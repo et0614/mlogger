@@ -1,0 +1,68 @@
+﻿<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Measurement status</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h2>Measurement status</h2>
+
+    <b>No. of MLoggers connected:</b><!--ML_NUMBER--> unit(s)<br><br>
+    <b>List of MLoggers:</b><br>
+    <div id="loggers">
+        Filtering <input class="search"><br><br>
+        <table align="left">
+            <thead>
+                <tr>
+                    <th class="sort general_h" data-sort="dt_last">Last connection</th>
+                    <th class="sort general_h" data-sort="name">Name</th>
+                    <th class="sort general_h" data-sort="id">Address</th>
+                    <th class="sort thlog_h" data-sort="dt_th">Date and time</th>
+                    <th class="sort thlog_h" data-sort="tmp">Dry-bulb temperature [C]</th>
+                    <th class="sort thlog_h" data-sort="hmd">Relative humidity [%]</th>
+                    <th class="sort glblog_h" data-sort="dt_glb">Date and time</th>
+                    <th class="sort glblog_h" data-sort="glb">Globe temperature [C]</th>
+                    <th class="sort vellog_h" data-sort="dt_vel">Date and time</th>
+                    <th class="sort vellog_h" data-sort="vel">Velocity [cm/s]</th>
+                    <th class="sort illlog_h" data-sort="dt_ill">Date and time</th>
+                    <th class="sort illlog_h" data-sort="ill">Illuminance [lx]</th>
+                    <th class="sort cmftlog_h" data-sort="cmft_set">SET</th>
+                    <th class="sort cmftlog_h" data-sort="cmft_pmv">PMV</th>
+                    <th class="sort cmftlog_h" data-sort="cmft_ppd">PPD[%]</th>
+                    <th class="general_h">DL</th>
+                </tr>
+            </thead>
+            <!-- IMPORTANT, class="list" have to be at tbody -->
+            <tbody class="list">
+                <!--ML_CONTENTS-->
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+    <br>
+    Web site: <a href="https://www.hvacsimulator.net/mlogger">https://www.hvacsimulator.net/mlogger</a>
+
+    <script src="list.js"></script>
+    <script>
+        var options = {
+            valueNames: ['dt_last', 'name', 'id', 'dt_th', 'tmp', 'hmd', 'dt_glb', 'glb', 'dt_vel', 'vel', 'dt_ill', 'ill', 'cmft_set', 'cmft_pmv', 'cmft_ppd']
+        };
+        var loggerList = new List('loggers', options);
+        loggerList.sort('name', { order: 'desc' });
+    </script>
+
+    <style>
+        .sort.desc:after {
+            content: " v";
+        }
+
+        .sort.asc:after {
+            content: " ^";
+        }
+    </style>
+
+</body>
+</html>

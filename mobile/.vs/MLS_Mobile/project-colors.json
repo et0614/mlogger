@@ -1,0 +1,26 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "5e89a91e-7ae0-4870-8ddc-31abc5060e61": {
+      "ProjectGuid": "5e89a91e-7ae0-4870-8ddc-31abc5060e61",
+      "DisplayName": "MLS_Mobile",
+      "ColorIndex": 0
+    },
+    "1962bb79-f1b6-44e5-90bc-1ea0273eb5d3": {
+      "ProjectGuid": "1962bb79-f1b6-44e5-90bc-1ea0273eb5d3",
+      "DisplayName": "MLS_Mobile.iOS",
+      "ColorIndex": 1
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "その他のファイル",
+      "ColorIndex": -1
+    },
+    "f1ae9d02-2c38-46b5-8f2f-e3b931e17a59": {
+      "ProjectGuid": "f1ae9d02-2c38-46b5-8f2f-e3b931e17a59",
+      "DisplayName": "MLS_Mobile.Android",
+      "ColorIndex": 2
+    }
+  },
+  "NextColorIndex": 3
+}

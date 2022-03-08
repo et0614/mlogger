@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Visual="Material"
+             x:Class="MLS_Mobile.AboutPage" BackgroundColor="#FFFFFF">
+    <AbsoluteLayout>
+        <Frame AbsoluteLayout.LayoutFlags="PositionProportional"
+                    AbsoluteLayout.LayoutBounds="0.5,0.4,AutoSize,AutoSize" BackgroundColor="#FFFFFF">
+            <StackLayout>
+                <Label Text="MLogger Server Mobile" HorizontalTextAlignment="Center" FontSize="Title" TextColor="#000000"/>
+                <Label Text="Version 1.1.2" HorizontalTextAlignment="Center" FontSize="Small" TextColor="#000000"/>
+                <Label Text="Popolo Project" HorizontalTextAlignment="Center" FontSize="Large" Margin="0,20,0,0" TextColor="#000000"/>
+                <Label Text="https://www.hvacsimulator.net" HorizontalTextAlignment="Center" TextColor="#000000"/>
+            </StackLayout>
+        </Frame>
+    </AbsoluteLayout>
+</ContentPage>

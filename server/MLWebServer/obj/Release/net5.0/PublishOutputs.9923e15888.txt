@@ -1,0 +1,5 @@
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\MLWebServer.exe
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\MLWebServer.dll
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\MLWebServer.deps.json
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\MLWebServer.runtimeconfig.json
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\MLWebServer.pdb

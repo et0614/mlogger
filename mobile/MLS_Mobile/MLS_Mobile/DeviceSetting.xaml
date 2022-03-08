@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Visual="Material"
+             x:Class="MLS_Mobile.DeviceSetting" BackgroundColor="#FFFFFF">
+
+    <StackLayout>
+        <ScrollView Orientation="Vertical">
+            <StackLayout Margin="15">
+
+                <Label x:Name="title1" FontSize="Subtitle" TextColor="Black"/>
+
+                <Grid Margin="10,0,0,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="40" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--温湿度計-->
+                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_th" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_th" VerticalTextAlignment="Center" TextColor="Black"/>
+                    <Entry Grid.Row="0" Grid.Column="2" x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                    <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center" TextColor="Black"/>
+
+                    <!--グローブ温度計-->
+                    <Switch Grid.Row="1" Grid.Column="0" x:Name="cbx_glb" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_glb" VerticalTextAlignment="Center" TextColor="Black"/>
+                    <Entry Grid.Row="1" Grid.Column="2" x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                    <Label Grid.Row="1" Grid.Column="3" Text="sec" VerticalTextAlignment="Center" TextColor="Black"/>
+
+                    <!--微風速計-->
+                    <Switch Grid.Row="2" Grid.Column="0" x:Name="cbx_vel" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_vel"  VerticalTextAlignment="Center" TextColor="Black"/>
+                    <Entry Grid.Row="2" Grid.Column="2" x:Name="ent_vel" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                    <Label Grid.Row="2" Grid.Column="3" Text="sec" VerticalTextAlignment="Center" TextColor="Black"/>
+
+                    <!--照度計-->
+                    <Switch Grid.Row="3" Grid.Column="0" x:Name="cbx_lux" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="3" Grid.Column="1" x:Name="lbl_lux" VerticalTextAlignment="Center" TextColor="Black"/>
+                    <Entry Grid.Row="3" Grid.Column="2" x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                    <Label Grid.Row="3" Grid.Column="3" Text="sec" VerticalTextAlignment="Center" TextColor="Black"/>
+                </Grid>
+
+
+                <Label x:Name="title2" FontSize="Subtitle" TextColor="Black"/>
+
+                <Grid Margin="10,0,0,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <DatePicker x:Name="stDate" Grid.Row="0" Grid.Column="0" HorizontalOptions="Fill" Focused="stDate_Focused" Unfocused="stDate_Unfocused" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                    <TimePicker x:Name="stTime" Grid.Row="0" Grid.Column="1" HorizontalOptions="Fill" Focused="stTime_Focused" Unfocused="stTime_Unfocused" BackgroundColor="#D8D8D8" TextColor="#000000"/>
+                </Grid>
+
+                <Label x:Name="title3" FontSize="Subtitle" TextColor="Black"/>
+
+                <Grid Margin="10,0,0,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Row="0" Grid.Column="0" x:Name="btnLoad" Clicked="LoadButton_Clicked" BorderWidth="1" FontSize="Medium" TextColor="DarkGreen"/>
+                    <Button Grid.Row="0" Grid.Column="1" x:Name="btnSave" Clicked="SaveButton_Clicked" BorderWidth="1" FontSize="Medium" TextColor="DarkGreen"/>
+                    <Button Grid.Row="0" Grid.Column="2" x:Name="btnStart" Clicked="StartButton_Clicked" BorderWidth="1" FontSize="Medium" TextColor="DarkGreen"/>
+                </Grid>
+
+                <Label x:Name="title4" FontSize="Subtitle" TextColor="Black"/>
+                <Label x:Name="spc_name" Margin="10,0,0,0" TextColor="Black"/>
+                <Label x:Name="spc_xbadds" Margin="10,0,0,0" TextColor="Black"/>
+                <Label x:Name="spc_mcadds" Margin="10,0,0,0" TextColor="Black"/>
+                <Label x:Name="spc_vers" Margin="10,0,0,0" TextColor="Black"/>
+
+                <Grid Margin="10,0,0,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Row="0" Grid.Column="0" x:Name="btnCFactor" Clicked="CFButton_Clicked" BorderWidth="1" FontSize="Medium" TextColor="DarkGreen"/>
+                </Grid>
+
+            </StackLayout>
+        </ScrollView>
+
+    </StackLayout>
+</ContentPage>

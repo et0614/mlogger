@@ -1,0 +1,63 @@
+﻿<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<title>測定状況</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>計測状況</h2>
+
+<b>接続台数：</b><!--ML_NUMBER--> 台<br><br>
+<b>測定器一覧：</b><br>
+    <div id="loggers">
+        抽出 <input class="search"><br><br>
+        <table align="left">
+          <thead>
+              <tr>
+                  <th class="sort general_h" data-sort="dt_last">最終接続</th>
+                  <th class="sort general_h" data-sort="name">測定器名</th>
+                  <th class="sort general_h" data-sort="id">アドレス</th>
+                  <th class="sort thlog_h" data-sort="dt_th">計測日時</th>
+                  <th class="sort thlog_h" data-sort="tmp">乾球温度[C]</th>
+                  <th class="sort thlog_h" data-sort="hmd">相対湿度[%]</th>
+                  <th class="sort glblog_h" data-sort="dt_glb">計測日時</th>
+                  <th class="sort glblog_h" data-sort="glb">グローブ温度[C]</th>
+                  <th class="sort vellog_h" data-sort="dt_vel">計測日時</th>
+                  <th class="sort vellog_h" data-sort="vel">微風速[cm/s]</th>
+                  <th class="sort illlog_h" data-sort="dt_ill">計測日時</th>
+                  <th class="sort illlog_h" data-sort="ill">照度[lx]</th>
+                  <th class="sort cmftlog_h" data-sort="cmft_set">SET</th>
+                  <th class="sort cmftlog_h" data-sort="cmft_pmv">PMV</th>
+                  <th class="sort cmftlog_h" data-sort="cmft_ppd">PPD[%]</th>
+                  <th class="general_h">DL</th>
+              </tr>
+          </thead>
+          <!-- IMPORTANT, class="list" have to be at tbody -->
+          <tbody class="list">
+            <!--ML_CONTENTS-->
+          </tbody>
+        </table>
+    </div>
+      
+    <script src="list.js"></script>
+    <script>
+        var options = {
+            valueNames: ['dt_last', 'name', 'id', 'dt_th', 'tmp', 'hmd', 'dt_glb', 'glb', 'dt_vel', 'vel', 'dt_ill', 'ill', 'cmft_set', 'cmft_pmv', 'cmft_ppd']
+      };
+      var loggerList = new List('loggers', options);
+      loggerList.sort( 'name', {order : 'desc' });
+    </script>    
+
+    <style>
+        .sort.desc:after {
+          content:"▼";
+        }
+        .sort.asc:after {
+          content:"▲";
+        }
+    </style>
+
+</body>
+</html>

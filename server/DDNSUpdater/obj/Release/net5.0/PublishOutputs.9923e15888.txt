@@ -1,0 +1,5 @@
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\DDNSUpdater.exe
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\DDNSUpdater.dll
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\DDNSUpdater.deps.json
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\DDNSUpdater.runtimeconfig.json
+C:\Users\etoga\Google ドライブ\研究\ロガー開発2\MLServer\MLServer_NET5\publish\DDNSUpdater.pdb

@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Visual="Material"
+             x:Class="MLS_Mobile.LoggingData" BackgroundColor="#FFFFFF">
+    <ContentPage.Content>
+        <StackLayout Margin="10">
+            <Label x:Name="lblFname" Text="File: MLogger_xxxx_yyyyMMdd.txt" Margin="0,0,0,10" TextColor="#000000"/>
+            <Grid Margin="5,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Row="0" Grid.Column="0" x:Name="btnCopy" BorderWidth="1" Clicked="copy_Clicked" TextColor="DarkGreen" FontSize="Medium" VerticalOptions="Fill" HorizontalOptions="Fill"/>
+                <Button Grid.Row="0" Grid.Column="1" x:Name="btnDelete" BorderWidth="1" Clicked="delete_Clicked" TextColor="DarkGreen" FontSize="Medium"/>
+                <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0" VerticalOptions="FillAndExpand" BackgroundColor="White" Padding="5">
+                    <Label x:Name="lbl_data" VerticalOptions="FillAndExpand" TextColor="Black"/>
+                </ScrollView>
+            </Grid>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

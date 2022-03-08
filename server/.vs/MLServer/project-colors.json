@@ -1,0 +1,31 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "7c4c7e5d-7d57-4e5d-a89a-1266a1c96e30": {
+      "ProjectGuid": "7c4c7e5d-7d57-4e5d-a89a-1266a1c96e30",
+      "DisplayName": "IshidaPost",
+      "ColorIndex": 0
+    },
+    "e90e3102-ee4b-43a0-9fc7-3b4ff4781a91": {
+      "ProjectGuid": "e90e3102-ee4b-43a0-9fc7-3b4ff4781a91",
+      "DisplayName": "MLServer",
+      "ColorIndex": 1
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "その他のファイル",
+      "ColorIndex": -1
+    },
+    "22195d98-ff29-41de-b106-6bd937c49519": {
+      "ProjectGuid": "22195d98-ff29-41de-b106-6bd937c49519",
+      "DisplayName": "DiscTest",
+      "ColorIndex": 2
+    },
+    "115d6232-4d2b-485d-8f08-09eaa25be215": {
+      "ProjectGuid": "115d6232-4d2b-485d-8f08-09eaa25be215",
+      "DisplayName": "DDNSUpdater",
+      "ColorIndex": 3
+    }
+  },
+  "NextColorIndex": 4
+}
