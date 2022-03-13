@@ -25,7 +25,8 @@ static float readGlbVoltage(void);
 
 static float readVelVoltage(void);
 
-static void writeSDcard(const tm dtNow, const char write_chars[]);
+//static void writeSDcard(const tm dtNow, const char write_chars[]);
+static void writeSDcard(const tm dtNow, const char* write_chars);
 
 //ˆÈ‰ºAinlineŠÖ”’è‹`
 

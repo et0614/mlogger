@@ -146,9 +146,12 @@ int main(void)
 	//XBeeスリープ解除
 	wakeup_xbee();
 	
+	//FatFS操作のためのメモリ確保
+	fSystem = (FATFS *)malloc(sizeof(FATFS));
+	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
-				
+
 	//割り込み再開
 	sei();
 	
@@ -160,9 +163,7 @@ int main(void)
 		outputToBLE = outputToSDCard = false;
 		startTime = currentTime;
 	}
-	
-	fSystem = (FATFS*) malloc(sizeof(FATFS));
-	
+		
     while (1) 
     {
 		//Logging中でなければSDカードマウントを試みる
@@ -172,7 +173,7 @@ int main(void)
 		//スリープモード設定		
 		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
-									
+											
 		//スリープ
 		sleep_mode();
     }
@@ -487,7 +488,7 @@ ISR(TIMER2_OVF_vect)
 		//新規データがある場合は送信
 		if(hasNewData)
 		{
-			if(outputToXBee || outputToBLE) 
+			if(outputToXBee || outputToBLE)
 			{
 				wakeup_xbee(); //XBeeスリープ解除
 				_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
@@ -514,7 +515,7 @@ ISR(TIMER2_OVF_vect)
 				
 		//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 		//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
-		while(! my_uart::tx_done());
+		//while(! my_uart::tx_done()); //止まる
 
 		_delay_ms(10);
 		//Bluetooth通信でなければスリープに入る（XBeeの仕様上、Bluetoothモードのスリープは不可）
@@ -539,7 +540,8 @@ ISR(TIMER2_OVF_vect)
 	}
 }
 
-static void writeSDcard(const tm dtNow, const char write_chars[])
+//static void writeSDcard(const tm dtNow, const char write_chars[])
+static void writeSDcard(const tm dtNow, const char* write_chars)
 {
 	//マウント未完了ならば終了
 	if(!initSD) return;
@@ -555,20 +557,12 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	myRTC.min=dtNow.tm_min;
 	myRTC.sec=dtNow.tm_sec;
 	
-	FIL fl;
-	FRESULT fr = f_open(&fl, fileName, FA_OPEN_APPEND | FA_WRITE);
-	if(fr == FR_OK)
-	{
-		int n=0;
-		//f_puts(write_chars, &fl); //この瞬間EEPROMから読み込んだ補正係数がぶっ壊れる
-		//1文字ずつ書き出すとうまくいく(Debugのみ)が、理由はわからじ。調査必要
-		while(write_chars[n])
-		{
-			f_putc(write_chars[n], &fl);
-			n++;	
-		}
-		f_close(&fl);
+	FIL* fl = (FIL*)malloc(sizeof(FIL));	
+	if(f_open(fl, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK){
+		f_puts(write_chars, fl);
+		f_close(fl);
 	}
+	free(fl);
 }
 
 //INT0割り込み：計測中断処理
