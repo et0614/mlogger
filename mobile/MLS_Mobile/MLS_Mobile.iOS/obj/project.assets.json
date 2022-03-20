@@ -2667,11 +2667,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.iOS\\MLS_Mobile.iOS.csproj",
+      "projectUniqueName": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.iOS\\MLS_Mobile.iOS.csproj",
       "projectName": "MLS_Mobile.iOS",
-      "projectPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.iOS\\MLS_Mobile.iOS.csproj",
+      "projectPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.iOS\\MLS_Mobile.iOS.csproj",
       "packagesPath": "C:\\Users\\etoga\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.iOS\\obj\\",
+      "outputPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.iOS\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "fallbackFolders": [
@@ -2692,8 +2692,8 @@
       "frameworks": {
         "xamarinios10": {
           "projectReferences": {
-            "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
-              "projectPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj"
+            "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
+              "projectPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj"
             }
           }
         }

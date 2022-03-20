@@ -25,7 +25,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>net.hvacsimulator.mls</string>
 	<key>CFBundleVersion</key>
-	<string>1.1.1</string>
+	<string>1.1.4</string>
 	<key>UILaunchStoryboardName</key>
 	<string>Launchscreen</string>
 	<key>CFBundleName</key>
@@ -39,7 +39,7 @@
 		<string>bluetooth-central</string>
 	</array>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.1</string>
+	<string>1.1.4</string>
 	<key>XSAppIconAssets</key>
 	<string>Media.xcassets/AppIcons.appiconset</string>
 </dict>

@@ -4179,11 +4179,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.Android\\MLS_Mobile.Android.csproj",
+      "projectUniqueName": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.Android\\MLS_Mobile.Android.csproj",
       "projectName": "MLS_Mobile.Android",
-      "projectPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.Android\\MLS_Mobile.Android.csproj",
+      "projectPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.Android\\MLS_Mobile.Android.csproj",
       "packagesPath": "C:\\Users\\etoga\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.Android\\obj\\",
+      "outputPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile.Android\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "fallbackFolders": [
@@ -4204,8 +4204,8 @@
       "frameworks": {
         "monoandroid12.0": {
           "projectReferences": {
-            "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
-              "projectPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj"
+            "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
+              "projectPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj"
             }
           }
         }

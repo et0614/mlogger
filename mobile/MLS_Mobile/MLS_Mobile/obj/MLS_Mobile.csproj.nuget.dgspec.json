@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {}
+    "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {}
   },
   "projects": {
-    "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
+    "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj",
+        "projectUniqueName": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj",
         "projectName": "MLS_Mobile",
-        "projectPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj",
+        "projectPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile.csproj",
         "packagesPath": "C:\\Users\\etoga\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\etoga\\Desktop\\MLS_Mobile\\MLS_Mobile\\MLS_Mobile\\obj\\",
+        "outputPath": "C:\\Users\\etoga\\Desktop\\mobile\\MLS_Mobile\\MLS_Mobile\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
