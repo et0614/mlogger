@@ -170,7 +170,7 @@ int main(void)
 		if(!logging && !initSD)
 			if(f_mount(fSystem, "", 1) == FR_OK) initSD = true;
 		
-		//スリープモード設定		
+		//スリープモード設定
 		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_SAVE);
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
 											
@@ -414,7 +414,7 @@ ISR(TIMER2_OVF_vect)
 		if(currentTime < startTime) return;
 		
 		//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
-		if(my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
+		if(my_eeprom::measure_vel && my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
 		
 		bool hasNewData = false;
 		char tmpS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
