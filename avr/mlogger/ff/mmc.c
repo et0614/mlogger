@@ -15,12 +15,19 @@
 #include "diskio.h"
 
 /* Peripheral controls (Platform dependent) */
-#define CS_LOW()		PORTD &= ~0b00001000 /* PORTD.3 （CS）をOFFにする	*/
-#define	CS_HIGH()		PORTD |= 0b00001000	/* PORTD.3 （CS）をONにする */
+//#define CS_LOW()		PORTC.OUTCLR = PIN3_bm /* PORTC.3 （CS）をOFFにする	*/
+//#define	CS_HIGH()		PORTC.OUTSET = PIN3_bm /* PORTC.3 （CS）をONにする */
+#define CS_LOW()		PORTC.OUT &= ~PIN3_bm /* PORTC.3 （CS）をOFFにする	*/
+#define	CS_HIGH()		PORTC.OUT |= PIN3_bm /* PORTC.3 （CS）をONにする */
 #define MMC_CD			1	/* Test if card detected.   yes:true, no:false, default:true */
 #define MMC_WP			0	/* Test if write protected. yes:true, no:false, default:false */
-#define	FCLK_SLOW()		SPCR = 0x52	/* Set SPI clock for initialization (100-400kHz)	8MHz/64=125kHz, SPI2X=0 */
-#define	FCLK_FAST()		SPCR = 0x50 /* Set fast clock (depends on the CSD)	8MHz/4=2MHz, SPI2X=0 */	/* Set SPI clock for read/write (20MHz max) */
+//#define	FCLK_SLOW()		SPCR = 0x52	/* Set SPI clock for initialization (100-400kHz)	8MHz/64=125kHz, SPI2X=0 */
+//#define	FCLK_FAST()		SPCR = 0x50 /* Set fast clock (depends on the CSD)	8MHz/4=2MHz, SPI2X=0 */	/* Set SPI clock for read/write (20MHz max) */
+//#define	FCLK_SLOW()		SPI1.CTRLA |= SPI_PRESC_DIV64_gc	/* Set SPI clock for initialization (100-400kHz)	8MHz/64=125kHz, SPI2X=0 */
+//#define	FCLK_FAST()		SPI1.CTRLA |= SPI_PRESC_DIV4_gc /* Set fast clock (depends on the CSD)	8MHz/4=2MHz, SPI2X=0 */	/* Set SPI clock for read/write (20MHz max) */
+#define	FCLK_SLOW()		SPI1.CTRLA |= SPI_PRESC_DIV16_gc	/* Set SPI clock for initialization (100-400kHz)	4MHz/64=250kHz, SPI2X=0 */
+#define	FCLK_FAST()		SPI1.CTRLA |= SPI_PRESC_DIV4_gc /* Set fast clock (depends on the CSD)	4MHz/4=1MHz, SPI2X=0 */	/* Set SPI clock for read/write (20MHz max) */
+
 
 /*--------------------------------------------------------------------------
 
@@ -72,25 +79,29 @@ static
 void power_on (void)
 {
 	for (Timer1 = 2; Timer1; ); /* Wait for 20ms 12.09.09 */
-	DDRB |=	(1<<PB2)|(1<<PB3)|(1<<PB5);	/* SS, MOSI, SCKを出力に設定 */
-	PORTB |= (1<<PB4)|(1<<PB5);			/* SCK, MISOをHiに設定 */
-	/* 
-	pb7:未使用
-	pb6:未使用
-	pb5:SCK
-	pb4:MISO
-	pb3:MOSI
-	pb2:CS
-	pb1:クロック出力(SPIとは無関係
-	pb0:カード挿入？ 
-	*/
-	SPSR = 0; /* SPI 2x modeにはしない */
+	
+	PORTC.DIR |= PIN0_bm;  //SPI通信（MOSI）
+	PORTC.DIR &= ~PIN1_bm; //SPI通信（MISO）
+	PORTC.DIR |= PIN2_bm;  //SPI通信（SCK）
+	PORTC.DIR |= PIN3_bm;  //SPI通信（CS）
+	PORTC.OUTSET = PIN1_bm; // MISOをHiに設定
+	PORTC.OUTSET = PIN2_bm; // SCKをHiに設定	
+	
+	//SPI1.CTRLA |= SPI_ENABLE_bm;  //Enable SPI function
+
+	SPI1.CTRLA =
+		SPI_ENABLE_bm | // 単位部許可
+		SPI_MASTER_bm | // 主装置SPI単位部
+		SPI_PRESC_DIV16_gc; // 16分周ｼｽﾃﾑ ｸﾛｯｸ
+		
+	SPI1.CTRLA &= ~SPI_CLK2X_bm;  //SPI 2x modeにはしない
 }
 
 static
 void power_off (void)
 {
-	SPCR = 0; /* Disable SPI function */
+	//SPCR = 0; /* Disable SPI function */
+	SPI1.CTRLA &= ~SPI_ENABLE_bm;  //Disable SPI function
 	Stat |= STA_NOINIT;
 }
 
@@ -104,9 +115,13 @@ BYTE xchg_spi (		/* Returns received data */
 	BYTE dat		/* Data to be sent */
 )
 {
-	SPDR = dat;
-	loop_until_bit_is_set(SPSR, SPIF);
-	return SPDR;
+	//SPDR = dat;
+	//loop_until_bit_is_set(SPSR, SPIF);
+	//return SPDR;
+	
+	SPI1.DATA = dat;
+	while (!(SPI1.INTFLAGS & SPI_IF_bm)); //データ交換待ち
+	return SPI1.DATA;
 }
 
 
@@ -118,12 +133,19 @@ void rcvr_spi_multi (
 )
 {
 	do {
-		SPDR = 0xFF;
+		/*SPDR = 0xFF;
 		loop_until_bit_is_set(SPSR, SPIF);
 		*p++ = SPDR;
 		SPDR = 0xFF;
 		loop_until_bit_is_set(SPSR, SPIF);
-		*p++ = SPDR;
+		*p++ = SPDR;*/
+		
+		SPI1.DATA = 0xFF;
+		while (!(SPI1.INTFLAGS & SPI_IF_bm)); //データ交換待ち
+		*p++ = SPI1.DATA;
+		SPI1.DATA = 0xFF;
+		while (!(SPI1.INTFLAGS & SPI_IF_bm)); //データ交換待ち
+		*p++ = SPI1.DATA;		
 	} while (cnt -= 2);
 }
 
@@ -136,10 +158,15 @@ void xmit_spi_multi (
 )
 {
 	do {
-		SPDR = *p++;
+		/*SPDR = *p++;
 		loop_until_bit_is_set(SPSR, SPIF);
 		SPDR = *p++;
-		loop_until_bit_is_set(SPSR, SPIF);
+		loop_until_bit_is_set(SPSR, SPIF);*/
+		
+		SPI1.DATA = *p++;
+		while (!(SPI1.INTFLAGS & SPI_IF_bm)); //データ交換待ち
+		SPI1.DATA = *p++;
+		while (!(SPI1.INTFLAGS & SPI_IF_bm)); //データ交換待ち
 	} while (cnt -= 2);
 }
 

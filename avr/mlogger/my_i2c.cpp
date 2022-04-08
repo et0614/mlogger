@@ -1,150 +1,122 @@
 /**
  * @file my_i2c.cpp
- * @brief AVR(ATMega328)でI2C通信を行う（AM2320とOPT3001）
- *  参考1：http://cjtsx.blogspot.jp/2016/07/am2320-library-for-avrs-without.html
- *  参考2：https://www.avrfreaks.net/forum/aht20-sensor-and-i2c?skey=aht20
+ * @brief AVRxxシリーズでI2C通信する
+ *  参考1: https://github.com/microchip-pic-avr-examples/avr128da48-cnano-i2c-send-receive-mplabx
+ *  参考2: https://www.avrfreaks.net/forum/aht20-sensor-and-i2c?skey=aht20
  * @author E.Togashi
  * @date 2020/12/25
  */
 
 #include "my_i2c.h"
+#include <avr/io.h>
 #include <util/delay.h>
- 
-/************************************************************************/
-/* Port functions                                                       */
-/************************************************************************/
- 
-//AVRマイコンのI2C関連のピン情報を設定
-#define I2C_PORT PORTC
-#define I2C_DDR DDRC
-#define I2C_PIN PINC
-#define I2C_SDA_BIT 4
-#define I2C_SCL_BIT 5
- 
-#define SDA_LOW I2C_DDR |= _BV(I2C_SDA_BIT)
-#define SDA_HIGH I2C_DDR &= ~_BV(I2C_SDA_BIT)
-#define SCL_LOW I2C_DDR |= _BV(I2C_SCL_BIT)
-#define SCL_HIGH I2C_DDR &= ~_BV(I2C_SCL_BIT)
-#define SCL_IS_LOW (!(I2C_PIN & _BV(I2C_SCL_BIT)))
- 
-#define SCL_WAIT_HIGH while (!(I2C_PIN & _BV(I2C_SCL_BIT))) {}
 
-static void _bus_delay(void)
+
+//VCNLのアドレス。同部品には4種のアドレスがあるので型番に注意。
+const uint8_t VCNL_ADD = 0x60 << 1;
+
+enum 
 {
-	_delay_us(50);
+	I2C_INIT = 0,
+	I2C_ACKED,
+	I2C_NACKED,
+	I2C_READY,
+	I2C_ERROR,
+	I2C_SUCCESS
+};
+ 
+//書き込み終了を待つ
+static uint8_t _i2c_WaitW(void)
+ {
+	 uint8_t state = I2C_INIT;
+	 do
+	 {
+		 //書き込みもしくは読み込み完了フラグを監視
+		 if(TWI1.MSTATUS & (TWI_WIF_bm | TWI_RIF_bm))
+		 //if(TWI1.MSTATUS & TWI_WIF_bm)
+		 {
+			 //ACKを受け取った場合
+			 if(!(TWI1.MSTATUS & TWI_RXACK_bm)) state = I2C_ACKED;
+			 //ACKを受け取らなかった場合
+			 else state = I2C_NACKED;
+		 }
+		 //エラー発生フラグを監視
+		 else if(TWI1.MSTATUS & (TWI_BUSERR_bm | TWI_ARBLOST_bm)) state = I2C_ERROR;
+	 } while(!state);
+	 
+	 return state;
+ }
+
+//読み込み終了を待つ
+static uint8_t _i2c_WaitR(void)
+ {
+	 uint8_t state = I2C_INIT;
+	 do
+	 {
+		 //書き込みもしくは読み込み完了フラグを監視
+		 if(TWI1.MSTATUS & (TWI_WIF_bm | TWI_RIF_bm)) state = I2C_READY;
+		 //if(TWI1.MSTATUS & TWI_RIF_bm) state = I2C_READY;
+		 //エラー発生フラグを監視
+		 else if(TWI1.MSTATUS & (TWI_BUSERR_bm | TWI_ARBLOST_bm)) state = I2C_ERROR;
+	 } while(!state);
+	 
+	 return state;
+ }
+ 
+//I2C通信（書き込み）開始
+static uint8_t _start_writing(uint8_t address)
+{
+	TWI1.MADDR = address & ~0x01; //Write動作の場合、1桁目は0
+	
+	//while(TWI_RXACK_bm & TWI1.MSTATUS);
+	//return 1;
+	return _i2c_WaitW();
 }
 
-//#ifdef USE_Q_DELAY
-static void _bus_q_delay(void)
+//I2C通信（読み込み）開始
+static uint8_t _start_reading(uint8_t address)
 {
-	_delay_us(30);
-}
-//#else
-//#define _bus_q_delay() _bus_delay()
-//#endif
- 
-static void SCL_SetHigh(void)
-{
- SCL_HIGH;
- _bus_delay();
-}
- 
-static void SCL_SetLow(void)
-{
- SCL_LOW;
- _bus_delay();
-}
- 
-/************************************************************************/
-/* Bus functions                                                        */
-/************************************************************************/
-
-//I2C通信の開始
-static void _bus_start(void)
-{
-	//SCL-H + SDA-Lで開始
-	SCL_HIGH;
-	SDA_LOW;
-	//待機してSCLをLに
-	_bus_delay();
-	SCL_SetLow();
+	TWI1.MADDR = address | 0x01; //Read動作の場合、1桁目は1
+	
+	//while(TWI_RXACK_bm & TWI1.MSTATUS);
+	//return 1;
+	return _i2c_WaitW();
 }
 
 //I2C通信の終了
 static void _bus_stop(void)
 {
-	//SCL-HのときにSDAがLからHに変更で終了
-	SDA_LOW;
-	_bus_delay();
-	SCL_HIGH;
-	_bus_q_delay();
-	SDA_HIGH;
-	_bus_delay();
+	TWI1.MCTRLB = TWI_ACKACT_bm | TWI_MCMD_STOP_gc; //NACK
 }
 
 //Write処理（マスタからスレーブへの送信）
 static uint8_t _bus_write(uint8_t data)
 {
-	//最上位bit（MSB）から順に送信
-	for (uint8_t i = 0; i<8; i++) {
-		SCL_SetLow(); //SCLを一旦下げて。。。
- 
-		//最上位bitの1,0判定
-		if (data & 0x80) SDA_HIGH;
-		else SDA_LOW;
-		_bus_delay();
- 
-		SCL_SetHigh(); //用意ができたらSCLを上げる
-		SCL_WAIT_HIGH;
-		
-		//最上位bitをシフト（次のbitへ）
-		data <<= 1;
-	} 
-	SCL_SetLow();
-	SDA_HIGH;
-	_bus_delay();
- 
-	//スレーブのACKを待つ
-	SCL_HIGH;
-	SCL_WAIT_HIGH; // wait for slave ack
-	_bus_delay();
-	bool ack = !(I2C_PIN & _BV(I2C_SDA_BIT));
-	SCL_SetLow();
- 
-	return (uint8_t)ack;
+	TWI1.MDATA = data;
+	return _i2c_WaitW();
 }
 
 //Read処理（スレーブからマスタへの送信）
-static uint8_t _bus_read(bool sendAck)
+static uint8_t _bus_read(bool sendAck, bool withStopCondition, uint8_t* data)
 {
-	uint8_t data = 0;
- 
-	//最上位bit（MSB）から順に受信
-	for (uint8_t i=0; i<8; i++) {
-		SCL_SetLow();
-		SCL_SetHigh();
- 
-		SCL_WAIT_HIGH;
- 
-		if (I2C_PIN & _BV(I2C_SDA_BIT)) data |= (0x80 >> i);
+	uint8_t rslt = _i2c_WaitR();	
+	if(rslt == I2C_READY)
+	{
+		*data = TWI1.MDATA;
+		
+		if(sendAck) TWI1.MCTRLB &= ~TWI_ACKACT_bm; //ACK
+		else TWI1.MCTRLB |= TWI_ACKACT_bm; //NACK
+		
+		if(withStopCondition) TWI1.MCTRLB |= TWI_MCMD_STOP_gc;
+		else TWI1.MCTRLB |= TWI_MCMD_RECVTRANS_gc;
+
+		return I2C_SUCCESS;
 	}
-	SCL_SetLow();
- 
-	//ACK or NACKを送信
-	if (sendAck) SDA_LOW;
-	else SDA_HIGH;
-	_bus_delay();
- 
-	SCL_SetHigh();
-	SCL_SetLow();
- 
-	SDA_HIGH;
-	_bus_q_delay();
- 
-	return data;
+	//エラー処理
+	else return rslt;
 }
  
-//巡回冗長検査値を生成
+//巡回冗長検査値を生成1
 static uint16_t crc16(uint8_t *ptr, uint8_t len)
 {
 	uint16_t crc =0xFFFF;
@@ -162,19 +134,74 @@ static uint16_t crc16(uint8_t *ptr, uint8_t len)
 	}
 	return crc;
 }
+
+//巡回冗長検査値を生成2
+static uint8_t crc8(uint8_t *ptr, uint8_t len) 
+{
+	uint8_t crc = 0xFF;
+	for(int i = 0; i < len; i++) {
+		crc ^= *ptr++;
+		for(uint8_t bit = 8; bit > 0; --bit) {
+			if(crc & 0x80) {
+				crc = (crc << 1) ^ 0x31u;
+				} else {
+				crc = (crc << 1);
+			}
+		}
+	}
+	return crc;
+}
+ 
+ 
+//以下、publicメソッド*************************************
  
 void my_i2c::InitializeI2C(void)
 {
-	I2C_DDR &= ~(_BV(I2C_SCL_BIT)|_BV(I2C_SDA_BIT));
-	I2C_PORT &= (_BV(I2C_SCL_BIT)|_BV(I2C_SDA_BIT));
+	// TWI通信のPIN設定 : SDA->PF2, SCL->PF3
+	PORTMUX.TWIROUTEA = 0x00;
+	
+	// 動作モードの設定
+	TWI1.CTRLA &= ~TWI_FMPEN_bm; //デフォルト（Standard もしくは Fast）
+	
+	// SDA hold time（SCLがLowになった後、どれだけSDA信号を維持するか）
+	TWI1.CTRLA |= TWI_SDAHOLD_50NS_gc; //50ns
+	
+	// ボーレートの設定（周波数が決まる）
+	//AVR32DB32のデータシート:Clock Generationより
+	const bool IS_STANDARD_MODE = true;
+	float fScl = IS_STANDARD_MODE ? 100000 : 400000; //周波数[Hz]
+	float tRise = 0.000000001 * (IS_STANDARD_MODE ? 1000 : 300); //Rise time [sec]
+	float tOf = 0.000000001 * 250;
+	float baud = (uint8_t)(((float)F_CPU / (2 * fScl)) - 5 - ((float)F_CPU * tRise / 2));
+	float tLow = (baud + 5) / F_CPU - tOf;
+	float tLowM = 0.000000001 * (IS_STANDARD_MODE ? 4700 : 1300);
+	if(tLow < tLowM) baud = F_CPU * (tLowM + tOf) - 5;
+	TWI1.MBAUD = baud;
+	
+	// アドレスレジスタ、データレジスタを初期化
+	TWI1.MADDR = 0x00;
+	TWI1.MDATA = 0x00;
+
+	TWI1.MCTRLA |= TWI_ENABLE_bm		// TWIの有効化
+				| TWI_TIMEOUT_200US_gc; //200uSの通信不良でSkip	
+
+	TWI1.MSTATUS = TWI_BUSSTATE_IDLE_gc; //バスをIDLE状態にする
+	TWI1.MSTATUS |= TWI_WIF_bm | TWI_CLKHOLD_bm; //フラグクリア
+
+	TWI1.MCTRLB |= TWI_FLUSH_bm; //通信状態を初期化
+	
+	//照度計測設定//設定は変えないので初期化時のみ呼び出し
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; } //照度計測設定コマンド
+	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return; } //000 1 00 0 0: 計測レベル, ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効
+	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
+	_bus_stop();
 }
 
-//初期化処理OPTxxx
 void my_i2c::InitializeOPT(uint8_t add)
 {
 	//Configuration
-	_bus_start();
-	_bus_write(add + 0); //OPTxxxxのアドレス
+	_start_writing(add); //OPTxxxxのアドレス
 	_bus_write(0x01); //Configuration要求
 	_bus_write(0b11001110); //0b 1100 1 11 0 //automatic full-scale, 800ms, continuous conversions, read only field
 	_bus_write(0b00000000); //0b 0 0 0 0 0 00//read only field * 3, hysteresis-style,
@@ -183,8 +210,7 @@ void my_i2c::InitializeOPT(uint8_t add)
 	
 	//OPTxxxxのResister Address をResultに設定
 	//再設定するまで維持されるため、初期化時に設定してしまう
-	_bus_start();
-	_bus_write(add + 0); //OPTxxxxのアドレス
+	_start_writing(add); //OPTxxxxのアドレス
 	_bus_write(0x00); //Result要求
 	_bus_stop();
 	_delay_ms(1); //必要な待機時間は技術資料から読み取れず
@@ -192,31 +218,29 @@ void my_i2c::InitializeOPT(uint8_t add)
 
 uint8_t my_i2c::ReadAM2320(float* tempValue, float* humiValue)
 {
+	const uint8_t AM_ADD = 0xB8; //AM2320のアドレス（0xB8=0b10111000）
 	uint8_t buffer[8];
 	
 	//スリープ状態から起こす。ACKは取得できない
-	_bus_start();
-	_bus_write(0xB8); //AM2320のアドレス（10111000）	
+	_start_writing(AM_ADD);
 	_delay_ms(1);
 	_bus_stop();
 	
-	//コマンド送信前処理// SLA + address (0xB8) + starting address(0x00) + register length(0x04)
-	_bus_start();
-	_bus_write(0xB8);
+	//コマンド送信前処理// SLA + address (0xB8) + starting address(0x00) + register length(0x04)	
+	_start_writing(AM_ADD);
 	_bus_write(0x03);
 	_bus_write(0x00);
 	_bus_write(0x04);
 	_bus_stop();
 	_delay_ms(1); //1.5ms以上の待機！！！
-	
-	_bus_start();
-	_bus_write(0xB8 + 1); //Read命令（address + 1）
+
+	_start_reading(AM_ADD);
 	_delay_us(50); //30us以上の待機
-	for (uint8_t i = 0; i<7; i++) {
-		buffer[i] = _bus_read(1); //読んでACK
+	for (uint8_t i = 0; i<7; i++) {		
+		_bus_read(1, 0, &buffer[i]); //読んでACK
 	}
-	buffer[7] = _bus_read(0); //読んでNACK
-	_bus_stop();
+	_bus_read(0, 1, &buffer[7]); //読んでNACK
+	//_bus_stop();
 	
 	//CRC16をチェック
 	uint16_t Rcrc = ((uint16_t)buffer[7] << 8)+buffer[6];
@@ -243,82 +267,72 @@ uint8_t my_i2c::ReadAM2320(float* tempValue, float* humiValue)
 
 uint8_t my_i2c::ReadAHT20(float* tempValue, float* humiValue)
 {
+	*humiValue = -99;
+	*tempValue = -99;
+	
+	const uint8_t AHT_ADD = 0x38 << 1; //AHT20のアドレス（0x38=0b00111000）
 	uint8_t buffer[7];
 	
-	_bus_start();
-	_bus_write(0x70); //AHT20のアドレス（0x70,0b01110000）+ write(0)
-	_bus_write(0xBE); //初期化
-	_bus_write(0x08);
-	_bus_write(0x00);
+	//初期化コマンド(送信後10ms待つ)
+	if(_start_writing(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0xBE) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x08) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
 	_bus_stop();
 	_delay_ms(10);
 	
-	_bus_start();
-	_bus_write(0x70);
-	_bus_write(0xF5);   // RH command no holding mode
-	_delay_ms(20);
+	//測定命令(計測終了まで80ms必要)
+	if(_start_writing(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0xAC) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x33) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
 	_bus_stop();
-	
-	_bus_start();
-	_bus_write(0x70);
-	_bus_write(0xF3);   // Temp command no holding mode
-	_delay_ms(20);
-	_bus_stop();
-	
-	_bus_start();
-	_bus_write(0x70); //AHT20のアドレス（0x70,0b01110000）+ write(0)
-	_bus_write(0xAC); //測定命令
-	_bus_write(0x33);
-	_bus_write(0x00);
-	_bus_stop();
-	_delay_ms(100);
-		
+	_delay_ms(80);
+			
 	//測定値を受信
-	_bus_start();
-	_bus_write(0x70 + 1); //AHT20のアドレス（0x70,0b01110000）+ read(1)
-	buffer[0]=_bus_read(1); //ACK:状態
-	if(buffer[0] & (1<<7))
-	{
-		//計測未完了	
-		*humiValue = -99;
-		*tempValue = -99;
-		_bus_stop();
-		return 0;
-	}
+	if(_start_reading(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:状態
+	//Busyの場合
+	if((buffer[0] & (1<<7))) { _bus_stop(); return 0; }
 	else
 	{
-		buffer[1]=_bus_read(1); //ACK:相対湿度1
-		buffer[2]=_bus_read(1); //ACK:相対湿度2
-		buffer[3]=_bus_read(1); //ACK:相対湿度3,乾球温度1
-		buffer[4]=_bus_read(1); //ACK:乾球温度2
-		buffer[5]=_bus_read(1); //ACK:乾球温度3
-		buffer[6]=_bus_read(0); //NACK:CRC
-		_bus_stop();
+		if(_bus_read(1, 0, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度1
+		if(_bus_read(1, 0, &buffer[2]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度2
+		if(_bus_read(1, 0, &buffer[3]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度3,乾球温度1
+		if(_bus_read(1, 0, &buffer[4]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度2
+		if(_bus_read(1, 0, &buffer[5]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度3
+		if(_bus_read(0, 1, &buffer[6]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK:CRC
 		
-		float hum = 0;
-		hum += buffer[1];
-		hum *= 256;
-		hum += buffer[2];
-		hum *= 16;
-		hum += (buffer[3]>>4);
-		hum *= 100;
-		hum /= 1024;
-		hum /= 1024;
-		*humiValue = hum;
-		
-		float tmp = 0;
-		tmp += (buffer[3] & 0x0F);
-		tmp *= 256;
-		tmp += buffer[4];
-		tmp *= 256;
-		tmp += buffer[5];
-		tmp *= 200;
-		tmp /= 1024;
-		tmp /= 1024;
-		tmp -= 50;
-		*tempValue = tmp;
+		//CRC8をチェック
+		volatile uint8_t rcrc = crc8((uint8_t*)buffer, 6);
+		if (buffer[6] == rcrc) 
+		{
+			float hum = 0;
+			hum += buffer[1];
+			hum *= 256;
+			hum += buffer[2];
+			hum *= 16;
+			hum += (buffer[3]>>4);
+			hum *= 100;
+			hum /= 1024;
+			hum /= 1024;
+			*humiValue = hum;
+			
+			float tmp = 0;
+			tmp += (buffer[3] & 0x0F);
+			tmp *= 256;
+			tmp += buffer[4];
+			tmp *= 256;
+			tmp += buffer[5];
+			tmp *= 200;
+			tmp /= 1024;
+			tmp /= 1024;
+			tmp -= 50;
+			*tempValue = tmp;
 
-		return 1;
+			return 1;
+		}
+		else return 0;
 	}	
 }
 
@@ -326,12 +340,10 @@ float my_i2c::ReadOPT(uint8_t add)
 {
 	uint8_t buffer[2];
 	
-	_bus_start();
-	_bus_write(add + 1); //OPTxxxxのアドレスに、Read命令のために+1する
+	_start_reading(add); //OPTxxxxのアドレス
 	_delay_us(50); //待機すべき時間は不明//AutoScaleで10ms×レンジ変更回数の時間が必要の模様。レンジは12段階なので最大で110ms+αか？
-	buffer[0] = _bus_read(1); //ACK
-	buffer[1] = _bus_read(0); //NACK
-	_bus_stop();
+	_bus_read(1, 0, &buffer[0]); //ACK
+	_bus_read(0, 1, &buffer[1]); //NACK
 	
 	//Luxに変換
 	int expnt = (0b11110000 & buffer[0]) >> 4; //上位4bitがレンジを表す
@@ -341,3 +353,34 @@ float my_i2c::ReadOPT(uint8_t add)
 	if(83865.60 < lux) return 0; //エラー時は0とする
 	else return lux;
 }
+
+float my_i2c::ReadVCNL4030(void)
+{
+	//照度読み取り
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x0B) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測コマンド
+	//stopせずに続けて送信
+	if(_start_reading(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	uint8_t buffer[2];
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK
+	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK
+		
+	uint16_t data = (buffer[1] << 8) + buffer[0];
+	return 0.064 * 4 * data; //ダイナミックレンジ2倍、感度1倍設定のため:2/(1/2)=4
+}
+
+void my_i2c::ScanAddress(uint8_t minAddress, uint8_t maxAddress)
+{
+	for (uint8_t client_address = minAddress; client_address <= maxAddress; client_address++)
+	{
+		if(_start_writing(client_address<<1) == I2C_ACKED)
+		{
+			//debug用
+			//volatile uint8_t xxx = client_address;
+		}
+		_bus_stop();
+		_delay_ms(10);
+	}	
+	
+}
+	

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\MLResumer.csproj": {}
+    "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\MLResumer.csproj": {}
   },
   "projects": {
-    "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\MLResumer.csproj": {
+    "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\MLResumer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\MLResumer.csproj",
+        "projectUniqueName": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\MLResumer.csproj",
         "projectName": "MLResumer",
-        "projectPath": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\MLResumer.csproj",
+        "projectPath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\MLResumer.csproj",
         "packagesPath": "C:\\Users\\etoga\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\obj\\",
+        "outputPath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

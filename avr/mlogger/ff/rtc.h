@@ -10,15 +10,15 @@ typedef struct {
 	uint8_t		hour;	/* 0..23 */
 	uint8_t		min;	/* 0..59 */
 	uint8_t		sec;	/* 0..59 */
-} RTC;
+} RTC_MM;
 
 int iic_write (uint8_t, uint16_t, uint16_t, const void*);	/* Write to IIC device */
 int iic_read (uint8_t, uint16_t, uint16_t, void*);		/* Read from IIC device */
 
 int rtc_init (void);				/* Initialize RTC */
-int rtc_gettime (RTC*);				/* Get time */
-int rtc_settime (const RTC*);		/* Set time */
+int rtc_gettime (RTC_MM*);				/* Get time */
+int rtc_settime (const RTC_MM*);		/* Set time */
 
-RTC myRTC;
+RTC_MM myRTC;
 
 #endif

@@ -12,34 +12,34 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-//ビット設定関数
-#define cbi(addr, bit) addr &= ~(1 << bit) // addrのbit目を'0'にする。
-#define sbi(addr, bit) addr |= (1 << bit)  // addrのbit目を'1'にする。
-
-#define BAUD_CALC(x) ((F_CPU+(x)*8UL) / (16UL*(x))-1UL)
+//#define BAUD_CALC(x)	((F_CPU+(x)*8UL) / (16UL*(x))-1UL)
+#define BAUD_CALC(BAUD_RATE)	((float)(64 * F_CPU / (16 * (float)BAUD_RATE)) + 0.5)
 
 //初期化
 void my_uart::Initialize(void)
 {
-	//ボーレートの設定
-	unsigned int baud = BAUD_CALC(9600);
-	UBRR0H = (unsigned char)(baud>>8);//ボーレート上位
-	UBRR0L = (unsigned char)baud; //ボーレート下位
+	//ポートの入出力設定
+	PORTA.DIRSET = PIN0_bm; //TX:書き出し
+	PORTA.DIRCLR = PIN1_bm; //RX:読み込み
 	
-	UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0); //割り込みと送受信有効化
-	UCSR0C = 0b00000110; //8bit, noparity, stopbit1, 非同期
+	//ボーレートの設定
+	USART0.BAUD = (uint16_t)BAUD_CALC(9600);
+	
+	USART0_CTRLA |= USART_RXCIF_bm; //受信完了イベント有効化
+	USART0.CTRLB |= (USART_RXEN_bm | USART_TXEN_bm); //送受信有効化
+	USART0.CTRLC = 0b00000011;//00 00 0 11: Asynchronous, noparity, stopbit=1, 8bit
 }
 
 bool my_uart::tx_done(void)
 {
-	return UCSR0A & 0b00100000;
+	return (USART0.STATUS & USART_DREIF_bm);
 }
 
 //1文字送信
 void my_uart::send_char(const unsigned char data)
 {
-	while(!(UCSR0A & 0b00100000));
-	UDR0 = data;
+	while (!tx_done());
+	USART0.TXDATAL = data;
 }
 
 //文字配列を送信

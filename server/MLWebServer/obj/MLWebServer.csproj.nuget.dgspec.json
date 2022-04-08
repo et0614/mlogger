@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLWebServer\\MLWebServer.csproj": {}
+    "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLWebServer\\MLWebServer.csproj": {}
   },
   "projects": {
-    "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLWebServer\\MLWebServer.csproj": {
+    "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLWebServer\\MLWebServer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLWebServer\\MLWebServer.csproj",
+        "projectUniqueName": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLWebServer\\MLWebServer.csproj",
         "projectName": "MLWebServer",
-        "projectPath": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLWebServer\\MLWebServer.csproj",
+        "projectPath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLWebServer\\MLWebServer.csproj",
         "packagesPath": "C:\\Users\\etoga\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLWebServer\\obj\\",
+        "outputPath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLWebServer\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

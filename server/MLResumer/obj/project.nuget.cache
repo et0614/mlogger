@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "G4dTdjA4+azQOKNgMBig5q7qbTxonbRM11LRrFBaviK4ULHNLWF6p4eM0R7wnFBVkF9vvpTRX1HFJ+NGMZyQCg==",
+  "dgSpecHash": "hhpovhMTzv8Odza11oiULrGLzwkwZWRWu3rN0z69QIvZtN4kDFm1xS13ytl7ZIkJqCIX8vEUr66Df7EVjTmImg==",
   "success": true,
-  "projectFilePath": "C:\\Users\\etoga\\Desktop\\MLServer_NET5\\MLResumer\\MLResumer.csproj",
+  "projectFilePath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLResumer\\MLResumer.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\etoga\\.nuget\\packages\\binaryserializer\\7.5.5\\binaryserializer.7.5.5.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",

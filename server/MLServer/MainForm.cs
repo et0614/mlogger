@@ -876,7 +876,7 @@ namespace MLServer
         //接続済の場合
         if (connectedPorts.Contains(pNames[i]))
         {
-          item.Text = String.Format(i18n.Resources.MF_ConnectPort, portName);
+          item.Text = String.Format(i18n.Resources.MF_DisconnectPort, portName);
           item.ForeColor = Color.Red;
           item.Click += delegate (object sender, EventArgs e)
           {
@@ -886,7 +886,7 @@ namespace MLServer
         //未接続の場合
         else
         {
-          item.Text = String.Format(i18n.Resources.MF_DisconnectPort, portName);
+          item.Text = String.Format(i18n.Resources.MF_ConnectPort, portName);
           item.ForeColor = Color.Green;
           item.Click += delegate (object sender, EventArgs e)
           {

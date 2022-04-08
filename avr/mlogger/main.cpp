@@ -1,17 +1,11 @@
 /**
  * @file main.cpp
- * @brief AVR(ATMega328)を使用した計測データ収集・送信プログラム
+ * @brief AVR(AVRxxDB32)を使用した計測データ収集・送信プログラム
  * @author E.Togashi
- * @date 2020/7/14
+ * @date 2022/3/11
  *
  * version履歴
- * 2.3.0	EEPROMを使って補正係数を管理する方式に変更,年月日を直接に出力,MicroSD書き出し対応開始
- * 2.3.2    Resetスイッチの入力に対応。
- * 2.3.3    AD変換安定化のために反復回数増加。10回→35回。UART通信,XBee通信を色々と改良。MicroSD書き出し対応、一応出来上がり。
- * 2.3.4    XBee通信にCTS制御を導入
- * 2.3.5	リングバッファによるUART通信を取りやめ
- * 2.4.1	AHT20に対応。AD変換基準電圧：風速の基準をAVCC, グローブ温度の基準を内部1.1Vに変更
- * 2.4.2	EEPROMの初期化バグ修正
+ * 3.0.0	AVRxxDB32シリーズ用
  */
 
 /**XBee端末の設定****************************************
@@ -42,6 +36,17 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+
+#include <avr/xmega.h>
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+	#include <avr/cpufunc.h>
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #include <util/delay.h>
 
 //日付操作用
@@ -112,8 +117,6 @@ static FATFS* fSystem;
 static char charBuff[my_xbee::MAX_CMD_CHAR];
 
 //マクロ定義********************************************************
-#define cbi(addr, bit) addr &= ~(1 << bit) // addrのbit目を'0'にする。
-#define sbi(addr, bit) addr |= (1 << bit)  // addrのbit目を'1'にする。
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array[0]))
 
 int main(void)
@@ -121,23 +124,24 @@ int main(void)
 	//EEPROM
 	my_eeprom::LoadCorrectionFactor();
 	my_eeprom::LoadMeasurementSetting();
-	
+		
 	//入出力ポートを初期化
 	initialize_port();
 
 	//一旦、すべての割り込み禁止
 	cli();
 		
-	//AD変換有効化
-	ADCSRA = 0b10000111; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
+	//AD変換の設定
+	ADC0.CTRLA |= (ADC_ENABLE_bm | ADC_RESSEL_10BIT_gc); //ADC有効化, 10bit分解
+	ADC0.CTRLB |= ADC_SAMPNUM_ACC64_gc; //64回平均化, 16, 32, 64から設定できる
+	ADC0.CTRLC |= ADC_PRESC_DIV128_gc; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
 	
-	//INT0割り込み設定
-	sbi(MCUSR, ISC01);
-	sbi(EIMSK, INT0);
+	//スイッチ割り込み設定
+	PORTA.PIN2CTRL |= PORT_ISC_FALLING_gc; //電圧降下割込フラグON
 		
 	//通信を初期化
 	my_i2c::InitializeI2C(); //I2C
-	my_i2c::InitializeOPT(OPT_ADDRESS);  //OPTxxxx
+	//my_i2c::InitializeOPT(OPT_ADDRESS);  //OPTxxxx
 	my_uart::Initialize();  //XBee（UART）
 	
 	//タイマ初期化
@@ -146,15 +150,14 @@ int main(void)
 	//XBeeスリープ解除
 	wakeup_xbee();
 	
-	//FatFS操作のためのメモリ確保
-	fSystem = (FATFS *)malloc(sizeof(FATFS));
+	fSystem = (FATFS*) malloc(sizeof(FATFS));
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
 
 	//割り込み再開
 	sei();
-	
+
 	//通信再開フラグを確認
 	if(my_eeprom::startAuto)
 	{
@@ -163,17 +166,17 @@ int main(void)
 		outputToBLE = outputToSDCard = false;
 		startTime = currentTime;
 	}
-		
+	
     while (1) 
     {
 		//Logging中でなければSDカードマウントを試みる
 		if(!logging && !initSD)
 			if(f_mount(fSystem, "", 1) == FR_OK) initSD = true;
 		
-		//スリープモード設定
-		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+		//スリープモード設定		
+		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_DOWN); //ATmega328PではPWR_SAVE
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
-											
+									
 		//スリープ
 		sleep_mode();
     }
@@ -181,46 +184,92 @@ int main(void)
 
 static void initialize_port(void)
 {
+	//SPI通信のための初期処理はmmc.cのpower_on()関数内
+	//***
+	
 	//出力ポート
-	sbi(DDRD, DDD3); //SPI通信（CS）
-	sbi(DDRD, DDD5); //LED出力
-	sbi(DDRD, DDD1); //RXD:UART書き出し
-	sbi(DDRD, DDD7); //XBeeスリープ制御
-	sbi(DDRC, DDC1); //微風速計リレー
-	sbi(DDRD, DDB0); //微風速計5V昇圧
+	PORTD.DIRSET = PIN6_bm; //LED出力
+	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
+	PORTA.DIRSET = PIN5_bm; //微風速計リレー
+	PORTA.DIRSET = PIN7_bm; //微風速計5V昇圧//最新版ではPIN4に変更。後で変えろ	
+	PORTA.DIRSET = PIN2_bm; //INT0:リセット用割り込み
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
-	cbi(DDRC, DDC0); //グローブ温度センサAD変換
-	cbi(DDRC, DDC2); //風速センサAD変換
-	cbi(DDRD, DDD0); //RXD:UART読み込み
-	cbi(DDRD, DDD2); //INT0:リセット用割り込み
-	sbi(PORTD, PORTD2); //INT0をプルアップ
+	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
+	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
+	
+	//プルアップ
+	PORTA.OUTSET = PIN2_bm; //INT0：設定
+	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：解除
+	PORTD.OUTCLR = PIN2_bm; //風速センサ：解除
 }
 
 //タイマ初期化
 static void initialize_timer( void )
 {
-	//Timer 1 //0.01secタイマ
-	OCR1A = (uint16_t)( ( F_CPU / 8L ) / 100L );	// カウントは8MHz/8/100(100Hz)
-	TCNT1 = 0;	//初期化
-	TCCR1A = 0b00000000;			// CTC動作
-	TCCR1B = (0x02 | _BV(WGM12));	// 8分周
-	TIMSK1 |= _BV(OCIE1A);			// 割り込み許可
+	//Timer 1 //0.01secタイマ************************
+	TCA0.SINGLE.INTCTRL = TCA_SINGLE_OVF_bm; //タイマ溢れ割り込み有効化
+	TCA0.SINGLE.CTRLB = TCA_SINGLE_WGMODE_NORMAL_gc; 
+	TCA0.SINGLE.EVCTRL &= ~(TCA_SINGLE_CNTAEI_bm);	
+	TCA0.SINGLE.PER = 0.01 * F_CPU / 2 - 1;  //0.01sec, 4MHz, 2分周
+	TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV2_gc | TCA_SINGLE_ENABLE_bm;
+		
+	//外部クリスタルによる1secタイマ*******************
 	
-	//Timer 2 //1secタイマ
-	//外部クリスタル駆動設定
-	ASSR |= (1<<AS2);
-	TCNT2 = 0;	//初期化
-	TCCR2A = 0b00000000;	// 標準（オーバーフロー）動作
-	TCCR2B = 0b10000101;	// 128分周
-	TIMSK2 |= _BV(TOIE2);	// 割り込み許可
+	//PORTF.DIRCLR = PIN0_bm; //XTAL1
+	//PORTF.DIRCLR = PIN1_bm; //XTAL1
+	
+	//**外部クリスタルの有効化処理**
+	/*uint8_t temp; 
+	temp = CLKCTRL.XOSC32KCTRLA; //発振器禁止
+	temp &= ~CLKCTRL_ENABLE_bm;
+	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp); //保護されたレジスタへの書き込み*/
+	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, ~CLKCTRL_ENABLE_bm);
+	while(CLKCTRL.MCLKSTATUS & CLKCTRL_XOSC32KS_bm); //XOSC32KSが0になるまで待機
+
+	/*temp = CLKCTRL.XOSC32KCTRLA; //XTAL1とXTAL2に接続された外部クリスタルを使用
+	temp &= ~CLKCTRL_SEL_bm;
+	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp);*/
+	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, ~CLKCTRL_SEL_bm);
+	
+	/*temp = CLKCTRL.XOSC32KCTRLA; //発振器許可
+	temp |= CLKCTRL_ENABLE_bm;
+	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp);*/
+	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, CLKCTRL_ENABLE_bm);
+
+	while (RTC.STATUS > 0); //全レジスタが同期されるまで待機
+	//**ここまで*******************
+
+	RTC.CLKSEL = RTC_CLKSEL_OSC32K_gc;  //32.768kHz内部クリスタル用発振器 (OSC32K）
+	//RTC.CLKSEL = RTC_CLKSEL_XOSC32K_gc; //32.768kHz外部クリスタル用発振器 (XOSC32K)
+	RTC.DBGCTRL |= RTC_DBGRUN_bm;        //デバッグで走行: 許可
+
+	/*RTC.PITINTCTRL = RTC_PI_bm;           //Periodic Interrupt Enabled
+	RTC.PITCTRLA = RTC_PERIOD_CYC32768_gc //RTC Clock Cycles 32768
+				| RTC_PITEN_bm;           //Periodic Interrupt Timer Enable*/
+	
+	//RTC.PER = 1;  //周期設定
+	RTC.PER = 32768 / 32 - 1;  //周期設定
+	//RTC.CTRLA = RTC_PRESCALER_DIV32768_gc //32.768kHzのため
+	RTC.CTRLA = RTC_PRESCALER_DIV32_gc //32
+				| RTC_RTCEN_bm //RTC有効化
+				| RTC_RUNSTDBY_bm; //スタンバイモードでの継続許可
+	RTC.INTCTRL |= RTC_OVF_bm;
+	
+	//debug main clock statusの確認
+	if(CLKCTRL.MCLKSTATUS & CLKCTRL_XOSC32KS_bm)
+	//if(CLKCTRL.MCLKSTATUS & CLKCTRL_OSCHFS_bm)
+	{
+		volatile int x = 10;
+		volatile int y = x;
+	}
 }
 
 //UART受信時の割り込み処理
-ISR(USART_RX_vect)
+ISR(USART0_RXC_vect)
 {
-	char dat = UDR0;	//読み出し
+	char dat = USART0.RXDATAL;	//読み出し
 	
 	//開始コード「~」が来たら初期化。本当はEscape処理がいるが、「~」はコマンドで使わないので良いだろう
 	if(dat == 0x7E)
@@ -255,7 +304,7 @@ ISR(USART_RX_vect)
 			else if(framePosition < frameSize) //データをバッファに格納
 				frameBuff[framePosition - (xbeeOffset + 1)] = dat;
 		}
-			
+		
 		framePosition++;
 	}	
 }
@@ -294,7 +343,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:2.4.2\r");
+		my_xbee::bltx_chars("VER:3.0.0\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -397,14 +446,22 @@ static void solve_command(void)
 }
 
 // Timer1割り込み//FatFs（SDカード入出力通信）用
-ISR(TIMER1_COMPA_vect)
+//ISR(TIMER1_COMPA_vect)
+ISR(TCA0_OVF_vect)
 {
 	disk_timerproc();	/* Drive timer procedure of low level disk I/O module */
+	
+	TCA0.SINGLE.INTFLAGS = TCA_SINGLE_OVF_bm; //割り込み解除
 }
 
-// Timer2割り込み：ロギング用の1秒毎の処理
-ISR(TIMER2_OVF_vect)
+//ロギング用の1秒毎の処理
+ISR(RTC_CNT_vect)
+//ISR(RTC_PIT_vect)
 {
+	//割り込み要求フラグ解除
+	//RTC.PITINTFLAGS = RTC_PI_bm;
+	RTC.INTFLAGS = RTC_OVF_bm;
+	
 	currentTime++; //1秒進める
 				
 	//ロギング中であれば
@@ -433,7 +490,7 @@ ISR(TIMER2_OVF_vect)
 			dtostrf(velV,6,4,velVS);
 			
 			float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
-			float vel = bff * (2.3595 + bff * (-12.029 + bff * 79.744));
+			float vel = bff * (2.3595 + bff * (-12.029 + bff * 79.744)); //電圧-風速換算式
 			dtostrf(vel,6,4,velS);
 			
 			pass_vel = 0;
@@ -478,7 +535,7 @@ ISR(TIMER2_OVF_vect)
 		pass_ill++;
 		if(my_eeprom::measure_ill && my_eeprom::interval_ill <= pass_ill)
 		{
-			float ill_d = my_i2c::ReadOPT(OPT_ADDRESS);
+			float ill_d = my_i2c::ReadVCNL4030();
 			ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
 			dtostrf(ill_d,8,2,illS);
 			pass_ill = 0;
@@ -488,7 +545,7 @@ ISR(TIMER2_OVF_vect)
 		//新規データがある場合は送信
 		if(hasNewData)
 		{
-			if(outputToXBee || outputToBLE)
+			if(outputToXBee || outputToBLE) 
 			{
 				wakeup_xbee(); //XBeeスリープ解除
 				_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
@@ -506,7 +563,7 @@ ISR(TIMER2_OVF_vect)
 			
 			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-			charBuff[my_xbee::MAX_CMD_CHAR-1]='\0';
+			charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
 
 			if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
 			if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
@@ -515,7 +572,7 @@ ISR(TIMER2_OVF_vect)
 				
 		//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 		//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
-		//while(! my_uart::tx_done()); //止まる
+		//while(! my_uart::tx_done());
 
 		_delay_ms(10);
 		//Bluetooth通信でなければスリープに入る（XBeeの仕様上、Bluetoothモードのスリープは不可）
@@ -540,8 +597,7 @@ ISR(TIMER2_OVF_vect)
 	}
 }
 
-//static void writeSDcard(const tm dtNow, const char write_chars[])
-static void writeSDcard(const tm dtNow, const char* write_chars)
+static void writeSDcard(const tm dtNow, const char write_chars[])
 {
 	//マウント未完了ならば終了
 	if(!initSD) return;
@@ -562,12 +618,17 @@ static void writeSDcard(const tm dtNow, const char* write_chars)
 		f_puts(write_chars, fl);
 		f_close(fl);
 	}
+	
 	free(fl);
 }
 
 //INT0割り込み：計測中断処理
-ISR(INT0_vect)
+//ISR(INT0_vect)
+ISR(PORTA_PORT_vect)
 {
+	// 割り込みフラグ解除
+	PORTA.INTFLAGS = PIN2_bm;
+	
 	//ロギング停止
 	logging=false;
 	
@@ -584,96 +645,71 @@ ISR(INT0_vect)
 //グローブ温度の電圧を読み取る
 static float readGlbVoltage(void)
 {
-	long int refV = 0;
-	long int adV = 0;
-	for(int i=0;i<AD_ITER;i++)
-	{
-		//覚書
-		//グローブ温度の電圧は0.7V程度なので、AREFとAVCCを切断して、内部電圧（1.1V）基準で計測すべき
-		
-		//基準1.1Vを計測
-		ADMUX = 0b11101110;
-		_delay_ms(5);
-		ADCSRA = 0b11000111; //変換開始
-		while(ADCSRA & 0b01000000); //変換終了待ち
-		refV += ADC;
-
-		//AD0を計測
-		ADMUX = 0b11100000;
-		_delay_ms(5);
-		ADCSRA = 0b11000111; //変換開始
-		while(ADCSRA & 0b01000000); //変換終了待ち
-		adV += ADC;
-	}
-	return (float)adV / (float)refV * 1.1;
+	//AI4を計測
+	VREF.ADC0REF = VREF_REFSEL_1V024_gc; //基準電圧を1.024Vに設定
+	ADC0.MUXPOS = ADC_MUXPOS_AIN4_gc;
+	_delay_ms(5);
+	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
+	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
+	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	
+	return (float)adV * 1.024;
 }
 
 //微風速の電圧を読み取る
 static float readVelVoltage(void)
 {
-	//平均値を出力して安定化
-	long int refV = 0;
-	long int adV = 0;
-	for(int i=0;i<AD_ITER;i++)
-	{
-		//基準1.1Vを計測
-		ADMUX = 0b01001110;
-		_delay_ms(5);
-		ADCSRA = 0b11000111; //変換開始
-		while(ADCSRA & 0b01000000); //変換終了待ち
-		refV += ADC;
+	//AI2を計測
+	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(3.3V)に設定
+	ADC0.MUXPOS = ADC_MUXPOS_AIN2_gc;
+	_delay_ms(5);
+	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
+	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
+	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 	
-		//AD2(Velocity)を計測
-		ADMUX = 0b01000010;
-		_delay_ms(5);
-		ADCSRA = 0b11000111; //変換開始
-		while(ADCSRA & 0b01000000); //変換終了待ち
-		adV += ADC;
-	}
-	return (float)adV / (float)refV * 1.1;
+	return (float)adV * 3.3;
 }
 
 static void sleep_anemo(void)
 {
-	cbi(PORTC, PORTC1); //リレー遮断
-	cbi(PORTB, PORTB0); //5V昇圧停止
+	PORTA.OUTCLR = PIN5_bm; //リレー遮断
+	PORTA.OUTCLR = PIN7_bm; //5V昇圧停止//最新版ではPIN4に変更。後で変えろ
 }
 
 //以下はinline関数************************************
 
 inline static void wakeup_anemo(void)
 {
-	sbi(PORTC, PORTC1); //リレー通電
-	sbi(PORTB, PORTB0); //5V昇圧開始
+	PORTA.OUTSET = PIN5_bm; //リレー通電
+	PORTA.OUTSET = PIN7_bm; //5V昇圧開始//最新版ではPIN4に変更。後で変えろ
 }
 
 inline static void sleep_xbee(void)
 {
-	sbi(PORTD, PORTD7);
+	PORTF.OUTSET = PIN5_bm;
 }
 
 inline static void wakeup_xbee(void)
 {
-	cbi(PORTD, PORTD7);
+	PORTF.OUTCLR = PIN5_bm;
 }
 
-//LEDを点滅させる
 inline static void blinkLED(int iterNum)
 {
 	if(iterNum < 1) return;
 
 	//初回
-	sbi(PORTD, PORTD5);
+	PORTD.OUTSET = PIN6_bm;
 	_delay_ms(25);
-	cbi(PORTD, PORTD5);
+	PORTD.OUTCLR = PIN6_bm;
 	
 	//2回目以降は時間を空けて点滅
 	for(int i=1;i<iterNum;i++)
 	{
 		_delay_ms(100);
-		sbi(PORTD, PORTD5);
+		PORTD.OUTSET = PIN6_bm;
 		_delay_ms(25);
-		cbi(PORTD, PORTD5);
+		PORTD.OUTCLR = PIN6_bm;
 	}
 }
 

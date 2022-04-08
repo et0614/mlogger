@@ -1,13 +1,13 @@
 /**
  * @file my_i2c.h
- * @brief AVR(ATMega328)でI2C通信を行う（AM2320とOPT3001）
+ * @brief AVRxxシリーズでI2C通信する
  *  参考：http://cjtsx.blogspot.jp/2016/07/am2320-library-for-avrs-without.html
  * @author E.Togashi
  * @date 2020/12/25
  */
  
-#ifndef AM2320S_H_
-#define AM2320S_H_
+#ifndef MY_I2C_H_
+#define MY_I2C_H_
  
 #include <avr/io.h>
 
@@ -43,7 +43,15 @@ class my_i2c
 		 * @return 照度[lx]
 		 */
 		static float ReadOPT(uint8_t add);
-
+		
+		/**
+		 * @fn
+		 * VCNL4030から照度を読み取る
+		 * @return 照度[lx]
+		 */
+		static float ReadVCNL4030(void);
+		
+		static void ScanAddress(uint8_t minAddress, uint8_t maxAddress);
 };
- 
-#endif /* AM2320S_H_ */
+  
+#endif /* MY_I2C_H_ */

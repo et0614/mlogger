@@ -110,37 +110,9 @@ int iic_write (
 
 
 
-int rtc_gettime (RTC *rtc)
+int rtc_gettime (RTC_MM *rtc)
 {
-
-        // 12.09.10 RTC‚ÍŒÅ’èŽž
-
-        
-
-        //BYTE buf[8];
-
-
-
-        //if (!iic_read(0xD0, 0, 7, buf)) return 0;
-
-//
-
-        //rtc->sec = (buf[0] & 0x0F) + ((buf[0] >> 4) & 7) * 10;
-
-        //rtc->min = (buf[1] & 0x0F) + (buf[1] >> 4) * 10;
-
-        //rtc->hour = (buf[2] & 0x0F) + ((buf[2] >> 4) & 3) * 10;
-
-        //rtc->wday = (buf[2] & 0x07);
-
-        //rtc->mday = (buf[4] & 0x0F) + ((buf[4] >> 4) & 3) * 10;
-
-        //rtc->month = (buf[5] & 0x0F) + ((buf[5] >> 4) & 1) * 10;
-
-        //rtc->year = 2000 + (buf[6] & 0x0F) + (buf[6] >> 4) * 10;
-
-
-
+	
         rtc->sec = 0;
 
         rtc->min = 0;
@@ -184,7 +156,7 @@ DWORD get_fattime (void)
 }
 
 
-int rtc_settime (const RTC *rtc)
+int rtc_settime (const RTC_MM *rtc)
 
 {
 
