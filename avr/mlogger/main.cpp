@@ -6,6 +6,7 @@
  *
  * version履歴
  * 3.0.0	AVRxxDB32シリーズ用
+ * 3.0.1	Reset処理を3秒長押しで有効に。短時間押し込みは電池確認のための点灯に変更。
  */
 
 /**XBee端末の設定****************************************
@@ -113,6 +114,9 @@ static uint8_t wc_time = 0;
 volatile bool initSD = false; //SDカード初期化フラグ
 static FATFS* fSystem;
 
+//リセット処理用
+volatile static unsigned int resetTime = 0;
+
 //汎用の文字列配列
 static char charBuff[my_xbee::MAX_CMD_CHAR];
 
@@ -137,7 +141,7 @@ int main(void)
 	ADC0.CTRLC |= ADC_PRESC_DIV128_gc; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
 	
 	//スイッチ割り込み設定
-	PORTA.PIN2CTRL |= PORT_ISC_FALLING_gc; //電圧降下割込フラグON
+	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
 		
 	//通信を初期化
 	my_i2c::InitializeI2C(); //I2C
@@ -343,7 +347,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.0\r");
+		my_xbee::bltx_chars("VER:3.0.1\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -467,6 +471,21 @@ ISR(RTC_CNT_vect)
 	//ロギング中であれば
 	if(logging)
 	{
+		//リセットボタン押し込み確認
+		if(!(PORTA.IN & PIN2_bm)) 
+		{
+			resetTime++;
+			if(3 < resetTime)
+			{
+				logging=false;	//ロギング停止
+				initSD = false;	//SDカード再マウント
+				sleep_anemo();	//風速センサを停止
+				blinkLED(3);	//LED点滅
+				return;
+			}
+		}
+		else resetTime = 0; //Resetボタン押し込み時間を0に戻す		 
+		
 		//計測開始時刻の前ならば終了
 		if(currentTime < startTime) return;
 		
@@ -622,24 +641,15 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	free(fl);
 }
 
-//INT0割り込み：計測中断処理
-//ISR(INT0_vect)
+//INT0割り込み
 ISR(PORTA_PORT_vect)
 {
 	// 割り込みフラグ解除
 	PORTA.INTFLAGS = PIN2_bm;
 	
-	//ロギング停止
-	logging=false;
-	
-	//SDカード再マウント
-	initSD = false;
-		
-	//風速センサを停止
-	sleep_anemo();
-	
-	//LED点滅
-	blinkLED(3);
+	//Push:LED点灯, None:LED消灯
+	if(PORTA.IN & PIN2_bm) PORTD.OUTCLR = PIN6_bm;
+	else PORTD.OUTSET = PIN6_bm;
 }
 
 //グローブ温度の電圧を読み取る
@@ -699,17 +709,14 @@ inline static void blinkLED(int iterNum)
 	if(iterNum < 1) return;
 
 	//初回
-	PORTD.OUTSET = PIN6_bm;
-	_delay_ms(25);
-	PORTD.OUTCLR = PIN6_bm;
-	
-	//2回目以降は時間を空けて点滅
-	for(int i=1;i<iterNum;i++)
+	PORTD.OUTCLR = PIN6_bm; //一旦必ず消灯して
+	//点滅
+	for(int i=0;i<iterNum;i++)
 	{
 		_delay_ms(100);
-		PORTD.OUTSET = PIN6_bm;
+		PORTD.OUTSET = PIN6_bm; //点灯
 		_delay_ms(25);
-		PORTD.OUTCLR = PIN6_bm;
+		PORTD.OUTCLR = PIN6_bm; //消灯
 	}
 }
 
