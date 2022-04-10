@@ -3021,9 +3021,9 @@ Codaca, SPD4D28</description>
 <part name="SUPPLY17" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="VDD" device=""/>
 <part name="SUPPLY18" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="SUPPLY23" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
-<part name="PN4_1" library="OPL_Connector" library_urn="urn:adsk.eagle:library:8004395" deviceset="DIP-BLACK-FEMALE-HEADER-VERT(10P-2.0)" device="" package3d_urn="urn:adsk.eagle:package:8004550/1" value="10p-2.0"/>
+<part name="PN4_1(XB1)" library="OPL_Connector" library_urn="urn:adsk.eagle:library:8004395" deviceset="DIP-BLACK-FEMALE-HEADER-VERT(10P-2.0)" device="" package3d_urn="urn:adsk.eagle:package:8004550/1" value="10p-2.0"/>
 <part name="SUPPLY7" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="VDD" device=""/>
-<part name="PN4_2" library="OPL_Connector" library_urn="urn:adsk.eagle:library:8004395" deviceset="DIP-BLACK-FEMALE-HEADER-VERT(10P-2.0)" device="" package3d_urn="urn:adsk.eagle:package:8004550/1" value="10p-2.0"/>
+<part name="PN4_2(XB1)" library="OPL_Connector" library_urn="urn:adsk.eagle:library:8004395" deviceset="DIP-BLACK-FEMALE-HEADER-VERT(10P-2.0)" device="" package3d_urn="urn:adsk.eagle:package:8004550/1" value="10p-2.0"/>
 <part name="SUPPLY8" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="SUPPLY12" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="D2" library="Seeed-Diode" deviceset="SMD-DIODE-SCHOTTKY-20V-1A(SOD-123)" device="" value="20V-1A"/>
@@ -3037,7 +3037,7 @@ Codaca, SPD4D28</description>
 <part name="SUPPLY4" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="SUPPLY11" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="PTC1" library="MyParts" deviceset="TFPT1206" device=""/>
-<part name="BBOX" library="MyParts" deviceset="BH321" device=""/>
+<part name="BB1" library="MyParts" deviceset="BH321" device=""/>
 <part name="SUPPLY14" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="SUPPLY21" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="VDD" device=""/>
 <part name="PN3" library="MyParts" deviceset="DIP-BLACK-ROUND-FEMALE-HEADER-VERT(2P-2.54)" device="" package3d_urn="urn:adsk.eagle:package:8004540/1" value="2p-2.54"/>
@@ -3117,13 +3117,13 @@ Codaca, SPD4D28</description>
 <instance part="SUPPLY23" gate="GND" x="-16.51" y="83.82" smashed="yes">
 <attribute name="VALUE" x="-18.415" y="80.645" size="1.27" layer="96"/>
 </instance>
-<instance part="PN4_1" gate="G$1" x="-5.08" y="-5.08" smashed="yes">
+<instance part="PN4_1(XB1)" gate="G$1" x="-5.08" y="-5.08" smashed="yes">
 <attribute name="NAME" x="-2.794" y="-8.636" size="1.778" layer="95" ratio="10" rot="R90"/>
 </instance>
 <instance part="SUPPLY7" gate="G$1" x="-15.24" y="10.16" smashed="yes">
 <attribute name="VALUE" x="-17.145" y="13.335" size="1.27" layer="96"/>
 </instance>
-<instance part="PN4_2" gate="G$1" x="10.16" y="-5.08" smashed="yes">
+<instance part="PN4_2(XB1)" gate="G$1" x="10.16" y="-5.08" smashed="yes">
 <attribute name="NAME" x="12.446" y="-8.382" size="1.778" layer="95" ratio="10" rot="R90"/>
 </instance>
 <instance part="SUPPLY8" gate="GND" x="-13.462" y="16.51" smashed="yes" rot="R270">
@@ -3165,7 +3165,7 @@ Codaca, SPD4D28</description>
 <instance part="PTC1" gate="G$1" x="55.88" y="-15.24" smashed="yes">
 <attribute name="NAME" x="52.832" y="-20.066" size="1.778" layer="95"/>
 </instance>
-<instance part="BBOX" gate="G$1" x="68.58" y="10.16" smashed="yes"/>
+<instance part="BB1" gate="G$1" x="68.58" y="10.16" smashed="yes"/>
 <instance part="SUPPLY14" gate="GND" x="25.4" y="-12.7" smashed="yes">
 <attribute name="VALUE" x="23.495" y="-15.875" size="1.27" layer="96"/>
 </instance>
@@ -3320,7 +3320,7 @@ Codaca, SPD4D28</description>
 <pinref part="C1" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="PN4_1" gate="G$1" pin="10"/>
+<pinref part="PN4_1(XB1)" gate="G$1" pin="10"/>
 <pinref part="SUPPLY12" gate="GND" pin="GND"/>
 <wire x1="-11.43" y1="-16.51" x2="-15.24" y2="-16.51" width="0.1524" layer="91"/>
 <wire x1="-15.24" y1="-16.51" x2="-15.24" y2="-17.78" width="0.1524" layer="91"/>
@@ -3369,7 +3369,7 @@ Codaca, SPD4D28</description>
 <segment>
 <pinref part="SUPPLY16" gate="GND" pin="GND"/>
 <wire x1="63.5" y1="10.16" x2="63.5" y2="12.7" width="0.1524" layer="91"/>
-<pinref part="BBOX" gate="G$1" pin="-"/>
+<pinref part="BB1" gate="G$1" pin="-"/>
 <wire x1="66.04" y1="12.7" x2="63.5" y2="12.7" width="0.1524" layer="91"/>
 </segment>
 <segment>
@@ -3454,7 +3454,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="VDD" class="2">
 <segment>
-<pinref part="PN4_1" gate="G$1" pin="1"/>
+<pinref part="PN4_1(XB1)" gate="G$1" pin="1"/>
 <pinref part="SUPPLY7" gate="G$1" pin="VDD"/>
 <wire x1="-11.43" y1="6.35" x2="-15.24" y2="6.35" width="0.1524" layer="91"/>
 <wire x1="-15.24" y1="6.35" x2="-15.24" y2="7.62" width="0.1524" layer="91"/>
@@ -3611,7 +3611,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="RXD" class="0">
 <segment>
-<pinref part="PN4_1" gate="G$1" pin="2"/>
+<pinref part="PN4_1(XB1)" gate="G$1" pin="2"/>
 <wire x1="-106.68" y1="3.81" x2="-11.43" y2="3.81" width="0.1524" layer="91"/>
 <pinref part="AM1" gate="A" pin="PA1,RXD0"/>
 <wire x1="-101.6" y1="48.26" x2="-106.68" y2="48.26" width="0.1524" layer="91"/>
@@ -3620,7 +3620,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="TXD" class="0">
 <segment>
-<pinref part="PN4_1" gate="G$1" pin="3"/>
+<pinref part="PN4_1(XB1)" gate="G$1" pin="3"/>
 <wire x1="-109.22" y1="1.27" x2="-11.43" y2="1.27" width="0.1524" layer="91"/>
 <wire x1="-109.22" y1="1.27" x2="-109.22" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="AM1" gate="A" pin="PA0,TXD0"/>
@@ -3629,7 +3629,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="SLP" class="0">
 <segment>
-<pinref part="PN4_1" gate="G$1" pin="9"/>
+<pinref part="PN4_1(XB1)" gate="G$1" pin="9"/>
 <wire x1="-104.14" y1="63.5" x2="-104.14" y2="-13.97" width="0.1524" layer="91"/>
 <wire x1="-104.14" y1="-13.97" x2="-11.43" y2="-13.97" width="0.1524" layer="91"/>
 <pinref part="AM1" gate="A" pin="PF5"/>
@@ -3822,7 +3822,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="CTS" class="0">
 <segment>
-<pinref part="PN4_2" gate="G$1" pin="2"/>
+<pinref part="PN4_2(XB1)" gate="G$1" pin="2"/>
 <wire x1="3.81" y1="3.81" x2="0" y2="3.81" width="0.1524" layer="91"/>
 <wire x1="0" y1="3.81" x2="0" y2="-22.86" width="0.1524" layer="91"/>
 <pinref part="AM1" gate="A" pin="PA3"/>
@@ -3841,7 +3841,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="N$3" class="0">
 <segment>
-<pinref part="PN4_2" gate="G$1" pin="10"/>
+<pinref part="PN4_2(XB1)" gate="G$1" pin="10"/>
 <wire x1="3.81" y1="-16.51" x2="2.54" y2="-16.51" width="0.1524" layer="91"/>
 <wire x1="2.54" y1="-16.51" x2="2.54" y2="-20.32" width="0.1524" layer="91"/>
 <pinref part="SW2" gate="G$1" pin="1"/>
@@ -3876,7 +3876,7 @@ Codaca, SPD4D28</description>
 </net>
 <net name="VBT" class="0">
 <segment>
-<pinref part="BBOX" gate="G$1" pin="+"/>
+<pinref part="BB1" gate="G$1" pin="+"/>
 <pinref part="SW1" gate="G$1" pin="P1"/>
 <wire x1="81.28" y1="12.7" x2="93.98" y2="12.7" width="0.1524" layer="91"/>
 <wire x1="93.98" y1="12.7" x2="93.98" y2="15.24" width="0.1524" layer="91"/>
