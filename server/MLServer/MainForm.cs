@@ -238,6 +238,8 @@ namespace MLServer
 
       btn_applySetting.Text = i18n.Resources.MF_ApplySetting;
       btn_startCollecting.Text = i18n.Resources.MF_StartDataCollecting;
+      btn_outputSD.Text = i18n.Resources.MF_StartLoggingToSDCard;
+      btn_setCFactor.Text = i18n.Resources.MF_SetCorrectionFactors;
 
       lvhd_xbeeID.Text = "ID";
       lvhd_xbeeName.Text = i18n.Resources.Name;
@@ -818,7 +820,14 @@ namespace MLServer
 
           //探索開始
           net.SetDiscoveryTimeout(5000); //5秒
-          net.StartNodeDiscoveryProcess();
+          try
+          {
+            net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
+          }
+          catch (Exception e)
+          {
+            appendLog(e.Message);
+          }
 
           appendLog(String.Format(i18n.Resources.MF_StartSearch, myXBees[key].portName));
         });

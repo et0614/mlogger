@@ -340,11 +340,29 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
+        ///   Set correction factors に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string MF_SetCorrectionFactors {
+            get {
+                return ResourceManager.GetString("MF_SetCorrectionFactors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Start data collecting に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MF_StartDataCollecting {
             get {
                 return ResourceManager.GetString("MF_StartDataCollecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Start logging (SD card) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string MF_StartLoggingToSDCard {
+            get {
+                return ResourceManager.GetString("MF_StartLoggingToSDCard", resourceCulture);
             }
         }
         

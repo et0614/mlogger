@@ -210,8 +210,14 @@
   <data name="MF_Search_Def" xml:space="preserve">
     <value>MLogger（XBeeエンドデバイス）を探索します</value>
   </data>
+  <data name="MF_SetCorrectionFactors" xml:space="preserve">
+    <value>補正係数を修正する</value>
+  </data>
   <data name="MF_StartDataCollecting" xml:space="preserve">
     <value>データ収集を開始する</value>
+  </data>
+  <data name="MF_StartLoggingToSDCard" xml:space="preserve">
+    <value>ロギング（SDカード）を開始する</value>
   </data>
   <data name="MF_StartSearch" xml:space="preserve">
     <value>MLoggerの探索を開始します（Port {0}）・・・</value>

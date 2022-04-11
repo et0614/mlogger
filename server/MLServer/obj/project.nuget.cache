@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "pjKuOK7IhKG8pW4lnhGDR34mcKmFzpmbFTKCQL1XgQX0vtMJ5X5MaM2KcadJ+g7zaYKT87Dbcqefpuh0LjjQWg==",
+  "dgSpecHash": "zTKz/o0Jr321aQNgKPITNqH5f4YvpBFnbnE33uuQwYXjXwnUtY6SYWo8fPoeNKJ9ixVYwZq5+BlQs9095hdBng==",
   "success": true,
-  "projectFilePath": "C:\\Users\\etoga\\マイドライブ（e.togashi@gmail.com）\\研究\\ロガー開発3\\mlogger\\server\\MLServer\\MLServer.csproj",
+  "projectFilePath": "C:\\Users\\etoga\\Desktop\\server\\MLServer\\MLServer.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\etoga\\.nuget\\packages\\common.logging\\3.4.1\\common.logging.3.4.1.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\common.logging.core\\3.4.1\\common.logging.core.3.4.1.nupkg.sha512",

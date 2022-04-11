@@ -47,6 +47,12 @@
       this.lvhd_illMeasure = new System.Windows.Forms.ColumnHeader();
       this.lvhd_illInterval = new System.Windows.Forms.ColumnHeader();
       this.lvhd_startTime = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv1Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv1Interval = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv2Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv2Interval = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv3Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
       this.tbx_log = new System.Windows.Forms.TextBox();
       this.pnl_settingEdit = new System.Windows.Forms.Panel();
       this.lbl_gpv3 = new System.Windows.Forms.Label();
@@ -83,12 +89,6 @@
       this.tbx_thInterval = new System.Windows.Forms.TextBox();
       this.cbx_velMeasure = new System.Windows.Forms.CheckBox();
       this.tbx_velInterval = new System.Windows.Forms.TextBox();
-      this.lvhd_gv1Measure = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv1Interval = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv2Measure = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv2Interval = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv3Measure = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
       this.toolStrip.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
@@ -283,6 +283,42 @@
       this.lvhd_startTime.Text = "開始日時";
       this.lvhd_startTime.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
       this.lvhd_startTime.Width = 120;
+      // 
+      // lvhd_gv1Measure
+      // 
+      this.lvhd_gv1Measure.Text = "電圧1";
+      this.lvhd_gv1Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv1Measure.Width = 80;
+      // 
+      // lvhd_gv1Interval
+      // 
+      this.lvhd_gv1Interval.Text = "測定間隔";
+      this.lvhd_gv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv1Interval.Width = 80;
+      // 
+      // lvhd_gv2Measure
+      // 
+      this.lvhd_gv2Measure.Text = "電圧2";
+      this.lvhd_gv2Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv2Measure.Width = 80;
+      // 
+      // lvhd_gv2Interval
+      // 
+      this.lvhd_gv2Interval.Text = "測定間隔";
+      this.lvhd_gv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv2Interval.Width = 80;
+      // 
+      // lvhd_gv3Measure
+      // 
+      this.lvhd_gv3Measure.Text = "電圧3";
+      this.lvhd_gv3Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv3Measure.Width = 80;
+      // 
+      // lvhd_gv3Interval
+      // 
+      this.lvhd_gv3Interval.Text = "測定間隔";
+      this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv3Interval.Width = 80;
       // 
       // tbx_log
       // 
@@ -720,42 +756,6 @@
       this.tbx_velInterval.Text = "60";
       this.tbx_velInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
-      // lvhd_gv1Measure
-      // 
-      this.lvhd_gv1Measure.Text = "電圧1";
-      this.lvhd_gv1Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv1Measure.Width = 80;
-      // 
-      // lvhd_gv1Interval
-      // 
-      this.lvhd_gv1Interval.Text = "測定間隔";
-      this.lvhd_gv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv1Interval.Width = 80;
-      // 
-      // lvhd_gv2Measure
-      // 
-      this.lvhd_gv2Measure.Text = "電圧2";
-      this.lvhd_gv2Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Measure.Width = 80;
-      // 
-      // lvhd_gv2Interval
-      // 
-      this.lvhd_gv2Interval.Text = "測定間隔";
-      this.lvhd_gv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Interval.Width = 80;
-      // 
-      // lvhd_gv3Measure
-      // 
-      this.lvhd_gv3Measure.Text = "電圧3";
-      this.lvhd_gv3Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Measure.Width = 80;
-      // 
-      // lvhd_gv3Interval
-      // 
-      this.lvhd_gv3Interval.Text = "測定間隔";
-      this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Interval.Width = 80;
-      // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
@@ -765,7 +765,7 @@
       this.Controls.Add(this.pnl_settingEdit);
       this.Controls.Add(this.toolStrip);
       this.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
-      this.MinimumSize = new System.Drawing.Size(2000, 1350);
+      this.MinimumSize = new System.Drawing.Size(2400, 1350);
       this.Name = "MainForm";
       this.ShowIcon = false;
       this.Text = "MLServer version 1.0.5";
