@@ -124,6 +124,15 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
+        ///   General purpose voltage に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string GeneralPurposeVoltage {
+            get {
+                return ResourceManager.GetString("GeneralPurposeVoltage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Globe temperature に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string GlbTemp {

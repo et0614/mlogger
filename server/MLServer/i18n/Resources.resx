@@ -138,6 +138,9 @@
   <data name="DBTemp" xml:space="preserve">
     <value>Dry-bulb temperature</value>
   </data>
+  <data name="GeneralPurposeVoltage" xml:space="preserve">
+    <value>General purpose voltage</value>
+  </data>
   <data name="GlbTemp" xml:space="preserve">
     <value>Globe temperature</value>
   </data>

@@ -47,13 +47,26 @@
       this.lvhd_illMeasure = new System.Windows.Forms.ColumnHeader();
       this.lvhd_illInterval = new System.Windows.Forms.ColumnHeader();
       this.lvhd_startTime = new System.Windows.Forms.ColumnHeader();
+      this.tbx_log = new System.Windows.Forms.TextBox();
       this.pnl_settingEdit = new System.Windows.Forms.Panel();
+      this.lbl_gpv3 = new System.Windows.Forms.Label();
+      this.lbl_gpv2 = new System.Windows.Forms.Label();
+      this.lbl_gpv1 = new System.Windows.Forms.Label();
       this.lbl_ill = new System.Windows.Forms.Label();
       this.lbl_vel = new System.Windows.Forms.Label();
+      this.label9 = new System.Windows.Forms.Label();
       this.lbl_glb = new System.Windows.Forms.Label();
+      this.label7 = new System.Windows.Forms.Label();
       this.lbl_th = new System.Windows.Forms.Label();
+      this.cbx_gpv3Measure = new System.Windows.Forms.CheckBox();
+      this.label4 = new System.Windows.Forms.Label();
+      this.cbx_gpv2Measure = new System.Windows.Forms.CheckBox();
       this.btn_startCollecting = new System.Windows.Forms.Button();
+      this.tbx_gpv3Interval = new System.Windows.Forms.TextBox();
+      this.cbx_gpv1Measure = new System.Windows.Forms.CheckBox();
+      this.tbx_gpv2Interval = new System.Windows.Forms.TextBox();
       this.label5 = new System.Windows.Forms.Label();
+      this.tbx_gpv1Interval = new System.Windows.Forms.TextBox();
       this.cbx_illMeasure = new System.Windows.Forms.CheckBox();
       this.tbx_illInterval = new System.Windows.Forms.TextBox();
       this.lbl_SDTime = new System.Windows.Forms.Label();
@@ -70,7 +83,12 @@
       this.tbx_thInterval = new System.Windows.Forms.TextBox();
       this.cbx_velMeasure = new System.Windows.Forms.CheckBox();
       this.tbx_velInterval = new System.Windows.Forms.TextBox();
-      this.tbx_log = new System.Windows.Forms.TextBox();
+      this.lvhd_gv1Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv1Interval = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv2Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv2Interval = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv3Measure = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
       this.toolStrip.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
@@ -130,7 +148,7 @@
       // splitContainer1
       // 
       this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.splitContainer1.Location = new System.Drawing.Point(0, 58);
+      this.splitContainer1.Location = new System.Drawing.Point(508, 58);
       this.splitContainer1.Margin = new System.Windows.Forms.Padding(6);
       this.splitContainer1.Name = "splitContainer1";
       this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -138,14 +156,13 @@
       // splitContainer1.Panel1
       // 
       this.splitContainer1.Panel1.Controls.Add(this.lv_setting);
-      this.splitContainer1.Panel1.Controls.Add(this.pnl_settingEdit);
       this.splitContainer1.Panel1MinSize = 300;
       // 
       // splitContainer1.Panel2
       // 
       this.splitContainer1.Panel2.Controls.Add(this.tbx_log);
-      this.splitContainer1.Size = new System.Drawing.Size(2374, 1171);
-      this.splitContainer1.SplitterDistance = 852;
+      this.splitContainer1.Size = new System.Drawing.Size(1866, 1221);
+      this.splitContainer1.SplitterDistance = 887;
       this.splitContainer1.SplitterWidth = 9;
       this.splitContainer1.TabIndex = 17;
       // 
@@ -163,14 +180,20 @@
             this.lvhd_velInterval,
             this.lvhd_illMeasure,
             this.lvhd_illInterval,
-            this.lvhd_startTime});
+            this.lvhd_startTime,
+            this.lvhd_gv1Measure,
+            this.lvhd_gv1Interval,
+            this.lvhd_gv2Measure,
+            this.lvhd_gv2Interval,
+            this.lvhd_gv3Measure,
+            this.lvhd_gv3Interval});
       this.lv_setting.Dock = System.Windows.Forms.DockStyle.Fill;
       this.lv_setting.FullRowSelect = true;
       this.lv_setting.HideSelection = false;
-      this.lv_setting.Location = new System.Drawing.Point(508, 0);
+      this.lv_setting.Location = new System.Drawing.Point(0, 0);
       this.lv_setting.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.lv_setting.Name = "lv_setting";
-      this.lv_setting.Size = new System.Drawing.Size(1866, 852);
+      this.lv_setting.Size = new System.Drawing.Size(1866, 887);
       this.lv_setting.TabIndex = 3;
       this.lv_setting.UseCompatibleStateImageBehavior = false;
       this.lv_setting.View = System.Windows.Forms.View.Details;
@@ -261,14 +284,38 @@
       this.lvhd_startTime.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
       this.lvhd_startTime.Width = 120;
       // 
+      // tbx_log
+      // 
+      this.tbx_log.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.tbx_log.Location = new System.Drawing.Point(0, 0);
+      this.tbx_log.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.tbx_log.Multiline = true;
+      this.tbx_log.Name = "tbx_log";
+      this.tbx_log.ReadOnly = true;
+      this.tbx_log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+      this.tbx_log.Size = new System.Drawing.Size(1866, 325);
+      this.tbx_log.TabIndex = 5;
+      // 
       // pnl_settingEdit
       // 
+      this.pnl_settingEdit.Controls.Add(this.lbl_gpv3);
+      this.pnl_settingEdit.Controls.Add(this.lbl_gpv2);
+      this.pnl_settingEdit.Controls.Add(this.lbl_gpv1);
       this.pnl_settingEdit.Controls.Add(this.lbl_ill);
       this.pnl_settingEdit.Controls.Add(this.lbl_vel);
+      this.pnl_settingEdit.Controls.Add(this.label9);
       this.pnl_settingEdit.Controls.Add(this.lbl_glb);
+      this.pnl_settingEdit.Controls.Add(this.label7);
       this.pnl_settingEdit.Controls.Add(this.lbl_th);
+      this.pnl_settingEdit.Controls.Add(this.cbx_gpv3Measure);
+      this.pnl_settingEdit.Controls.Add(this.label4);
+      this.pnl_settingEdit.Controls.Add(this.cbx_gpv2Measure);
       this.pnl_settingEdit.Controls.Add(this.btn_startCollecting);
+      this.pnl_settingEdit.Controls.Add(this.tbx_gpv3Interval);
+      this.pnl_settingEdit.Controls.Add(this.cbx_gpv1Measure);
+      this.pnl_settingEdit.Controls.Add(this.tbx_gpv2Interval);
       this.pnl_settingEdit.Controls.Add(this.label5);
+      this.pnl_settingEdit.Controls.Add(this.tbx_gpv1Interval);
       this.pnl_settingEdit.Controls.Add(this.cbx_illMeasure);
       this.pnl_settingEdit.Controls.Add(this.tbx_illInterval);
       this.pnl_settingEdit.Controls.Add(this.lbl_SDTime);
@@ -287,11 +334,41 @@
       this.pnl_settingEdit.Controls.Add(this.tbx_velInterval);
       this.pnl_settingEdit.Dock = System.Windows.Forms.DockStyle.Left;
       this.pnl_settingEdit.Enabled = false;
-      this.pnl_settingEdit.Location = new System.Drawing.Point(0, 0);
+      this.pnl_settingEdit.Location = new System.Drawing.Point(0, 58);
       this.pnl_settingEdit.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.pnl_settingEdit.Name = "pnl_settingEdit";
-      this.pnl_settingEdit.Size = new System.Drawing.Size(508, 852);
+      this.pnl_settingEdit.Size = new System.Drawing.Size(508, 1221);
       this.pnl_settingEdit.TabIndex = 2;
+      // 
+      // lbl_gpv3
+      // 
+      this.lbl_gpv3.AutoSize = true;
+      this.lbl_gpv3.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+      this.lbl_gpv3.Location = new System.Drawing.Point(20, 680);
+      this.lbl_gpv3.Name = "lbl_gpv3";
+      this.lbl_gpv3.Size = new System.Drawing.Size(302, 32);
+      this.lbl_gpv3.TabIndex = 13;
+      this.lbl_gpv3.Text = "General purpose voltage 3";
+      // 
+      // lbl_gpv2
+      // 
+      this.lbl_gpv2.AutoSize = true;
+      this.lbl_gpv2.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+      this.lbl_gpv2.Location = new System.Drawing.Point(20, 570);
+      this.lbl_gpv2.Name = "lbl_gpv2";
+      this.lbl_gpv2.Size = new System.Drawing.Size(302, 32);
+      this.lbl_gpv2.TabIndex = 13;
+      this.lbl_gpv2.Text = "General purpose voltage 2";
+      // 
+      // lbl_gpv1
+      // 
+      this.lbl_gpv1.AutoSize = true;
+      this.lbl_gpv1.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+      this.lbl_gpv1.Location = new System.Drawing.Point(20, 460);
+      this.lbl_gpv1.Name = "lbl_gpv1";
+      this.lbl_gpv1.Size = new System.Drawing.Size(299, 32);
+      this.lbl_gpv1.TabIndex = 13;
+      this.lbl_gpv1.Text = "General purpose voltage 1";
       // 
       // lbl_ill
       // 
@@ -313,6 +390,16 @@
       this.lbl_vel.TabIndex = 13;
       this.lbl_vel.Text = "Velocity";
       // 
+      // label9
+      // 
+      this.label9.AutoSize = true;
+      this.label9.Location = new System.Drawing.Point(325, 734);
+      this.label9.Margin = new System.Windows.Forms.Padding(7, 0, 7, 0);
+      this.label9.Name = "label9";
+      this.label9.Size = new System.Drawing.Size(48, 32);
+      this.label9.TabIndex = 11;
+      this.label9.Text = "sec";
+      // 
       // lbl_glb
       // 
       this.lbl_glb.AutoSize = true;
@@ -322,6 +409,16 @@
       this.lbl_glb.Size = new System.Drawing.Size(222, 32);
       this.lbl_glb.TabIndex = 13;
       this.lbl_glb.Text = "Globe temperature";
+      // 
+      // label7
+      // 
+      this.label7.AutoSize = true;
+      this.label7.Location = new System.Drawing.Point(325, 624);
+      this.label7.Margin = new System.Windows.Forms.Padding(7, 0, 7, 0);
+      this.label7.Name = "label7";
+      this.label7.Size = new System.Drawing.Size(48, 32);
+      this.label7.TabIndex = 11;
+      this.label7.Text = "sec";
       // 
       // lbl_th
       // 
@@ -333,10 +430,46 @@
       this.lbl_th.TabIndex = 12;
       this.lbl_th.Text = "Dry-bulb temperature / Relative humdiity";
       // 
+      // cbx_gpv3Measure
+      // 
+      this.cbx_gpv3Measure.AutoSize = true;
+      this.cbx_gpv3Measure.Location = new System.Drawing.Point(60, 730);
+      this.cbx_gpv3Measure.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.cbx_gpv3Measure.Name = "cbx_gpv3Measure";
+      this.cbx_gpv3Measure.Size = new System.Drawing.Size(138, 36);
+      this.cbx_gpv3Measure.TabIndex = 7;
+      this.cbx_gpv3Measure.TabStop = false;
+      this.cbx_gpv3Measure.Text = "Measure";
+      this.cbx_gpv3Measure.UseVisualStyleBackColor = true;
+      this.cbx_gpv3Measure.CheckedChanged += new System.EventHandler(this.cbx_measure_CheckedChanged);
+      // 
+      // label4
+      // 
+      this.label4.AutoSize = true;
+      this.label4.Location = new System.Drawing.Point(325, 514);
+      this.label4.Margin = new System.Windows.Forms.Padding(7, 0, 7, 0);
+      this.label4.Name = "label4";
+      this.label4.Size = new System.Drawing.Size(48, 32);
+      this.label4.TabIndex = 11;
+      this.label4.Text = "sec";
+      // 
+      // cbx_gpv2Measure
+      // 
+      this.cbx_gpv2Measure.AutoSize = true;
+      this.cbx_gpv2Measure.Location = new System.Drawing.Point(60, 620);
+      this.cbx_gpv2Measure.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.cbx_gpv2Measure.Name = "cbx_gpv2Measure";
+      this.cbx_gpv2Measure.Size = new System.Drawing.Size(138, 36);
+      this.cbx_gpv2Measure.TabIndex = 7;
+      this.cbx_gpv2Measure.TabStop = false;
+      this.cbx_gpv2Measure.Text = "Measure";
+      this.cbx_gpv2Measure.UseVisualStyleBackColor = true;
+      this.cbx_gpv2Measure.CheckedChanged += new System.EventHandler(this.cbx_measure_CheckedChanged);
+      // 
       // btn_startCollecting
       // 
       this.btn_startCollecting.Image = ((System.Drawing.Image)(resources.GetObject("btn_startCollecting.Image")));
-      this.btn_startCollecting.Location = new System.Drawing.Point(20, 640);
+      this.btn_startCollecting.Location = new System.Drawing.Point(20, 987);
       this.btn_startCollecting.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_startCollecting.Name = "btn_startCollecting";
       this.btn_startCollecting.Size = new System.Drawing.Size(468, 55);
@@ -347,6 +480,39 @@
       this.btn_startCollecting.UseVisualStyleBackColor = true;
       this.btn_startCollecting.Click += new System.EventHandler(this.btn_startMLogger_Click);
       // 
+      // tbx_gpv3Interval
+      // 
+      this.tbx_gpv3Interval.Location = new System.Drawing.Point(227, 728);
+      this.tbx_gpv3Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.tbx_gpv3Interval.Name = "tbx_gpv3Interval";
+      this.tbx_gpv3Interval.Size = new System.Drawing.Size(80, 39);
+      this.tbx_gpv3Interval.TabIndex = 3;
+      this.tbx_gpv3Interval.Text = "60";
+      this.tbx_gpv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      // 
+      // cbx_gpv1Measure
+      // 
+      this.cbx_gpv1Measure.AutoSize = true;
+      this.cbx_gpv1Measure.Location = new System.Drawing.Point(60, 510);
+      this.cbx_gpv1Measure.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.cbx_gpv1Measure.Name = "cbx_gpv1Measure";
+      this.cbx_gpv1Measure.Size = new System.Drawing.Size(138, 36);
+      this.cbx_gpv1Measure.TabIndex = 7;
+      this.cbx_gpv1Measure.TabStop = false;
+      this.cbx_gpv1Measure.Text = "Measure";
+      this.cbx_gpv1Measure.UseVisualStyleBackColor = true;
+      this.cbx_gpv1Measure.CheckedChanged += new System.EventHandler(this.cbx_measure_CheckedChanged);
+      // 
+      // tbx_gpv2Interval
+      // 
+      this.tbx_gpv2Interval.Location = new System.Drawing.Point(227, 618);
+      this.tbx_gpv2Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.tbx_gpv2Interval.Name = "tbx_gpv2Interval";
+      this.tbx_gpv2Interval.Size = new System.Drawing.Size(80, 39);
+      this.tbx_gpv2Interval.TabIndex = 3;
+      this.tbx_gpv2Interval.Text = "60";
+      this.tbx_gpv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      // 
       // label5
       // 
       this.label5.AutoSize = true;
@@ -356,6 +522,16 @@
       this.label5.Size = new System.Drawing.Size(48, 32);
       this.label5.TabIndex = 11;
       this.label5.Text = "sec";
+      // 
+      // tbx_gpv1Interval
+      // 
+      this.tbx_gpv1Interval.Location = new System.Drawing.Point(227, 508);
+      this.tbx_gpv1Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.tbx_gpv1Interval.Name = "tbx_gpv1Interval";
+      this.tbx_gpv1Interval.Size = new System.Drawing.Size(80, 39);
+      this.tbx_gpv1Interval.TabIndex = 3;
+      this.tbx_gpv1Interval.Text = "60";
+      this.tbx_gpv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
       // cbx_illMeasure
       // 
@@ -384,7 +560,7 @@
       // 
       this.lbl_SDTime.AutoSize = true;
       this.lbl_SDTime.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-      this.lbl_SDTime.Location = new System.Drawing.Point(20, 460);
+      this.lbl_SDTime.Location = new System.Drawing.Point(20, 807);
       this.lbl_SDTime.Margin = new System.Windows.Forms.Padding(7, 0, 7, 0);
       this.lbl_SDTime.Name = "lbl_SDTime";
       this.lbl_SDTime.Size = new System.Drawing.Size(368, 32);
@@ -395,7 +571,7 @@
       // 
       this.dtp_timer.CustomFormat = "yyyy/MM/dd hh:mm";
       this.dtp_timer.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-      this.dtp_timer.Location = new System.Drawing.Point(60, 510);
+      this.dtp_timer.Location = new System.Drawing.Point(60, 857);
       this.dtp_timer.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.dtp_timer.Name = "dtp_timer";
       this.dtp_timer.Size = new System.Drawing.Size(428, 39);
@@ -406,7 +582,7 @@
       // btn_outputSD
       // 
       this.btn_outputSD.Image = global::MLServer.Properties.Resources.sd;
-      this.btn_outputSD.Location = new System.Drawing.Point(20, 713);
+      this.btn_outputSD.Location = new System.Drawing.Point(20, 1060);
       this.btn_outputSD.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_outputSD.Name = "btn_outputSD";
       this.btn_outputSD.Size = new System.Drawing.Size(468, 55);
@@ -420,7 +596,7 @@
       // btn_setCFactor
       // 
       this.btn_setCFactor.Image = global::MLServer.Properties.Resources.ram;
-      this.btn_setCFactor.Location = new System.Drawing.Point(20, 786);
+      this.btn_setCFactor.Location = new System.Drawing.Point(20, 1133);
       this.btn_setCFactor.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_setCFactor.Name = "btn_setCFactor";
       this.btn_setCFactor.Size = new System.Drawing.Size(468, 55);
@@ -434,7 +610,7 @@
       // btn_applySetting
       // 
       this.btn_applySetting.Image = ((System.Drawing.Image)(resources.GetObject("btn_applySetting.Image")));
-      this.btn_applySetting.Location = new System.Drawing.Point(20, 567);
+      this.btn_applySetting.Location = new System.Drawing.Point(20, 914);
       this.btn_applySetting.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_applySetting.Name = "btn_applySetting";
       this.btn_applySetting.Size = new System.Drawing.Size(468, 55);
@@ -544,30 +720,55 @@
       this.tbx_velInterval.Text = "60";
       this.tbx_velInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
-      // tbx_log
+      // lvhd_gv1Measure
       // 
-      this.tbx_log.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.tbx_log.Location = new System.Drawing.Point(0, 0);
-      this.tbx_log.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
-      this.tbx_log.Multiline = true;
-      this.tbx_log.Name = "tbx_log";
-      this.tbx_log.ReadOnly = true;
-      this.tbx_log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.tbx_log.Size = new System.Drawing.Size(2374, 310);
-      this.tbx_log.TabIndex = 5;
+      this.lvhd_gv1Measure.Text = "電圧1";
+      this.lvhd_gv1Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv1Measure.Width = 80;
+      // 
+      // lvhd_gv1Interval
+      // 
+      this.lvhd_gv1Interval.Text = "測定間隔";
+      this.lvhd_gv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv1Interval.Width = 80;
+      // 
+      // lvhd_gv2Measure
+      // 
+      this.lvhd_gv2Measure.Text = "電圧2";
+      this.lvhd_gv2Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv2Measure.Width = 80;
+      // 
+      // lvhd_gv2Interval
+      // 
+      this.lvhd_gv2Interval.Text = "測定間隔";
+      this.lvhd_gv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv2Interval.Width = 80;
+      // 
+      // lvhd_gv3Measure
+      // 
+      this.lvhd_gv3Measure.Text = "電圧3";
+      this.lvhd_gv3Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv3Measure.Width = 80;
+      // 
+      // lvhd_gv3Interval
+      // 
+      this.lvhd_gv3Interval.Text = "測定間隔";
+      this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_gv3Interval.Width = 80;
       // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(2374, 1229);
+      this.ClientSize = new System.Drawing.Size(2374, 1279);
       this.Controls.Add(this.splitContainer1);
+      this.Controls.Add(this.pnl_settingEdit);
       this.Controls.Add(this.toolStrip);
       this.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
-      this.MinimumSize = new System.Drawing.Size(1909, 950);
+      this.MinimumSize = new System.Drawing.Size(2000, 1350);
       this.Name = "MainForm";
       this.ShowIcon = false;
-      this.Text = "MLServer version 1.0.4";
+      this.Text = "MLServer version 1.0.5";
       this.toolStrip.ResumeLayout(false);
       this.toolStrip.PerformLayout();
       this.splitContainer1.Panel1.ResumeLayout(false);
@@ -625,6 +826,24 @@
     private System.Windows.Forms.Label lbl_vel;
     private System.Windows.Forms.Label lbl_glb;
     private System.Windows.Forms.Label lbl_th;
+    private System.Windows.Forms.Label lbl_gpv3;
+    private System.Windows.Forms.Label lbl_gpv2;
+    private System.Windows.Forms.Label lbl_gpv1;
+    private System.Windows.Forms.Label label9;
+    private System.Windows.Forms.Label label7;
+    private System.Windows.Forms.CheckBox cbx_gpv3Measure;
+    private System.Windows.Forms.Label label4;
+    private System.Windows.Forms.CheckBox cbx_gpv2Measure;
+    private System.Windows.Forms.TextBox tbx_gpv3Interval;
+    private System.Windows.Forms.CheckBox cbx_gpv1Measure;
+    private System.Windows.Forms.TextBox tbx_gpv2Interval;
+    private System.Windows.Forms.TextBox tbx_gpv1Interval;
+    private System.Windows.Forms.ColumnHeader lvhd_gv1Measure;
+    private System.Windows.Forms.ColumnHeader lvhd_gv1Interval;
+    private System.Windows.Forms.ColumnHeader lvhd_gv2Measure;
+    private System.Windows.Forms.ColumnHeader lvhd_gv2Interval;
+    private System.Windows.Forms.ColumnHeader lvhd_gv3Measure;
+    private System.Windows.Forms.ColumnHeader lvhd_gv3Interval;
   }
 }
 

@@ -64,6 +64,15 @@ namespace MLServer
     /// <summary>最新の照度計測日時を取得する</summary>
     public DateTime LastMeasureTime_Ill { get; private set; } = UNIX_EPOCH;
 
+    /// <summary>最新の汎用電圧1計測日時を取得する</summary>
+    public DateTime LastMeasureTime_GV1 { get; private set; } = UNIX_EPOCH;
+
+    /// <summary>最新の汎用電圧2計測日時を取得する</summary>
+    public DateTime LastMeasureTime_GV2 { get; private set; } = UNIX_EPOCH;
+
+    /// <summary>最新の汎用電圧3計測日時を取得する</summary>
+    public DateTime LastMeasureTime_GV3 { get; private set; } = UNIX_EPOCH;
+
     /// <summary>最新の温度[C]を取得する</summary>
     public double LastTemperature { get; private set; } = double.NaN;
 
@@ -78,6 +87,15 @@ namespace MLServer
 
     /// <summary>最新の照度[lx]を取得する</summary>
     public double LastIlluminance { get; private set; } = double.NaN;
+
+    /// <summary>最新の汎用電圧1[V]を取得する</summary>
+    public double LastIGeneralPurposeVoltage1 { get; private set; } = double.NaN;
+
+    /// <summary>最新の汎用電圧2[V]を取得する</summary>
+    public double LastIGeneralPurposeVoltage2 { get; private set; } = double.NaN;
+
+    /// <summary>最新の汎用電圧3[V]を取得する</summary>
+    public double LastIGeneralPurposeVoltage3 { get; private set; } = double.NaN;
 
     /// <summary>温度計測値の補正式Ax+Bの補正係数Aを取得する</summary>
     public double CFactorA_Temperature { get; private set; } = 1.0;
@@ -231,7 +249,8 @@ namespace MLServer
       out double temperature, out double humidity,
       out double globeV, out double globe,
       out double velocityV, out double velocity,
-      out double illuminance)
+      out double illuminance,
+      out double gpVoltage1, out double gpVoltage2, out double gpVoltage3)
     {
       try
       {
@@ -248,6 +267,9 @@ namespace MLServer
         illuminance = (buff[7] == "n/a") ? double.NaN : double.Parse(buff[7]);
         globeV = (buff[8] == "n/a") ? double.NaN : double.Parse(buff[8]);
         velocityV = (buff[9] == "n/a") ? double.NaN : double.Parse(buff[9]);
+        gpVoltage1 = (buff[10] == "n/a") ? double.NaN : double.Parse(buff[10]);
+        gpVoltage2 = (buff[11] == "n/a") ? double.NaN : double.Parse(buff[11]);
+        gpVoltage3 = (buff[12] == "n/a") ? double.NaN : double.Parse(buff[12]);
 
         //最新の値を保存
         if (!double.IsNaN(temperature))
@@ -271,6 +293,21 @@ namespace MLServer
           LastMeasureTime_Ill = now;
           LastIlluminance = illuminance;
         }
+        if (!double.IsNaN(gpVoltage1))
+        {
+          LastMeasureTime_GV1 = now;
+          LastIGeneralPurposeVoltage1 = gpVoltage1;
+        }
+        if (!double.IsNaN(gpVoltage2))
+        {
+          LastMeasureTime_GV2 = now;
+          LastIGeneralPurposeVoltage2 = gpVoltage2;
+        }
+        if (!double.IsNaN(gpVoltage3))
+        {
+          LastMeasureTime_GV3 = now;
+          LastIGeneralPurposeVoltage3 = gpVoltage3;
+        }
 
         //熱的快適性指標を計算する
         calcThermalIndices();
@@ -279,7 +316,8 @@ namespace MLServer
       catch
       {
         now = UNIX_EPOCH;
-        temperature = humidity = globeV = globe = velocityV = velocity = illuminance = double.NaN;
+        temperature = humidity = globeV = globe = velocityV = velocity = illuminance 
+          = gpVoltage1 = gpVoltage2 = gpVoltage3 = double.NaN;
       }
     }
 

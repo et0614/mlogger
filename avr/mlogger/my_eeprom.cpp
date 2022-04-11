@@ -41,12 +41,18 @@ static uint8_t EEMEM EEP_MES_TH;
 static uint8_t EEMEM EEP_MES_GLB;
 static uint8_t EEMEM EEP_MES_VEL;
 static uint8_t EEMEM EEP_MES_ILL;
+static uint8_t EEMEM EEP_MES_AD1;
+static uint8_t EEMEM EEP_MES_AD2;
+static uint8_t EEMEM EEP_MES_AD3;
 
 //計測間隔
 static unsigned int EEMEM EEP_STP_TH;
 static unsigned int EEMEM EEP_STP_GLB;
 static unsigned int EEMEM EEP_STP_VEL;
 static unsigned int EEMEM EEP_STP_ILL;
+static unsigned int EEMEM EEP_STP_AD1;
+static unsigned int EEMEM EEP_STP_AD2;
+static unsigned int EEMEM EEP_STP_AD3;
 
 //自動通信開始設定
 static uint8_t EEMEM EEP_START_AUTO;
@@ -69,12 +75,18 @@ volatile bool my_eeprom::measure_th = true;
 volatile bool my_eeprom::measure_glb = true;
 volatile bool my_eeprom::measure_vel = true;
 volatile bool my_eeprom::measure_ill = true;
+volatile bool my_eeprom::measure_AD1 = false;
+volatile bool my_eeprom::measure_AD2 = false;
+volatile bool my_eeprom::measure_AD3 = false;
 
 //計測間隔
 volatile unsigned int my_eeprom::interval_th = 60;
 volatile unsigned int my_eeprom::interval_glb = 60;
 volatile unsigned int my_eeprom::interval_vel = 60;
 volatile unsigned int my_eeprom::interval_ill = 60;
+volatile unsigned int my_eeprom::interval_AD1 = 60;
+volatile unsigned int my_eeprom::interval_AD2 = 60;
+volatile unsigned int my_eeprom::interval_AD3 = 60;
 
 //自動通信開始設定
 volatile bool my_eeprom::startAuto = false;
@@ -133,6 +145,12 @@ void my_eeprom::LoadCorrectionFactor()
 		eeprom_update_byte(&EEP_MES_VEL,'T');
 		eeprom_busy_wait();
 		eeprom_update_byte(&EEP_MES_ILL,'T');
+		eeprom_busy_wait();
+		eeprom_update_byte(&EEP_MES_AD1,'F');
+		eeprom_busy_wait();
+		eeprom_update_byte(&EEP_MES_AD2,'F');
+		eeprom_busy_wait();
+		eeprom_update_byte(&EEP_MES_AD3,'F');
 		
 		//計測間隔
 		eeprom_busy_wait();
@@ -143,6 +161,12 @@ void my_eeprom::LoadCorrectionFactor()
 		eeprom_update_word(&EEP_STP_VEL, 60);
 		eeprom_busy_wait();
 		eeprom_update_word(&EEP_STP_ILL, 60);
+		eeprom_busy_wait();
+		eeprom_update_word(&EEP_STP_AD1, 60);
+		eeprom_busy_wait();
+		eeprom_update_word(&EEP_STP_AD2, 60);
+		eeprom_busy_wait();
+		eeprom_update_word(&EEP_STP_AD3, 60);
 		
 		//自動通信開始設定
 		eeprom_busy_wait();
@@ -340,6 +364,21 @@ void my_eeprom::LoadMeasurementSetting()
 	my_eeprom::measure_ill = (eeprom_read_byte(&EEP_MES_ILL) == 'T');
 	eeprom_busy_wait();
 	my_eeprom::interval_ill = eeprom_read_word(&EEP_STP_ILL);
+		
+	eeprom_busy_wait();
+	my_eeprom::measure_AD1 = (eeprom_read_byte(&EEP_MES_AD1) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD1 = eeprom_read_word(&EEP_STP_AD1);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_AD2 = (eeprom_read_byte(&EEP_MES_AD2) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD2 = eeprom_read_word(&EEP_STP_AD2);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_AD3 = (eeprom_read_byte(&EEP_MES_AD3) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD3 = eeprom_read_word(&EEP_STP_AD3);
 }
 
 //計測設定を書き込む
@@ -367,5 +406,20 @@ void my_eeprom::SetMeasurementSetting()
 	eeprom_update_byte(&EEP_MES_ILL,my_eeprom::measure_ill ? 'T' : 'F');
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_ILL,my_eeprom::interval_ill);
+	
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD1,my_eeprom::measure_AD1 ? 'T' : 'F');
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD1,my_eeprom::interval_AD1);
+	
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD2,my_eeprom::measure_AD2 ? 'T' : 'F');
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD2,my_eeprom::interval_AD2);
+	
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD3,my_eeprom::measure_AD3 ? 'T' : 'F');
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD3,my_eeprom::interval_AD3);
 }
 

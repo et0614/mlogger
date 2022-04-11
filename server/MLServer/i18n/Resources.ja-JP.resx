@@ -138,6 +138,9 @@
   <data name="DBTemp" xml:space="preserve">
     <value>乾球温度</value>
   </data>
+  <data name="GeneralPurposeVoltage" xml:space="preserve">
+    <value>汎用電圧</value>
+  </data>
   <data name="GlbTemp" xml:space="preserve">
     <value>グローブ温度</value>
   </data>

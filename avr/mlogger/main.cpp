@@ -106,6 +106,9 @@ volatile static unsigned int pass_th = 0;
 volatile static unsigned int pass_glb = 0;
 volatile static unsigned int pass_vel = 0;
 volatile static unsigned int pass_ill = 0;
+volatile static unsigned int pass_ad1 = 0;
+volatile static unsigned int pass_ad2 = 0;
+volatile static unsigned int pass_ad3 = 0;
 
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
@@ -180,6 +183,8 @@ int main(void)
 		//スリープモード設定		
 		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_DOWN); //ATmega328PではPWR_SAVE
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
+		
+		//set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ DEBUG
 									
 		//スリープ
 		sleep_mode();
@@ -202,11 +207,17 @@ static void initialize_port(void)
 	//入力ポート
 	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
+	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
+	PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
+	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
 	
 	//プルアップ
 	PORTA.OUTSET = PIN2_bm; //INT0：設定
 	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：解除
 	PORTD.OUTCLR = PIN2_bm; //風速センサ：解除
+	PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：解除
+	PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：解除
+	PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：解除
 }
 
 //タイマ初期化
@@ -249,18 +260,21 @@ static void initialize_timer( void )
 	//RTC.CLKSEL = RTC_CLKSEL_XOSC32K_gc; //32.768kHz外部クリスタル用発振器 (XOSC32K)
 	RTC.DBGCTRL |= RTC_DBGRUN_bm;        //デバッグで走行: 許可
 
-	/*RTC.PITINTCTRL = RTC_PI_bm;           //Periodic Interrupt Enabled
+	RTC.PITINTCTRL = RTC_PI_bm;           //Periodic Interrupt Enabled
 	RTC.PITCTRLA = RTC_PERIOD_CYC32768_gc //RTC Clock Cycles 32768
-				| RTC_PITEN_bm;           //Periodic Interrupt Timer Enable*/
+				| RTC_PITEN_bm;           //Periodic Interrupt Timer Enable
 	
-	//RTC.PER = 1;  //周期設定
-	RTC.PER = 32768 / 32 - 1;  //周期設定
+	/*RTC.PER = 32768 / 32 - 1;  //周期設定
 	//RTC.CTRLA = RTC_PRESCALER_DIV32768_gc //32.768kHzのため
-	RTC.CTRLA = RTC_PRESCALER_DIV32_gc //32
+	RTC.CTRLA = RTC_PRESCALER_DIV32768_gc //32
 				| RTC_RTCEN_bm //RTC有効化
 				| RTC_RUNSTDBY_bm; //スタンバイモードでの継続許可
-	RTC.INTCTRL |= RTC_OVF_bm;
+	RTC.INTCTRL |= RTC_OVF_bm;*/
 	
+	//POWER DOWN時にもタイマ割込を有効にする
+	SLPCTRL.CTRLA |= SLPCTRL_SMODE_PDOWN_gc; 
+	SLPCTRL.CTRLA |= SLPCTRL_SEN_bm;
+
 	//debug main clock statusの確認
 	if(CLKCTRL.MCLKSTATUS & CLKCTRL_XOSC32KS_bm)
 	//if(CLKCTRL.MCLKSTATUS & CLKCTRL_OSCHFS_bm)
@@ -367,6 +381,9 @@ static void solve_command(void)
 		pass_glb = my_eeprom::interval_glb;
 		pass_vel = my_eeprom::interval_vel;
 		pass_ill = my_eeprom::interval_ill;
+		pass_ad1 = my_eeprom::interval_AD1;
+		pass_ad2 = my_eeprom::interval_AD2;
+		pass_ad3 = my_eeprom::interval_AD3;
 		
 		//ロギング設定をEEPROMに保存
 		//my_eeprom::startAuto = outputToXBee; //リセットスイッチを持つ基盤が用意できたらコメントアウトする
@@ -388,6 +405,12 @@ static void solve_command(void)
 		my_eeprom::measure_glb = (command[9] == 't');
 		my_eeprom::measure_vel = (command[15] == 't');
 		my_eeprom::measure_ill = (command[21] == 't');
+		if(37 < strlen(command))
+		{
+			my_eeprom::measure_AD1 = (command[37] == 't');
+			my_eeprom::measure_AD2 = (command[43] == 't');
+			my_eeprom::measure_AD3 = (command[49] == 't');
+		}
 		
 		//測定時間間隔
 		char num[6];
@@ -400,6 +423,15 @@ static void solve_command(void)
 		my_eeprom::interval_vel = atoi(num);
 		strncpy(num, command + 22, 5);
 		my_eeprom::interval_ill = atoi(num);
+		if(37 < strlen(command))
+		{
+			strncpy(num, command + 38, 5);
+			my_eeprom::interval_AD1 = atoi(num);
+			strncpy(num, command + 44, 5);
+			my_eeprom::interval_AD2 = atoi(num);
+			strncpy(num, command + 50, 5);
+			my_eeprom::interval_AD3 = atoi(num);
+		}
 		
 		//計測開始時刻
 		char num2[11];
@@ -408,21 +440,29 @@ static void solve_command(void)
 		startTime = atol(num2);
 		
 		//ACK
-		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld\r",
+		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u\r",
 			my_eeprom::measure_th, my_eeprom::interval_th, 
 			my_eeprom::measure_glb, my_eeprom::interval_glb, 
 			my_eeprom::measure_vel, my_eeprom::interval_vel, 
-			my_eeprom::measure_ill, my_eeprom::interval_ill, startTime);
+			my_eeprom::measure_ill, my_eeprom::interval_ill, 
+			startTime,
+			my_eeprom::measure_AD1, my_eeprom::interval_AD1, 
+			my_eeprom::measure_AD2, my_eeprom::interval_AD2, 
+			my_eeprom::measure_AD3, my_eeprom::interval_AD3);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//Load Measurement Settings
 	else if(strncmp(command, "LMS", 3) == 0)
 	{
-		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld\r",
-			my_eeprom::measure_th, my_eeprom::interval_th, 
-			my_eeprom::measure_glb, my_eeprom::interval_glb, 
-			my_eeprom::measure_vel, my_eeprom::interval_vel, 
-			my_eeprom::measure_ill, my_eeprom::interval_ill, startTime);
+		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u\r",
+			my_eeprom::measure_th, my_eeprom::interval_th,
+			my_eeprom::measure_glb, my_eeprom::interval_glb,
+			my_eeprom::measure_vel, my_eeprom::interval_vel,
+			my_eeprom::measure_ill, my_eeprom::interval_ill, 
+			startTime,
+			my_eeprom::measure_AD1, my_eeprom::interval_AD1,
+			my_eeprom::measure_AD2, my_eeprom::interval_AD2,
+			my_eeprom::measure_AD3, my_eeprom::interval_AD3);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//End Logging
@@ -459,33 +499,33 @@ ISR(TCA0_OVF_vect)
 }
 
 //ロギング用の1秒毎の処理
-ISR(RTC_CNT_vect)
-//ISR(RTC_PIT_vect)
+//ISR(RTC_CNT_vect)
+ISR(RTC_PIT_vect)
 {
 	//割り込み要求フラグ解除
-	//RTC.PITINTFLAGS = RTC_PI_bm;
-	RTC.INTFLAGS = RTC_OVF_bm;
+	RTC.PITINTFLAGS = RTC_PI_bm;
+	//RTC.INTFLAGS = RTC_OVF_bm;
 	
 	currentTime++; //1秒進める
+	
+	//リセットボタン押し込み確認
+	if(!(PORTA.IN & PIN2_bm))
+	{
+		resetTime++;
+		if(3 < resetTime)
+		{
+			logging=false;	//ロギング停止
+			initSD = false;	//SDカード再マウント
+			sleep_anemo();	//風速センサを停止
+			blinkLED(3);	//LED点滅
+			return;
+		}
+	}
+	else resetTime = 0; //Resetボタン押し込み時間を0に戻す
 				
 	//ロギング中であれば
 	if(logging)
-	{
-		//リセットボタン押し込み確認
-		if(!(PORTA.IN & PIN2_bm)) 
-		{
-			resetTime++;
-			if(3 < resetTime)
-			{
-				logging=false;	//ロギング停止
-				initSD = false;	//SDカード再マウント
-				sleep_anemo();	//風速センサを停止
-				blinkLED(3);	//LED点滅
-				return;
-			}
-		}
-		else resetTime = 0; //Resetボタン押し込み時間を0に戻す		 
-		
+	{		
 		//計測開始時刻の前ならば終了
 		if(currentTime < startTime) return;
 		
@@ -500,6 +540,9 @@ ISR(RTC_CNT_vect)
 		char velS[7] = "n/a"; //0.0000 ~ 1.5000//6文字+\r
 		char velVS[7] = "n/a";
 		char illS[9] = "n/a"; //0.01~83865.60
+		char adV1S[7] = "n/a";
+		char adV2S[7] = "n/a";
+		char adV3S[7] = "n/a";
 		
 		//微風速測定************
 		pass_vel++;
@@ -561,6 +604,36 @@ ISR(RTC_CNT_vect)
 			hasNewData = true;
 		}
 		
+		//汎用AD変換測定1
+		pass_ad1++;
+		if(my_eeprom::measure_AD1 && my_eeprom::interval_AD1 <= pass_ad1)
+		{
+			float adV = readVoltage(1); //AD変換
+			dtostrf(adV,6,4,adV1S);
+			pass_ad1 = 0;
+			hasNewData = true;
+		}
+		
+		//汎用AD変換測定2
+		pass_ad2++;
+		if(my_eeprom::measure_AD2 && my_eeprom::interval_AD2 <= pass_ad2)
+		{
+			float adV = readVoltage(1); //AD変換
+			dtostrf(adV,6,4,adV2S);
+			pass_ad2 = 0;
+			hasNewData = true;
+		}
+		
+		//汎用AD変換測定3
+		pass_ad3++;
+		if(my_eeprom::measure_AD3 && my_eeprom::interval_AD3 <= pass_ad3)
+		{
+			float adV = readVoltage(1); //AD変換
+			dtostrf(adV,6,4,adV3S);
+			pass_ad3 = 0;
+			hasNewData = true;
+		}
+		
 		//新規データがある場合は送信
 		if(hasNewData)
 		{
@@ -576,9 +649,9 @@ ISR(RTC_CNT_vect)
 			gmtime_r(&ct, &dtNow);
 			
 			//書き出し文字列を作成
-			snprintf(charBuff, sizeof(charBuff), "%s%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s\r",
+			snprintf(charBuff, sizeof(charBuff), "%s%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
 			(outputToSDCard ? "" : "DTT:"), dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS);
+			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
 			
 			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
@@ -612,7 +685,8 @@ ISR(RTC_CNT_vect)
 		wc_time--;
 		
 		//明滅
-		blinkLED(initSD ? 2 : 1);
+		if((PORTA.IN & PIN2_bm))  //Reset押し込み中は明滅停止
+			blinkLED(initSD ? 2 : 1);
 	}
 }
 
@@ -672,6 +746,23 @@ static float readVelVoltage(void)
 	//AI2を計測
 	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(3.3V)に設定
 	ADC0.MUXPOS = ADC_MUXPOS_AIN2_gc;
+	_delay_ms(5);
+	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
+	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
+	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	
+	return (float)adV * 3.3;
+}
+
+//AD1~3の電圧を読み取る
+static float readVoltage(unsigned int adNumber)
+{
+	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(3.3V)に設定
+
+	if(adNumber == 1) ADC0.MUXPOS = ADC_MUXPOS_AIN20_gc; //AD1
+	else if(adNumber == 2) ADC0.MUXPOS = ADC_MUXPOS_AIN5_gc; //AD2
+	else ADC0.MUXPOS = ADC_MUXPOS_AIN3_gc; //AD3
+
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち

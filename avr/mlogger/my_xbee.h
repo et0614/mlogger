@@ -13,7 +13,7 @@ class my_xbee
 	public:
 
 	//ƒRƒ}ƒ“ƒh‚ÌÅ‘å•¶š”
-	static const int MAX_CMD_CHAR = 100;
+	static const int MAX_CMD_CHAR = 150;
 	
 	/**
 	 * @fn

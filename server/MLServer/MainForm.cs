@@ -228,9 +228,13 @@ namespace MLServer
       lbl_glb.Text = i18n.Resources.GlbTemp;
       lbl_vel.Text = i18n.Resources.Velocity;
       lbl_ill.Text = i18n.Resources.Illuminance;
+      lbl_gpv1.Text = i18n.Resources.GeneralPurposeVoltage + " 1";
+      lbl_gpv2.Text = i18n.Resources.GeneralPurposeVoltage + " 2";
+      lbl_gpv3.Text = i18n.Resources.GeneralPurposeVoltage + " 3";
       lbl_SDTime.Text = i18n.Resources.MF_MStartDTime;
 
-      cbx_thMeasure.Text = cbx_glbMeasure.Text = cbx_velMeasure.Text = cbx_illMeasure.Text = i18n.Resources.MF_MeasureCBX;
+      cbx_thMeasure.Text = cbx_glbMeasure.Text = cbx_velMeasure.Text = cbx_illMeasure.Text
+        = cbx_gpv1Measure.Text = cbx_gpv2Measure.Text = cbx_gpv3Measure.Text = i18n.Resources.MF_MeasureCBX;
 
       btn_applySetting.Text = i18n.Resources.MF_ApplySetting;
       btn_startCollecting.Text = i18n.Resources.MF_StartDataCollecting;
@@ -267,7 +271,10 @@ namespace MLServer
       (ListViewItem item, string state);
 
     private delegate void setListViewContentsDelegate
-      (ListViewItem item, string name, string state, string measureTH, string intervalTH, string measureGlb, string intervalGlb, string measureVel, string intervalVel, string measureIlm, string intervalIlm, string startTime);
+      (ListViewItem item, string name, string state, 
+      string measureTH, string intervalTH, string measureGlb, string intervalGlb, string measureVel, string intervalVel, 
+      string measureIlm, string intervalIlm,
+      string measureGV1, string intervalGV1, string measureGV2, string intervalGV2, string measureGV3, string intervalGV3, string startTime);
 
     /// <summary>ログ表示を更新する</summary>
     /// <param name="log">ログの内容</param>
@@ -301,7 +308,7 @@ namespace MLServer
         if (!lvItems.ContainsKey(ml))
         {
           ListViewItem lvm = new ListViewItem(new string[]
-          { ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing, "true", "60", "true", "60", "true", "600", "true", "60", "2000/01/01 00:00" });
+          { ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing, "true", "60", "true", "60", "true", "600", "true", "60", "2000/01/01 00:00", "true", "60", "true", "60", "true", "60" });
           lvItems.Add(ml, lvm);
           lv_setting.Items.Add(lvm);
         }
@@ -377,11 +384,16 @@ namespace MLServer
       string measureGlb, string intervalGlb,
       string measureVel, string intervalVel,
       string measureIlm, string intervalIlm,
+      string measureGV1, string intervalGV1,
+      string measureGV2, string intervalGV2,
+      string measureGV3, string intervalGV3,
       string startTime)
     {
       if (InvokeRequired)
       {
-        Invoke(new setListViewContentsDelegate(setListViewContents), item, name, state, measureTH, intervalTH, measureGlb, intervalGlb, measureVel, intervalVel, measureIlm, intervalIlm, startTime);
+        Invoke(new setListViewContentsDelegate(setListViewContents), 
+          item, name, state, measureTH, intervalTH, measureGlb, intervalGlb, measureVel, intervalVel, measureIlm, intervalIlm,
+          measureGV1, intervalGV1, measureGV2, intervalGV2, measureGV3, intervalGV3, startTime);
         return;
       }
       item.SubItems[1].Text = name;
@@ -395,6 +407,12 @@ namespace MLServer
       item.SubItems[9].Text = measureIlm;
       item.SubItems[10].Text = intervalIlm;
       item.SubItems[11].Text = startTime;
+      item.SubItems[12].Text = measureGV1;
+      item.SubItems[13].Text = intervalGV1;
+      item.SubItems[14].Text = measureGV2;
+      item.SubItems[15].Text = intervalGV2;
+      item.SubItems[16].Text = measureGV3;
+      item.SubItems[17].Text = intervalGV3;
     }
 
     #endregion
@@ -450,15 +468,15 @@ namespace MLServer
           using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
           {
             DateTime mlNow;
-            double tmp, hmd, glbV, glb, velV, vel, ill;
-            mLoggers[add].SolveDTT(command, out mlNow, out tmp, out hmd, out glbV, out glb, out velV, out vel, out ill);
+            double tmp, hmd, glbV, glb, velV, vel, ill, gpV1, gpV2, gpV3;
+            mLoggers[add].SolveDTT(command, out mlNow, out tmp, out hmd, out glbV, out glb, out velV, out vel, out ill, out gpV1, out gpV2, out gpV3);
             sWriter.WriteLine(
               DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在時刻
               mlNow.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の現在時刻
               tmp.ToString("F2") + "," + hmd.ToString("F2") + "," +
               glbV.ToString("F3") + "," + glb.ToString("F2") + "," +
               velV.ToString("F3") + "," + vel.ToString("F4") + "," +
-              ill.ToString("F2"));
+              ill.ToString("F2") + "," + gpV1.ToString("F3") + "," + gpV2.ToString("F3") + "," + gpV3.ToString("F3"));
           }
         }
         catch
@@ -488,6 +506,9 @@ namespace MLServer
             (buff[2] == "1") ? "true" : "false", buff[3],
             (buff[4] == "1") ? "true" : "false", buff[5],
             (buff[6] == "1") ? "true" : "false", buff[7],
+            (buff[9] == "1") ? "true" : "false", buff[10],
+            (buff[11] == "1") ? "true" : "false", buff[12],
+            (buff[13] == "1") ? "true" : "false", buff[14],
             MLogger.GetDateTimeFromUTime(long.Parse(buff[8])).ToString("yyyy/MM/dd HH:mm"));
         }
       }
@@ -917,6 +938,12 @@ namespace MLServer
       tbx_velInterval.Text = item.SubItems[8].Text;
       cbx_illMeasure.Checked = (item.SubItems[9].Text == "true");
       tbx_illInterval.Text = item.SubItems[10].Text;
+      cbx_gpv1Measure.Checked = (item.SubItems[12].Text == "true");
+      tbx_gpv1Interval.Text = item.SubItems[13].Text;
+      cbx_gpv2Measure.Checked = (item.SubItems[14].Text == "true");
+      tbx_gpv2Interval.Text = item.SubItems[15].Text;
+      cbx_gpv3Measure.Checked = (item.SubItems[16].Text == "true");
+      tbx_gpv3Interval.Text = item.SubItems[17].Text;
       dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, "yyyy/MM/dd HH:mm", null);
     }
 
@@ -948,7 +975,7 @@ namespace MLServer
       if (lv_setting.SelectedItems.Count == 0) return;
 
       //設定内容をチェック1
-      int itTH, itRD, itVL, itIL;
+      int itTH, itRD, itVL, itIL, itGV1, itGV2, itGV3;
       if (!int.TryParse(tbx_thInterval.Text, out itTH))
       {
         MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.DBTemp));
@@ -969,9 +996,25 @@ namespace MLServer
         MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.Illuminance));
         return;
       }
+      if (!int.TryParse(tbx_gpv1Interval.Text, out itGV1))
+      {
+        MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 1"));
+        return;
+      }
+      if (!int.TryParse(tbx_gpv2Interval.Text, out itGV2))
+      {
+        MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 2"));
+        return;
+      }
+      if (!int.TryParse(tbx_gpv3Interval.Text, out itGV3))
+      {
+        MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 3"));
+        return;
+      }
 
       //設定内容をチェック2
-      if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL)
+      if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 || itGV2 < 1 || itGV3 < 1
+        || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1 || 86400 < itGV2 || 86400 < itGV3)
       {
         MessageBox.Show(i18n.Resources.MF_Alrt_Interval);
         return;
@@ -983,7 +1026,10 @@ namespace MLServer
         + (cbx_glbMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itRD)
         + (cbx_velMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itVL)
         + (cbx_illMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itIL)
-        + MLogger.GetUnixTime(dtp_timer.Value).ToString("F0");
+        + String.Format("{0, 10}", MLogger.GetUnixTime(dtp_timer.Value).ToString("F0")) //UNIX時間を10桁（空白埋め）で送信
+        + (cbx_gpv1Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV1)
+        + (cbx_gpv2Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV2)
+        + (cbx_gpv3Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV3);
 
       //1件ずつコマンドを送信
       for (int i = 0; i < lv_setting.SelectedItems.Count; i++)
@@ -991,6 +1037,28 @@ namespace MLServer
         sndMsg(UP_ADD + lv_setting.SelectedItems[i].SubItems[0].Text,
           "\r" + sData + "\r"); //\rを送ってからコマンドを送ると安心
       }
+    }
+
+    /// <summary>計測真偽設定チェックボックス操作時の処理</summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void cbx_measure_CheckedChanged(object sender, EventArgs e)
+    {
+      CheckBox cbx = (CheckBox)sender;
+      if (cbx.Equals(cbx_thMeasure))
+        tbx_thInterval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_glbMeasure))
+        tbx_glbInterval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_velMeasure))
+        tbx_velInterval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_illMeasure))
+        tbx_illInterval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_gpv1Measure))
+        tbx_gpv1Interval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_gpv2Measure))
+        tbx_gpv2Interval.Enabled = cbx.Checked;
+      else if (cbx.Equals(cbx_gpv3Measure))
+        tbx_gpv3Interval.Enabled = cbx.Checked;
     }
 
     private void sndMsg(string longAddress, string msg)
@@ -1078,17 +1146,5 @@ namespace MLServer
 
     #endregion
 
-    private void cbx_measure_CheckedChanged(object sender, EventArgs e)
-    {
-      CheckBox cbx = (CheckBox)sender;
-      if (cbx.Equals(cbx_thMeasure))
-        tbx_thInterval.Enabled = cbx.Checked;
-      else if (cbx.Equals(cbx_glbMeasure))
-        tbx_glbInterval.Enabled = cbx.Checked;
-      else if (cbx.Equals(cbx_velMeasure))
-        tbx_velInterval.Enabled = cbx.Checked;
-      else if (cbx.Equals(cbx_illMeasure))
-        tbx_illInterval.Enabled = cbx.Checked;
-    }
   }
 }
