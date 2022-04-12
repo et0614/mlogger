@@ -766,9 +766,19 @@ static float readVoltage(unsigned int adNumber)
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	float adV = 3.3 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 	
-	return (float)adV * 3.3;
+	//電圧が小さい場合には基準電圧を1.024にする（計算速度は足りるか？）
+	if(adV < 1.0)
+	{
+		VREF.ADC0REF = VREF_REFSEL_1V024_gc; //基準電圧を1.024Vに設定
+		_delay_ms(5);
+		ADC0.COMMAND = ADC_STCONV_bm; //変換開始
+		while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
+		adV = 1.024 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	}
+	
+	return (float)adV;
 }
 
 static void sleep_anemo(void)
