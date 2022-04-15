@@ -21,6 +21,8 @@ void my_uart::Initialize(void)
 	//ポートの入出力設定
 	PORTA.DIRSET = PIN0_bm; //TX:書き出し
 	PORTA.DIRCLR = PIN1_bm; //RX:読み込み
+	//RXをPullUp
+	PORTA.OUTSET = PIN1_bm; //INT0：設定
 	
 	//ボーレートの設定
 	USART0.BAUD = (uint16_t)BAUD_CALC(9600);

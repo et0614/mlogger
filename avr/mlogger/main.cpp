@@ -185,8 +185,9 @@ int main(void)
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
 		
 		//set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ DEBUG
-									
+							
 		//スリープ
+		if(logging && !outputToBLE) sleep_xbee(); //XBee通信によるデータ送信中であればXBeeもスリープ
 		sleep_mode();
     }
 }
@@ -200,7 +201,7 @@ static void initialize_port(void)
 	PORTD.DIRSET = PIN6_bm; //LED出力
 	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
 	PORTA.DIRSET = PIN5_bm; //微風速計リレー
-	PORTA.DIRSET = PIN7_bm; //微風速計5V昇圧//最新版ではPIN4に変更。後で変えろ	
+	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧	
 	PORTA.DIRSET = PIN2_bm; //INT0:リセット用割り込み
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
@@ -211,7 +212,7 @@ static void initialize_port(void)
 	PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
 	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
 	
-	//プルアップ
+	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //INT0：設定
 	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：解除
 	PORTD.OUTCLR = PIN2_bm; //風速センサ：解除
@@ -231,57 +232,29 @@ static void initialize_timer( void )
 	TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV2_gc | TCA_SINGLE_ENABLE_bm;
 		
 	//外部クリスタルによる1secタイマ*******************
-	
-	//PORTF.DIRCLR = PIN0_bm; //XTAL1
-	//PORTF.DIRCLR = PIN1_bm; //XTAL1
-	
 	//**外部クリスタルの有効化処理**
-	/*uint8_t temp; 
-	temp = CLKCTRL.XOSC32KCTRLA; //発振器禁止
-	temp &= ~CLKCTRL_ENABLE_bm;
-	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp); //保護されたレジスタへの書き込み*/
+	//発振器禁止
 	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, ~CLKCTRL_ENABLE_bm);
 	while(CLKCTRL.MCLKSTATUS & CLKCTRL_XOSC32KS_bm); //XOSC32KSが0になるまで待機
 
-	/*temp = CLKCTRL.XOSC32KCTRLA; //XTAL1とXTAL2に接続された外部クリスタルを使用
-	temp &= ~CLKCTRL_SEL_bm;
-	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp);*/
+	//XTAL1とXTAL2に接続された外部クリスタルを使用
 	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, ~CLKCTRL_SEL_bm);
 	
-	/*temp = CLKCTRL.XOSC32KCTRLA; //発振器許可
-	temp |= CLKCTRL_ENABLE_bm;
-	ccp_write_io((uint8_t*) &CLKCTRL.XOSC32KCTRLA, temp);*/
+	//発振器許可
 	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, CLKCTRL_ENABLE_bm);
 
 	while (RTC.STATUS > 0); //全レジスタが同期されるまで待機
 	//**ここまで*******************
 
-	RTC.CLKSEL = RTC_CLKSEL_OSC32K_gc;  //32.768kHz内部クリスタル用発振器 (OSC32K）
-	//RTC.CLKSEL = RTC_CLKSEL_XOSC32K_gc; //32.768kHz外部クリスタル用発振器 (XOSC32K)
-	RTC.DBGCTRL |= RTC_DBGRUN_bm;        //デバッグで走行: 許可
-
-	RTC.PITINTCTRL = RTC_PI_bm;           //Periodic Interrupt Enabled
-	RTC.PITCTRLA = RTC_PERIOD_CYC32768_gc //RTC Clock Cycles 32768
-				| RTC_PITEN_bm;           //Periodic Interrupt Timer Enable
-	
-	/*RTC.PER = 32768 / 32 - 1;  //周期設定
-	//RTC.CTRLA = RTC_PRESCALER_DIV32768_gc //32.768kHzのため
-	RTC.CTRLA = RTC_PRESCALER_DIV32768_gc //32
-				| RTC_RTCEN_bm //RTC有効化
-				| RTC_RUNSTDBY_bm; //スタンバイモードでの継続許可
-	RTC.INTCTRL |= RTC_OVF_bm;*/
+	RTC.CLKSEL = RTC_CLKSEL_XOSC32K_gc;	  //32.768kHz外部クリスタル用発振器 (XOSC32K)を選択
+	RTC.DBGCTRL |= RTC_DBGRUN_bm;         //デバッグで走行を許可
+	RTC.PITINTCTRL = RTC_PI_bm;           //定期割込を有効にする
+	RTC.PITCTRLA = RTC_PERIOD_CYC32768_gc //RTC周期は32768
+				| RTC_PITEN_bm;           //定期割込用タイマを有効にする
 	
 	//POWER DOWN時にもタイマ割込を有効にする
 	SLPCTRL.CTRLA |= SLPCTRL_SMODE_PDOWN_gc; 
 	SLPCTRL.CTRLA |= SLPCTRL_SEN_bm;
-
-	//debug main clock statusの確認
-	if(CLKCTRL.MCLKSTATUS & CLKCTRL_XOSC32KS_bm)
-	//if(CLKCTRL.MCLKSTATUS & CLKCTRL_OSCHFS_bm)
-	{
-		volatile int x = 10;
-		volatile int y = x;
-	}
 }
 
 //UART受信時の割り込み処理
@@ -504,7 +477,6 @@ ISR(RTC_PIT_vect)
 {
 	//割り込み要求フラグ解除
 	RTC.PITINTFLAGS = RTC_PI_bm;
-	//RTC.INTFLAGS = RTC_OVF_bm;
 	
 	currentTime++; //1秒進める
 	
@@ -668,7 +640,7 @@ ISR(RTC_PIT_vect)
 
 		_delay_ms(10);
 		//Bluetooth通信でなければスリープに入る（XBeeの仕様上、Bluetoothモードのスリープは不可）
-		if(!outputToBLE) sleep_xbee();
+		//if(!outputToBLE) sleep_xbee();
 		if(outputToSDCard) blinkLED(1); //SDカード記録中は毎秒LED点滅
 	}
 	else
@@ -792,7 +764,7 @@ static void sleep_anemo(void)
 inline static void wakeup_anemo(void)
 {
 	PORTA.OUTSET = PIN5_bm; //リレー通電
-	PORTA.OUTSET = PIN7_bm; //5V昇圧開始//最新版ではPIN4に変更。後で変えろ
+	PORTA.OUTSET = PIN4_bm; //5V昇圧開始
 }
 
 inline static void sleep_xbee(void)

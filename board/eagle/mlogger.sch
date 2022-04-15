@@ -2998,6 +2998,67 @@ Codaca, SPD4D28</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="wirepad" urn="urn:adsk.eagle:library:412">
+<description>&lt;b&gt;Single Pads&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
+<packages>
+<package name="1,6/0,8" urn="urn:adsk.eagle:footprint:30809/1" library_version="2">
+<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
+<wire x1="-0.762" y1="0.762" x2="-0.508" y2="0.762" width="0.1524" layer="21"/>
+<wire x1="-0.762" y1="0.762" x2="-0.762" y2="0.508" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="0.762" x2="0.762" y2="0.508" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="0.762" x2="0.508" y2="0.762" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="-0.508" x2="0.762" y2="-0.762" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="-0.762" x2="0.508" y2="-0.762" width="0.1524" layer="21"/>
+<wire x1="-0.508" y1="-0.762" x2="-0.762" y2="-0.762" width="0.1524" layer="21"/>
+<wire x1="-0.762" y1="-0.762" x2="-0.762" y2="-0.508" width="0.1524" layer="21"/>
+<circle x="0" y="0" radius="0.635" width="0.1524" layer="51"/>
+<pad name="1" x="0" y="0" drill="0.8128" diameter="1.6002" shape="octagon"/>
+<text x="-0.762" y="1.016" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="0" y="0.6" size="0.0254" layer="27">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="1,6/0,8" urn="urn:adsk.eagle:package:30830/1" type="box" library_version="2">
+<description>THROUGH-HOLE PAD</description>
+<packageinstances>
+<packageinstance name="1,6/0,8"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="PAD" urn="urn:adsk.eagle:symbol:30808/1" library_version="2">
+<wire x1="-1.016" y1="1.016" x2="1.016" y2="-1.016" width="0.254" layer="94"/>
+<wire x1="-1.016" y1="-1.016" x2="1.016" y2="1.016" width="0.254" layer="94"/>
+<text x="-1.143" y="1.8542" size="1.778" layer="95">&gt;NAME</text>
+<text x="-1.143" y="-3.302" size="1.778" layer="96">&gt;VALUE</text>
+<pin name="P" x="2.54" y="0" visible="off" length="short" direction="pas" rot="R180"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="1,6/0,8" urn="urn:adsk.eagle:component:30848/2" prefix="PAD" uservalue="yes" library_version="2">
+<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
+<gates>
+<gate name="P" symbol="PAD" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="1,6/0,8">
+<connects>
+<connect gate="P" pin="P" pad="1"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:30830/1"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="POPULARITY" value="15" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -3081,6 +3142,11 @@ Codaca, SPD4D28</description>
 <part name="C7" library="MyParts" deviceset="MURATA_0603" device="" package3d_urn="urn:adsk.eagle:package:8004287/1"/>
 <part name="C8" library="MyParts" deviceset="MURATA_0603" device="" package3d_urn="urn:adsk.eagle:package:8004287/1"/>
 <part name="SUPPLY1" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
+<part name="PAD1" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
+<part name="PAD2" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
+<part name="PAD3" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
+<part name="PAD4" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
+<part name="PAD5" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -3259,8 +3325,8 @@ Codaca, SPD4D28</description>
 <instance part="SW2" gate="G$1" x="10.16" y="-20.32" smashed="yes">
 <attribute name="NAME" x="6.604" y="-23.622" size="1.778" layer="95" ratio="10"/>
 </instance>
-<instance part="SW1" gate="G$1" x="91.44" y="15.24" smashed="yes">
-<attribute name="NAME" x="82.804" y="15.24" size="1.778" layer="95"/>
+<instance part="SW1" gate="G$1" x="91.44" y="12.7" smashed="yes">
+<attribute name="NAME" x="82.804" y="12.7" size="1.778" layer="95"/>
 </instance>
 <instance part="R239" gate="G$1" x="-30.48" y="22.86" smashed="yes">
 <attribute name="NAME" x="-33.226" y="13.462" size="1.778" layer="95" ratio="10"/>
@@ -3304,6 +3370,26 @@ Codaca, SPD4D28</description>
 </instance>
 <instance part="SUPPLY1" gate="GND" x="-139.7" y="63.5" smashed="yes">
 <attribute name="VALUE" x="-138.557" y="64.135" size="1.27" layer="96"/>
+</instance>
+<instance part="PAD1" gate="P" x="-35.56" y="78.74" smashed="yes" rot="R180">
+<attribute name="NAME" x="-34.417" y="76.8858" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-34.417" y="82.042" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="PAD2" gate="P" x="-35.56" y="73.66" smashed="yes" rot="R180">
+<attribute name="NAME" x="-34.417" y="71.8058" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-34.417" y="76.962" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="PAD3" gate="P" x="-33.02" y="53.34" smashed="yes" rot="R180">
+<attribute name="NAME" x="-31.877" y="51.4858" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-31.877" y="56.642" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="PAD4" gate="P" x="-33.02" y="50.8" smashed="yes" rot="R180">
+<attribute name="NAME" x="-31.877" y="48.9458" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-31.877" y="54.102" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="PAD5" gate="P" x="-109.22" y="66.04" smashed="yes">
+<attribute name="NAME" x="-110.363" y="67.8942" size="1.778" layer="95"/>
+<attribute name="VALUE" x="-110.363" y="62.738" size="1.778" layer="96"/>
 </instance>
 </instances>
 <busses>
@@ -3647,10 +3733,10 @@ Codaca, SPD4D28</description>
 <pinref part="L1" gate="G$1" pin="P$2"/>
 <pinref part="L2" gate="G$1" pin="P$2"/>
 <pinref part="C3" gate="G$1" pin="2"/>
-<pinref part="SW1" gate="G$1" pin="P2"/>
-<wire x1="91.44" y1="22.86" x2="99.06" y2="22.86" width="0.1524" layer="91"/>
-<wire x1="99.06" y1="22.86" x2="99.06" y2="27.94" width="0.1524" layer="91"/>
 <junction x="99.06" y="27.94"/>
+<pinref part="SW1" gate="G$1" pin="P1"/>
+<wire x1="93.98" y1="12.7" x2="99.06" y2="12.7" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="12.7" x2="99.06" y2="27.94" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="P$2" class="2">
@@ -3874,14 +3960,6 @@ Codaca, SPD4D28</description>
 <wire x1="2.54" y1="50.8" x2="-25.4" y2="50.8" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="VBT" class="0">
-<segment>
-<pinref part="BB1" gate="G$1" pin="+"/>
-<pinref part="SW1" gate="G$1" pin="P1"/>
-<wire x1="81.28" y1="12.7" x2="93.98" y2="12.7" width="0.1524" layer="91"/>
-<wire x1="93.98" y1="12.7" x2="93.98" y2="15.24" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="SCL" class="0">
 <segment>
 <pinref part="PH1" gate="G$1" pin="SCL"/>
@@ -3965,30 +4043,44 @@ Codaca, SPD4D28</description>
 <segment>
 <pinref part="AM1" gate="A" pin="PF4"/>
 <wire x1="-101.6" y1="66.04" x2="-106.68" y2="66.04" width="0.1524" layer="91"/>
+<pinref part="PAD5" gate="P" pin="P"/>
 </segment>
 </net>
 <net name="N$8" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PD3"/>
 <wire x1="-40.64" y1="73.66" x2="-38.1" y2="73.66" width="0.1524" layer="91"/>
+<pinref part="PAD2" gate="P" pin="P"/>
 </segment>
 </net>
 <net name="N$11" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PD5"/>
 <wire x1="-40.64" y1="78.74" x2="-38.1" y2="78.74" width="0.1524" layer="91"/>
+<pinref part="PAD1" gate="P" pin="P"/>
 </segment>
 </net>
 <net name="N$12" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PA7"/>
 <wire x1="-40.64" y1="53.34" x2="-35.56" y2="53.34" width="0.1524" layer="91"/>
+<pinref part="PAD3" gate="P" pin="P"/>
 </segment>
 </net>
 <net name="N$13" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PA6"/>
 <wire x1="-40.64" y1="50.8" x2="-35.56" y2="50.8" width="0.1524" layer="91"/>
+<pinref part="PAD4" gate="P" pin="P"/>
+</segment>
+</net>
+<net name="N$14" class="0">
+<segment>
+<pinref part="BB1" gate="G$1" pin="+"/>
+<wire x1="81.28" y1="12.7" x2="83.82" y2="12.7" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="12.7" x2="83.82" y2="20.32" width="0.1524" layer="91"/>
+<pinref part="SW1" gate="G$1" pin="P2"/>
+<wire x1="83.82" y1="20.32" x2="91.44" y2="20.32" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
