@@ -66,9 +66,6 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-//AD変換の安定化のための繰り返し回数
-const uint8_t AD_ITER = 35;
-
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
 
@@ -183,11 +180,11 @@ int main(void)
 		//スリープモード設定		
 		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_DOWN); //ATmega328PではPWR_SAVE
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
+
+		//Bluetooth通信を除き、ロギング中はXBeeをスリープさせる（XBeeの仕様上、Bluetoothモードのスリープは不可）
+		if(logging && !outputToBLE) sleep_xbee();
 		
-		//set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ DEBUG
-							
-		//スリープ
-		if(logging && !outputToBLE) sleep_xbee(); //XBee通信によるデータ送信中であればXBeeもスリープ
+		//マイコンをスリープさせる
 		sleep_mode();
     }
 }
@@ -244,7 +241,7 @@ static void initialize_timer( void )
 	_PROTECTED_WRITE(CLKCTRL.XOSC32KCTRLA, CLKCTRL_ENABLE_bm);
 
 	while (RTC.STATUS > 0); //全レジスタが同期されるまで待機
-	//**ここまで*******************
+	//**有効化処理ここまで*********
 
 	RTC.CLKSEL = RTC_CLKSEL_XOSC32K_gc;	  //32.768kHz外部クリスタル用発振器 (XOSC32K)を選択
 	RTC.DBGCTRL |= RTC_DBGRUN_bm;         //デバッグで走行を許可
@@ -463,7 +460,6 @@ static void solve_command(void)
 }
 
 // Timer1割り込み//FatFs（SDカード入出力通信）用
-//ISR(TIMER1_COMPA_vect)
 ISR(TCA0_OVF_vect)
 {
 	disk_timerproc();	/* Drive timer procedure of low level disk I/O module */
@@ -472,7 +468,6 @@ ISR(TCA0_OVF_vect)
 }
 
 //ロギング用の1秒毎の処理
-//ISR(RTC_CNT_vect)
 ISR(RTC_PIT_vect)
 {
 	//割り込み要求フラグ解除
@@ -637,10 +632,8 @@ ISR(RTC_PIT_vect)
 		//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 		//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
 		//while(! my_uart::tx_done());
-
-		_delay_ms(10);
-		//Bluetooth通信でなければスリープに入る（XBeeの仕様上、Bluetoothモードのスリープは不可）
-		//if(!outputToBLE) sleep_xbee();
+		_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う
+		
 		if(outputToSDCard) blinkLED(1); //SDカード記録中は毎秒LED点滅
 	}
 	else
@@ -756,7 +749,7 @@ static float readVoltage(unsigned int adNumber)
 static void sleep_anemo(void)
 {
 	PORTA.OUTCLR = PIN5_bm; //リレー遮断
-	PORTA.OUTCLR = PIN7_bm; //5V昇圧停止//最新版ではPIN4に変更。後で変えろ
+	PORTA.OUTCLR = PIN4_bm; //5V昇圧停止
 }
 
 //以下はinline関数************************************
