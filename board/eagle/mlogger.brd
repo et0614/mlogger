@@ -1414,8 +1414,8 @@ design rules under a new name.</description>
 </element>
 <element name="D2" library="Seeed-Diode" package="SOD-123" value="20V-1A" x="18.9546" y="13.4" smashed="yes" rot="R90">
 <attribute name="MPN" value="B5819W" x="18.9546" y="13.4" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="NAME" x="19.5896" y="12.511" size="0.381" layer="33" ratio="10" rot="R90"/>
 <attribute name="NAME" x="19.6864" y="10.2246" size="0.8128" layer="25" ratio="11"/>
+<attribute name="NAME" x="19.5896" y="12.511" size="0.381" layer="33" ratio="10" rot="R90"/>
 <attribute name="VALUE" x="20.9866" y="11.495" size="0.889" layer="27" font="vector" ratio="11" rot="R90"/>
 </element>
 <element name="HT2" library="MyParts" package="HT77XXSOT25" value="HT77XXSOT25" x="24.2442" y="11.6524" smashed="yes" rot="R90">
