@@ -4014,7 +4014,7 @@ Codaca, SPD4D28</description>
 <junction x="-127" y="73.66"/>
 </segment>
 </net>
-<net name="N$7" class="0">
+<net name="UPDI" class="0">
 <segment>
 <pinref part="PN1" gate="G$1" pin="P$2"/>
 <pinref part="AM1" gate="A" pin="UPDI"/>
@@ -4039,21 +4039,21 @@ Codaca, SPD4D28</description>
 <wire x1="78.74" y1="-15.24" x2="69.85" y2="-15.24" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$9" class="0">
+<net name="GADC1" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PF4"/>
 <wire x1="-101.6" y1="66.04" x2="-106.68" y2="66.04" width="0.1524" layer="91"/>
 <pinref part="PAD5" gate="P" pin="P"/>
 </segment>
 </net>
-<net name="N$8" class="0">
+<net name="GADC3" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PD3"/>
 <wire x1="-40.64" y1="73.66" x2="-38.1" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="PAD2" gate="P" pin="P"/>
 </segment>
 </net>
-<net name="N$11" class="0">
+<net name="GADC2" class="0">
 <segment>
 <pinref part="AM1" gate="A" pin="PD5"/>
 <wire x1="-40.64" y1="78.74" x2="-38.1" y2="78.74" width="0.1524" layer="91"/>
