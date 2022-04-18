@@ -14,7 +14,15 @@ class my_xbee
 
 	//コマンドの最大文字数
 	static const int MAX_CMD_CHAR = 150;
-	
+
+	/**
+	 * @fn
+	 * XBee通信のための初期化処理
+	 * @param 無し
+	 * @return 無し
+	 */
+	static void Initialize(void);
+		
 	/**
 	 * @fn
 	 * Frameに文字列を入れてXbee（Zigbee通信）で送信する

@@ -13,6 +13,12 @@
 class my_uart
 {
 	public:
+		/**
+		* @fn
+		* UART’ÊM‚Ì‚½‚ß‚Ì‰Šú‰»ˆ—
+		* @param –³‚µ
+		* @return –³‚µ
+		*/
 		static void Initialize(void);
 				
 		/**

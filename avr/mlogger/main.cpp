@@ -7,6 +7,7 @@
  * version履歴
  * 3.0.0	AVRxxDB32シリーズ用
  * 3.0.1	Reset処理を3秒長押しで有効に。短時間押し込みは電池確認のための点灯に変更。
+ * 3.0.2	ADCバグ修正
  */
 
 /**XBee端末の設定****************************************
@@ -54,11 +55,9 @@ extern "C"{
 #include <time.h>
 
 #include "main.h"
-#include "mlerr.h" //エラーコード
-#include "my_eeprom.h" //EEPROM処理
-#include "my_uart.h" //UART通信
-#include "my_i2c.h"  //I2C通信
-#include "my_xbee.h" //XBee通信
+#include "my_eeprom.h"	//EEPROM処理
+#include "my_i2c.h"		//I2C通信
+#include "my_xbee.h"	//XBee通信
 
 //FatFs関連
 #include "ff/ff.h"
@@ -145,8 +144,8 @@ int main(void)
 		
 	//通信を初期化
 	my_i2c::InitializeI2C(); //I2C
-	//my_i2c::InitializeOPT(OPT_ADDRESS);  //OPTxxxx
-	my_uart::Initialize();  //XBee（UART）
+	//my_i2c::InitializeOPT(OPT_ADDRESS);  //照度センサとしてOPTxxxxを使う場合
+	my_xbee::Initialize();  //XBee（UART）
 	
 	//タイマ初期化
 	initialize_timer();
@@ -210,12 +209,12 @@ static void initialize_port(void)
 	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
 	
 	//プルアップ/ダウン
-	PORTA.OUTSET = PIN2_bm; //INT0：設定
-	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：解除
-	PORTD.OUTCLR = PIN2_bm; //風速センサ：解除
-	PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：解除
-	PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：解除
-	PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：解除
+	PORTA.OUTSET = PIN2_bm; //INT0：アップ
+	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：ダウン
+	PORTD.OUTCLR = PIN2_bm; //風速センサ：ダウン
+	PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：ダウン
+	PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：ダウン
+	PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：ダウン
 }
 
 //タイマ初期化
@@ -331,7 +330,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.1\r");
+		my_xbee::bltx_chars("VER:3.0.2\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -585,7 +584,7 @@ ISR(RTC_PIT_vect)
 		pass_ad2++;
 		if(my_eeprom::measure_AD2 && my_eeprom::interval_AD2 <= pass_ad2)
 		{
-			float adV = readVoltage(1); //AD変換
+			float adV = readVoltage(2); //AD変換
 			dtostrf(adV,6,4,adV2S);
 			pass_ad2 = 0;
 			hasNewData = true;
@@ -595,7 +594,7 @@ ISR(RTC_PIT_vect)
 		pass_ad3++;
 		if(my_eeprom::measure_AD3 && my_eeprom::interval_AD3 <= pass_ad3)
 		{
-			float adV = readVoltage(1); //AD変換
+			float adV = readVoltage(3); //AD変換
 			dtostrf(adV,6,4,adV3S);
 			pass_ad3 = 0;
 			hasNewData = true;

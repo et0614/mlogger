@@ -8,6 +8,11 @@
 #include "my_xbee.h"
 #include "my_uart.h"
 
+void my_xbee::Initialize(void)
+{
+	my_uart::Initialize();	
+}
+
 //コーディネータに対して文字配列を送信
 void my_xbee::tx_chars(const char data[])
 {
