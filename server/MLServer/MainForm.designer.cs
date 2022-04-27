@@ -522,7 +522,7 @@
       this.tbx_gpv3Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.tbx_gpv3Interval.Name = "tbx_gpv3Interval";
       this.tbx_gpv3Interval.Size = new System.Drawing.Size(80, 39);
-      this.tbx_gpv3Interval.TabIndex = 3;
+      this.tbx_gpv3Interval.TabIndex = 6;
       this.tbx_gpv3Interval.Text = "60";
       this.tbx_gpv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
@@ -545,7 +545,7 @@
       this.tbx_gpv2Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.tbx_gpv2Interval.Name = "tbx_gpv2Interval";
       this.tbx_gpv2Interval.Size = new System.Drawing.Size(80, 39);
-      this.tbx_gpv2Interval.TabIndex = 3;
+      this.tbx_gpv2Interval.TabIndex = 5;
       this.tbx_gpv2Interval.Text = "60";
       this.tbx_gpv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
@@ -565,7 +565,7 @@
       this.tbx_gpv1Interval.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.tbx_gpv1Interval.Name = "tbx_gpv1Interval";
       this.tbx_gpv1Interval.Size = new System.Drawing.Size(80, 39);
-      this.tbx_gpv1Interval.TabIndex = 3;
+      this.tbx_gpv1Interval.TabIndex = 4;
       this.tbx_gpv1Interval.Text = "60";
       this.tbx_gpv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 

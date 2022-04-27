@@ -1,0 +1,16 @@
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.exe
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.deps.json
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.runtimeconfig.json
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.runtimeconfig.dev.json
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.dll
+C:\Users\etoga\Desktop\server\DataIntegrator\bin\Release\net5.0\DataIntegrator.pdb
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.csproj.AssemblyReference.cache
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.AssemblyInfoInputs.cache
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.AssemblyInfo.cs
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.csproj.CoreCompileInputs.cache
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.dll
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\refint\DataIntegrator.dll
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.pdb
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\DataIntegrator.genruntimeconfig.cache
+C:\Users\etoga\Desktop\server\DataIntegrator\obj\Release\net5.0\ref\DataIntegrator.dll

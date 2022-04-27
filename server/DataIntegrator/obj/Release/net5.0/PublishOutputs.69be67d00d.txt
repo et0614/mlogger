@@ -1,0 +1,5 @@
+C:\Users\etoga\Desktop\server\publish\DataIntegrator.exe
+C:\Users\etoga\Desktop\server\publish\DataIntegrator.dll
+C:\Users\etoga\Desktop\server\publish\DataIntegrator.deps.json
+C:\Users\etoga\Desktop\server\publish\DataIntegrator.runtimeconfig.json
+C:\Users\etoga\Desktop\server\publish\DataIntegrator.pdb

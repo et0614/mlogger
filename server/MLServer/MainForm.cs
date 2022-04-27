@@ -200,22 +200,34 @@ namespace MLServer
           if (hasNewLog)
           {
             hasNewLog = false;
-            refreshLog();
+            try
+            {
+              refreshLog();
+            }
+            catch (Exception ex)
+            {
+              appendErrorLog(ex.Message);
+              appendErrorLog(logString.ToString());
+            }
           }
           Thread.Sleep(LOG_REFRESH_SPAN);
         }
       });
 
       //子機のアドレスを読み込む
-      using (StreamReader sReader = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + "resume.txt"))
+      string rsPath = AppDomain.CurrentDomain.BaseDirectory + "resume.txt";
+      if (File.Exists(rsPath))
       {
-        string buff;
-        while ((buff = sReader.ReadLine()) != null)
+        using (StreamReader sReader = new StreamReader(rsPath))
         {
-          MLogger ml = new MLogger(buff);
-          if (cFactors.ContainsKey(ml.LowAddress))
-            ml.InitCFactors(cFactors[ml.LowAddress]);
-          mLoggers.Add(ml.LongAddress, ml);
+          string buff;
+          while ((buff = sReader.ReadLine()) != null)
+          {
+            MLogger ml = new MLogger(buff);
+            if (cFactors.ContainsKey(ml.LowAddress))
+              ml.InitCFactors(cFactors[ml.LowAddress]);
+            mLoggers.Add(ml.LongAddress, ml);
+          }
         }
       }
 
@@ -435,6 +447,16 @@ namespace MLServer
       }
     }
 
+    /// <summary>エラーログを保存</summary>
+    /// <param name="log"></param>
+    private void appendErrorLog(string log)
+    {
+      using (StreamWriter sWriter = new StreamWriter("errLog.txt", true))
+      {
+        sWriter.WriteLine(log);
+      }
+    }
+
     /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>
     /// <param name="address">子機のLongAddress</param>
     /// <returns>通信用XBee端末</returns>
@@ -622,7 +644,7 @@ namespace MLServer
         }
         catch (Exception exc)
         {
-          appendLog(mlg.LowAddress + " : " + exc.Message);
+          appendErrorLog(mlg.LowAddress + " : " + exc.Message);
           mlg.ClearCommand(); //異常終了時はコマンドを全消去する
         }
         comNum++;
