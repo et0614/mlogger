@@ -11,8 +11,8 @@ namespace DataIntegrator
   {
     static void Main(string[] args)
     {
-      //DEBUG
-      //args = new string[] { "600" };
+      //DEBUG:3/4 21:59
+      args = new string[] { "60" };
 
       //引数確認
       int tStep;
@@ -80,9 +80,10 @@ namespace DataIntegrator
             string[] buff = line.Split(',');
             DateTime lastDT = dt;
             dt = DateTime.ParseExact(buff[0], "yyyy/MM/dd HH:mm:ss", null);
-            //データが遡るエラー
+            //データが遡るエラーを回避
             if (lastDT < dt)
             {
+              //データが現在日時を超えていない場合、または次のタイムステップを超えている場合にはデータなし（NA）として行を進ませる
               while (dt < now)
               {
                 writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
@@ -95,16 +96,8 @@ namespace DataIntegrator
                 rowNum++;
               }
 
-              if (now <= dt && dt < now.AddSeconds(tStep))
-              {
-                double bf;
-                if (buff[1] != "NaN" && double.TryParse(buff[1], out bf)) dbt = bf;
-                if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) hmd = bf;
-                if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) glb = bf;
-                if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) vel = bf;
-                if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) ill = bf;
-              }
-              else if (now.AddSeconds(tStep) <= dt)
+              //データが次のタイムステップを超えた場合、一時保存データがあれば書き出す。なければデータなし（NA）として行を進ませる
+              while (now.AddSeconds(tStep) <= dt)
               {
                 if (double.IsNaN(dbt)) writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
                 else writeCellValue(dbtSht, i + 1, rowNum, dbt);
@@ -121,19 +114,23 @@ namespace DataIntegrator
                 if (double.IsNaN(ill)) writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
                 else writeCellValue(illSht, i + 1, rowNum, ill);
 
-                double bf;
                 dbt = hmd = glb = vel = ill = double.NaN;
-                if (double.TryParse(buff[1], out bf)) dbt = bf;
-                if (double.TryParse(buff[2], out bf)) hmd = bf;
-                if (double.TryParse(buff[4], out bf)) glb = bf;
-                if (double.TryParse(buff[6], out bf)) vel = bf;
-                if (double.TryParse(buff[7], out bf)) ill = bf;
-
                 now = now.AddSeconds(tStep);
                 rowNum++;
               }
+
+              //データが現在日時から次のタイムステップまでの間にある場合は書き出し候補とする
+              //ただし、計測間隔が短い場合には、別のデータも該当する可能性があるため、行は進めない
+              if (now <= dt && dt < now.AddSeconds(tStep))
+              {
+                double bf;
+                if (buff[1] != "NaN" && double.TryParse(buff[1], out bf)) dbt = bf;
+                if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) hmd = bf;
+                if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) glb = bf;
+                if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) vel = bf;
+                if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) ill = bf;
+              }
             }
-            
           }
         }
         if(endDT < now) endDT = now;
