@@ -11,8 +11,8 @@ namespace DataIntegrator
   {
     static void Main(string[] args)
     {
-      //DEBUG:3/4 21:59
-      args = new string[] { "60" };
+      //DEBUG
+      //args = new string[] { "600" };
 
       //引数確認
       int tStep;
@@ -40,7 +40,17 @@ namespace DataIntegrator
         using (StreamReader sr = new StreamReader(file))
         {
           DateTime dt = DateTime.ParseExact(sr.ReadLine().Split(',')[0], "yyyy/MM/dd HH:mm:ss", null);
-          if (dt < startDT) startDT = dt;
+          if (dt < startDT)
+          {
+            startDT = dt;
+            if (startDT < new DateTime(2020, 1, 1, 0, 0, 0))
+            {
+              Console.WriteLine("Alert: Data of the \"" + file + "\" start at " + startDT.ToString("yyyy/MM/dd HH:mm:ss"));
+              Console.WriteLine("Continue the calculation ? (yes / no)");
+              string arg = Console.ReadLine();
+              if (arg != "yes" || arg != "y") return;
+            }
+          }
         }
       }
       //秒を切り捨て
