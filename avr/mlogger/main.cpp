@@ -386,6 +386,13 @@ static void solve_command(void)
 			my_eeprom::measure_AD2 = (command[43] == 't');
 			my_eeprom::measure_AD3 = (command[49] == 't');
 		}
+		//バージョンが低い場合の処理
+		else
+		{
+			my_eeprom::measure_AD1 = false;
+			my_eeprom::measure_AD2 = false;
+			my_eeprom::measure_AD3 = false;
+		}
 		
 		//測定時間間隔
 		char num[6];
@@ -406,6 +413,13 @@ static void solve_command(void)
 			my_eeprom::interval_AD2 = atoi(num);
 			strncpy(num, command + 50, 5);
 			my_eeprom::interval_AD3 = atoi(num);
+		}
+		//バージョンが低い場合の処理
+		else
+		{
+			my_eeprom::interval_AD1 = 60;
+			my_eeprom::interval_AD2 = 60;
+			my_eeprom::interval_AD3 = 60;
 		}
 		
 		//計測開始時刻
