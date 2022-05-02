@@ -3287,6 +3287,7 @@ Codaca, SPD4D28</description>
 <part name="SUPPLY6" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 <part name="SUPPLY10" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="VDD" device=""/>
 <part name="C9" library="MyParts" deviceset="MURATA_0603" device="" package3d_urn="urn:adsk.eagle:package:8004287/1"/>
+<part name="SUPPLY15" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -3544,6 +3545,9 @@ Codaca, SPD4D28</description>
 <attribute name="NAME" x="-118.11" y="105.41" size="1.778" layer="95" ratio="10"/>
 <attribute name="VALUE" x="-118.11" y="101.6" size="1.27" layer="96" ratio="10"/>
 </instance>
+<instance part="SUPPLY15" gate="GND" x="-104.14" y="101.6" smashed="yes">
+<attribute name="VALUE" x="-102.997" y="102.235" size="1.27" layer="96"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -3695,6 +3699,11 @@ Codaca, SPD4D28</description>
 <wire x1="-139.7" y1="93.98" x2="-139.7" y2="86.36" width="0.1524" layer="91"/>
 <pinref part="RG1" gate="A" pin="2"/>
 <wire x1="-134.5946" y1="93.98" x2="-139.7" y2="93.98" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="C9" gate="G$1" pin="2"/>
+<pinref part="SUPPLY15" gate="GND" pin="GND"/>
+<wire x1="-110.49" y1="104.14" x2="-104.14" y2="104.14" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="VDD" class="2">
@@ -4249,31 +4258,20 @@ Codaca, SPD4D28</description>
 </net>
 <net name="N$7" class="0">
 <segment>
-<pinref part="L3" gate="A" pin="2"/>
-<pinref part="C9" gate="G$1" pin="2"/>
-<wire x1="-110.49" y1="104.14" x2="-109.22" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="-109.22" y1="104.14" x2="-109.22" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="-109.22" y1="101.6" x2="-119.38" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="-119.38" y1="101.6" x2="-119.38" y2="96.52" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$9" class="0">
-<segment>
 <pinref part="C9" gate="G$1" pin="1"/>
 <pinref part="RG1" gate="A" pin="5"/>
 <wire x1="-124.4346" y1="96.52" x2="-121.92" y2="96.52" width="0.1524" layer="91"/>
 <wire x1="-121.92" y1="96.52" x2="-121.92" y2="104.14" width="0.1524" layer="91"/>
 <wire x1="-121.92" y1="104.14" x2="-118.11" y2="104.14" width="0.1524" layer="91"/>
+<pinref part="L3" gate="A" pin="2"/>
+<wire x1="-121.92" y1="96.52" x2="-119.38" y2="96.52" width="0.1524" layer="91"/>
+<junction x="-121.92" y="96.52"/>
 </segment>
 </net>
 </nets>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,1,-40.64,66.04,U1,VDDIO2,VDD,,,"/>
-<approved hash="104,1,-101.6,81.28,U1,AVDD,VDD,,,"/>
-<approved hash="113,1,91.44,28.5496,C3,,,,,"/>
-<approved hash="113,1,78.74,28.5496,C2,,,,,"/>
 <approved hash="113,1,73.66,74.2696,C1,,,,,"/>
 <approved hash="113,1,24.7904,-5.08,C4,,,,,"/>
 <approved hash="113,1,38.1,46.3296,C5,,,,,"/>
@@ -4283,7 +4281,6 @@ Codaca, SPD4D28</description>
 <approved hash="113,1,57.8104,5.08,R6,,,,,"/>
 <approved hash="113,1,27.94,27.3304,R7,,,,,"/>
 <approved hash="113,1,17.78,27.3304,R8,,,,,"/>
-<approved hash="113,1,-33.02,88.2904,R1,,,,,"/>
 </errors>
 </schematic>
 </drawing>
