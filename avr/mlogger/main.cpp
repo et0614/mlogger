@@ -8,6 +8,7 @@
  * 3.0.0	AVRxxDB32シリーズ用
  * 3.0.1	Reset処理を3秒長押しで有効に。短時間押し込みは電池確認のための点灯に変更。
  * 3.0.2	ADCバグ修正
+ * 3.0.3	ADC基準電圧を2.0Vに変更
  */
 
 /**XBee端末の設定****************************************
@@ -72,7 +73,7 @@ const uint8_t V_WAKEUP_TIME = 20;
 const char OPT_ADDRESS = 0x88; //OPT3001は0x88, OPT3007は0x8A, を使用。
 
 //グローブ温度計測用モジュールのタイプ
-const bool IS_MCP9700 = true;
+const bool IS_MCP9700 = false; //MCP9701ならばfalse
 
 //AM2320かAHT20か
 const bool IS_AM2320 = false;
@@ -207,14 +208,19 @@ static void initialize_port(void)
 	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
 	PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
 	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
+	PORTA.DIRCLR = PIN6_bm; //汎用IO1
+	PORTA.DIRCLR = PIN7_bm; //汎用IO2
 	
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //INT0：アップ
-	PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：ダウン
-	PORTD.OUTCLR = PIN2_bm; //風速センサ：ダウン
-	PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：ダウン
-	PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：ダウン
-	PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：ダウン
+	PORTA.OUTCLR = PIN6_bm; //汎用IO1：ダウン
+	PORTA.OUTCLR = PIN7_bm; //汎用IO2：ダウン
+	
+	//PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：ダウン 2022.04.19 Pullup/downはADCではそもそも無効。
+	//PORTD.OUTCLR = PIN2_bm; //風速センサ：ダウン
+	//PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：ダウン
+	//PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：ダウン
+	//PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：ダウン
 }
 
 //タイマ初期化
@@ -330,7 +336,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.2\r");
+		my_xbee::bltx_chars("VER:3.0.3\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -708,20 +714,20 @@ static float readGlbVoltage(void)
 static float readVelVoltage(void)
 {
 	//AI2を計測
-	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(3.3V)に設定
+	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 	ADC0.MUXPOS = ADC_MUXPOS_AIN2_gc;
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
 	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 	
-	return (float)adV * 3.3;
+	return (float)adV * 2.0;
 }
 
 //AD1~3の電圧を読み取る
 static float readVoltage(unsigned int adNumber)
 {
-	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(3.3V)に設定
+	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 
 	if(adNumber == 1) ADC0.MUXPOS = ADC_MUXPOS_AIN20_gc; //AD1
 	else if(adNumber == 2) ADC0.MUXPOS = ADC_MUXPOS_AIN5_gc; //AD2
@@ -730,7 +736,7 @@ static float readVoltage(unsigned int adNumber)
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	float adV = 3.3 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	float adV = 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 	
 	//電圧が小さい場合には基準電圧を1.024にする（計算速度は足りるか？）
 	if(adV < 1.0)
