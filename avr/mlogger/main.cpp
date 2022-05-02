@@ -139,6 +139,7 @@ int main(void)
 	ADC0.CTRLA |= (ADC_ENABLE_bm | ADC_RESSEL_10BIT_gc); //ADC有効化, 10bit分解
 	ADC0.CTRLB |= ADC_SAMPNUM_ACC64_gc; //64回平均化, 16, 32, 64から設定できる
 	ADC0.CTRLC |= ADC_PRESC_DIV128_gc; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
+	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 	
 	//スイッチ割り込み設定
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
@@ -199,7 +200,7 @@ static void initialize_port(void)
 	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
 	PORTA.DIRSET = PIN5_bm; //微風速計リレー
 	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧	
-	PORTA.DIRSET = PIN2_bm; //INT0:リセット用割り込み
+	PORTA.DIRSET = PIN2_bm; //PORTA PIN2:リセット用割り込み
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
@@ -212,7 +213,7 @@ static void initialize_port(void)
 	PORTA.DIRCLR = PIN7_bm; //汎用IO2
 	
 	//プルアップ/ダウン
-	PORTA.OUTSET = PIN2_bm; //INT0：アップ
+	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
 	PORTA.OUTCLR = PIN6_bm; //汎用IO1：ダウン
 	PORTA.OUTCLR = PIN7_bm; //汎用IO2：ダウン
 	
@@ -699,7 +700,7 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	free(fl);
 }
 
-//INT0割り込み
+//PORTA PIN2割り込み
 ISR(PORTA_PORT_vect)
 {
 	// 割り込みフラグ解除
@@ -714,35 +715,27 @@ ISR(PORTA_PORT_vect)
 static float readGlbVoltage(void)
 {
 	//AI4を計測
-	VREF.ADC0REF = VREF_REFSEL_1V024_gc; //基準電圧を1.024Vに設定
 	ADC0.MUXPOS = ADC_MUXPOS_AIN4_gc;
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
-	
-	return (float)adV * 1.024;
+	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 }
 
 //微風速の電圧を読み取る
 static float readVelVoltage(void)
 {
 	//AI2を計測
-	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 	ADC0.MUXPOS = ADC_MUXPOS_AIN2_gc;
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	float adV = (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
-	
-	return (float)adV * 2.0;
+	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 }
 
 //AD1~3の電圧を読み取る
 static float readVoltage(unsigned int adNumber)
 {
-	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
-
 	if(adNumber == 1) ADC0.MUXPOS = ADC_MUXPOS_AIN20_gc; //AD1
 	else if(adNumber == 2) ADC0.MUXPOS = ADC_MUXPOS_AIN5_gc; //AD2
 	else ADC0.MUXPOS = ADC_MUXPOS_AIN3_gc; //AD3
@@ -750,19 +743,7 @@ static float readVoltage(unsigned int adNumber)
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	float adV = 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
-	
-	//電圧が小さい場合には基準電圧を1.024にする（計算速度は足りるか？）
-	if(adV < 1.0)
-	{
-		VREF.ADC0REF = VREF_REFSEL_1V024_gc; //基準電圧を1.024Vに設定
-		_delay_ms(5);
-		ADC0.COMMAND = ADC_STCONV_bm; //変換開始
-		while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-		adV = 1.024 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
-	}
-	
-	return (float)adV;
+	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 }
 
 static void sleep_anemo(void)
