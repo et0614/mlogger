@@ -107,9 +107,6 @@ volatile static unsigned int pass_ad1 = 0;
 volatile static unsigned int pass_ad2 = 0;
 volatile static unsigned int pass_ad3 = 0;
 
-//距離を計測するか否か（否の場合には照度を計測）
-volatile static bool measureDist = false;
-
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
 
@@ -426,6 +423,11 @@ static void solve_command(void)
 			my_eeprom::interval_AD3 = 60;
 		}
 		
+		//近接センサの有効無効
+		if(37 < strlen(command)) my_eeprom::measure_Prox = (command[55] == 't');
+		//バージョンが低い場合の処理
+		else my_eeprom::measure_Prox = false;
+		
 		//計測開始時刻
 		char num2[11];
 		num2[10] = '\0';
@@ -433,7 +435,7 @@ static void solve_command(void)
 		startTime = atol(num2);
 		
 		//ACK
-		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u\r",
+		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d\r",
 			my_eeprom::measure_th, my_eeprom::interval_th, 
 			my_eeprom::measure_glb, my_eeprom::interval_glb, 
 			my_eeprom::measure_vel, my_eeprom::interval_vel, 
@@ -441,13 +443,14 @@ static void solve_command(void)
 			startTime,
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1, 
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2, 
-			my_eeprom::measure_AD3, my_eeprom::interval_AD3);
+			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
+			my_eeprom::measure_Prox);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//Load Measurement Settings
 	else if(strncmp(command, "LMS", 3) == 0)
 	{
-		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u\r",
+		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d\r",
 			my_eeprom::measure_th, my_eeprom::interval_th,
 			my_eeprom::measure_glb, my_eeprom::interval_glb,
 			my_eeprom::measure_vel, my_eeprom::interval_vel,
@@ -455,7 +458,8 @@ static void solve_command(void)
 			startTime,
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1,
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2,
-			my_eeprom::measure_AD3, my_eeprom::interval_AD3);
+			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
+			my_eeprom::measure_Prox);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//End Logging
@@ -588,7 +592,7 @@ ISR(RTC_PIT_vect)
 		if(my_eeprom::measure_ill && my_eeprom::interval_ill <= pass_ill)
 		{
 			
-			if(measureDist) 
+			if(my_eeprom::measure_Prox) 
 			{
 				float ill_d = my_i2c::ReadVCNL4030_PS();
 				dtostrf(ill_d,8,2,illS);

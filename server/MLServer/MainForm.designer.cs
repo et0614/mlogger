@@ -55,10 +55,11 @@
       this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
       this.tbx_log = new System.Windows.Forms.TextBox();
       this.pnl_settingEdit = new System.Windows.Forms.Panel();
+      this.rbtn_ill = new System.Windows.Forms.RadioButton();
+      this.rbtn_prox = new System.Windows.Forms.RadioButton();
       this.lbl_gpv3 = new System.Windows.Forms.Label();
       this.lbl_gpv2 = new System.Windows.Forms.Label();
       this.lbl_gpv1 = new System.Windows.Forms.Label();
-      this.lbl_ill = new System.Windows.Forms.Label();
       this.lbl_vel = new System.Windows.Forms.Label();
       this.label9 = new System.Windows.Forms.Label();
       this.lbl_glb = new System.Windows.Forms.Label();
@@ -89,6 +90,7 @@
       this.tbx_thInterval = new System.Windows.Forms.TextBox();
       this.cbx_velMeasure = new System.Windows.Forms.CheckBox();
       this.tbx_velInterval = new System.Windows.Forms.TextBox();
+      this.lvhd_prxMeasure = new System.Windows.Forms.ColumnHeader();
       this.toolStrip.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
@@ -186,7 +188,8 @@
             this.lvhd_gv2Measure,
             this.lvhd_gv2Interval,
             this.lvhd_gv3Measure,
-            this.lvhd_gv3Interval});
+            this.lvhd_gv3Interval,
+            this.lvhd_prxMeasure});
       this.lv_setting.Dock = System.Windows.Forms.DockStyle.Fill;
       this.lv_setting.FullRowSelect = true;
       this.lv_setting.HideSelection = false;
@@ -334,10 +337,11 @@
       // 
       // pnl_settingEdit
       // 
+      this.pnl_settingEdit.Controls.Add(this.rbtn_ill);
+      this.pnl_settingEdit.Controls.Add(this.rbtn_prox);
       this.pnl_settingEdit.Controls.Add(this.lbl_gpv3);
       this.pnl_settingEdit.Controls.Add(this.lbl_gpv2);
       this.pnl_settingEdit.Controls.Add(this.lbl_gpv1);
-      this.pnl_settingEdit.Controls.Add(this.lbl_ill);
       this.pnl_settingEdit.Controls.Add(this.lbl_vel);
       this.pnl_settingEdit.Controls.Add(this.label9);
       this.pnl_settingEdit.Controls.Add(this.lbl_glb);
@@ -376,6 +380,30 @@
       this.pnl_settingEdit.Size = new System.Drawing.Size(508, 1221);
       this.pnl_settingEdit.TabIndex = 2;
       // 
+      // rbtn_ill
+      // 
+      this.rbtn_ill.AutoSize = true;
+      this.rbtn_ill.Checked = true;
+      this.rbtn_ill.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+      this.rbtn_ill.Location = new System.Drawing.Point(20, 350);
+      this.rbtn_ill.Name = "rbtn_ill";
+      this.rbtn_ill.Size = new System.Drawing.Size(170, 36);
+      this.rbtn_ill.TabIndex = 15;
+      this.rbtn_ill.TabStop = true;
+      this.rbtn_ill.Text = "Illuminance";
+      this.rbtn_ill.UseVisualStyleBackColor = true;
+      // 
+      // rbtn_prox
+      // 
+      this.rbtn_prox.AutoSize = true;
+      this.rbtn_prox.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+      this.rbtn_prox.Location = new System.Drawing.Point(200, 350);
+      this.rbtn_prox.Name = "rbtn_prox";
+      this.rbtn_prox.Size = new System.Drawing.Size(148, 36);
+      this.rbtn_prox.TabIndex = 14;
+      this.rbtn_prox.Text = "Proximity";
+      this.rbtn_prox.UseVisualStyleBackColor = true;
+      // 
       // lbl_gpv3
       // 
       this.lbl_gpv3.AutoSize = true;
@@ -405,16 +433,6 @@
       this.lbl_gpv1.Size = new System.Drawing.Size(299, 32);
       this.lbl_gpv1.TabIndex = 13;
       this.lbl_gpv1.Text = "General purpose voltage 1";
-      // 
-      // lbl_ill
-      // 
-      this.lbl_ill.AutoSize = true;
-      this.lbl_ill.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-      this.lbl_ill.Location = new System.Drawing.Point(20, 350);
-      this.lbl_ill.Name = "lbl_ill";
-      this.lbl_ill.Size = new System.Drawing.Size(139, 32);
-      this.lbl_ill.TabIndex = 13;
-      this.lbl_ill.Text = "Illuminance";
       // 
       // lbl_vel
       // 
@@ -756,6 +774,12 @@
       this.tbx_velInterval.Text = "60";
       this.tbx_velInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
+      // lvhd_prxMeasure
+      // 
+      this.lvhd_prxMeasure.Text = "近接";
+      this.lvhd_prxMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_prxMeasure.Width = 80;
+      // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
@@ -822,7 +846,6 @@
     private System.Windows.Forms.ColumnHeader lvhd_xbeeName;
     private System.Windows.Forms.Button btn_setCFactor;
     private System.Windows.Forms.Button btn_outputSD;
-    private System.Windows.Forms.Label lbl_ill;
     private System.Windows.Forms.Label lbl_vel;
     private System.Windows.Forms.Label lbl_glb;
     private System.Windows.Forms.Label lbl_th;
@@ -844,6 +867,9 @@
     private System.Windows.Forms.ColumnHeader lvhd_gv2Interval;
     private System.Windows.Forms.ColumnHeader lvhd_gv3Measure;
     private System.Windows.Forms.ColumnHeader lvhd_gv3Interval;
+    private System.Windows.Forms.RadioButton rbtn_ill;
+    private System.Windows.Forms.RadioButton rbtn_prox;
+    private System.Windows.Forms.ColumnHeader lvhd_prxMeasure;
   }
 }
 

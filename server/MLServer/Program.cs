@@ -15,9 +15,9 @@ namespace MLServer
     static void Main()
     {
       //‘Û‰»‘Î‰Šm”F—p:DEBUG
-      /*string lang = "ja-JP";
-      string lang = "en-US";
-      System.Threading.Thread.CurrentThread.CurrentCulture 
+      //string lang = "ja-JP";
+      //string lang = "en-US";
+      /*System.Threading.Thread.CurrentThread.CurrentCulture 
         = System.Threading.Thread.CurrentThread.CurrentUICulture 
         = new System.Globalization.CultureInfo(lang);*/
 

@@ -239,7 +239,8 @@ namespace MLServer
       lbl_th.Text = i18n.Resources.DBTemp + "/" + i18n.Resources.RHumid;
       lbl_glb.Text = i18n.Resources.GlbTemp;
       lbl_vel.Text = i18n.Resources.Velocity;
-      lbl_ill.Text = i18n.Resources.Illuminance;
+      rbtn_ill.Text = i18n.Resources.Illuminance;
+      rbtn_prox.Text = i18n.Resources.Proximity;
       lbl_gpv1.Text = i18n.Resources.GeneralPurposeVoltage + " 1";
       lbl_gpv2.Text = i18n.Resources.GeneralPurposeVoltage + " 2";
       lbl_gpv3.Text = i18n.Resources.GeneralPurposeVoltage + " 3";
@@ -265,6 +266,13 @@ namespace MLServer
       lvhd_illMeasure.Text = i18n.Resources.Illuminance;
       lvhd_illInterval.Text = i18n.Resources.Interval;
       lvhd_startTime.Text = i18n.Resources.MF_MStartDTime;
+      lvhd_gv1Measure.Text = i18n.Resources.GeneralPurposeVoltage + "1";
+      lvhd_gv1Interval.Text = i18n.Resources.Interval;
+      lvhd_gv2Measure.Text = i18n.Resources.GeneralPurposeVoltage + "2";
+      lvhd_gv2Interval.Text = i18n.Resources.Interval;
+      lvhd_gv3Measure.Text = i18n.Resources.GeneralPurposeVoltage + "3";
+      lvhd_gv3Interval.Text = i18n.Resources.Interval;
+      lvhd_prxMeasure.Text = i18n.Resources.Proximity;
     }
 
     #endregion
@@ -288,7 +296,8 @@ namespace MLServer
       (ListViewItem item, string name, string state, 
       string measureTH, string intervalTH, string measureGlb, string intervalGlb, string measureVel, string intervalVel, 
       string measureIlm, string intervalIlm,
-      string measureGV1, string intervalGV1, string measureGV2, string intervalGV2, string measureGV3, string intervalGV3, string startTime);
+      string measureGV1, string intervalGV1, string measureGV2, string intervalGV2, string measureGV3, string intervalGV3, 
+      string measurePrx, string startTime);
 
     /// <summary>ログ表示を更新する</summary>
     /// <param name="log">ログの内容</param>
@@ -322,7 +331,7 @@ namespace MLServer
         if (!lvItems.ContainsKey(ml))
         {
           ListViewItem lvm = new ListViewItem(new string[]
-          { ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing, "true", "60", "true", "60", "true", "600", "true", "60", "2000/01/01 00:00", "true", "60", "true", "60", "true", "60" });
+          { ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing, "true", "60", "true", "60", "true", "600", "true", "60", "2000/01/01 00:00", "true", "60", "true", "60", "true", "60", "false" });
           lvItems.Add(ml, lvm);
           lv_setting.Items.Add(lvm);
         }
@@ -401,13 +410,14 @@ namespace MLServer
       string measureGV1, string intervalGV1,
       string measureGV2, string intervalGV2,
       string measureGV3, string intervalGV3,
+      string measurePrx,
       string startTime)
     {
       if (InvokeRequired)
       {
         Invoke(new setListViewContentsDelegate(setListViewContents), 
           item, name, state, measureTH, intervalTH, measureGlb, intervalGlb, measureVel, intervalVel, measureIlm, intervalIlm,
-          measureGV1, intervalGV1, measureGV2, intervalGV2, measureGV3, intervalGV3, startTime);
+          measureGV1, intervalGV1, measureGV2, intervalGV2, measureGV3, intervalGV3, measurePrx, startTime);
         return;
       }
       item.SubItems[1].Text = name;
@@ -427,6 +437,7 @@ namespace MLServer
       item.SubItems[15].Text = intervalGV2;
       item.SubItems[16].Text = measureGV3;
       item.SubItems[17].Text = intervalGV3;
+      item.SubItems[18].Text = measurePrx;
     }
 
     #endregion
@@ -533,6 +544,7 @@ namespace MLServer
             (buff[9] == "1") ? "true" : "false", buff[10],
             (buff[11] == "1") ? "true" : "false", buff[12],
             (buff[13] == "1") ? "true" : "false", buff[14],
+            (buff[15] == "1") ? "true" : "false",
             MLogger.GetDateTimeFromUTime(long.Parse(buff[8])).ToString("yyyy/MM/dd HH:mm"));
         }
       }
@@ -975,7 +987,11 @@ namespace MLServer
       tbx_gpv2Interval.Text = item.SubItems[15].Text;
       cbx_gpv3Measure.Checked = (item.SubItems[16].Text == "true");
       tbx_gpv3Interval.Text = item.SubItems[17].Text;
+      rbtn_ill.Checked = (item.SubItems[18].Text != "true");
+      rbtn_prox.Checked = (item.SubItems[18].Text == "true");
       dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, "yyyy/MM/dd HH:mm", null);
+
+      reflectCheckBoxState();
     }
 
     /// <summary>補正係数設定ボタンクリック時の処理</summary>
@@ -1060,7 +1076,8 @@ namespace MLServer
         + String.Format("{0, 10}", MLogger.GetUnixTime(dtp_timer.Value).ToString("F0")) //UNIX時間を10桁（空白埋め）で送信
         + (cbx_gpv1Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV1)
         + (cbx_gpv2Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV2)
-        + (cbx_gpv3Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV3);
+        + (cbx_gpv3Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV3)
+        + (rbtn_prox.Checked ? "t" : "f");
 
       //1件ずつコマンドを送信
       for (int i = 0; i < lv_setting.SelectedItems.Count; i++)
@@ -1077,19 +1094,30 @@ namespace MLServer
     {
       CheckBox cbx = (CheckBox)sender;
       if (cbx.Equals(cbx_thMeasure))
-        tbx_thInterval.Enabled = cbx.Checked;
+        lbl_th.Enabled = tbx_thInterval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_glbMeasure))
-        tbx_glbInterval.Enabled = cbx.Checked;
+        lbl_glb.Enabled = tbx_glbInterval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_velMeasure))
-        tbx_velInterval.Enabled = cbx.Checked;
+        lbl_vel.Enabled = tbx_velInterval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_illMeasure))
-        tbx_illInterval.Enabled = cbx.Checked;
+        rbtn_ill.Enabled = rbtn_prox.Enabled = tbx_illInterval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_gpv1Measure))
-        tbx_gpv1Interval.Enabled = cbx.Checked;
+        lbl_gpv1.Enabled = tbx_gpv1Interval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_gpv2Measure))
-        tbx_gpv2Interval.Enabled = cbx.Checked;
+        lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_gpv3Measure))
-        tbx_gpv3Interval.Enabled = cbx.Checked;
+        lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx.Checked;
+    }
+
+    private void reflectCheckBoxState()
+    {
+      lbl_th.Enabled = tbx_thInterval.Enabled = cbx_thMeasure.Checked;
+      lbl_glb.Enabled = tbx_glbInterval.Enabled = cbx_glbMeasure.Checked;
+      lbl_vel.Enabled = tbx_velInterval.Enabled = cbx_velMeasure.Checked;
+      rbtn_ill.Enabled = rbtn_prox.Enabled = tbx_illInterval.Enabled = cbx_illMeasure.Checked;
+      lbl_gpv1.Enabled = tbx_gpv1Interval.Enabled = cbx_gpv1Measure.Checked;
+      lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx_gpv2Measure.Checked;
+      lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx_gpv3Measure.Checked;
     }
 
     private void sndMsg(string longAddress, string msg)

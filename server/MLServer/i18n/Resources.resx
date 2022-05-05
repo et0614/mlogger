@@ -228,6 +228,9 @@
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="Proximity" xml:space="preserve">
+    <value>Proximity</value>
+  </data>
   <data name="RadTemp" xml:space="preserve">
     <value>Radiative temperature</value>
   </data>

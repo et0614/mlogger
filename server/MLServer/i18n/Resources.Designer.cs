@@ -394,6 +394,15 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
+        ///   Proximity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string Proximity {
+            get {
+                return ResourceManager.GetString("Proximity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Radiative temperature に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string RadTemp {

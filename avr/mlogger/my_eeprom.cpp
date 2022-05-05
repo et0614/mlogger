@@ -44,6 +44,7 @@ static uint8_t EEMEM EEP_MES_ILL;
 static uint8_t EEMEM EEP_MES_AD1;
 static uint8_t EEMEM EEP_MES_AD2;
 static uint8_t EEMEM EEP_MES_AD3;
+static uint8_t EEMEM EEP_MES_PRX;
 
 //åvë™ä‘äu
 static unsigned int EEMEM EEP_STP_TH;
@@ -78,6 +79,7 @@ volatile bool my_eeprom::measure_ill = true;
 volatile bool my_eeprom::measure_AD1 = false;
 volatile bool my_eeprom::measure_AD2 = false;
 volatile bool my_eeprom::measure_AD3 = false;
+volatile bool my_eeprom::measure_Prox = false;
 
 //åvë™ä‘äu
 volatile unsigned int my_eeprom::interval_th = 60;
@@ -151,6 +153,8 @@ void my_eeprom::LoadCorrectionFactor()
 		eeprom_update_byte(&EEP_MES_AD2,'F');
 		eeprom_busy_wait();
 		eeprom_update_byte(&EEP_MES_AD3,'F');
+		eeprom_busy_wait();
+		eeprom_update_byte(&EEP_MES_PRX,'F');
 		
 		//åvë™ä‘äu
 		eeprom_busy_wait();
@@ -379,6 +383,9 @@ void my_eeprom::LoadMeasurementSetting()
 	my_eeprom::measure_AD3 = (eeprom_read_byte(&EEP_MES_AD3) == 'T');
 	eeprom_busy_wait();
 	my_eeprom::interval_AD3 = eeprom_read_word(&EEP_STP_AD3);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_Prox = (eeprom_read_byte(&EEP_MES_PRX) == 'T');
 }
 
 //åvë™ê›íËÇèëÇ´çûÇﬁ
@@ -421,5 +428,8 @@ void my_eeprom::SetMeasurementSetting()
 	eeprom_update_byte(&EEP_MES_AD3,my_eeprom::measure_AD3 ? 'T' : 'F');
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_AD3,my_eeprom::interval_AD3);
+	
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_PRX,my_eeprom::measure_Prox ? 'T' : 'F');
 }
 
