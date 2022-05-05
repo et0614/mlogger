@@ -54,9 +54,9 @@ class my_i2c
 		/**
 		 * @fn
 		 * VCNL4030‚©‚ç‹——£‚ð“Ç‚ÝŽæ‚é
-		 * @return ‹——£[cts]
+		 * @return ‹——£[mm]
 		 */
-		static uint16_t ReadVCNL4030_PS(void);
+		static float ReadVCNL4030_PS(void);
 		
 		static void ScanAddress(uint8_t minAddress, uint8_t maxAddress);
 };

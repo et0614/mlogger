@@ -197,10 +197,16 @@ void my_i2c::InitializeI2C(void)
 	
 	//距離計測設定
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
-	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド
-	if(_bus_write(0b11001100) != I2C_ACKED) { _bus_stop(); return; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=4T(200ms), 距離計測有効（常に有効で電力消費は問題ないか？）
+	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド1(PS_CONF1, PS_CONF2)
+	if(_bus_write(0b11001110) != I2C_ACKED) { _bus_stop(); return; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測有効（常に有効で電力消費は問題ないか？）
 	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
 	_bus_stop();
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x04) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド2(PS_CONF3, PS_MS)
+	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 0 0 1: Normal current, Reserved, PS_SMART_PERS=Disable, Active force mode disable, No PS active force mode, PS_MS disabled, turn on sunlight cancel
+	if(_bus_write(0b00000111) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 111: Reserved, 1xtypical sunlight cancel current, typical sunlight capability, 00h sunlight protect mode, LED current=200mA
+	_bus_stop();
+	
 }
 
 void my_i2c::InitializeOPT(uint8_t add)
@@ -374,7 +380,7 @@ float my_i2c::ReadVCNL4030_ALS(void)
 	return 0.064 * 4 * data; //ダイナミックレンジ2倍、感度1倍設定のため:2/(1/2)=4
 }
 
-uint16_t my_i2c::ReadVCNL4030_PS(void)
+float my_i2c::ReadVCNL4030_PS(void)
 {
 	//1回のみの読み取りのため、Active Force Modeを使う
 	/*if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
@@ -393,7 +399,8 @@ uint16_t my_i2c::ReadVCNL4030_PS(void)
 	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK
 		
 	uint16_t data = (buffer[1] << 8) + buffer[0];
-	return data;
+	float ld = log(data);
+	return exp((-0.018 * ld - 0.234) * ld + 6.564);
 }
 
 void my_i2c::ScanAddress(uint8_t minAddress, uint8_t maxAddress)

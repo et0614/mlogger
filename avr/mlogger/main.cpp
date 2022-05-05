@@ -590,8 +590,8 @@ ISR(RTC_PIT_vect)
 			
 			if(measureDist) 
 			{
-				uint16_t ill_u = my_i2c::ReadVCNL4030_PS();
-				sprintf(illS,"%u",ill_u);
+				float ill_d = my_i2c::ReadVCNL4030_PS();
+				dtostrf(ill_d,8,2,illS);
 			}
 			else
 			{
