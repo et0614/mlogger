@@ -107,6 +107,9 @@ volatile static unsigned int pass_ad1 = 0;
 volatile static unsigned int pass_ad2 = 0;
 volatile static unsigned int pass_ad3 = 0;
 
+//距離を計測するか否か（否の場合には照度を計測）
+volatile static bool measureDist = false;
+
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
 
@@ -584,9 +587,18 @@ ISR(RTC_PIT_vect)
 		pass_ill++;
 		if(my_eeprom::measure_ill && my_eeprom::interval_ill <= pass_ill)
 		{
-			float ill_d = my_i2c::ReadVCNL4030();
-			ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
-			dtostrf(ill_d,8,2,illS);
+			
+			if(measureDist) 
+			{
+				uint16_t ill_u = my_i2c::ReadVCNL4030_PS();
+				sprintf(illS,"%u",ill_u);
+			}
+			else
+			{
+				float ill_d = my_i2c::ReadVCNL4030_ALS();
+				ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
+				dtostrf(ill_d,8,2,illS);
+			}
 			pass_ill = 0;
 			hasNewData = true;
 		}

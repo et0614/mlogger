@@ -11,7 +11,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-
 //VCNLのアドレス。同部品には4種のアドレスがあるので型番に注意。
 const uint8_t VCNL_ADD = 0x60 << 1;
 
@@ -152,9 +151,8 @@ static uint8_t crc8(uint8_t *ptr, uint8_t len)
 	return crc;
 }
  
- 
 //以下、publicメソッド*************************************
- 
+
 void my_i2c::InitializeI2C(void)
 {
 	// TWI通信のPIN設定 : SDA->PF2, SCL->PF3
@@ -193,8 +191,15 @@ void my_i2c::InitializeI2C(void)
 	//照度計測設定//設定は変えないので初期化時のみ呼び出し
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
 	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; } //照度計測設定コマンド
-	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return; } //000 1 00 0 0: 計測レベル, ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効
+	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return; } //000 1 00 0 0: 計測レベル, ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効（常に有効で電力消費は問題ないか？）
 	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
+	_bus_stop();
+	
+	//距離計測設定
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド
+	if(_bus_write(0b11001100) != I2C_ACKED) { _bus_stop(); return; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=4T(200ms), 距離計測有効（常に有効で電力消費は問題ないか？）
+	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
 	_bus_stop();
 }
 
@@ -354,7 +359,7 @@ float my_i2c::ReadOPT(uint8_t add)
 	else return lux;
 }
 
-float my_i2c::ReadVCNL4030(void)
+float my_i2c::ReadVCNL4030_ALS(void)
 {
 	//照度読み取り
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
@@ -367,6 +372,28 @@ float my_i2c::ReadVCNL4030(void)
 		
 	uint16_t data = (buffer[1] << 8) + buffer[0];
 	return 0.064 * 4 * data; //ダイナミックレンジ2倍、感度1倍設定のため:2/(1/2)=4
+}
+
+uint16_t my_i2c::ReadVCNL4030_PS(void)
+{
+	//1回のみの読み取りのため、Active Force Modeを使う
+	/*if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x04) != I2C_ACKED) { _bus_stop(); return 0; } //距離計測設定コマンド
+	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //0 00 0 1 0 0 0
+	if(_bus_write(0b00000000) != I2C_ACKED) { _bus_stop(); return 0; } //0 00 0 0 000
+	_bus_stop();*/
+	
+	//距離読み取り
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x08) != I2C_ACKED) { _bus_stop(); return 0; } //距離計測コマンド
+	//stopせずに続けて送信
+	if(_start_reading(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	uint8_t buffer[2];
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK
+	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK
+		
+	uint16_t data = (buffer[1] << 8) + buffer[0];
+	return data;
 }
 
 void my_i2c::ScanAddress(uint8_t minAddress, uint8_t maxAddress)
