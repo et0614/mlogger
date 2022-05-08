@@ -3288,6 +3288,8 @@ Codaca, SPD4D28</description>
 <part name="SUPPLY10" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="VDD" device=""/>
 <part name="C9" library="MyParts" deviceset="MURATA_0603" device="" package3d_urn="urn:adsk.eagle:package:8004287/1"/>
 <part name="SUPPLY15" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
+<part name="PAD6" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,8" device="" package3d_urn="urn:adsk.eagle:package:30830/1"/>
+<part name="SUPPLY26" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -3548,6 +3550,13 @@ Codaca, SPD4D28</description>
 <instance part="SUPPLY15" gate="GND" x="-104.14" y="101.6" smashed="yes">
 <attribute name="VALUE" x="-102.997" y="102.235" size="1.27" layer="96"/>
 </instance>
+<instance part="PAD6" gate="P" x="-71.12" y="96.52" smashed="yes" rot="R180">
+<attribute name="NAME" x="-67.437" y="94.6658" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-69.977" y="99.822" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="SUPPLY26" gate="GND" x="-77.47" y="93.98" smashed="yes">
+<attribute name="VALUE" x="-79.375" y="90.805" size="1.27" layer="96"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -3704,6 +3713,11 @@ Codaca, SPD4D28</description>
 <pinref part="C9" gate="G$1" pin="2"/>
 <pinref part="SUPPLY15" gate="GND" pin="GND"/>
 <wire x1="-110.49" y1="104.14" x2="-104.14" y2="104.14" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="SUPPLY26" gate="GND" pin="GND"/>
+<pinref part="PAD6" gate="P" pin="P"/>
+<wire x1="-77.47" y1="96.52" x2="-73.66" y2="96.52" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="VDD" class="2">
