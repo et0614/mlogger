@@ -214,8 +214,8 @@ static void initialize_port(void)
 	
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
-	PORTA.OUTCLR = PIN6_bm; //汎用IO1：ダウン
-	PORTA.OUTCLR = PIN7_bm; //汎用IO2：ダウン
+	PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
+	PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
 	
 	//PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：ダウン 2022.04.19 Pullup/downはADCではそもそも無効。
 	//PORTD.OUTCLR = PIN2_bm; //風速センサ：ダウン
