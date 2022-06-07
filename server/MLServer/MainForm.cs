@@ -30,6 +30,9 @@ namespace MLServer
     /// <summary>ログ表示を更新する時間間隔[msec]</summary>
     private const int LOG_REFRESH_SPAN = 1 * 1000;
 
+    /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
+    private const int XBEE_SCAN_SPAN = 5 * 1000;
+
     #endregion
 
     #region readonly 初期化パラメータ
@@ -85,6 +88,9 @@ namespace MLServer
 
     /// <summary>XBee端末と接続されたポート名のリスト</summary>
     private List<string> connectedPorts = new List<string>();
+
+    /// <summary>接続候補のポートリスト</summary>
+    private List<string> excludedPorts = new List<string>();
 
     /// <summary>発見されたMLogger端末のリスト</summary>
     private Dictionary<string, MLogger> mLoggers = new Dictionary<string, MLogger>();
@@ -211,6 +217,29 @@ namespace MLServer
             }
           }
           Thread.Sleep(LOG_REFRESH_SPAN);
+        }
+      });
+
+      //定期的にXBeeコーディネータを探索する
+      Task xbeeScanTask = Task.Run(() =>
+      {
+        while (true)
+        {
+          //各ポートへの接続を試行
+          string[] portList = System.IO.Ports.SerialPort.GetPortNames();
+          foreach(string pn in excludedPorts)
+            if(Array.IndexOf(portList, pn) == -1)
+              excludedPorts.Remove(pn);
+
+          for (int i = 0; i < portList.Length; i++)
+          {
+            if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
+            {
+              Task tsk = makeConnectTask(portList[i], baudRate);
+              tsk.Start();
+            }            
+          }
+          Thread.Sleep(XBEE_SCAN_SPAN);
         }
       });
 
@@ -708,7 +737,7 @@ namespace MLServer
     {
       foreach (ZigBeeDevice key in myXBees.Keys)
         disconnectXBee(myXBees[key].portName);
-      connectedPorts.Clear();
+      connectedPorts.Clear(); //ここから3行は最後のXBee切断処理時に呼び出されるはずだが、必要？
       lv_setting.Items.Clear();
       mLoggers.Clear();
 
@@ -727,6 +756,9 @@ namespace MLServer
 
     private void disconnectXBee(string portName)
     {
+      //再接続しないポートに登録
+      excludedPorts.Add(portName);
+
       foreach (ZigBeeDevice key in myXBees.Keys)
       {
         xbeeInfo xInfo = myXBees[key];
@@ -813,6 +845,7 @@ namespace MLServer
         }
         catch (Exception ex)
         {
+          excludedPorts.Add(pName);
           appendLog(pName + ": " + ex.Message);
           return;
         }

@@ -8,9 +8,9 @@
     ".NETCoreApp,Version=v5.0": {
       "MLServer/1.0.0": {
         "dependencies": {
-          "Popolo": "2.3.1.33",
+          "Popolo": "2.3.1.35",
           "System.IO.Ports": "6.0.0",
-          "XBeeLibrary.Core": "1.0.1"
+          "XBeeLibrary.Core": "1.0.2"
         },
         "runtime": {
           "MLServer.dll": {}
@@ -78,14 +78,14 @@
           "System.Security.Principal.Windows": "5.0.0"
         }
       },
-      "Popolo/2.3.1.33": {
+      "Popolo/2.3.1.35": {
         "dependencies": {
           "System.Text.Json": "4.7.2"
         },
         "runtime": {
           "lib/netstandard2.0/Popolo.dll": {
-            "assemblyVersion": "2.3.1.33",
-            "fileVersion": "2.3.1.33"
+            "assemblyVersion": "2.3.1.34",
+            "fileVersion": "2.3.1.34"
           }
         }
       },
@@ -380,7 +380,7 @@
           "System.Runtime": "4.1.0"
         }
       },
-      "XBeeLibrary.Core/1.0.1": {
+      "XBeeLibrary.Core/1.0.2": {
         "dependencies": {
           "Common.Logging": "3.4.1"
         },
@@ -390,8 +390,8 @@
             "fileVersion": "1.0.0.0"
           },
           "lib/netstandard2.0/XBeeLibrary.Core.dll": {
-            "assemblyVersion": "1.0.1.0",
-            "fileVersion": "1.0.1.0"
+            "assemblyVersion": "1.0.2.0",
+            "fileVersion": "1.0.2.0"
           }
         }
       }
@@ -445,12 +445,12 @@
       "path": "microsoft.win32.registry/5.0.0",
       "hashPath": "microsoft.win32.registry.5.0.0.nupkg.sha512"
     },
-    "Popolo/2.3.1.33": {
+    "Popolo/2.3.1.35": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-y8igRn06tVxBrWHK3ptUaY0yZvAZ6BZEKCirp35kj5bBRahgeaMIYDfiYFero4NOuGBpp7uRthicrKgtTNCKNA==",
-      "path": "popolo/2.3.1.33",
-      "hashPath": "popolo.2.3.1.33.nupkg.sha512"
+      "sha512": "sha512-m+Tubsbv7JvtN/IIeZySZNx1wufaQKPRaAe9/hA7RAfD97zt1I3zLLjsAhulwABXrqc3UQClmXgBLRr/kxobpw==",
+      "path": "popolo/2.3.1.35",
+      "hashPath": "popolo.2.3.1.35.nupkg.sha512"
     },
     "runtime.linux-arm.runtime.native.System.IO.Ports/6.0.0": {
       "type": "package",
@@ -690,12 +690,12 @@
       "path": "system.threading.tasks/4.0.11",
       "hashPath": "system.threading.tasks.4.0.11.nupkg.sha512"
     },
-    "XBeeLibrary.Core/1.0.1": {
+    "XBeeLibrary.Core/1.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-AE/dNdDMNpNs0qEk9tHIjv5MksC7EGNaqM3Er8MMEmgLU+w9uDLfudd5z5sGy7dbrg+PjMVO8Ckn331pLBglDQ==",
-      "path": "xbeelibrary.core/1.0.1",
-      "hashPath": "xbeelibrary.core.1.0.1.nupkg.sha512"
+      "sha512": "sha512-jBZaprva7E6D+TCCmoU9gi/Ow5UiDBCqZ38O+aZxItyr+I1aeVK7eEsYXUCUvRM6HO8wkNFlt5Hu7/lan46CfQ==",
+      "path": "xbeelibrary.core/1.0.2",
+      "hashPath": "xbeelibrary.core.1.0.2.nupkg.sha512"
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "zTKz/o0Jr321aQNgKPITNqH5f4YvpBFnbnE33uuQwYXjXwnUtY6SYWo8fPoeNKJ9ixVYwZq5+BlQs9095hdBng==",
+  "dgSpecHash": "mOoxSKggVjqxgaiMV5Kv91JNCDq/eoHSzntOKEHX1O2wufD/SXSmVVXLs/X2H1k57d94BE/R4Vd4IUczXcp8kw==",
   "success": true,
   "projectFilePath": "C:\\Users\\etoga\\Desktop\\server\\MLServer\\MLServer.csproj",
   "expectedPackageFiles": [
@@ -10,7 +10,7 @@
     "C:\\Users\\etoga\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\microsoft.netcore.targets\\1.0.1\\microsoft.netcore.targets.1.0.1.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\microsoft.win32.registry\\5.0.0\\microsoft.win32.registry.5.0.0.nupkg.sha512",
-    "C:\\Users\\etoga\\.nuget\\packages\\popolo\\2.3.1.33\\popolo.2.3.1.33.nupkg.sha512",
+    "C:\\Users\\etoga\\.nuget\\packages\\popolo\\2.3.1.35\\popolo.2.3.1.35.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\6.0.0\\runtime.linux-arm.runtime.native.system.io.ports.6.0.0.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\6.0.0\\runtime.linux-arm64.runtime.native.system.io.ports.6.0.0.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\6.0.0\\runtime.linux-x64.runtime.native.system.io.ports.6.0.0.nupkg.sha512",
@@ -45,7 +45,7 @@
     "C:\\Users\\etoga\\.nuget\\packages\\system.text.json\\4.7.2\\system.text.json.4.7.2.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\system.threading\\4.0.11\\system.threading.4.0.11.nupkg.sha512",
     "C:\\Users\\etoga\\.nuget\\packages\\system.threading.tasks\\4.0.11\\system.threading.tasks.4.0.11.nupkg.sha512",
-    "C:\\Users\\etoga\\.nuget\\packages\\xbeelibrary.core\\1.0.1\\xbeelibrary.core.1.0.1.nupkg.sha512"
+    "C:\\Users\\etoga\\.nuget\\packages\\xbeelibrary.core\\1.0.2\\xbeelibrary.core.1.0.2.nupkg.sha512"
   ],
   "logs": []
 }

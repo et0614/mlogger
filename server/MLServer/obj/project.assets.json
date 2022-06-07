@@ -97,7 +97,7 @@
           }
         }
       },
-      "Popolo/2.3.1.33": {
+      "Popolo/2.3.1.35": {
         "type": "package",
         "dependencies": {
           "System.Text.Json": "4.7.2"
@@ -567,7 +567,7 @@
           "ref/netstandard1.3/System.Threading.Tasks.dll": {}
         }
       },
-      "XBeeLibrary.Core/1.0.1": {
+      "XBeeLibrary.Core/1.0.2": {
         "type": "package",
         "dependencies": {
           "Common.Logging": "3.4.1"
@@ -759,16 +759,16 @@
         "version.txt"
       ]
     },
-    "Popolo/2.3.1.33": {
-      "sha512": "y8igRn06tVxBrWHK3ptUaY0yZvAZ6BZEKCirp35kj5bBRahgeaMIYDfiYFero4NOuGBpp7uRthicrKgtTNCKNA==",
+    "Popolo/2.3.1.35": {
+      "sha512": "m+Tubsbv7JvtN/IIeZySZNx1wufaQKPRaAe9/hA7RAfD97zt1I3zLLjsAhulwABXrqc3UQClmXgBLRr/kxobpw==",
       "type": "package",
-      "path": "popolo/2.3.1.33",
+      "path": "popolo/2.3.1.35",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "lib/netstandard2.0/Popolo.dll",
         "lib/netstandard2.0/Popolo.xml",
-        "popolo.2.3.1.33.nupkg.sha512",
+        "popolo.2.3.1.35.nupkg.sha512",
         "popolo.nuspec"
       ]
     },
@@ -2541,26 +2541,27 @@
         "system.threading.tasks.nuspec"
       ]
     },
-    "XBeeLibrary.Core/1.0.1": {
-      "sha512": "AE/dNdDMNpNs0qEk9tHIjv5MksC7EGNaqM3Er8MMEmgLU+w9uDLfudd5z5sGy7dbrg+PjMVO8Ckn331pLBglDQ==",
+    "XBeeLibrary.Core/1.0.2": {
+      "sha512": "jBZaprva7E6D+TCCmoU9gi/Ow5UiDBCqZ38O+aZxItyr+I1aeVK7eEsYXUCUvRM6HO8wkNFlt5Hu7/lan46CfQ==",
       "type": "package",
-      "path": "xbeelibrary.core/1.0.1",
+      "path": "xbeelibrary.core/1.0.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "lib/netstandard2.0/SRP.dll",
         "lib/netstandard2.0/XBeeLibrary.Core.dll",
+        "nuget_icon.png",
         "release_notes.txt",
-        "xbeelibrary.core.1.0.1.nupkg.sha512",
+        "xbeelibrary.core.1.0.2.nupkg.sha512",
         "xbeelibrary.core.nuspec"
       ]
     }
   },
   "projectFileDependencyGroups": {
     "net5.0-windows7.0": [
-      "Popolo >= 2.3.1.33",
+      "Popolo >= 2.3.1.35",
       "System.IO.Ports >= 6.0.0",
-      "XBeeLibrary.Core >= 1.0.1"
+      "XBeeLibrary.Core >= 1.0.2"
     ]
   },
   "packageFolders": {
@@ -2589,6 +2590,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2609,7 +2611,7 @@
         "dependencies": {
           "Popolo": {
             "target": "Package",
-            "version": "[2.3.1.33, )"
+            "version": "[2.3.1.35, )"
           },
           "System.IO.Ports": {
             "target": "Package",
@@ -2617,7 +2619,7 @@
           },
           "XBeeLibrary.Core": {
             "target": "Package",
-            "version": "[1.0.1, )"
+            "version": "[1.0.2, )"
           }
         },
         "imports": [
@@ -2638,7 +2640,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.200\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.300\\RuntimeIdentifierGraph.json"
       }
     }
   }
