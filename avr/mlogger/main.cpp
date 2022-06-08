@@ -9,6 +9,7 @@
  * 3.0.1	Reset処理を3秒長押しで有効に。短時間押し込みは電池確認のための点灯に変更。
  * 3.0.2	ADCバグ修正
  * 3.0.3	ADC基準電圧を2.0Vに変更
+ * 3.0.4	CMSコマンド実行時にもEEPROMに設定を保存するように変更
  */
 
 /**XBee端末の設定****************************************
@@ -337,7 +338,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.3\r");
+		my_xbee::bltx_chars("VER:3.0.4\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -433,6 +434,9 @@ static void solve_command(void)
 		num2[10] = '\0';
 		strncpy(num2, command + 27, 10);
 		startTime = atol(num2);
+		
+		//ロギング設定をEEPROMに保存
+		my_eeprom::SetMeasurementSetting();
 		
 		//ACK
 		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d\r",

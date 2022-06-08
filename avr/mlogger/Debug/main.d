@@ -23,9 +23,8 @@ main.d main.o: .././main.cpp \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\util\delay_basic.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\math.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\time.h \
- .././main.h .././mlerr.h .././my_eeprom.h .././my_uart.h .././my_i2c.h \
- .././my_xbee.h .././ff/ff.h .././ff/integer.h .././ff/ffconf.h \
- .././ff/diskio.h .././ff/rtc.h
+ .././main.h .././my_eeprom.h .././my_i2c.h .././my_xbee.h .././ff/ff.h \
+ .././ff/integer.h .././ff/ffconf.h .././ff/diskio.h .././ff/rtc.h
 
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\stdio.h:
 
@@ -77,11 +76,7 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 
 .././main.h:
 
-.././mlerr.h:
-
 .././my_eeprom.h:
-
-.././my_uart.h:
 
 .././my_i2c.h:
 
