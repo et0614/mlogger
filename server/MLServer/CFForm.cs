@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using MLLib;
+
 namespace MLServer
 {
   public partial class CFForm : Form
@@ -52,21 +54,21 @@ namespace MLServer
 
     public void UpdateCFactors()
     {
-      cA_dbt.Text = Logger.CFactorA_Temperature.ToString("F3");
-      cB_dbt.Text = Logger.CFactorB_Temperature.ToString("F2");
+      cA_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
+      cB_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
 
-      cA_hmd.Text = Logger.CFactorA_RHumidity.ToString("F3");
-      cB_hmd.Text = Logger.CFactorB_RHumidity.ToString("F2");
+      cA_hmd.Text = Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
+      cB_hmd.Text = Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
 
-      cA_glb.Text = Logger.CFactorA_Globe.ToString("F3");
-      cB_glb.Text = Logger.CFactorB_Globe.ToString("F2");
+      cA_glb.Text = Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
+      cB_glb.Text = Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
 
-      cA_vel.Text = Logger.CFactorA_Velocity.ToString("F3");
-      cB_vel.Text = Logger.CFactorB_Velocity.ToString("F3");
-      vel_0V.Text = Logger.MinVoltage_Velocity.ToString("F3");
+      cA_vel.Text = Logger.Velocity.CorrectionFactorA.ToString("F3");
+      cB_vel.Text = Logger.Velocity.CorrectionFactorB.ToString("F3");
+      vel_0V.Text = Logger.VelocityMinVoltage.ToString("F3");
 
-      cA_lux.Text = Logger.CFactorA_Illuminance.ToString("F3");
-      cB_lux.Text = Logger.CFactorB_Illuminance.ToString("F0");
+      cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
+      cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");
 
       isEdited = false;
       resetTextBoxColor();
@@ -172,7 +174,8 @@ namespace MLServer
         Task.Run(() =>
         {
           SendMessageFnc(Logger.LongAddress,
-            MLogger.MakeSCFCommand(dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV)
+            MLogger.MakeCorrectionFactorsSettingCommand
+            (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV)
             );
         });
       }

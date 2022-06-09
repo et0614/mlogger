@@ -1,0 +1,15 @@
+C:\Users\etoga\Desktop\server\MLLib\bin\Release\net6.0\MLLib.deps.json
+C:\Users\etoga\Desktop\server\MLLib\bin\Release\net6.0\MLLib.dll
+C:\Users\etoga\Desktop\server\MLLib\bin\Release\net6.0\MLLib.pdb
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.csproj.AssemblyReference.cache
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.AssemblyInfoInputs.cache
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.AssemblyInfo.cs
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.csproj.CoreCompileInputs.cache
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.dll
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\refint\MLLib.dll
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\MLLib.pdb
+C:\Users\etoga\Desktop\server\MLLib\obj\Release\net6.0\ref\MLLib.dll
+C:\Users\etoga\Desktop\server\dll\Release\net6.0\MLLib.deps.json
+C:\Users\etoga\Desktop\server\dll\Release\net6.0\MLLib.dll
+C:\Users\etoga\Desktop\server\dll\Release\net6.0\MLLib.pdb

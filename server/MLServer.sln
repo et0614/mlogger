@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLWebServer", "MLWebServer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DDNSUpdater", "DDNSUpdater\DDNSUpdater.csproj", "{115D6232-4D2B-485D-8F08-09EAA25BE215}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataIntegrator", "DataIntegrator\DataIntegrator.csproj", "{9B8B3D26-C1A0-4422-A429-0F836B48DD52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataIntegrator", "DataIntegrator\DataIntegrator.csproj", "{9B8B3D26-C1A0-4422-A429-0F836B48DD52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLLib", "MLLib\MLLib.csproj", "{7D045F55-2D56-46FF-97C4-470E2023520E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{9B8B3D26-C1A0-4422-A429-0F836B48DD52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B8B3D26-C1A0-4422-A429-0F836B48DD52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B8B3D26-C1A0-4422-A429-0F836B48DD52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D045F55-2D56-46FF-97C4-470E2023520E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D045F55-2D56-46FF-97C4-470E2023520E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D045F55-2D56-46FF-97C4-470E2023520E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D045F55-2D56-46FF-97C4-470E2023520E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

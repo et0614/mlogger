@@ -1,0 +1,52 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "MLLib/1.0.0": {
+        "dependencies": {
+          "Popolo": "2.3.1.35"
+        },
+        "runtime": {
+          "MLLib.dll": {}
+        }
+      },
+      "Popolo/2.3.1.35": {
+        "dependencies": {
+          "System.Text.Json": "4.7.2"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Popolo.dll": {
+            "assemblyVersion": "2.3.1.34",
+            "fileVersion": "2.3.1.34"
+          }
+        }
+      },
+      "System.Text.Json/4.7.2": {}
+    }
+  },
+  "libraries": {
+    "MLLib/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Popolo/2.3.1.35": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-m+Tubsbv7JvtN/IIeZySZNx1wufaQKPRaAe9/hA7RAfD97zt1I3zLLjsAhulwABXrqc3UQClmXgBLRr/kxobpw==",
+      "path": "popolo/2.3.1.35",
+      "hashPath": "popolo.2.3.1.35.nupkg.sha512"
+    },
+    "System.Text.Json/4.7.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-TcMd95wcrubm9nHvJEQs70rC0H/8omiSGGpU4FQ/ZA1URIqD4pjmFJh2Mfv1yH1eHgJDWTi2hMDXwTET+zOOyg==",
+      "path": "system.text.json/4.7.2",
+      "hashPath": "system.text.json.4.7.2.nupkg.sha512"
+    }
+  }
+}

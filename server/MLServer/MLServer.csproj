@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MLogger.cs" />
     <Compile Remove="XBeeConnectForm.cs" />
     <Compile Remove="XBeeConnectForm.designer.cs" />
   </ItemGroup>
@@ -19,6 +20,12 @@
     <PackageReference Include="Popolo" Version="2.3.1.35" />
     <PackageReference Include="System.IO.Ports" Version="6.0.0" />
     <PackageReference Include="XBeeLibrary.Core" Version="1.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MLLib">
+      <HintPath>..\MLLib\bin\Debug\net6.0\MLLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

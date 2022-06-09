@@ -11,6 +11,8 @@ using System.Threading;
 using XBeeLibrary.Core;
 using XBeeLibrary.Core.Models;
 
+using MLLib;
+
 namespace MLServer
 {
   public partial class MainForm : Form
@@ -242,24 +244,6 @@ namespace MLServer
           Thread.Sleep(XBEE_SCAN_SPAN);
         }
       });
-
-      //子機のアドレスを読み込む
-      string rsPath = AppDomain.CurrentDomain.BaseDirectory + "resume.txt";
-      if (File.Exists(rsPath))
-      {
-        using (StreamReader sReader = new StreamReader(rsPath))
-        {
-          string buff;
-          while ((buff = sReader.ReadLine()) != null)
-          {
-            MLogger ml = new MLogger(buff);
-            if (cFactors.ContainsKey(ml.LowAddress))
-              ml.InitCFactors(cFactors[ml.LowAddress]);
-            mLoggers.Add(ml.LongAddress, ml);
-          }
-        }
-      }
-
     }
 
     /// <summary>コントロールの国際化対応処理</summary>
@@ -511,104 +495,6 @@ namespace MLServer
 
     #region 通信イベント処理
 
-    /// <summary>受信データを処理する</summary>
-    /// <param name="add">送信元アドレス</param>
-    /// <param name="data">受信データ</param>
-    /// <returns>コマンドが処理できたか否か</returns>
-    private bool solveCommand(string add, string command)
-    {
-      //DTTであれば書き出す*******************************
-      if (command.StartsWith("DTT") && mLoggers.ContainsKey(add))
-      {
-        MLogger ml = mLoggers[add];
-        if (lvItems.ContainsKey(ml))
-          setCurrentState(lvItems[ml], i18n.Resources.MF_Measuring);
-
-        //データ書き出し
-        string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
-
-        try
-        {
-          using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
-          {
-            DateTime mlNow;
-            double tmp, hmd, glbV, glb, velV, vel, ill, gpV1, gpV2, gpV3;
-            mLoggers[add].SolveDTT(command, out mlNow, out tmp, out hmd, out glbV, out glb, out velV, out vel, out ill, out gpV1, out gpV2, out gpV3);
-            sWriter.WriteLine(
-              DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在時刻
-              mlNow.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の現在時刻
-              tmp.ToString("F2") + "," + hmd.ToString("F2") + "," +
-              glbV.ToString("F3") + "," + glb.ToString("F2") + "," +
-              velV.ToString("F3") + "," + vel.ToString("F4") + "," +
-              ill.ToString("F2") + "," + gpV1.ToString("F3") + "," + gpV2.ToString("F3") + "," + gpV3.ToString("F3"));
-          }
-        }
-        catch
-        {
-          appendLog(String.Format(i18n.Resources.MF_FileIsUsing, fName));
-          return false;
-        }
-
-        //通信中のアイコン明滅
-        Task.Run(async () =>
-        {
-          setTSBtnState(tsb_downloading, true, Properties.Resources.downloading, "", "");
-          await Task.Delay(300);
-          setTSBtnState(tsb_downloading, true, Properties.Resources.waiting, "", "");
-        });
-      }
-
-      //CMSかLMSであればListViewに計測設定を反映************************
-      else if (command.StartsWith("CMS") || command.StartsWith("LMS"))
-      {
-        if (mLoggers.ContainsKey(add))
-        {
-          string[] buff = command.Substring(4, command.Length - 4).Split(',');
-          MLogger ml = mLoggers[add];
-          setListViewContents(lvItems[ml], ml.Name, i18n.Resources.MF_Editable,
-            (buff[0] == "1") ? "true" : "false", buff[1],
-            (buff[2] == "1") ? "true" : "false", buff[3],
-            (buff[4] == "1") ? "true" : "false", buff[5],
-            (buff[6] == "1") ? "true" : "false", buff[7],
-            (buff[9] == "1") ? "true" : "false", buff[10],
-            (buff[11] == "1") ? "true" : "false", buff[12],
-            (buff[13] == "1") ? "true" : "false", buff[14],
-            (buff[15] == "1") ? "true" : "false",
-            MLogger.GetDateTimeFromUTime(long.Parse(buff[8])).ToString("yyyy/MM/dd HH:mm"));
-        }
-      }
-
-      //DMYであれば計測中
-      else if (command.StartsWith("DMY") && mLoggers.ContainsKey(add) && lvItems.ContainsKey(mLoggers[add]))
-        setCurrentState(lvItems[mLoggers[add]], i18n.Resources.MF_Measuring);
-
-      //WFCであればコマンド入力待ち
-      else if (command.StartsWith("WFC") && mLoggers.ContainsKey(add) && lvItems.ContainsKey(mLoggers[add]))
-        setCurrentState(lvItems[mLoggers[add]], i18n.Resources.MF_Editable);
-
-      //STLであれば計測開始
-      else if (command.StartsWith("STL") && mLoggers.ContainsKey(add) && lvItems.ContainsKey(mLoggers[add]))
-        setCurrentState(lvItems[mLoggers[add]], i18n.Resources.MF_Measuring);
-
-      //VERであればバージョン情報更新
-      else if (command.StartsWith("VER") && mLoggers.ContainsKey(add))
-        mLoggers[add].SetVersion(command.Remove(0, 4));
-
-      //SCFかLCFの場合には補正係数表示を更新
-      else if (command.StartsWith("SCF") || command.StartsWith("LCF"))
-      {
-        //補正係数を読み込む
-        MLogger ml = mLoggers[add];
-        ml.LoadCFactors(command);
-
-        //表示中の補正係数設定フォームがあれば反映
-        if (cfForm != null)
-          Invoke(new UpdateCFactorsDelegate(cfForm.UpdateCFactors));
-      }
-
-      return true;
-    }
-
     public delegate void UpdateCFactorsDelegate();
 
     private void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
@@ -624,8 +510,14 @@ namespace MLServer
       if (!mLoggers.ContainsKey(add))
       {
         MLogger ml = new MLogger(add);
-        if (cFactors.ContainsKey(ml.LowAddress))
-          ml.InitCFactors(cFactors[ml.LowAddress]);
+
+        ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
+        ml.MeasurementSettingReceivedEvent += Ml_MeasurementSettingReceivedEvent;
+        ml.VersionReceivedEvent += Ml_VersionReceivedEvent;
+        ml.CorrectionFactorsReceivedEvent += Ml_CorrectionFactorsReceivedEvent;
+        ml.WaitingForCommandMessageReceivedEvent += Ml_WaitingForCommandMessageReceivedEvent;
+        ml.StartMeasuringMessageReceivedEvent += Ml_StartMeasuringMessageReceivedEvent;
+
         mLoggers.Add(add, ml);
 
         //プログラム異常停止に備えてResumeリストに追加
@@ -644,8 +536,11 @@ namespace MLServer
       {
         try
         {
-          dv.SendData(rdv, Encoding.ASCII.GetBytes("\rLMS\r")); //\rを送ってからコマンドを送ると安心
-          dv.SendData(rdv, Encoding.ASCII.GetBytes("\rVER\r")); //\rを送ってからコマンドを送ると安心
+          sndMsg(add, "\rLMS\r");
+          sndMsg(add, "\rVER\r");
+
+          //dv.SendData(rdv, Encoding.ASCII.GetBytes("\rLMS\r")); //\rを送ってからコマンドを送ると安心
+          //dv.SendData(rdv, Encoding.ASCII.GetBytes("\rVER\r")); //\rを送ってからコマンドを送ると安心
         }
         catch (Exception e)
         {
@@ -671,24 +566,19 @@ namespace MLServer
       //受信データを追加
       mlg.AddReceivedData(rcvStr);
 
-      //3コマンドまでは受け付ける
-      int comNum = 0;
-      string command;
-      while ((command = mlg.GetCommand()) != null && comNum < 3)
+      //コマンド処理
+      while (mlg.HasCommand)
       {
-        //ここは確実に落ちないようにしないと、ロギング全体が止まる
         try
         {
-          appendLog(mlg.LowAddress + " : " + command);
-          if (solveCommand(add, command)) mlg.RemoveCommand(); //処理に成功した場合はコマンドを削除
-          else break; //処理に失敗した場合には次回に再挑戦
+          appendLog(mlg.Name + ": " + mlg.NextCommand);
+          mlg.SolveCommand();
         }
         catch (Exception exc)
         {
           appendErrorLog(mlg.LowAddress + " : " + exc.Message);
-          mlg.ClearCommand(); //異常終了時はコマンドを全消去する
+          mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
         }
-        comNum++;
       }
 
       //受信パケット総量が48500bytesを超えた場合に再接続
@@ -726,6 +616,91 @@ namespace MLServer
     {
       //受信パケット総量を加算
       pBytes += e.ReceivedPacket.PacketLength;
+    }
+
+    #endregion
+
+    #region コマンド受信イベント発生時の処理
+
+    private void Ml_StartMeasuringMessageReceivedEvent(object sender, EventArgs e)
+    {
+      setCurrentState(lvItems[(MLogger)sender], i18n.Resources.MF_Measuring);
+    }
+
+    private void Ml_WaitingForCommandMessageReceivedEvent(object sender, EventArgs e)
+    {
+      setCurrentState(lvItems[(MLogger)sender], i18n.Resources.MF_Editable);
+    }
+
+    private void Ml_VersionReceivedEvent(object sender, EventArgs e)
+    {
+      
+    }
+
+    private void Ml_MeasurementSettingReceivedEvent(object sender, EventArgs e)
+    {
+      MLogger ml = (MLogger)sender;
+      setListViewContents(
+        lvItems[ml], ml.Name, i18n.Resources.MF_Editable,
+        ml.DrybulbTemperature.Measure ? "true" : "false", ml.DrybulbTemperature.Interval.ToString(),
+        ml.RelativeHumdity.Measure ? "true" : "false", ml.RelativeHumdity.Interval.ToString(),
+        ml.Velocity.Measure ? "true" : "false", ml.Velocity.Interval.ToString(),
+        ml.Illuminance.Measure ? "true" : "false", ml.Illuminance.Interval.ToString(),
+        ml.GeneralVoltage1.Measure ? "true" : "false", ml.GeneralVoltage1.Interval.ToString(),
+        ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
+        ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
+        ml.MeasureProximity ? "true" : "false",
+        ml.StartMeasuringDateTime.ToString("yyyy/MM/dd HH:mm"));
+    }
+
+    private void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
+    {
+      MLogger ml = (MLogger)sender;
+      if (lvItems.ContainsKey(ml))
+        setCurrentState(lvItems[ml], i18n.Resources.MF_Measuring);
+
+      //データ書き出し
+      string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
+
+      try
+      {
+        using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
+        {
+          sWriter.WriteLine(
+            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
+            ml.LastMeasuredDateTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
+            ml.RelativeHumdity.LastValue.ToString("F2") + "," +
+            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
+            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
+            ml.VelocityVoltage.ToString("F3") + "," + 
+            ml.Velocity.LastValue.ToString("F4") + "," +
+            ml.Illuminance.LastValue.ToString("F2") + "," +
+            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+            ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
+            ml.GeneralVoltage3.LastValue.ToString("F3"));
+        }
+      }
+      catch
+      {
+        appendLog(String.Format(i18n.Resources.MF_FileIsUsing, fName));
+        return;
+      }
+
+      //通信中のアイコン明滅
+      Task.Run(async () =>
+      {
+        setTSBtnState(tsb_downloading, true, Properties.Resources.downloading, "", "");
+        await Task.Delay(300);
+        setTSBtnState(tsb_downloading, true, Properties.Resources.waiting, "", "");
+      });
+    }
+
+    private void Ml_CorrectionFactorsReceivedEvent(object sender, EventArgs e)
+    {
+      //表示中の補正係数設定フォームがあれば反映
+      if (cfForm != null)
+        Invoke(new UpdateCFactorsDelegate(cfForm.UpdateCFactors));
     }
 
     #endregion
@@ -915,9 +890,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          //tffはxbee-on,bluetooth-off,sdcard-off
-          sndMsg(UP_ADD + adds[i],
-            "\rSTL" + String.Format("{0:D10}", MLogger.GetUnixTime(DateTime.Now)) + "tff\r");
+          sndMsg(UP_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false));
           Thread.Sleep(cmdSSpan);
         }
       });
@@ -937,9 +910,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          //tffはxbee-on,bluetooth-off,sdcard-off
-          sndMsg(UP_ADD + adds[i],
-            "\rSTL" + String.Format("{0:D10}", MLogger.GetUnixTime(DateTime.Now)) + "fft\r");
+          sndMsg(UP_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true));
           Thread.Sleep(cmdSSpan);
         }
       });
@@ -1101,16 +1072,16 @@ namespace MLServer
       }
 
       //設定コマンドを作成
-      string sData = "CMS"
-        + (cbx_thMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itTH)
-        + (cbx_glbMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itRD)
-        + (cbx_velMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itVL)
-        + (cbx_illMeasure.Checked ? "t" : "f") + string.Format("{0,5}", itIL)
-        + String.Format("{0, 10}", MLogger.GetUnixTime(dtp_timer.Value).ToString("F0")) //UNIX時間を10桁（空白埋め）で送信
-        + (cbx_gpv1Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV1)
-        + (cbx_gpv2Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV2)
-        + (cbx_gpv3Measure.Checked ? "t" : "f") + string.Format("{0,5}", itGV3)
-        + (rbtn_prox.Checked ? "t" : "f");
+      string sData = MLogger.MakeChangeMeasuringSettingCommand(
+        dtp_timer.Value,
+        cbx_thMeasure.Checked, itTH,
+        cbx_glbMeasure.Checked, itRD,
+        cbx_velMeasure.Checked, itVL,
+        cbx_illMeasure.Checked, itIL,
+        cbx_gpv1Measure.Checked, itGV1,
+        cbx_gpv2Measure.Checked, itGV2,
+        cbx_gpv3Measure.Checked, itGV3,
+        rbtn_prox.Checked);
 
       //1件ずつコマンドを送信
       for (int i = 0; i < lv_setting.SelectedItems.Count; i++)
@@ -1179,12 +1150,12 @@ namespace MLServer
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
-      string html = MLogger.MakeListHTML(i18n.Resources.topPage_html, loggers, metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue);
+      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
       { sWriter.Write(html); }
 
-      string latestData = MLogger.MakeLatestData(loggers, metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue);
+      string latestData = MLogger.MakeLatestData(loggers);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
       { sWriter.Write(latestData); }

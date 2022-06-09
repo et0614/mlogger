@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "RwJ34S+rMd2F0jNgyxyP4PDNao9wj66kjiYIh9Nmbz4/gw5alKrCzDXnRXty76U5eED4JN/rG/v8FGM7OHfhMg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\etoga\\Desktop\\server\\MLLib\\MLLib.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\etoga\\.nuget\\packages\\popolo\\2.3.1.35\\popolo.2.3.1.35.nupkg.sha512",
+    "C:\\Users\\etoga\\.nuget\\packages\\system.text.json\\4.7.2\\system.text.json.4.7.2.nupkg.sha512"
+  ],
+  "logs": []
+}
