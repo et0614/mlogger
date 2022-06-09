@@ -58,6 +58,9 @@ static unsigned int EEMEM EEP_STP_AD3;
 //自動通信開始設定
 static uint8_t EEMEM EEP_START_AUTO;
 
+//ロガー名称
+static char EEMEM EEP_NAME[21];
+
 //補正係数
 volatile float my_eeprom::Cf_dbtA = 1.0;
 volatile float my_eeprom::Cf_dbtB = 0.0;
@@ -93,117 +96,89 @@ volatile unsigned int my_eeprom::interval_AD3 = 60;
 //自動通信開始設定
 volatile bool my_eeprom::startAuto = false;
 
-//補正係数を読み込む
-void my_eeprom::LoadCorrectionFactor()
+//ロガー名称
+char my_eeprom::mlName[21];
+
+//メモリを初期化する
+void initMemory()
 {
-	//強制初期化処理
-	//eeprom_busy_wait();
-	//eeprom_update_byte(&EEP_INITFLAG, 'F');
+	//乾球温度補正係数A,B
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_DBTCF_A, 1.000);
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_DBTCF_B, 0.000);
 	
-	//初期化未了の場合は補正係数を初期化する
-	//https://scienceprog.com/tip-on-storing-initial-values-in-eeprom-of-avr-microcontroller/
-	//この方法だと、たまたまEEPROMの「EEP_INITFLAG」に「T」が設定されていた場合に処理が破綻するが良いのだろうか・・・
-	eeprom_busy_wait(); //EEPROM読み書き可能まで待機
-	if (eeprom_read_byte(&EEP_INITFLAG) != 'T')
-	{
-		//乾球温度補正係数A,B
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_DBTCF_A, 1.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_DBTCF_B, 0.000);
-		
-		//相対湿度補正係数A,B
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_HMDCF_A, 1.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_HMDCF_B, 0.000);
-		
-		//グローブ温度補正係数A,B
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_GLBCF_A, 1.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_GLBCF_B, 0.000);
-		
-		//照度補正係数A,B
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_LUXCF_A, 1.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_LUXCF_B, 0.000);
-		
-		//風速補正係数A,B,無風電圧
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_VELCF_A, 1.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_VELCF_B, 0.000);
-		eeprom_busy_wait();
-		eeprom_update_float(&EEP_VEL0, 1.450);
-		
-		//計測真偽
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_TH,'T');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_GLB,'T');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_VEL,'T');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_ILL,'T');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_AD1,'F');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_AD2,'F');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_AD3,'F');
-		eeprom_busy_wait();
-		eeprom_update_byte(&EEP_MES_PRX,'F');
-		
-		//計測間隔
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_TH, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_GLB, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_VEL, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_ILL, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_AD1, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_AD2, 60);
-		eeprom_busy_wait();
-		eeprom_update_word(&EEP_STP_AD3, 60);
-		
-		//自動通信開始設定
-		eeprom_busy_wait();
-		eeprom_write_byte(&EEP_START_AUTO,'F');
-		
-		//初期化フラグ
-		eeprom_busy_wait();
-		eeprom_write_byte(&EEP_INITFLAG,'T');
-	}
+	//相対湿度補正係数A,B
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_HMDCF_A, 1.000);
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_HMDCF_B, 0.000);
 	
-	//補正係数を読み込む
+	//グローブ温度補正係数A,B
 	eeprom_busy_wait();
-	my_eeprom::Cf_dbtA = eeprom_read_float (&EEP_DBTCF_A);
+	eeprom_update_float(&EEP_GLBCF_A, 1.000);
 	eeprom_busy_wait();
-	my_eeprom::Cf_dbtB = eeprom_read_float (&EEP_DBTCF_B);
+	eeprom_update_float(&EEP_GLBCF_B, 0.000);
+	
+	//照度補正係数A,B
 	eeprom_busy_wait();
-	my_eeprom::Cf_hmdA = eeprom_read_float (&EEP_HMDCF_A);
+	eeprom_update_float(&EEP_LUXCF_A, 1.000);
 	eeprom_busy_wait();
-	my_eeprom::Cf_hmdB = eeprom_read_float (&EEP_HMDCF_B);
+	eeprom_update_float(&EEP_LUXCF_B, 0.000);
+	
+	//風速補正係数A,B,無風電圧
 	eeprom_busy_wait();
-	my_eeprom::Cf_glbA = eeprom_read_float (&EEP_GLBCF_A);
+	eeprom_update_float(&EEP_VELCF_A, 1.000);
 	eeprom_busy_wait();
-	my_eeprom::Cf_glbB = eeprom_read_float (&EEP_GLBCF_B);
+	eeprom_update_float(&EEP_VELCF_B, 0.000);
 	eeprom_busy_wait();
-	my_eeprom::Cf_luxA = eeprom_read_float (&EEP_LUXCF_A);
+	eeprom_update_float(&EEP_VEL0, 1.450);
+	
+	//計測真偽
 	eeprom_busy_wait();
-	my_eeprom::Cf_luxB = eeprom_read_float (&EEP_LUXCF_B);
+	eeprom_update_byte(&EEP_MES_TH,'T');
 	eeprom_busy_wait();
-	my_eeprom::Cf_velA = eeprom_read_float (&EEP_VELCF_A);
+	eeprom_update_byte(&EEP_MES_GLB,'T');
 	eeprom_busy_wait();
-	my_eeprom::Cf_velB = eeprom_read_float (&EEP_VELCF_B);
+	eeprom_update_byte(&EEP_MES_VEL,'T');
 	eeprom_busy_wait();
-	my_eeprom::Cf_vel0 = eeprom_read_float (&EEP_VEL0);	
+	eeprom_update_byte(&EEP_MES_ILL,'T');
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD1,'F');
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD2,'F');
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_AD3,'F');
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_PRX,'F');
+	
+	//計測間隔
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_TH, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_GLB, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_VEL, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_ILL, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD1, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD2, 60);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_AD3, 60);
+	
+	//自動通信開始設定
+	eeprom_busy_wait();
+	eeprom_write_byte(&EEP_START_AUTO,'F');
+	
+	//名前
+	eeprom_busy_wait();
+	eeprom_update_block("ML00000", EEP_NAME, 20);
+	
+	//初期化フラグ
+	eeprom_busy_wait();
+	eeprom_write_byte(&EEP_INITFLAG,'T');
 }
 
 //補正係数を書き込む
@@ -343,51 +318,6 @@ void my_eeprom::MakeCorrectionFactorString(char * txbuff, const char * command)
 		command, dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, vel0);
 }
 
-//計測設定を読み込む
-void my_eeprom::LoadMeasurementSetting()
-{
-	eeprom_busy_wait();
-	my_eeprom::startAuto = (eeprom_read_byte(&EEP_START_AUTO) == 'T');
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_th = (eeprom_read_byte(&EEP_MES_TH) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_th = eeprom_read_word(&EEP_STP_TH);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_glb = (eeprom_read_byte(&EEP_MES_GLB) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_glb = eeprom_read_word(&EEP_STP_GLB);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_vel = (eeprom_read_byte(&EEP_MES_VEL) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_vel = eeprom_read_word(&EEP_STP_VEL);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_ill = (eeprom_read_byte(&EEP_MES_ILL) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_ill = eeprom_read_word(&EEP_STP_ILL);
-		
-	eeprom_busy_wait();
-	my_eeprom::measure_AD1 = (eeprom_read_byte(&EEP_MES_AD1) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_AD1 = eeprom_read_word(&EEP_STP_AD1);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_AD2 = (eeprom_read_byte(&EEP_MES_AD2) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_AD2 = eeprom_read_word(&EEP_STP_AD2);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_AD3 = (eeprom_read_byte(&EEP_MES_AD3) == 'T');
-	eeprom_busy_wait();
-	my_eeprom::interval_AD3 = eeprom_read_word(&EEP_STP_AD3);
-	
-	eeprom_busy_wait();
-	my_eeprom::measure_Prox = (eeprom_read_byte(&EEP_MES_PRX) == 'T');
-}
-
 //計測設定を書き込む
 void my_eeprom::SetMeasurementSetting()
 {
@@ -433,3 +363,107 @@ void my_eeprom::SetMeasurementSetting()
 	eeprom_update_byte(&EEP_MES_PRX,my_eeprom::measure_Prox ? 'T' : 'F');
 }
 
+//名称を書き込む
+void my_eeprom::SaveName()
+{
+	eeprom_busy_wait();
+	eeprom_update_block(mlName, EEP_NAME, sizeof(mlName));
+}
+
+//補正係数を読み込む
+void LoadCorrectionFactor()
+{
+	//補正係数を読み込む
+	eeprom_busy_wait();
+	my_eeprom::Cf_dbtA = eeprom_read_float (&EEP_DBTCF_A);
+	eeprom_busy_wait();
+	my_eeprom::Cf_dbtB = eeprom_read_float (&EEP_DBTCF_B);
+	eeprom_busy_wait();
+	my_eeprom::Cf_hmdA = eeprom_read_float (&EEP_HMDCF_A);
+	eeprom_busy_wait();
+	my_eeprom::Cf_hmdB = eeprom_read_float (&EEP_HMDCF_B);
+	eeprom_busy_wait();
+	my_eeprom::Cf_glbA = eeprom_read_float (&EEP_GLBCF_A);
+	eeprom_busy_wait();
+	my_eeprom::Cf_glbB = eeprom_read_float (&EEP_GLBCF_B);
+	eeprom_busy_wait();
+	my_eeprom::Cf_luxA = eeprom_read_float (&EEP_LUXCF_A);
+	eeprom_busy_wait();
+	my_eeprom::Cf_luxB = eeprom_read_float (&EEP_LUXCF_B);
+	eeprom_busy_wait();
+	my_eeprom::Cf_velA = eeprom_read_float (&EEP_VELCF_A);
+	eeprom_busy_wait();
+	my_eeprom::Cf_velB = eeprom_read_float (&EEP_VELCF_B);
+	eeprom_busy_wait();
+	my_eeprom::Cf_vel0 = eeprom_read_float (&EEP_VEL0);
+}
+
+//計測設定を読み込む
+void LoadMeasurementSetting()
+{
+	eeprom_busy_wait();
+	my_eeprom::startAuto = (eeprom_read_byte(&EEP_START_AUTO) == 'T');
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_th = (eeprom_read_byte(&EEP_MES_TH) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_th = eeprom_read_word(&EEP_STP_TH);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_glb = (eeprom_read_byte(&EEP_MES_GLB) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_glb = eeprom_read_word(&EEP_STP_GLB);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_vel = (eeprom_read_byte(&EEP_MES_VEL) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_vel = eeprom_read_word(&EEP_STP_VEL);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_ill = (eeprom_read_byte(&EEP_MES_ILL) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_ill = eeprom_read_word(&EEP_STP_ILL);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_AD1 = (eeprom_read_byte(&EEP_MES_AD1) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD1 = eeprom_read_word(&EEP_STP_AD1);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_AD2 = (eeprom_read_byte(&EEP_MES_AD2) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD2 = eeprom_read_word(&EEP_STP_AD2);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_AD3 = (eeprom_read_byte(&EEP_MES_AD3) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_AD3 = eeprom_read_word(&EEP_STP_AD3);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_Prox = (eeprom_read_byte(&EEP_MES_PRX) == 'T');
+}
+
+//名称を読み込む
+void LoadName()
+{
+	eeprom_busy_wait();
+	eeprom_read_block(my_eeprom::mlName, EEP_NAME, sizeof(my_eeprom::mlName));
+}
+
+//設定を読み込む
+void my_eeprom::LoadEEPROM()
+{
+	//強制初期化処理
+	//eeprom_busy_wait();
+	//eeprom_update_byte(&EEP_INITFLAG, 'F');
+	
+	//初期化未了の場合は補正係数を初期化する
+	//https://scienceprog.com/tip-on-storing-initial-values-in-eeprom-of-avr-microcontroller/
+	//この方法だと、たまたまEEPROMの「EEP_INITFLAG」に「T」が設定されていた場合に処理が破綻するが良いのだろうか・・・
+	eeprom_busy_wait(); //EEPROM読み書き可能まで待機
+	if (eeprom_read_byte(&EEP_INITFLAG) != 'T') initMemory();
+	
+	LoadCorrectionFactor();
+	LoadMeasurementSetting();
+	LoadName();
+}

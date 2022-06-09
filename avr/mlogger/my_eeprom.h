@@ -23,21 +23,23 @@ class my_eeprom
 		//計測間隔  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
 		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3;
 		
-		//補正係数を読み込む
-		static void LoadCorrectionFactor();
-			
+		//名称
+		static char mlName[21];
+
 		//補正係数を書き込む
 		static void SetCorrectionFactor(const char * data);
 
 		//補正係数を表す文字列を作成する
 		static void MakeCorrectionFactorString(char * txbuff, const char * command);
 		
-		//計測設定を読み込む
-		static void LoadMeasurementSetting();
+		//EEPROMを読み込む
+		static void LoadEEPROM();
 		
 		//計測設定を書き込む
 		static void SetMeasurementSetting();
 		
+		//名称を書き込む
+		static void SaveName();
 };
 
 #endif /* MY_EEPROM_H_ */

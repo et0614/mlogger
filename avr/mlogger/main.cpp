@@ -10,6 +10,7 @@
  * 3.0.2	ADCバグ修正
  * 3.0.3	ADC基準電圧を2.0Vに変更
  * 3.0.4	CMSコマンド実行時にもEEPROMに設定を保存するように変更
+ * 3.0.5	機器名称関連のコマンド（LLN,CLN）を実装
  */
 
 /**XBee端末の設定****************************************
@@ -127,8 +128,7 @@ static char charBuff[my_xbee::MAX_CMD_CHAR];
 int main(void)
 {
 	//EEPROM
-	my_eeprom::LoadCorrectionFactor();
-	my_eeprom::LoadMeasurementSetting();
+	my_eeprom::LoadEEPROM();
 		
 	//入出力ポートを初期化
 	initialize_port();
@@ -338,7 +338,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.4\r");
+		my_xbee::bltx_chars("VER:3.0.5\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -484,6 +484,24 @@ static void solve_command(void)
 	{
 		my_eeprom::MakeCorrectionFactorString(charBuff, "LCF");
 		my_xbee::bltx_chars(charBuff);
+	}
+	//Change Logger Name
+	else if(strncmp(command, "CLN", 3) == 0)
+	{
+		strncpy(my_eeprom::mlName, command + 3, 20);
+		my_eeprom::SaveName();
+		
+		//ACK
+		char ack[21 + 4];
+		sprintf(ack, "CLN:%s\r", my_eeprom::mlName);		
+		my_xbee::bltx_chars(ack);
+	}
+	//Load Logger Name
+	else if(strncmp(command, "LLN", 3) == 0)
+	{
+		char name[21+4];
+		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
+		my_xbee::bltx_chars(name);
 	}
 	
 	//コマンドを削除
