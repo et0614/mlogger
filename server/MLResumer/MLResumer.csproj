@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MLLib\MLLib.csproj" />
+    <Reference Include="MLLib">
+      <HintPath>..\MLLib\bin\Release\net6.0\MLLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

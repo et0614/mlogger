@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLServer", "MLServer\MLServer.csproj", "{E90E3102-EE4B-43A0-9FC7-3B4FF4781A91}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7D045F55-2D56-46FF-97C4-470E2023520E} = {7D045F55-2D56-46FF-97C4-470E2023520E}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLResumer", "MLResumer\MLResumer.csproj", "{85AC61F2-64EB-49D9-A765-E41997C10074}"
 EndProject
@@ -13,7 +16,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DDNSUpdater", "DDNSUpdater\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataIntegrator", "DataIntegrator\DataIntegrator.csproj", "{9B8B3D26-C1A0-4422-A429-0F836B48DD52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLLib", "MLLib\MLLib.csproj", "{7D045F55-2D56-46FF-97C4-470E2023520E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLLib", "MLLib\MLLib.csproj", "{7D045F55-2D56-46FF-97C4-470E2023520E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

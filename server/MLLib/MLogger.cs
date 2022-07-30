@@ -24,6 +24,8 @@ namespace MLLib
     /// <summary>状態</summary>
     public enum Status
     {
+      /// <summary>初期化中</summary>
+      Initializing,
       /// <summary>コマンド受信待ち</summary>
       WaitingForCommand,
       /// <summary>計測開始処理中</summary>
@@ -37,22 +39,22 @@ namespace MLLib
     #region イベント定義
 
     /// <summary>測定値受信イベント</summary>
-    public event EventHandler MeasuredValueReceivedEvent;
+    public event EventHandler? MeasuredValueReceivedEvent;
 
     /// <summary>測定設定受信イベント</summary>
-    public event EventHandler MeasurementSettingReceivedEvent;
+    public event EventHandler? MeasurementSettingReceivedEvent;
 
     /// <summary>バージョン受信イベント</summary>
-    public event EventHandler VersionReceivedEvent;
+    public event EventHandler? VersionReceivedEvent;
 
     /// <summary>補正係数受信イベント</summary>
-    public event EventHandler CorrectionFactorsReceivedEvent;
+    public event EventHandler? CorrectionFactorsReceivedEvent;
 
     /// <summary>コマンド待ち通知受信イベント</summary>
-    public event EventHandler WaitingForCommandMessageReceivedEvent;
+    public event EventHandler? WaitingForCommandMessageReceivedEvent;
 
     /// <summary>測定開始通知受信イベント</summary>
-    public event EventHandler StartMeasuringMessageReceivedEvent;
+    public event EventHandler? StartMeasuringMessageReceivedEvent;
 
     #endregion
 
@@ -95,7 +97,7 @@ namespace MLLib
     public int Version_Revision { get; private set; }
 
     /// <summary>現在の状態を取得する</summary>
-    public Status CurrentStatus { get; private set; } = Status.WaitingForCommand;
+    public Status CurrentStatus { get; private set; } = Status.Initializing;
 
     /// <summary>計測開始日時を取得する</summary>
     public DateTime StartMeasuringDateTime { get; private set; } = new DateTime(2000, 1, 1, 0, 0, 0);
@@ -285,10 +287,12 @@ namespace MLLib
           break;
 
         case "CMS":
+          CurrentStatus = Status.WaitingForCommand;
           solveMS();
           break;
 
         case "LMS":
+          CurrentStatus = Status.WaitingForCommand;
           solveMS();
           break;
 
@@ -297,7 +301,8 @@ namespace MLLib
           break;
 
         case "WFC":
-          CurrentStatus = Status.WaitingForCommand;
+          if(CurrentStatus != Status.Initializing)
+            CurrentStatus = Status.WaitingForCommand;
 
           //イベント通知
           WaitingForCommandMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
@@ -589,6 +594,13 @@ namespace MLLib
     public static string MakeLoadMeasuringSettingCommand()
     {
       return "\rLMS\r";
+    }
+
+    /// <summary>補正係数取得コマンドをつくる</summary>
+    /// <returns>補正係数取得コマンド</returns>
+    public static string MakeLoadCorrectionFactorsCommand()
+    {
+      return "\rLCF\r";
     }
 
     #endregion

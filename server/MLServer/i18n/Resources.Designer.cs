@@ -340,7 +340,7 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
-        ///   Search the MLogger (XBee end-device) に類似しているローカライズされた文字列を検索します。
+        ///   Scan the MLogger (XBee end-device) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MF_Search_Def {
             get {
@@ -376,7 +376,7 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
-        ///   Start searching MLogger (Port {0})... に類似しているローカライズされた文字列を検索します。
+        ///   Start scanning MLogger ... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MF_StartSearch {
             get {

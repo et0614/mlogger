@@ -223,7 +223,7 @@
     <value>ロギング（SDカード）を開始する</value>
   </data>
   <data name="MF_StartSearch" xml:space="preserve">
-    <value>MLoggerの探索を開始します（Port {0}）・・・</value>
+    <value>MLoggerの探索を開始します・・・</value>
   </data>
   <data name="MF_TryConnectPort" xml:space="preserve">
     <value>{0}のXBeeへの接続を試みます</value>

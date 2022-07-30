@@ -27,13 +27,16 @@ namespace MLServer
     private const int MAX_LOG_LENGTH = 5000;
 
     /// <summary>HTMLデータを更新する時間間隔[msec]</summary>
-    private const int HTML_REFRESH_SPAN = 10 * 1000;
+    private const int REFRESH_HTML_TSPAN = 10 * 1000;
 
     /// <summary>ログ表示を更新する時間間隔[msec]</summary>
-    private const int LOG_REFRESH_SPAN = 1 * 1000;
+    private const int REFRESH_LOG_TSPAN = 1 * 1000;
 
-    /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
-    private const int XBEE_SCAN_SPAN = 5 * 1000;
+    /// <summary>コーディネータ探索時間間隔[msec]</summary>
+    private const int SCAN_COORDINATOR_TSPAN = 5 * 1000;
+
+    /// <summary>エンドデバイス探索時間間隔[msec]</summary>
+    private const int SCAN_ENDDEVICE_TSPAN = 5 * 1000;
 
     /// <summary>日時の型</summary>
     private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
@@ -104,7 +107,7 @@ namespace MLServer
     private readonly Dictionary<MLogger, ListViewItem> lviVals = new Dictionary<MLogger, ListViewItem>();
 
     /// <summary>通信用XBee端末リスト</summary>
-    private readonly Dictionary<ZigBeeDevice, xbeeInfo> myXBees = new Dictionary<ZigBeeDevice, xbeeInfo>();
+    private readonly Dictionary<ZigBeeDevice, xbeeInfo> coordinators = new Dictionary<ZigBeeDevice, xbeeInfo>();
 
     /// <summary>ログの一時保存</summary>
     private StringBuilder logString = new StringBuilder();
@@ -203,63 +206,16 @@ namespace MLServer
       disconnectXBee();
 
       //定期的にHTMLファイルを更新する
-      Task htmlRefreshTask = Task.Run(() =>
-      {
-        while (true)
-        {
-          if (hasNewData)
-          {
-            hasNewData = false;
-            makeWebData();
-          }
-          Thread.Sleep(HTML_REFRESH_SPAN);
-        }
-      });
+      htmlRefreshTask();
 
       //定期的にログ表示を更新する
-      Task logRefreshTask = Task.Run(() =>
-      {
-        while (true)
-        {
-          if (hasNewLog)
-          {
-            hasNewLog = false;
-            try
-            {
-              refreshLog();
-            }
-            catch (Exception ex)
-            {
-              appendErrorLog(ex.Message);
-              appendErrorLog(logString.ToString());
-            }
-          }
-          Thread.Sleep(LOG_REFRESH_SPAN);
-        }
-      });
+      loopLogRefresh();
 
-      //定期的にXBeeコーディネータを探索する
-      Task xbeeScanTask = Task.Run(() =>
-      {
-        while (true)
-        {
-          //各ポートへの接続を試行
-          string[] portList = System.IO.Ports.SerialPort.GetPortNames();
-          foreach(string pn in excludedPorts)
-            if(Array.IndexOf(portList, pn) == -1)
-              excludedPorts.Remove(pn);
+      //定期的にコーディネータを探索する
+      loopCoordinatorScan();
 
-          for (int i = 0; i < portList.Length; i++)
-          {
-            if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
-            {
-              Task tsk = makeConnectTask(portList[i], baudRate);
-              tsk.Start();
-            }            
-          }
-          Thread.Sleep(XBEE_SCAN_SPAN);
-        }
-      });
+      //定期的にエンドデバイスを探索・初期化する
+      loopEndDeviceInitialize();
     }
 
     /// <summary>コントロールの国際化対応処理</summary>
@@ -303,8 +259,6 @@ namespace MLServer
       lvhd_gv3Measure.Text = i18n.Resources.GeneralPurposeVoltage + "3";
       lvhd_gv3Interval.Text = i18n.Resources.Interval;
       lvhd_prxMeasure.Text = i18n.Resources.Proximity;
-      //幅を自動調節
-      foreach (ColumnHeader ch in lv_setting.Columns) ch.Width = -2;
 
       //計測値ListViewの項目
       lvhd2_dbt.Text = i18n.Resources.DBTemp;
@@ -316,8 +270,92 @@ namespace MLServer
       lvhd2_ppd.Text = "PPD";
       lvhd2_set.Text = "SET*";
       lvhd2_dtime.Text = i18n.Resources.DateTime;
-      //幅を自動調節
-      foreach (ColumnHeader ch in lv_measure.Columns) ch.Width = -2;
+    }
+
+    /// <summary>定期的にHTMLを更新する</summary>
+    private void htmlRefreshTask()
+    {
+      Task.Run(() =>
+      {
+        while (true)
+        {
+          if (hasNewData)
+          {
+            hasNewData = false;
+            makeWebData();
+          }
+          Thread.Sleep(REFRESH_HTML_TSPAN);
+        }
+      });
+    }
+
+    /// <summary>定期的にログを更新する</summary>
+    private void loopLogRefresh()
+    {
+      Task.Run(() =>
+      {
+        while (true)
+        {
+          if (hasNewLog)
+          {
+            hasNewLog = false;
+            try
+            {
+              refreshLog();
+            }
+            catch (Exception ex)
+            {
+              appendErrorLog(ex.Message);
+              appendErrorLog(logString.ToString());
+            }
+          }
+          Thread.Sleep(REFRESH_LOG_TSPAN);
+        }
+      });
+    }
+
+    /// <summary>定期的にCoordinatorを探索する</summary>
+    private void loopCoordinatorScan()
+    {
+      Task.Run(() =>
+      {
+        while (true)
+        {
+          //各ポートへの接続を試行
+          string[] portList = System.IO.Ports.SerialPort.GetPortNames();
+          foreach (string pn in excludedPorts)
+            if (Array.IndexOf(portList, pn) == -1)
+              excludedPorts.Remove(pn);
+
+          for (int i = 0; i < portList.Length; i++)
+          {
+            if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
+              scanCoordinator(portList[i], baudRate);
+          }
+          Thread.Sleep(SCAN_COORDINATOR_TSPAN);
+        }
+      });
+    }
+
+    /// <summary>定期的にEndDeviceを探索・初期化する</summary>
+    private void loopEndDeviceInitialize()
+    {
+      Task.Run(() =>
+      {
+        while (true)
+        {
+          scanEndDevice();
+
+          //初期化未了のEndDeviceを初期化
+          foreach (string key in mLoggers.Keys)
+          {
+            if (mLoggers[key].CurrentStatus == MLogger.Status.Initializing)
+              sndMsg(key, MLogger.MakeLoadMeasuringSettingCommand());
+          }
+
+          Thread.Sleep(SCAN_ENDDEVICE_TSPAN);
+        }
+      });
     }
 
     #endregion
@@ -357,9 +395,29 @@ namespace MLServer
         }
 
         //設定を更新
+        string status;
+        switch (ml.CurrentStatus)
+        {
+          case MLogger.Status.Initializing:
+            status = i18n.Resources.MF_Initializing;
+            break;
+          case MLogger.Status.WaitingForCommand:
+            status = i18n.Resources.MF_Editable;
+            break;
+          case MLogger.Status.StartMeasuring:
+            status = i18n.Resources.MF_Measuring;
+            break;
+          case MLogger.Status.Measuring:
+            status = i18n.Resources.MF_Measuring;
+            break;
+          default:
+            status = "Unknown status";
+            break;
+        }
+
         ListViewItem item = lviSets[ml];
         item.SubItems[1].Text = ml.Name;
-        item.SubItems[2].Text = (ml.CurrentStatus == MLogger.Status.WaitingForCommand) ? i18n.Resources.MF_Editable : i18n.Resources.MF_Measuring;
+        item.SubItems[2].Text = status;
         item.SubItems[3].Text = ml.DrybulbTemperature.Measure ? "true" : "false";
         item.SubItems[4].Text = ml.DrybulbTemperature.Interval.ToString();
         item.SubItems[5].Text = ml.GlobeTemperature.Measure ? "true" : "false";
@@ -513,43 +571,43 @@ namespace MLServer
 
     private void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
     {
+      //LongAddressを取得
+      RemoteXBeeDevice rdv = e.DiscoveredDevice;
+      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
+      string add = rdv.GetAddressString();
+
+      //新規デバイスでなければ終了
+      if (mLoggers.ContainsKey(add)) return;
+
       //HTML更新フラグを立てる
       hasNewData = true;
 
-      RemoteXBeeDevice rdv = e.DiscoveredDevice;
-      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
+      MLogger ml = new MLogger(add);
 
-      //MLoggerリストに追加
-      string add = rdv.GetAddressString();
-      if (!mLoggers.ContainsKey(add))
-      {
-        MLogger ml = new MLogger(add);
+      //名前を設定
+      if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
 
-        //名前を設定
-        if(mlNames.ContainsKey(add)) ml.Name = mlNames[add];
-        
-        //熱的快適性計算のための情報を設定
-        ml.CloValue = cloValue;
-        ml.MetValue = metValue;
-        ml.DefaultTemperature = dbtValue;
-        ml.DefaultRelativeHumidity = rhdValue;
-        ml.DefaultGlobeTemperature = mrtValue;
-        ml.DefaultVelocity = velValue;
+      //熱的快適性計算のための情報を設定
+      ml.CloValue = cloValue;
+      ml.MetValue = metValue;
+      ml.DefaultTemperature = dbtValue;
+      ml.DefaultRelativeHumidity = rhdValue;
+      ml.DefaultGlobeTemperature = mrtValue;
+      ml.DefaultVelocity = velValue;
 
-        //イベント登録
-        ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
-        ml.MeasurementSettingReceivedEvent += Ml_MeasurementSettingReceivedEvent;
-        ml.VersionReceivedEvent += Ml_VersionReceivedEvent;
-        ml.CorrectionFactorsReceivedEvent += Ml_CorrectionFactorsReceivedEvent;
-        ml.WaitingForCommandMessageReceivedEvent += Ml_WaitingForCommandMessageReceivedEvent;
-        ml.StartMeasuringMessageReceivedEvent += Ml_StartMeasuringMessageReceivedEvent;
+      //イベント登録
+      ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
+      ml.MeasurementSettingReceivedEvent += Ml_MeasurementSettingReceivedEvent;
+      ml.VersionReceivedEvent += Ml_VersionReceivedEvent;
+      ml.CorrectionFactorsReceivedEvent += Ml_CorrectionFactorsReceivedEvent;
+      ml.WaitingForCommandMessageReceivedEvent += Ml_WaitingForCommandMessageReceivedEvent;
+      ml.StartMeasuringMessageReceivedEvent += Ml_StartMeasuringMessageReceivedEvent;
 
-        mLoggers.Add(add, ml);
-      }
+      mLoggers.Add(add, ml);
 
       //子機のアドレスと通信用XBeeを対応付ける
-      if (!myXBees[dv].longAddress.Contains(add))
-        myXBees[dv].longAddress.Add(add);
+      if (!coordinators[dv].longAddress.Contains(add))
+        coordinators[dv].longAddress.Add(add);
 
       //リストビューに追加
       updateLVSettingItem(mLoggers[add]);
@@ -716,8 +774,8 @@ namespace MLServer
     /// <summary>すべてのXBee端末を切り離す</summary>
     private void disconnectXBee()
     {
-      foreach (ZigBeeDevice key in myXBees.Keys)
-        disconnectXBee(myXBees[key].portName);
+      foreach (ZigBeeDevice key in coordinators.Keys)
+        disconnectXBee(coordinators[key].portName);
       connectedPorts.Clear(); //ここから3行は最後のXBee切断処理時に呼び出されるはずだが、必要？
       lv_setting.Items.Clear();
       mLoggers.Clear();
@@ -740,9 +798,9 @@ namespace MLServer
       //再接続しないポートに登録
       excludedPorts.Add(portName);
 
-      foreach (ZigBeeDevice key in myXBees.Keys)
+      foreach (ZigBeeDevice key in coordinators.Keys)
       {
-        xbeeInfo xInfo = myXBees[key];
+        xbeeInfo xInfo = coordinators[key];
         if (xInfo.portName == portName)
         {
           //ListViewの更新処理
@@ -755,7 +813,7 @@ namespace MLServer
           key.DataReceived -= Device_DataReceived;
 
           key.Close();
-          myXBees.Remove(key);
+          coordinators.Remove(key);
         }
       }
       if (connectedPorts.Contains(portName))
@@ -803,19 +861,16 @@ namespace MLServer
 
         //各ポートへの接続を試行
         for (int i = 0; i < portList.Length; i++)
-        {
-          Task tsk = makeConnectTask(portList[i], baudRate);
-          tsk.Start();
-        }
+          scanCoordinator(portList[i], baudRate);
       }
     }
 
     /// <summary>Portへの接続Taskを生成</summary>
     /// <param name="pName">Port名称</param>
     /// <returns>Portへの接続Task</returns>
-    private Task makeConnectTask(string pName, int bRate)
+    private void scanCoordinator(string pName, int bRate)
     {
-      return new Task(() =>
+      Task.Run(() =>
       {
         //通信用XBee端末をOpen
         ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, bRate));
@@ -829,8 +884,11 @@ namespace MLServer
           appendLog(pName + ": " + ex.Message);
           return;
         }
-        myXBees.Add(device, new xbeeInfo(pName));
+        coordinators.Add(device, new xbeeInfo(pName));
         appendLog(pName + ": " + i18n.Resources.MF_ConnectionSucceeded + " S/N = " + device.XBee64BitAddr.ToString());
+
+        //Coordinatorが見つかった場合には直ちに初回のEndDevice探索
+        scanEndDevice(device);
 
         //イベント登録
         XBeeNetwork net = device.GetNetwork();
@@ -856,29 +914,39 @@ namespace MLServer
     /// <param name="e"></param>
     private void tsb_reload_Click(object sender, EventArgs e)
     {
-      foreach (ZigBeeDevice key in myXBees.Keys)
+      appendLog(i18n.Resources.MF_StartSearch);
+      scanEndDevice();
+    }
+
+    /// <summary>EndDeviceを探索する</summary>
+    /// <param name="coordinator">コーディネータ</param>
+    private void scanEndDevice(ZigBeeDevice coordinator)
+    {
+      Task.Run(() =>
       {
-        Task.Run(() =>
+        XBeeNetwork net = coordinator.GetNetwork();
+
+        //既に探索中の場合は一旦停止
+        if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
+
+        //探索開始
+        net.SetDiscoveryTimeout((long)(SCAN_ENDDEVICE_TSPAN * 0.9));
+        try
         {
-          XBeeNetwork net = key.GetNetwork();
+          net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
+        }
+        catch (Exception e)
+        {
+          appendLog(e.Message);
+        }
+      });
+    }
 
-          //既に探索中の場合は一旦停止
-          if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
-
-          //探索開始
-          net.SetDiscoveryTimeout(5000); //5秒
-          try
-          {
-            net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
-          }
-          catch (Exception e)
-          {
-            appendLog(e.Message);
-          }
-
-          appendLog(String.Format(i18n.Resources.MF_StartSearch, myXBees[key].portName));
-        });
-      }
+    /// <summary>EndDeviceを探索する</summary>
+    private void scanEndDevice()
+    {
+      foreach (ZigBeeDevice key in coordinators.Keys)
+        scanEndDevice(key);
     }
 
     /// <summary>開始ボタンクリック時の処理</summary>
@@ -964,8 +1032,7 @@ namespace MLServer
           item.Click += delegate (object sender, EventArgs e)
           {
             appendLog(String.Format(i18n.Resources.MF_TryConnectPort, portName));
-            Task tsk = makeConnectTask(portName, baudRate);
-            tsk.Start();
+            scanCoordinator(portName, baudRate);
           };
         }
       }
@@ -1020,7 +1087,7 @@ namespace MLServer
       cfForm.Show();
 
       //補正係数読み込みコマンドを送信
-      sndMsg(add, "\rLCF\r");
+      sndMsg(add, MLogger.MakeLoadCorrectionFactorsCommand());
     }
 
     /// <summary>計測設定更新ボタンクリック時の処理</summary>
@@ -1199,15 +1266,9 @@ namespace MLServer
     /// <returns>通信用XBee端末</returns>
     private ZigBeeDevice getXBee(string address)
     {
-      foreach (ZigBeeDevice key in myXBees.Keys)
-        if (myXBees[key].longAddress.Contains(address)) return key;
+      foreach (ZigBeeDevice key in coordinators.Keys)
+        if (coordinators[key].longAddress.Contains(address)) return key;
       return null;
-    }
-
-    private void listView_SizeChanged(object sender, EventArgs e)
-    {
-      //幅を自動調節
-      foreach (ColumnHeader ch in ((ListView)sender).Columns) ch.Width = -2;
     }
 
     #endregion

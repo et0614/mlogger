@@ -211,7 +211,7 @@
     <value>Search</value>
   </data>
   <data name="MF_Search_Def" xml:space="preserve">
-    <value>Search the MLogger (XBee end-device)</value>
+    <value>Scan the MLogger (XBee end-device)</value>
   </data>
   <data name="MF_SetCorrectionFactors" xml:space="preserve">
     <value>Set correction factors</value>
@@ -223,7 +223,7 @@
     <value>Start logging (SD card)</value>
   </data>
   <data name="MF_StartSearch" xml:space="preserve">
-    <value>Start searching MLogger (Port {0})...</value>
+    <value>Start scanning MLogger ...</value>
   </data>
   <data name="MF_TryConnectPort" xml:space="preserve">
     <value>Try to connect XBee (coordinator) on {0}</value>

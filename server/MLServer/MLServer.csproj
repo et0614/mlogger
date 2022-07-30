@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <Reference Include="MLLib">
-      <HintPath>..\MLLib\bin\Debug\net6.0\MLLib.dll</HintPath>
+      <HintPath>..\MLLib\bin\Release\net6.0\MLLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

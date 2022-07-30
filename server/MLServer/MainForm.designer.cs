@@ -236,84 +236,83 @@
       this.lv_setting.View = System.Windows.Forms.View.Details;
       this.lv_setting.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lv_setting_ColumnClick);
       this.lv_setting.SelectedIndexChanged += new System.EventHandler(this.lv_setting_SelectedIndexChanged);
-      this.lv_setting.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd_xbeeID
       // 
       this.lvhd_xbeeID.Name = "lvhd_xbeeID";
       this.lvhd_xbeeID.Text = "ID";
       this.lvhd_xbeeID.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_xbeeID.Width = 80;
+      this.lvhd_xbeeID.Width = 100;
       // 
       // lvhd_xbeeName
       // 
       this.lvhd_xbeeName.Name = "lvhd_xbeeName";
       this.lvhd_xbeeName.Text = "名前";
       this.lvhd_xbeeName.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_xbeeName.Width = 80;
+      this.lvhd_xbeeName.Width = 100;
       // 
       // lvhd_step
       // 
       this.lvhd_step.Name = "lvhd_step";
       this.lvhd_step.Text = "状態";
       this.lvhd_step.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_step.Width = 80;
+      this.lvhd_step.Width = 100;
       // 
       // lvhd_thMeasure
       // 
       this.lvhd_thMeasure.Name = "lvhd_thMeasure";
       this.lvhd_thMeasure.Text = "温湿度";
       this.lvhd_thMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_thMeasure.Width = 80;
+      this.lvhd_thMeasure.Width = 100;
       // 
       // lvhd_thInterval
       // 
       this.lvhd_thInterval.Name = "lvhd_thInterval";
       this.lvhd_thInterval.Text = "測定間隔";
       this.lvhd_thInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_thInterval.Width = 80;
+      this.lvhd_thInterval.Width = 100;
       // 
       // lvhd_glvMeasure
       // 
       this.lvhd_glvMeasure.Name = "lvhd_glvMeasure";
       this.lvhd_glvMeasure.Text = "グローブ温度";
       this.lvhd_glvMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_glvMeasure.Width = 80;
+      this.lvhd_glvMeasure.Width = 100;
       // 
       // lvhd_glvInterval
       // 
       this.lvhd_glvInterval.Name = "lvhd_glvInterval";
       this.lvhd_glvInterval.Text = "測定間隔";
       this.lvhd_glvInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_glvInterval.Width = 80;
+      this.lvhd_glvInterval.Width = 100;
       // 
       // lvhd_velMeasure
       // 
       this.lvhd_velMeasure.Name = "lvhd_velMeasure";
       this.lvhd_velMeasure.Text = "微風速";
       this.lvhd_velMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_velMeasure.Width = 80;
+      this.lvhd_velMeasure.Width = 100;
       // 
       // lvhd_velInterval
       // 
       this.lvhd_velInterval.Name = "lvhd_velInterval";
       this.lvhd_velInterval.Text = "測定間隔";
       this.lvhd_velInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_velInterval.Width = 80;
+      this.lvhd_velInterval.Width = 100;
       // 
       // lvhd_illMeasure
       // 
       this.lvhd_illMeasure.Name = "lvhd_illMeasure";
       this.lvhd_illMeasure.Text = "照度";
       this.lvhd_illMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_illMeasure.Width = 80;
+      this.lvhd_illMeasure.Width = 100;
       // 
       // lvhd_illInterval
       // 
       this.lvhd_illInterval.Name = "lvhd_illInterval";
       this.lvhd_illInterval.Text = "測定間隔";
       this.lvhd_illInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_illInterval.Width = 80;
+      this.lvhd_illInterval.Width = 100;
       // 
       // lvhd_startTime
       // 
@@ -326,43 +325,43 @@
       // 
       this.lvhd_gv1Measure.Text = "電圧1";
       this.lvhd_gv1Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv1Measure.Width = 80;
+      this.lvhd_gv1Measure.Width = 100;
       // 
       // lvhd_gv1Interval
       // 
       this.lvhd_gv1Interval.Text = "測定間隔";
       this.lvhd_gv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv1Interval.Width = 80;
+      this.lvhd_gv1Interval.Width = 100;
       // 
       // lvhd_gv2Measure
       // 
       this.lvhd_gv2Measure.Text = "電圧2";
       this.lvhd_gv2Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Measure.Width = 80;
+      this.lvhd_gv2Measure.Width = 100;
       // 
       // lvhd_gv2Interval
       // 
       this.lvhd_gv2Interval.Text = "測定間隔";
       this.lvhd_gv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Interval.Width = 80;
+      this.lvhd_gv2Interval.Width = 100;
       // 
       // lvhd_gv3Measure
       // 
       this.lvhd_gv3Measure.Text = "電圧3";
       this.lvhd_gv3Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Measure.Width = 80;
+      this.lvhd_gv3Measure.Width = 100;
       // 
       // lvhd_gv3Interval
       // 
       this.lvhd_gv3Interval.Text = "測定間隔";
       this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Interval.Width = 80;
+      this.lvhd_gv3Interval.Width = 100;
       // 
       // lvhd_prxMeasure
       // 
       this.lvhd_prxMeasure.Text = "近接";
       this.lvhd_prxMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_prxMeasure.Width = 80;
+      this.lvhd_prxMeasure.Width = 100;
       // 
       // lv_measure
       // 
@@ -385,71 +384,71 @@
       this.lv_measure.TabIndex = 4;
       this.lv_measure.UseCompatibleStateImageBehavior = false;
       this.lv_measure.View = System.Windows.Forms.View.Details;
-      this.lv_measure.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd2_xbeeID
       // 
       this.lvhd2_xbeeID.Text = "ID";
-      this.lvhd2_xbeeID.Width = 80;
+      this.lvhd2_xbeeID.Width = 100;
       // 
       // lvhd2_name
       // 
       this.lvhd2_name.Text = "Name";
       this.lvhd2_name.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_name.Width = 80;
+      this.lvhd2_name.Width = 100;
       // 
       // lvhd2_dbt
       // 
       this.lvhd2_dbt.Text = "dbt";
       this.lvhd2_dbt.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_dbt.Width = 80;
+      this.lvhd2_dbt.Width = 100;
       // 
       // lvhd2_hmd
       // 
       this.lvhd2_hmd.Text = "hmd";
       this.lvhd2_hmd.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_hmd.Width = 80;
+      this.lvhd2_hmd.Width = 100;
       // 
       // lvhd2_glb
       // 
       this.lvhd2_glb.Text = "glb";
       this.lvhd2_glb.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_glb.Width = 80;
+      this.lvhd2_glb.Width = 100;
       // 
       // lvhd2_vel
       // 
       this.lvhd2_vel.Text = "vel";
-      this.lvhd2_vel.Width = 80;
+      this.lvhd2_vel.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_vel.Width = 100;
       // 
       // lvhd2_ill
       // 
       this.lvhd2_ill.Text = "illuminance";
       this.lvhd2_ill.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_ill.Width = 80;
+      this.lvhd2_ill.Width = 100;
       // 
       // lvhd2_pmv
       // 
       this.lvhd2_pmv.Text = "pmv";
       this.lvhd2_pmv.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_pmv.Width = 80;
+      this.lvhd2_pmv.Width = 100;
       // 
       // lvhd2_ppd
       // 
       this.lvhd2_ppd.Text = "ppd";
       this.lvhd2_ppd.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_ppd.Width = 80;
+      this.lvhd2_ppd.Width = 100;
       // 
       // lvhd2_set
       // 
       this.lvhd2_set.Text = "set";
       this.lvhd2_set.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_set.Width = 80;
+      this.lvhd2_set.Width = 100;
       // 
       // lvhd2_dtime
       // 
       this.lvhd2_dtime.Text = "dtime";
       this.lvhd2_dtime.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd2_dtime.Width = 80;
+      this.lvhd2_dtime.Width = 120;
       // 
       // tbx_log
       // 
