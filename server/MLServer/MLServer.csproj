@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <BaseOutputPath>bin\</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -53,6 +54,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="mlnames.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="setting.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

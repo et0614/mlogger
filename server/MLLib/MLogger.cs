@@ -3,6 +3,8 @@
 using Popolo.HumanBody;
 using System.Text;
 
+using System.Collections.Generic;
+
 namespace MLLib
 {
 
@@ -72,16 +74,16 @@ namespace MLLib
     public bool IsFirstSave { get; set; } = true;
 
     /// <summary>LongAddress（16進数）を設定・取得する</summary>
-    public string LongAddress { get; private set; }
+    public string LongAddress { get; set; }
 
     /// <summary>LongAddressの下位アドレス（16進数）を取得する</summary>
     public string LowAddress { get { return LongAddress.Substring(8); } }
 
-    /// <summary>最後の通信日時を設定・取得する</summary>
-    public DateTime LastCommunication { get; set; }
+    /// <summary>最後の通信日時を取得する</summary>
+    public DateTime LastCommunicated { get; private set; }
 
     /// <summary>最後の計測日時を取得する</summary>
-    public DateTime LastMeasuredDateTime { get; private set; }
+    public DateTime LastMeasured { get; private set; }
 
     /// <summary>バージョン（メジャー）を取得する</summary>
     public int Version_Major { get; private set; }
@@ -179,6 +181,9 @@ namespace MLLib
 
     #region コンストラクタ
 
+    public MLogger()
+      : this("0000000000000000") { }
+
     /// <summary>インスタンスを初期化する</summary>
     /// <param name="longAddress">LongAddress（16進数）</param>
     public MLogger(string longAddress)
@@ -195,6 +200,9 @@ namespace MLLib
     /// <param name="data"></param>
     public void AddReceivedData(string data)
     {
+      //最終通信日時を更新
+      LastCommunicated = DateTime.Now;
+
       //データを追加
       receivedData += data;
 
@@ -342,7 +350,7 @@ namespace MLLib
         double gpVoltage3 = (buff[12] == "n/a") ? double.NaN : double.Parse(buff[12]);
 
         //最後の計測日時
-        LastMeasuredDateTime = now;
+        LastMeasured = now;
 
         //最新の値を保存
         if (!double.IsNaN(temperature))
@@ -478,7 +486,7 @@ namespace MLLib
       VelocityMinVoltage = vel0;
 
       //イベント通知
-      CorrectionFactorsReceivedEvent?.Invoke(this, EventArgs.Empty);      
+      CorrectionFactorsReceivedEvent?.Invoke(this, EventArgs.Empty);
     }
 
     #endregion
@@ -535,6 +543,19 @@ namespace MLLib
         + (measureProx ? "t" : "f");
     }
 
+    /// <summary>補正係数設定コマンドをつくる</summary>
+    /// <param name="dbtA">乾球温度の補正係数A（y=Ax+B）</param>
+    /// <param name="dbtB">乾球温度の補正係数B（y=Ax+B）</param>
+    /// <param name="hmdA">相対湿度の補正係数A（y=Ax+B）</param>
+    /// <param name="hmdB">相対湿度の補正係数B（y=Ax+B）</param>
+    /// <param name="glbA">グローブ温度の補正係数A（y=Ax+B）</param>
+    /// <param name="glbB">グローブ温度の補正係数B（y=Ax+B）</param>
+    /// <param name="luxA">照度の補正係数A（y=Ax+B）</param>
+    /// <param name="luxB">照度の補正係数B（y=Ax+B）</param>
+    /// <param name="velA">風速の補正係数A（y=Ax+B）</param>
+    /// <param name="velB">風速の補正係数B（y=Ax+B）</param>
+    /// <param name="vel0">無風風速の電圧[V]</param>
+    /// <returns>補正係数設定コマンド</returns>
     public static string MakeCorrectionFactorsSettingCommand(
       double dbtA, double dbtB,
       double hmdA, double hmdB,
@@ -556,6 +577,20 @@ namespace MLLib
         string.Format("{0, 4}", (1000 * vel0).ToString("F0") + "\r");
     }
 
+    /// <summary>バージョン取得コマンドをつくる</summary>
+    /// <returns>バージョン取得コマンド</returns>
+    public static string MakeGetVersionCommand()
+    {
+      return "\rVER\r";
+    }
+
+    /// <summary>計測設定取得コマンドをつくる</summary>
+    /// <returns>計測設定取得コマンド</returns>
+    public static string MakeLoadMeasuringSettingCommand()
+    {
+      return "\rLMS\r";
+    }
+
     #endregion
 
     #region staticメソッド
@@ -567,7 +602,7 @@ namespace MLLib
     public static long GetUnixTime(DateTime dTime)
     {
       DateTime dtNow = new DateTime(dTime.Year, dTime.Month, dTime.Day, dTime.Hour, dTime.Minute, dTime.Second, DateTimeKind.Utc);
-      return (long)(dtNow - UNIX_EPOCH).TotalSeconds; 
+      return (long)(dtNow - UNIX_EPOCH).TotalSeconds;
     }
 
     /// <summary>UNIX時間から日時を求める</summary>
@@ -575,7 +610,7 @@ namespace MLLib
     /// <returns>日時</returns>
     /// <remarks>計測器内部ではUTC=0で時刻を管理する</remarks>
     public static DateTime GetDateTimeFromUTime(long unixTime)
-    { 
+    {
       DateTime dtNow = UNIX_EPOCH.AddSeconds(unixTime);
       return new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, dtNow.Hour, dtNow.Minute, dtNow.Second, DateTimeKind.Local);
     }
@@ -605,7 +640,7 @@ namespace MLLib
         MLogger ml = mLoggers[i];
         contents.AppendLine("<tr>");
         //一般情報
-        contents.AppendLine("<td class=\"dt_last general\">" + ml.LastCommunication.ToString("M/d HH:mm:ss") + "</td>");
+        contents.AppendLine("<td class=\"dt_last general\">" + ml.LastCommunicated.ToString("M/d HH:mm:ss") + "</td>");
         contents.AppendLine("<td class=\"name general\">" + ml.Name + "</td>");
         contents.AppendLine("<td class=\"id general\">" + ml.LowAddress + "</td>");
         //温湿度

@@ -6,8 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using XBee;
-using XBee.Devices;
+using XBeeLibrary.Core;
+using XBeeLibrary.Core.Models;
+
+using MLLib;
 
 namespace MLServer
 {
@@ -17,10 +19,16 @@ namespace MLServer
     #region 定数宣言
 
     /// <summary>XBEEの上位アドレス</summary>
-    private const string XBEE_HIGHADD = "0013A200";
+    private const string UP_ADD = "0013A200";
 
     /// <summary>HTMLデータを更新する時間間隔[msec]</summary>
     private const int HTML_REFRESH_SPAN = 10 * 1000;
+
+    /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
+    private const int XBEE_SCAN_SPAN = 5 * 1000;
+
+    /// <summary>子機の探索時間間隔[msec]</summary>
+    private const int ENDDV_SCAN_SPAN = 5 * 1000;
 
     #endregion
 
@@ -29,20 +37,32 @@ namespace MLServer
     /// <summary>UART通信のボーレート</summary>
     private static int baudRate;
 
+    /// <summary>受信パケット総量[bytes]</summary>
+    private static int pBytes = 0;
+
     /// <summary>温冷感計算のための基準の物理量</summary>
     private static double metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue;
 
     /// <summary>新しいデータ収集があったか否か</summary>
     private static bool hasNewData = true;
 
-    /// <summary></summary>
-    private static string dataDirectory = AppDomain.CurrentDomain.BaseDirectory + "data";
+    /// <summary>データ格納用のディレクトリ</summary>
+    private static string dataDirectory;
 
     /// <summary>発見されたMLogger端末のリスト</summary>
-    private static Dictionary<ulong, MLogger> mLoggers = new Dictionary<ulong, MLogger>();
+    private static Dictionary<string, MLogger> mLoggers = new Dictionary<string, MLogger>();
 
-    /// <summary>補正係数リスト</summary>
-    private static Dictionary<string, string> cFactors = new Dictionary<string, string>();
+    /// <summary>XBee端末と接続されたポート名のリスト</summary>
+    private static List<string> connectedPorts = new List<string>();
+
+    /// <summary>接続候補のポートリスト</summary>
+    private static List<string> excludedPorts = new List<string>();
+
+    /// <summary>通信用XBee端末リスト</summary>
+    private static Dictionary<ZigBeeDevice, xbeeInfo> coordinators = new Dictionary<ZigBeeDevice, xbeeInfo>();
+
+    /// <summary>MLoggerのアドレス-名称対応リスト</summary>
+    private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
 
     #endregion
 
@@ -54,76 +74,20 @@ namespace MLServer
       dataDirectory = AppDomain.CurrentDomain.BaseDirectory + "data";
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
 
-      //補正係数読み込み
-      loadCFactors();
-
       //温冷感計算のための代謝量[met]と着衣量[clo]を読み込む
       loadInitFile(out baudRate, out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
 
-      //子機のアドレスを読み込む
-      using (StreamReader sReader = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + "resume.txt"))
+      //MLoggerのアドレス-名称対応リストを読む
+      using (StreamReader sReader = new StreamReader
+        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt"))
       {
-        string buff;
-        while ((buff = sReader.ReadLine()) != null)
+        string line;
+        while ((line = sReader.ReadLine()) != null)
         {
-          NodeAddress add = new NodeAddress(new LongAddress(Convert.ToUInt64(XBEE_HIGHADD + buff, 16)));
-          MLogger ml = new MLogger(add.LongAddress.Value);
-          if (cFactors.ContainsKey(ml.LowAddress))
-            ml.InitCFactors(cFactors[ml.LowAddress]);
-          mLoggers.Add(add.LongAddress.Value, ml);
+          string[] bf = line.Split(':');
+          mlNames.Add(UP_ADD + bf[0], bf[1]);
         }
       }
-
-      //ポート一覧の取得
-      string[] portList = System.IO.Ports.SerialPort.GetPortNames();
-      string pList = "以下のPortへの接続を試みます:";
-      for (int i = 0; i < portList.Length; i++) pList += " " + portList[i];
-      Console.WriteLine(pList);
-
-      //各ポートへの接続を試行
-      for (int i = 0; i < portList.Length; i++)
-      {
-        Task tsk = makeConnectTask(portList[i]); ;
-        tsk.Start();
-      }
-
-      //親機に接続とイベント登録
-      /*tryTask.Run(async () =>
-      {
-        
-        {
-          Console.WriteLine("XBeeに接続中・・・");
-          while (true)
-          {
-            string[] portList = System.IO.Ports.SerialPort.GetPortNames();
-            Console.Write("Port一覧:");
-            for (int i = 0; i < portList.Length; i++) Console.Write(" " + portList[i]);
-            Console.WriteLine();
-
-            var cntrl = XBeeController.FindAndOpenAsync(portList, 9600);
-            XBeeController myXBee = cntrl.Result;
-            if (myXBee != null)
-            {
-              var s2 = new XBeeSeries2(myXBee);
-              var serial = await s2.GetSerialNumberAsync();
-              Console.WriteLine("接続成功。S/N = " + serial);
-
-              //データ受信時の処理
-              myXBee.DataReceived += Controller_DataReceived;
-              break;
-            }
-            else
-            {
-              Console.WriteLine("再試行中");
-              Thread.Sleep(1000);
-            }
-          }
-        }
-        catch (Exception e)
-        {
-          Console.WriteLine(e.Message);
-        }
-    });*/
 
       //定期的にHTMLファイルを更新する
       Task htmlRefreshTask = Task.Run(() =>
@@ -132,66 +96,20 @@ namespace MLServer
         {
           if (hasNewData)
           {
-            makeWebData();
             hasNewData = false;
+            makeWebData();
           }
           Thread.Sleep(HTML_REFRESH_SPAN);
         }
       });
 
+      //定期的にXBeeコーディネータを探索する
+      scanCoordinator();
+
+      //子機を探す
+      scanEndDevice();
+
       while (true) ;
-    }
-
-    /// <summary>Portへの接続Taskを生成</summary>
-    /// <param name="pName">Port名称</param>
-    /// <returns>Portへの接続Task</returns>
-    private static Task makeConnectTask(string pName)
-    {
-      return new Task(async () =>
-      {
-        XBeeController ctrl = new XBeeController();
-        try
-        {
-          await ctrl.OpenAsync(pName, baudRate);
-        }
-        catch (Exception ex)
-        {
-          Console.WriteLine(pName + ": " + ex.Message);
-          return;
-        }
-        if (ctrl == null)
-        {
-          Console.WriteLine(pName + ": 接続失敗");
-          return;
-        }
-
-        var s2 = new XBeeSeries2(ctrl);
-        var serial = await s2.GetSerialNumberAsync();
-        Console.WriteLine(pName + ": " + " 接続成功。S/N = " + serial);
-
-        //データ受信時の処理
-        ctrl.DataReceived += Controller_DataReceived;
-
-      });
-    }
-
-    /// <summary>補正係数を読み込む</summary>
-    private static void loadCFactors()
-    {
-      string fPath = dataDirectory + Path.DirectorySeparatorChar + "cf.ini";
-      if (File.Exists(fPath))
-      {
-        try
-        {
-          using (StreamReader sReader = new StreamReader(fPath, Encoding.GetEncoding("UTF-8")))
-          {
-            string bf;
-            while ((bf = sReader.ReadLine()) != null)
-              cFactors.Add(bf.Substring(0, bf.IndexOf(',')), bf.Substring(bf.IndexOf(',') + 1));
-          }
-        }
-        catch { Console.WriteLine("cr.iniの読み込みに失敗しました"); }
-      }
     }
 
     private static void loadInitFile
@@ -216,99 +134,263 @@ namespace MLServer
           switch (st[0])
           {
             case "baud_rate":
-              brate = int.Parse(st[1]);
+              baudRate = int.Parse(st[1]);
               break;
             case "met":
-              met = double.Parse(st[1]);
+              metValue = double.Parse(st[1]);
               break;
             case "clo":
-              clo = double.Parse(st[1]);
+              cloValue = double.Parse(st[1]);
               break;
             case "dbt":
-              dbt = double.Parse(st[1]);
+              dbtValue = double.Parse(st[1]);
               break;
             case "rhd":
-              rhd = double.Parse(st[1]);
+              rhdValue = double.Parse(st[1]);
               break;
             case "vel":
-              vel = double.Parse(st[1]);
+              velValue = double.Parse(st[1]);
               break;
             case "mrt":
-              mrt = double.Parse(st[1]);
+              mrtValue = double.Parse(st[1]);
               break;
           }
         }
       }
+    }
+
+    private static void scanCoordinator()
+    {
+      Task xbeeScanTask = Task.Run(() =>
+      {
+        while (true)
+        {
+          //各ポートへの接続を試行
+          string[] portList = System.IO.Ports.SerialPort.GetPortNames();
+          foreach (string pn in excludedPorts)
+            if (Array.IndexOf(portList, pn) == -1)
+              excludedPorts.Remove(pn);
+
+          for (int i = 0; i < portList.Length; i++)
+          {
+            if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
+            {
+              Task tsk = makeConnectTask(portList[i]);
+              tsk.Start();
+            }
+          }
+          Thread.Sleep(XBEE_SCAN_SPAN);
+        }
+      });
+    }
+
+    private static void scanEndDevice()
+    {
+      //定期的にXBeeコーディネータを探索する
+      Task scanEndDeviceTask = Task.Run(() =>
+      {
+        while (true)
+        {
+          foreach (ZigBeeDevice coordinator in coordinators.Keys)
+          {
+            XBeeNetwork net = coordinator.GetNetwork();
+
+            //既に探索中の場合は一旦停止
+            if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
+
+            //探索開始
+            net.SetDiscoveryTimeout((int)(ENDDV_SCAN_SPAN * 0.9)); //5秒
+            try
+            {
+              Console.WriteLine("Start scanning end devices...");
+              net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
+            }
+            catch (Exception e)
+            {
+              Console.WriteLine(e.Message);
+            }
+          }
+
+          Thread.Sleep(ENDDV_SCAN_SPAN);
+        }
+      });
     }
 
     #endregion
 
-    #region XBee通信処理
+    #region コーディネータ接続関連の処理
 
-    /// <summary>データ受信時の処理</summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private static void Controller_DataReceived(object sender, SourcedDataReceivedEventArgs e)
+    /// <summary>Portへの接続Taskを生成</summary>
+    /// <param name="pName">Port名称</param>
+    /// <returns>Portへの接続Task</returns>
+    private static Task makeConnectTask(string pName)
     {
-      if (!mLoggers.ContainsKey(e.Address.LongAddress.Value)) return; //未登録のノードからの受信は無視
+      return new Task(() =>
+      {
+        //通信用XBee端末をOpen
+        ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, baudRate));
+        try
+        {
+          device.Open();
+        }
+        catch (Exception ex)
+        {
+          excludedPorts.Add(pName);
+          Console.WriteLine(pName + ": " + ex.Message);
+          return;
+        }
+        coordinators.Add(device, new xbeeInfo(pName));
+        Console.WriteLine(pName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
+
+        //イベント登録
+        XBeeNetwork net = device.GetNetwork();
+        device.GetNetwork().DeviceDiscovered += Net_DeviceDiscovered; //xbeeノード発見イベント
+                                                                      //
+        device.DataReceived += Device_DataReceived; //データ受信イベント
+        device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
+
+        connectedPorts.Add(pName);
+      });
+    }
+
+    private static void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
+    {
+      //HTML更新フラグを立てる
+      hasNewData = true;
+
+      RemoteXBeeDevice rdv = e.DiscoveredDevice;
+      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
+
+      //MLoggerリストに追加
+      string add = rdv.GetAddressString();
+      if (!mLoggers.ContainsKey(add))
+      {
+        MLogger ml = new MLogger(add);
+        
+        //名前を設定
+        if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
+
+        //熱的快適性計算のための情報を設定
+        ml.CloValue = cloValue;
+        ml.MetValue = metValue;
+        ml.DefaultTemperature = dbtValue;
+        ml.DefaultRelativeHumidity = rhdValue;
+        ml.DefaultGlobeTemperature = mrtValue;
+        ml.DefaultVelocity = velValue;
+
+        //イベント登録
+        ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
+
+        mLoggers.Add(add, ml);
+      }
+
+      //子機のアドレスと通信用XBeeを対応付ける
+      if (!coordinators[dv].longAddress.Contains(add))
+        coordinators[dv].longAddress.Add(add);
+    }
+
+    private static void Device_DataReceived(object sender, XBeeLibrary.Core.Events.DataReceivedEventArgs e)
+    {
+      RemoteXBeeDevice rdv = e.DataReceived.Device;
+      string add = rdv.GetAddressString();
+      string rcvStr = e.DataReceived.DataString;
+
+      if (!mLoggers.ContainsKey(add)) return; //未登録のノードからの受信は無視
 
       //HTML更新フラグを立てる
       hasNewData = true;
 
-      MLogger mlg = mLoggers[e.Address.LongAddress.Value];
-      mlg.LastCommunication = DateTime.Now;
+      MLogger mlg = mLoggers[add];
 
       //受信データを追加
-      Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-      char[] chars = Encoding.GetEncoding("Shift_JIS").GetString(e.Data).ToCharArray();
-      mlg.AddReceivedData(new string(chars));
+      mlg.AddReceivedData(rcvStr);
 
-      //コマンドがある限り処理を続ける
+      //コマンド処理
       while (mlg.HasCommand)
       {
-        string command = mlg.GetCommand();
-        Console.WriteLine(MLogger.GetLowAddress(e.Address.LongAddress.Value) + " : " + command);
-        if (solveCommand(e.Address, command)) mlg.RemoveCommand(); //処理に成功した場合はコマンドを削除
-        else break; //処理に失敗した場合には次回に再挑戦
-      }
-
-    }
-
-    /// <summary>受信データを処理する</summary>
-    /// <param name="add">送信元アドレス</param>
-    /// <param name="data">受信データ</param>
-    /// <returns>コマンドが処理できたか否か</returns>
-    private static bool solveCommand(NodeAddress add, string command)
-    {
-      //DATであれば書き出す*******************************
-      if (command.StartsWith("DTT"))
-      {
-        //データ書き出し
-        string fName = dataDirectory + Path.DirectorySeparatorChar + MLogger.GetLowAddress(add.LongAddress.Value) + ".csv";
-
         try
         {
-          using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.GetEncoding("Shift_JIS")))
-          {
-            DateTime now;
-            double tmp, hmd, glbV, glb, velV, vel, ill;
-            mLoggers[add.LongAddress.Value].SolveDTT(command, out now, out tmp, out hmd, out glbV, out glb, out velV, out vel, out ill);
-            sWriter.WriteLine(
-              now.ToString("yyyy/MM/dd HH:mm:ss") + "," +
-              tmp.ToString("F2") + "," + hmd.ToString("F2") + "," +
-              glbV.ToString("F3") + "," + glb.ToString("F2") + "," +
-              velV.ToString("F3") + "," + vel.ToString("F4") + "," +
-              ill.ToString("F2"));
-          }
+          Console.WriteLine(mlg.Name + ": " + mlg.NextCommand);
+          mlg.SolveCommand();
         }
-        catch
+        catch (Exception exc)
         {
-          Console.WriteLine(fName + "が使用中です");
-          return false;
+          Console.WriteLine(mlg.Name + " : " + exc.Message);
+          mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
         }
       }
 
-      return true;
+      //受信パケット総量が48500bytesを超えた場合に再接続
+      //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
+      //かなりいい加減でデータの取りこぼしが発生しかねない処理。
+      if (45000 < pBytes)
+      {
+        while (true)
+        {
+          try
+          {
+            XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
+
+            dvv.DataReceived -= Device_DataReceived;
+            dvv.PacketReceived -= Device_PacketReceived;
+            dvv.Close();
+
+            pBytes = 0;
+
+            dvv.Open();
+            dvv.DataReceived += Device_DataReceived;
+            dvv.PacketReceived += Device_PacketReceived;
+            return;
+          }
+          catch
+          {
+            Console.WriteLine("Re-connect Error");
+          }
+        }
+
+      }
+    }
+
+    private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
+    {
+      //受信パケット総量を加算
+      pBytes += e.ReceivedPacket.PacketLength;
+    }
+
+    #endregion
+
+    #region コマンド受信イベント発生時の処理
+
+    private static void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
+    {
+      //データ書き出し
+      MLogger ml = (MLogger)sender;      
+      string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
+
+      try
+      {
+        using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
+        {
+          sWriter.WriteLine(
+            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
+            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
+            ml.RelativeHumdity.LastValue.ToString("F2") + "," +
+            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
+            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
+            ml.VelocityVoltage.ToString("F3") + "," +
+            ml.Velocity.LastValue.ToString("F4") + "," +
+            ml.Illuminance.LastValue.ToString("F2") + "," +
+            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+            ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
+            ml.GeneralVoltage3.LastValue.ToString("F3"));
+        }
+      }
+      catch
+      {
+        Console.WriteLine(ml.Name + ": Can't access to file.");
+        return;
+      }
     }
 
     #endregion
@@ -320,15 +402,32 @@ namespace MLServer
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
-      string html = MLogger.MakeListHTML(Resources.topPage_html, loggers, metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue);
+      string html = MLogger.MakeHTMLTable(Resources.topPage_html, loggers);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
       { sWriter.Write(html); }
 
-      string latestData = MLogger.MakeLatestData(loggers, metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue);
+      string latestData = MLogger.MakeLatestData(loggers);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
       { sWriter.Write(latestData); }
+    }
+
+    #endregion
+
+    #region インナークラスの定義
+
+    /// <summary>通信用XBee端末の情報</summary>
+    private class xbeeInfo
+    {
+      public xbeeInfo(string portName)
+      {
+        this.portName = portName;
+      }
+
+      public List<string> longAddress = new List<string>();
+
+      public string portName { get; private set; }
     }
 
     #endregion

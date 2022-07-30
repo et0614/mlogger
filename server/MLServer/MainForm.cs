@@ -103,9 +103,6 @@ namespace MLServer
     /// <summary>通信用XBee端末リスト</summary>
     private Dictionary<ZigBeeDevice, xbeeInfo> myXBees = new Dictionary<ZigBeeDevice, xbeeInfo>();
 
-    /// <summary>補正係数リスト</summary>
-    private Dictionary<string, string> cFactors = new Dictionary<string, string>();
-
     /// <summary>ログの一時保存</summary>
     private StringBuilder logString = new StringBuilder();
 
@@ -115,6 +112,9 @@ namespace MLServer
     /// <summary>補正係数設定用フォーム</summary>
     private CFForm cfForm;
 
+    /// <summary>MLoggerのアドレス-名称対応リスト</summary>
+    private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
+
     #endregion
 
     #region コンストラクタ
@@ -122,6 +122,7 @@ namespace MLServer
     /// <summary>staticコンストラクタ：初期化パラメータ読み込み</summary>
     static MainForm()
     {
+      //初期設定ファイルを読む
       using (StreamReader sReader = new StreamReader
         (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "setting.ini"))
       {
@@ -163,6 +164,18 @@ namespace MLServer
               enableSDOutput = bool.Parse(st[1]);
               break;
           }
+        }
+      }
+
+      //MLoggerのアドレス-名称対応リストを読む
+      using (StreamReader sReader = new StreamReader
+        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt"))
+      {
+        string line;
+        while ((line = sReader.ReadLine()) != null)
+        {
+          string[] bf = line.Split(':');
+          mlNames.Add(UP_ADD + bf[0], bf[1]);
         }
       }
     }
@@ -511,6 +524,18 @@ namespace MLServer
       {
         MLogger ml = new MLogger(add);
 
+        //名前を設定
+        if(mlNames.ContainsKey(add)) ml.Name = mlNames[add];
+        
+        //熱的快適性計算のための情報を設定
+        ml.CloValue = cloValue;
+        ml.MetValue = metValue;
+        ml.DefaultTemperature = dbtValue;
+        ml.DefaultRelativeHumidity = rhdValue;
+        ml.DefaultGlobeTemperature = mrtValue;
+        ml.DefaultVelocity = velValue;
+
+        //イベント登録
         ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
         ml.MeasurementSettingReceivedEvent += Ml_MeasurementSettingReceivedEvent;
         ml.VersionReceivedEvent += Ml_VersionReceivedEvent;
@@ -519,9 +544,6 @@ namespace MLServer
         ml.StartMeasuringMessageReceivedEvent += Ml_StartMeasuringMessageReceivedEvent;
 
         mLoggers.Add(add, ml);
-
-        //プログラム異常停止に備えてResumeリストに追加
-        updateResumeNodeList();
       }
 
       //子機のアドレスと通信用XBeeを対応付ける
@@ -536,11 +558,8 @@ namespace MLServer
       {
         try
         {
-          sndMsg(add, "\rLMS\r");
-          sndMsg(add, "\rVER\r");
-
-          //dv.SendData(rdv, Encoding.ASCII.GetBytes("\rLMS\r")); //\rを送ってからコマンドを送ると安心
-          //dv.SendData(rdv, Encoding.ASCII.GetBytes("\rVER\r")); //\rを送ってからコマンドを送ると安心
+          sndMsg(add, MLogger.MakeLoadMeasuringSettingCommand());
+          sndMsg(add, MLogger.MakeGetVersionCommand());
         }
         catch (Exception e)
         {
@@ -561,7 +580,6 @@ namespace MLServer
       hasNewData = true;
 
       MLogger mlg = mLoggers[add];
-      mlg.LastCommunication = DateTime.Now;
 
       //受信データを追加
       mlg.AddReceivedData(rcvStr);
@@ -668,7 +686,7 @@ namespace MLServer
         {
           sWriter.WriteLine(
             DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
-            ml.LastMeasuredDateTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
             ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
             ml.RelativeHumdity.LastValue.ToString("F2") + "," +
             ml.GlobeTemperatureVoltage.ToString("F3") + "," +
@@ -1159,35 +1177,6 @@ namespace MLServer
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
       { sWriter.Write(latestData); }
-    }
-
-    #endregion
-
-    #region Resume用NodeAddressリストの作成
-
-    private void updateResumeNodeList()
-    {
-      List<string> addLng = new List<string>();
-
-      if (File.Exists("resume.txt"))
-      {
-        using (StreamReader sReader = new StreamReader("resume.txt"))
-        {
-          string buff;
-          while ((buff = sReader.ReadLine()) != null)
-            addLng.Add(buff);
-        }
-      }
-
-      foreach (string lngAdd in mLoggers.Keys)
-        if (!addLng.Contains(lngAdd))
-          addLng.Add(lngAdd);
-
-      using (StreamWriter sWriter = new StreamWriter("resume.txt"))
-      {
-        for (int i = 0; i < addLng.Count; i++)
-          sWriter.WriteLine(addLng[i]);
-      }
     }
 
     #endregion
