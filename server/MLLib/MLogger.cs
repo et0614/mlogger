@@ -98,7 +98,7 @@ namespace MLLib
     public Status CurrentStatus { get; private set; } = Status.WaitingForCommand;
 
     /// <summary>計測開始日時を取得する</summary>
-    public DateTime StartMeasuringDateTime { get; private set; }
+    public DateTime StartMeasuringDateTime { get; private set; } = new DateTime(2000, 1, 1, 0, 0, 0);
 
     #endregion
 
@@ -135,7 +135,7 @@ namespace MLLib
     public MeasurementInfo GeneralVoltage3 { get; } = new MeasurementInfo();
 
     /// <summary>近接センサ計測の真偽を取得する</summary>
-    public bool MeasureProximity { get; private set; } = true;
+    public bool MeasureProximity { get; private set; } = false;
 
     /// <summary>微風速の無風時の電圧[V]を取得する</summary>
     public double VelocityMinVoltage { get; private set; } = 1.45;
@@ -704,10 +704,10 @@ namespace MLLib
     public class MeasurementInfo
     {
       /// <summary>計測するか否かを取得する</summary>
-      public bool Measure { get; internal set; }
+      public bool Measure { get; internal set; } = true;
 
       /// <summary>計測時間間隔[sec]を取得する</summary>
-      public int Interval { get; internal set; }
+      public int Interval { get; internal set; } = 60;
 
       /// <summary>最終の計測日時を取得する</summary>
       public DateTime LastMeasureTime { get; internal set; } = UNIX_EPOCH;
@@ -716,10 +716,10 @@ namespace MLLib
       public double LastValue { get; internal set; }
 
       /// <summary>補正式Ax+Bの補正係数Aを取得する</summary>
-      public double CorrectionFactorA { get; internal set; }
+      public double CorrectionFactorA { get; internal set; } = 1.0;
 
       /// <summary>補正式Ax+Bの補正係数Bを取得する</summary>
-      public double CorrectionFactorB { get; internal set; }
+      public double CorrectionFactorB { get; internal set; } = 0.0;
     }
 
     #endregion

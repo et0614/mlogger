@@ -132,6 +132,9 @@
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="DateTime" xml:space="preserve">
+    <value>Date time</value>
+  </data>
   <data name="DBTandRH" xml:space="preserve">
     <value>DBT/RH</value>
   </data>

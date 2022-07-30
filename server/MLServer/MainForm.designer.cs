@@ -34,6 +34,7 @@
       this.tsb_reload = new System.Windows.Forms.ToolStripButton();
       this.tsb_downloading = new System.Windows.Forms.ToolStripButton();
       this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+      this.splitContainer2 = new System.Windows.Forms.SplitContainer();
       this.lv_setting = new System.Windows.Forms.ListView();
       this.lvhd_xbeeID = new System.Windows.Forms.ColumnHeader();
       this.lvhd_xbeeName = new System.Windows.Forms.ColumnHeader();
@@ -53,6 +54,19 @@
       this.lvhd_gv2Interval = new System.Windows.Forms.ColumnHeader();
       this.lvhd_gv3Measure = new System.Windows.Forms.ColumnHeader();
       this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
+      this.lvhd_prxMeasure = new System.Windows.Forms.ColumnHeader();
+      this.lv_measure = new System.Windows.Forms.ListView();
+      this.lvhd2_xbeeID = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_name = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_dbt = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_hmd = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_glb = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_vel = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_ill = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_pmv = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_ppd = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_set = new System.Windows.Forms.ColumnHeader();
+      this.lvhd2_dtime = new System.Windows.Forms.ColumnHeader();
       this.tbx_log = new System.Windows.Forms.TextBox();
       this.pnl_settingEdit = new System.Windows.Forms.Panel();
       this.rbtn_ill = new System.Windows.Forms.RadioButton();
@@ -90,12 +104,15 @@
       this.tbx_thInterval = new System.Windows.Forms.TextBox();
       this.cbx_velMeasure = new System.Windows.Forms.CheckBox();
       this.tbx_velInterval = new System.Windows.Forms.TextBox();
-      this.lvhd_prxMeasure = new System.Windows.Forms.ColumnHeader();
       this.toolStrip.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
       this.splitContainer1.Panel2.SuspendLayout();
       this.splitContainer1.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+      this.splitContainer2.Panel1.SuspendLayout();
+      this.splitContainer2.Panel2.SuspendLayout();
+      this.splitContainer2.SuspendLayout();
       this.pnl_settingEdit.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -157,7 +174,7 @@
       // 
       // splitContainer1.Panel1
       // 
-      this.splitContainer1.Panel1.Controls.Add(this.lv_setting);
+      this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
       this.splitContainer1.Panel1MinSize = 300;
       // 
       // splitContainer1.Panel2
@@ -167,6 +184,24 @@
       this.splitContainer1.SplitterDistance = 887;
       this.splitContainer1.SplitterWidth = 9;
       this.splitContainer1.TabIndex = 17;
+      // 
+      // splitContainer2
+      // 
+      this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+      this.splitContainer2.Name = "splitContainer2";
+      this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+      // 
+      // splitContainer2.Panel1
+      // 
+      this.splitContainer2.Panel1.Controls.Add(this.lv_setting);
+      // 
+      // splitContainer2.Panel2
+      // 
+      this.splitContainer2.Panel2.Controls.Add(this.lv_measure);
+      this.splitContainer2.Size = new System.Drawing.Size(1866, 887);
+      this.splitContainer2.SplitterDistance = 486;
+      this.splitContainer2.TabIndex = 5;
       // 
       // lv_setting
       // 
@@ -192,16 +227,16 @@
             this.lvhd_prxMeasure});
       this.lv_setting.Dock = System.Windows.Forms.DockStyle.Fill;
       this.lv_setting.FullRowSelect = true;
-      this.lv_setting.HideSelection = false;
       this.lv_setting.Location = new System.Drawing.Point(0, 0);
       this.lv_setting.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.lv_setting.Name = "lv_setting";
-      this.lv_setting.Size = new System.Drawing.Size(1866, 887);
+      this.lv_setting.Size = new System.Drawing.Size(1866, 486);
       this.lv_setting.TabIndex = 3;
       this.lv_setting.UseCompatibleStateImageBehavior = false;
       this.lv_setting.View = System.Windows.Forms.View.Details;
       this.lv_setting.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lv_setting_ColumnClick);
       this.lv_setting.SelectedIndexChanged += new System.EventHandler(this.lv_setting_SelectedIndexChanged);
+      this.lv_setting.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd_xbeeID
       // 
@@ -322,6 +357,99 @@
       this.lvhd_gv3Interval.Text = "測定間隔";
       this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
       this.lvhd_gv3Interval.Width = 80;
+      // 
+      // lvhd_prxMeasure
+      // 
+      this.lvhd_prxMeasure.Text = "近接";
+      this.lvhd_prxMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd_prxMeasure.Width = 80;
+      // 
+      // lv_measure
+      // 
+      this.lv_measure.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.lvhd2_xbeeID,
+            this.lvhd2_name,
+            this.lvhd2_dbt,
+            this.lvhd2_hmd,
+            this.lvhd2_glb,
+            this.lvhd2_vel,
+            this.lvhd2_ill,
+            this.lvhd2_pmv,
+            this.lvhd2_ppd,
+            this.lvhd2_set,
+            this.lvhd2_dtime});
+      this.lv_measure.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.lv_measure.Location = new System.Drawing.Point(0, 0);
+      this.lv_measure.Name = "lv_measure";
+      this.lv_measure.Size = new System.Drawing.Size(1866, 397);
+      this.lv_measure.TabIndex = 4;
+      this.lv_measure.UseCompatibleStateImageBehavior = false;
+      this.lv_measure.View = System.Windows.Forms.View.Details;
+      this.lv_measure.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
+      // 
+      // lvhd2_xbeeID
+      // 
+      this.lvhd2_xbeeID.Text = "ID";
+      this.lvhd2_xbeeID.Width = 80;
+      // 
+      // lvhd2_name
+      // 
+      this.lvhd2_name.Text = "Name";
+      this.lvhd2_name.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_name.Width = 80;
+      // 
+      // lvhd2_dbt
+      // 
+      this.lvhd2_dbt.Text = "dbt";
+      this.lvhd2_dbt.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_dbt.Width = 80;
+      // 
+      // lvhd2_hmd
+      // 
+      this.lvhd2_hmd.Text = "hmd";
+      this.lvhd2_hmd.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_hmd.Width = 80;
+      // 
+      // lvhd2_glb
+      // 
+      this.lvhd2_glb.Text = "glb";
+      this.lvhd2_glb.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_glb.Width = 80;
+      // 
+      // lvhd2_vel
+      // 
+      this.lvhd2_vel.Text = "vel";
+      this.lvhd2_vel.Width = 80;
+      // 
+      // lvhd2_ill
+      // 
+      this.lvhd2_ill.Text = "illuminance";
+      this.lvhd2_ill.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_ill.Width = 80;
+      // 
+      // lvhd2_pmv
+      // 
+      this.lvhd2_pmv.Text = "pmv";
+      this.lvhd2_pmv.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_pmv.Width = 80;
+      // 
+      // lvhd2_ppd
+      // 
+      this.lvhd2_ppd.Text = "ppd";
+      this.lvhd2_ppd.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_ppd.Width = 80;
+      // 
+      // lvhd2_set
+      // 
+      this.lvhd2_set.Text = "set";
+      this.lvhd2_set.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_set.Width = 80;
+      // 
+      // lvhd2_dtime
+      // 
+      this.lvhd2_dtime.Text = "dtime";
+      this.lvhd2_dtime.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+      this.lvhd2_dtime.Width = 80;
       // 
       // tbx_log
       // 
@@ -774,12 +902,6 @@
       this.tbx_velInterval.Text = "60";
       this.tbx_velInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
       // 
-      // lvhd_prxMeasure
-      // 
-      this.lvhd_prxMeasure.Text = "近接";
-      this.lvhd_prxMeasure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_prxMeasure.Width = 80;
-      // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
@@ -800,6 +922,10 @@
       this.splitContainer1.Panel2.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
       this.splitContainer1.ResumeLayout(false);
+      this.splitContainer2.Panel1.ResumeLayout(false);
+      this.splitContainer2.Panel2.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+      this.splitContainer2.ResumeLayout(false);
       this.pnl_settingEdit.ResumeLayout(false);
       this.pnl_settingEdit.PerformLayout();
       this.ResumeLayout(false);
@@ -870,6 +996,19 @@
     private System.Windows.Forms.RadioButton rbtn_ill;
     private System.Windows.Forms.RadioButton rbtn_prox;
     private System.Windows.Forms.ColumnHeader lvhd_prxMeasure;
+    private System.Windows.Forms.ListView lv_measure;
+    private System.Windows.Forms.ColumnHeader lvhd2_xbeeID;
+    private System.Windows.Forms.ColumnHeader lvhd2_name;
+    private System.Windows.Forms.ColumnHeader lvhd2_dbt;
+    private System.Windows.Forms.ColumnHeader lvhd2_hmd;
+    private System.Windows.Forms.ColumnHeader lvhd2_glb;
+    private System.Windows.Forms.ColumnHeader lvhd2_vel;
+    private System.Windows.Forms.ColumnHeader lvhd2_pmv;
+    private System.Windows.Forms.ColumnHeader lvhd2_ppd;
+    private System.Windows.Forms.ColumnHeader lvhd2_set;
+    private System.Windows.Forms.ColumnHeader lvhd2_dtime;
+    private System.Windows.Forms.SplitContainer splitContainer2;
+    private System.Windows.Forms.ColumnHeader lvhd2_ill;
   }
 }
 

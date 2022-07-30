@@ -132,6 +132,9 @@
   <data name="Close" xml:space="preserve">
     <value>閉じる</value>
   </data>
+  <data name="DateTime" xml:space="preserve">
+    <value>日時</value>
+  </data>
   <data name="DBTandRH" xml:space="preserve">
     <value>温湿度</value>
   </data>

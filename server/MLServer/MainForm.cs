@@ -35,6 +35,9 @@ namespace MLServer
     /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
     private const int XBEE_SCAN_SPAN = 5 * 1000;
 
+    /// <summary>日時の型</summary>
+    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
+
     #endregion
 
     #region readonly 初期化パラメータ
@@ -69,9 +72,6 @@ namespace MLServer
     /// <summary>SDカード書き出しを有効化するか否か</summary>
     private static readonly bool enableSDOutput = false;
 
-    /// <summary>予め登録された計器からの計測信号を自動で記録するか否か</summary>
-    private static readonly bool autoLogging = true;
-
     #endregion
 
     #region クラス変数
@@ -89,19 +89,22 @@ namespace MLServer
     private string dataDirectory;
 
     /// <summary>XBee端末と接続されたポート名のリスト</summary>
-    private List<string> connectedPorts = new List<string>();
+    private readonly List<string> connectedPorts = new List<string>();
 
     /// <summary>接続候補のポートリスト</summary>
-    private List<string> excludedPorts = new List<string>();
+    private readonly List<string> excludedPorts = new List<string>();
 
     /// <summary>発見されたMLogger端末のリスト</summary>
-    private Dictionary<string, MLogger> mLoggers = new Dictionary<string, MLogger>();
+    private readonly Dictionary<string, MLogger> mLoggers = new Dictionary<string, MLogger>();
 
-    /// <summary>MLoggerに関連付けられたリストビューのリスト</summary>
-    private Dictionary<MLogger, ListViewItem> lvItems = new Dictionary<MLogger, ListViewItem>();
+    /// <summary>MLoggerに関連付けられたリストビューのリスト（計測設定）</summary>
+    private readonly Dictionary<MLogger, ListViewItem> lviSets = new Dictionary<MLogger, ListViewItem>();
+
+    /// <summary>MLoggerに関連付けられたリストビューのリスト（計測値）</summary>
+    private readonly Dictionary<MLogger, ListViewItem> lviVals = new Dictionary<MLogger, ListViewItem>();
 
     /// <summary>通信用XBee端末リスト</summary>
-    private Dictionary<ZigBeeDevice, xbeeInfo> myXBees = new Dictionary<ZigBeeDevice, xbeeInfo>();
+    private readonly Dictionary<ZigBeeDevice, xbeeInfo> myXBees = new Dictionary<ZigBeeDevice, xbeeInfo>();
 
     /// <summary>ログの一時保存</summary>
     private StringBuilder logString = new StringBuilder();
@@ -280,6 +283,7 @@ namespace MLServer
       btn_outputSD.Text = i18n.Resources.MF_StartLoggingToSDCard;
       btn_setCFactor.Text = i18n.Resources.MF_SetCorrectionFactors;
 
+      //計測設定ListViewの項目
       lvhd_xbeeID.Text = "ID";
       lvhd_xbeeName.Text = i18n.Resources.Name;
       lvhd_step.Text = i18n.Resources.Status;
@@ -299,31 +303,140 @@ namespace MLServer
       lvhd_gv3Measure.Text = i18n.Resources.GeneralPurposeVoltage + "3";
       lvhd_gv3Interval.Text = i18n.Resources.Interval;
       lvhd_prxMeasure.Text = i18n.Resources.Proximity;
+      //幅を自動調節
+      foreach (ColumnHeader ch in lv_setting.Columns) ch.Width = -2;
+
+      //計測値ListViewの項目
+      lvhd2_dbt.Text = i18n.Resources.DBTemp;
+      lvhd2_hmd.Text = i18n.Resources.RHumid;
+      lvhd2_glb.Text = i18n.Resources.GlbTemp;
+      lvhd2_vel.Text = i18n.Resources.Velocity;
+      lvhd2_ill.Text = i18n.Resources.Illuminance;
+      lvhd2_pmv.Text = "PMV";
+      lvhd2_ppd.Text = "PPD";
+      lvhd2_set.Text = "SET*";
+      lvhd2_dtime.Text = i18n.Resources.DateTime;
+      //幅を自動調節
+      foreach (ColumnHeader ch in lv_measure.Columns) ch.Width = -2;
     }
 
     #endregion
 
-    #region コントロールの描画更新処理
+    #region コントロールの描画更新処理（設定用リストビュー）
+
+    private delegate void updateLVSettingItemDelegate(MLogger ml);
+
+    private void updateLVSettingItem(MLogger ml)
+    {
+      if (InvokeRequired)
+      {
+        Invoke(new updateLVSettingItemDelegate(updateLVSettingItem), ml);
+        return;
+      }
+
+      //MLoggerを取得
+      if (mLoggers.ContainsValue(ml))
+      {
+        //リストビューに無ければ追加
+        if (!lviSets.ContainsKey(ml))
+        {
+          ListViewItem lvm = new ListViewItem(new string[]
+          { 
+            ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing,
+            ml.DrybulbTemperature.Measure ? "true" : "false", ml.DrybulbTemperature.Interval.ToString(),
+            ml.GlobeTemperature.Measure ? "true" : "false", ml.GlobeTemperature.Interval.ToString(),
+            ml.Velocity.Measure ? "true" : "false", ml.Velocity.Interval.ToString(),
+            ml.Illuminance.Measure ? "true" : "false", ml.Illuminance.Interval.ToString(),
+            ml.GeneralVoltage1.Measure ? "true" : "false", ml.GeneralVoltage1.Interval.ToString(),
+            ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
+            ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
+            ml.MeasureProximity ? "true" : "false",
+            ml.StartMeasuringDateTime.ToString(DT_FORMAT) });
+          lviSets.Add(ml, lvm);
+          lv_setting.Items.Add(lvm);
+        }
+
+        //設定を更新
+        ListViewItem item = lviSets[ml];
+        item.SubItems[1].Text = ml.Name;
+        item.SubItems[2].Text = (ml.CurrentStatus == MLogger.Status.WaitingForCommand) ? i18n.Resources.MF_Editable : i18n.Resources.MF_Measuring;
+        item.SubItems[3].Text = ml.DrybulbTemperature.Measure ? "true" : "false";
+        item.SubItems[4].Text = ml.DrybulbTemperature.Interval.ToString();
+        item.SubItems[5].Text = ml.GlobeTemperature.Measure ? "true" : "false";
+        item.SubItems[6].Text = ml.GlobeTemperature.Interval.ToString();
+        item.SubItems[7].Text = ml.Velocity.Measure ? "true" : "false";
+        item.SubItems[8].Text = ml.Velocity.Interval.ToString();
+        item.SubItems[9].Text = ml.Illuminance.Measure ? "true" : "false";
+        item.SubItems[10].Text = ml.Illuminance.Interval.ToString();
+        item.SubItems[11].Text = ml.StartMeasuringDateTime.ToString(DT_FORMAT);
+        item.SubItems[12].Text = ml.GeneralVoltage1.Measure ? "true" : "false";
+        item.SubItems[13].Text = ml.GeneralVoltage1.Interval.ToString();
+        item.SubItems[14].Text = ml.GeneralVoltage2.Measure ? "true" : "false";
+        item.SubItems[15].Text = ml.GeneralVoltage2.Interval.ToString();
+        item.SubItems[16].Text = ml.GeneralVoltage3.Measure ? "true" : "false";
+        item.SubItems[17].Text = ml.GeneralVoltage3.Interval.ToString();
+        item.SubItems[18].Text = ml.MeasureProximity ? "true" : "false";
+      }
+    }
+
+    #endregion
+
+    #region コントロールの描画更新処理（測定値リストビュー）
+
+    private delegate void updateLVValueItemDelegate(MLogger ml);
+
+    /// <summary>XBee端末をリストに追加する</summary>
+    /// <param name="name"></param>
+    private void updateLVValueItem(MLogger ml)
+    {
+      if (InvokeRequired)
+      {
+        Invoke(new updateLVValueItemDelegate(updateLVValueItem), ml);
+        return;
+      }
+
+      //リストビューに無ければ追加
+      if (mLoggers.ContainsValue(ml))
+      {
+        if (!lviVals.ContainsKey(ml))
+        {
+          ListViewItem lvm = new ListViewItem(new string[]
+          { 
+            ml.LowAddress, ml.Name,
+            ml.DrybulbTemperature.LastValue.ToString("F1"),
+            ml.RelativeHumdity.LastValue.ToString("F1"),
+            ml.GlobeTemperature.LastValue.ToString("F1"),
+            ml.Velocity.LastValue.ToString("F2"),
+            ml.Illuminance.LastValue.ToString("F1"),
+            ml.PMV.ToString("F2"),
+            ml.PPD.ToString("F1"),
+            ml.SETStar.ToString("F1"),
+            ml.LastCommunicated.ToString(DT_FORMAT)
+          }); 
+          lviVals.Add(ml, lvm);
+          lv_measure.Items.Add(lvm);
+        }
+      }
+
+      //測定値を更新
+      ListViewItem item = lviVals[ml];
+      item.SubItems[1].Text = ml.Name;
+      item.SubItems[2].Text = ml.DrybulbTemperature.LastValue.ToString("F1");
+      item.SubItems[3].Text = ml.RelativeHumdity.LastValue.ToString("F1");
+      item.SubItems[4].Text = ml.GlobeTemperature.LastValue.ToString("F1");
+      item.SubItems[5].Text = ml.Velocity.LastValue.ToString("F2");
+      item.SubItems[6].Text = ml.Illuminance.LastValue.ToString("F1");
+      item.SubItems[7].Text = ml.PMV.ToString("F2");
+      item.SubItems[8].Text = ml.PPD.ToString("F1");
+      item.SubItems[9].Text = ml.SETStar.ToString("F1");
+      item.SubItems[10].Text = ml.LastCommunicated.ToString(DT_FORMAT);
+    }
+
+    #endregion
+
+    #region コントロールの描画更新処理（ログ関連）
 
     private delegate void refreshLogDelegate();
-
-    private delegate void initListViewItemDelegate(string longAddress);
-
-    private delegate void setTSBtnStateDelegate
-      (ToolStripButton tsBtn, bool enabled, Image img, string text, string toolTipText);
-
-    private delegate void setTSSBtnStateDelegate
-      (ToolStripSplitButton tssBtn, bool enabled, Image img, string text, string toolTipText);
-
-    private delegate void setCurrentStateDelegate
-      (ListViewItem item, string state);
-
-    private delegate void setListViewContentsDelegate
-      (ListViewItem item, string name, string state, 
-      string measureTH, string intervalTH, string measureGlb, string intervalGlb, string measureVel, string intervalVel, 
-      string measureIlm, string intervalIlm,
-      string measureGV1, string intervalGV1, string measureGV2, string intervalGV2, string measureGV3, string intervalGV3, 
-      string measurePrx, string startTime);
 
     /// <summary>ログ表示を更新する</summary>
     /// <param name="log">ログの内容</param>
@@ -340,29 +453,15 @@ namespace MLServer
       tbx_log.ScrollToCaret();
     }
 
-    /// <summary>XBee端末をリストに追加する</summary>
-    /// <param name="name"></param>
-    private void initListViewItem(string longAddress)
-    {
-      if (InvokeRequired)
-      {
-        Invoke(new initListViewItemDelegate(initListViewItem), longAddress);
-        return;
-      }
+    #endregion
 
-      //リストビューに追加
-      if (mLoggers.ContainsKey(longAddress))
-      {
-        MLogger ml = mLoggers[longAddress];
-        if (!lvItems.ContainsKey(ml))
-        {
-          ListViewItem lvm = new ListViewItem(new string[]
-          { ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing, "true", "60", "true", "60", "true", "600", "true", "60", "2000/01/01 00:00", "true", "60", "true", "60", "true", "60", "false" });
-          lvItems.Add(ml, lvm);
-          lv_setting.Items.Add(lvm);
-        }
-      }
-    }
+    #region コントロールの描画更新処理（Tool strip関連）
+
+    private delegate void setTSBtnStateDelegate
+      (ToolStripButton tsBtn, bool enabled, Image img, string text, string toolTipText);
+
+    private delegate void setTSSBtnStateDelegate
+      (ToolStripSplitButton tssBtn, bool enabled, Image img, string text, string toolTipText);
 
     /// <summary>ToolStripの設定</summary>
     /// <param name="tsBtn"></param>
@@ -404,104 +503,6 @@ namespace MLServer
       tsBtn.Text = text;
       tsBtn.ToolTipText = toolTipText;
       tsBtn.Enabled = enabled;
-    }
-
-    /// <summary>現在の状態を更新する</summary>
-    /// <param name="item"></param>
-    /// <param name="state"></param>
-    private void setCurrentState(ListViewItem item, string state)
-    {
-      if (InvokeRequired)
-      {
-        Invoke(new setCurrentStateDelegate(setCurrentState), item, state);
-        return;
-      }
-      item.SubItems[2].Text = state;
-    }
-
-    /// <summary>リストビューに測定内容を設定する</summary>
-    /// <param name="item"></param>
-    /// <param name="measureTH"></param>
-    /// <param name="intervalTH"></param>
-    /// <param name="measureGlb"></param>
-    /// <param name="intervalGlb"></param>
-    /// <param name="measureVel"></param>
-    /// <param name="intervalVel"></param>
-    private void setListViewContents
-      (ListViewItem item, string name, string state,
-      string measureTH, string intervalTH,
-      string measureGlb, string intervalGlb,
-      string measureVel, string intervalVel,
-      string measureIlm, string intervalIlm,
-      string measureGV1, string intervalGV1,
-      string measureGV2, string intervalGV2,
-      string measureGV3, string intervalGV3,
-      string measurePrx,
-      string startTime)
-    {
-      if (InvokeRequired)
-      {
-        Invoke(new setListViewContentsDelegate(setListViewContents), 
-          item, name, state, measureTH, intervalTH, measureGlb, intervalGlb, measureVel, intervalVel, measureIlm, intervalIlm,
-          measureGV1, intervalGV1, measureGV2, intervalGV2, measureGV3, intervalGV3, measurePrx, startTime);
-        return;
-      }
-      item.SubItems[1].Text = name;
-      item.SubItems[2].Text = state;
-      item.SubItems[3].Text = measureTH;
-      item.SubItems[4].Text = intervalTH;
-      item.SubItems[5].Text = measureGlb;
-      item.SubItems[6].Text = intervalGlb;
-      item.SubItems[7].Text = measureVel;
-      item.SubItems[8].Text = intervalVel;
-      item.SubItems[9].Text = measureIlm;
-      item.SubItems[10].Text = intervalIlm;
-      item.SubItems[11].Text = startTime;
-      item.SubItems[12].Text = measureGV1;
-      item.SubItems[13].Text = intervalGV1;
-      item.SubItems[14].Text = measureGV2;
-      item.SubItems[15].Text = intervalGV2;
-      item.SubItems[16].Text = measureGV3;
-      item.SubItems[17].Text = intervalGV3;
-      item.SubItems[18].Text = measurePrx;
-    }
-
-    #endregion
-
-    #region その他の処理
-
-    /// <summary>ログに追加する</summary>
-    /// <param name="log">追加するログ</param>
-    private void appendLog(string log)
-    {
-      lock (logString)
-      {
-        log = log.Replace("\r", "").Replace("\n", ""); //改行コードは除く
-        logString.AppendLine(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss : ") + log);
-
-        if (MAX_LOG_LENGTH < logString.Length) logString.Remove(0, Math.Max(logString.Length - MAX_LOG_LENGTH, 0));
-        hasNewLog = true;
-      }
-    }
-
-    /// <summary>エラーログを保存</summary>
-    /// <param name="log"></param>
-    private void appendErrorLog(string log)
-    {
-      using (StreamWriter sWriter = new StreamWriter("errLog.txt", true))
-      {
-        sWriter.WriteLine(log);
-      }
-    }
-
-    /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>
-    /// <param name="address">子機のLongAddress</param>
-    /// <returns>通信用XBee端末</returns>
-    private ZigBeeDevice getXBee(string address)
-    {
-      foreach (ZigBeeDevice key in myXBees.Keys)
-        if (myXBees[key].longAddress.Contains(address)) return key;
-      return null;
     }
 
     #endregion
@@ -551,7 +552,7 @@ namespace MLServer
         myXBees[dv].longAddress.Add(add);
 
       //リストビューに追加
-      initListViewItem(add);
+      updateLVSettingItem(mLoggers[add]);
 
       //測定設定情報を得る
       Task.Run(() =>
@@ -642,40 +643,27 @@ namespace MLServer
 
     private void Ml_StartMeasuringMessageReceivedEvent(object sender, EventArgs e)
     {
-      setCurrentState(lvItems[(MLogger)sender], i18n.Resources.MF_Measuring);
+      updateLVSettingItem((MLogger)sender);
     }
 
     private void Ml_WaitingForCommandMessageReceivedEvent(object sender, EventArgs e)
     {
-      setCurrentState(lvItems[(MLogger)sender], i18n.Resources.MF_Editable);
+      updateLVSettingItem((MLogger)sender);
     }
 
     private void Ml_VersionReceivedEvent(object sender, EventArgs e)
-    {
-      
-    }
+    { }
 
     private void Ml_MeasurementSettingReceivedEvent(object sender, EventArgs e)
     {
-      MLogger ml = (MLogger)sender;
-      setListViewContents(
-        lvItems[ml], ml.Name, i18n.Resources.MF_Editable,
-        ml.DrybulbTemperature.Measure ? "true" : "false", ml.DrybulbTemperature.Interval.ToString(),
-        ml.RelativeHumdity.Measure ? "true" : "false", ml.RelativeHumdity.Interval.ToString(),
-        ml.Velocity.Measure ? "true" : "false", ml.Velocity.Interval.ToString(),
-        ml.Illuminance.Measure ? "true" : "false", ml.Illuminance.Interval.ToString(),
-        ml.GeneralVoltage1.Measure ? "true" : "false", ml.GeneralVoltage1.Interval.ToString(),
-        ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
-        ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
-        ml.MeasureProximity ? "true" : "false",
-        ml.StartMeasuringDateTime.ToString("yyyy/MM/dd HH:mm"));
+      updateLVSettingItem((MLogger)sender);
     }
 
     private void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
     {
       MLogger ml = (MLogger)sender;
-      if (lvItems.ContainsKey(ml))
-        setCurrentState(lvItems[ml], i18n.Resources.MF_Measuring);
+      updateLVSettingItem(ml);
+      updateLVValueItem(ml);
 
       //データ書き出し
       string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
@@ -685,8 +673,8 @@ namespace MLServer
         using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
         {
           sWriter.WriteLine(
-            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
-            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            DateTime.Now.ToString(DT_FORMAT) + "," + //親機の現在日時
+            ml.LastMeasured.ToString(DT_FORMAT) + "," + //子機の計測日時
             ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
             ml.RelativeHumdity.LastValue.ToString("F2") + "," +
             ml.GlobeTemperatureVoltage.ToString("F3") + "," +
@@ -830,7 +818,6 @@ namespace MLServer
       return new Task(() =>
       {
         //通信用XBee端末をOpen
-        //ZigBeeDevice device = new ZigBeeDevice(new SerialPortConnection(pName, bRate));
         ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, bRate));
         try
         {
@@ -1011,7 +998,7 @@ namespace MLServer
       tbx_gpv3Interval.Text = item.SubItems[17].Text;
       rbtn_ill.Checked = (item.SubItems[18].Text != "true");
       rbtn_prox.Checked = (item.SubItems[18].Text == "true");
-      dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, "yyyy/MM/dd HH:mm", null);
+      dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, DT_FORMAT, null);
 
       reflectCheckBoxState();
     }
@@ -1177,6 +1164,50 @@ namespace MLServer
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
       { sWriter.Write(latestData); }
+    }
+
+    #endregion
+
+    #region その他の処理
+
+    /// <summary>ログに追加する</summary>
+    /// <param name="log">追加するログ</param>
+    private void appendLog(string log)
+    {
+      lock (logString)
+      {
+        log = log.Replace("\r", "").Replace("\n", ""); //改行コードは除く
+        logString.AppendLine(DateTime.Now.ToString(DT_FORMAT + " : ") + log);
+
+        if (MAX_LOG_LENGTH < logString.Length) logString.Remove(0, Math.Max(logString.Length - MAX_LOG_LENGTH, 0));
+        hasNewLog = true;
+      }
+    }
+
+    /// <summary>エラーログを保存</summary>
+    /// <param name="log"></param>
+    private void appendErrorLog(string log)
+    {
+      using (StreamWriter sWriter = new StreamWriter("errLog.txt", true))
+      {
+        sWriter.WriteLine(log);
+      }
+    }
+
+    /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>
+    /// <param name="address">子機のLongAddress</param>
+    /// <returns>通信用XBee端末</returns>
+    private ZigBeeDevice getXBee(string address)
+    {
+      foreach (ZigBeeDevice key in myXBees.Keys)
+        if (myXBees[key].longAddress.Contains(address)) return key;
+      return null;
+    }
+
+    private void listView_SizeChanged(object sender, EventArgs e)
+    {
+      //幅を自動調節
+      foreach (ColumnHeader ch in ((ListView)sender).Columns) ch.Width = -2;
     }
 
     #endregion

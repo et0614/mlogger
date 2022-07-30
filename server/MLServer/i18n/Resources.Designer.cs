@@ -106,6 +106,15 @@ namespace MLServer.i18n {
         }
         
         /// <summary>
+        ///   Date time に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DateTime {
+            get {
+                return ResourceManager.GetString("DateTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   DBT/RH に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DBTandRH {
