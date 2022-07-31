@@ -19,7 +19,7 @@ namespace MLServer
     #region 定数宣言
 
     /// <summary>XBEEの上位アドレス</summary>
-    private const string UP_ADD = "0013A200";
+    private const string HIGH_ADD = "0013A200";
 
     /// <summary>HTMLデータを更新する時間間隔[msec]</summary>
     private const int HTML_REFRESH_SPAN = 10 * 1000;
@@ -30,12 +30,12 @@ namespace MLServer
     /// <summary>子機の探索時間間隔[msec]</summary>
     private const int ENDDV_SCAN_SPAN = 5 * 1000;
 
+    /// <summary>UART通信のボーレート</summary>
+    private const int BAUD_RATE = 9600;
+
     #endregion
 
     #region クラス変数
-
-    /// <summary>UART通信のボーレート</summary>
-    private static int baudRate;
 
     /// <summary>受信パケット総量[bytes]</summary>
     private static int pBytes = 0;
@@ -75,7 +75,7 @@ namespace MLServer
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
 
       //温冷感計算のための代謝量[met]と着衣量[clo]を読み込む
-      loadInitFile(out baudRate, out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
+      loadInitFile(out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
 
       //MLoggerのアドレス-名称対応リストを読む
       using (StreamReader sReader = new StreamReader
@@ -85,7 +85,7 @@ namespace MLServer
         while ((line = sReader.ReadLine()) != null)
         {
           string[] bf = line.Split(':');
-          mlNames.Add(UP_ADD + bf[0], bf[1]);
+          mlNames.Add(HIGH_ADD + bf[0], bf[1]);
         }
       }
 
@@ -113,9 +113,8 @@ namespace MLServer
     }
 
     private static void loadInitFile
-      (out int brate, out double met, out double clo, out double dbt, out double rhd, out double vel, out double mrt)
+      (out double met, out double clo, out double dbt, out double rhd, out double vel, out double mrt)
     {
-      brate = 9600;
       met = 1.1;
       clo = 1.0;
       dbt = 25.0;
@@ -133,9 +132,6 @@ namespace MLServer
           string[] st = line.Split('=');
           switch (st[0])
           {
-            case "baud_rate":
-              baudRate = int.Parse(st[1]);
-              break;
             case "met":
               metValue = double.Parse(st[1]);
               break;
@@ -228,7 +224,7 @@ namespace MLServer
       return new Task(() =>
       {
         //通信用XBee端末をOpen
-        ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, baudRate));
+        ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, BAUD_RATE));
         try
         {
           device.Open();

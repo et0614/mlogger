@@ -43,6 +43,16 @@ namespace MLServer
 
     #endregion
 
+    #region 定数宣言
+
+    /// <summary>UART通信のボーレート</summary>
+    private const int BAUD_RATE = 9600;
+
+    /// <summary>設定および計測開始命令の送信をずらす秒数[msec]</summary>
+    private const int CMD_TSPAN = 200;
+
+    #endregion
+
     #region readonly 初期化パラメータ
 
     /// <summary>代謝量[met]</summary>
@@ -62,12 +72,6 @@ namespace MLServer
 
     /// <summary>平均放射温度[C]</summary>
     private readonly double mrtValue = 25.0;
-
-    /// <summary>UART通信のボーレート</summary>
-    private readonly int baudRate = 9600;
-
-    /// <summary>設定および計測開始命令の送信をずらす秒数[msec]</summary>
-    private readonly int cmdSSpan = 500;
 
     /// <summary>補正係数設定ボタンを表示するか否か</summary>
     private readonly bool showCFButton = false;
@@ -147,9 +151,6 @@ namespace MLServer
             string[] st = line.Split('=');
             switch (st[0])
             {
-              case "baud_rate":
-                baudRate = int.Parse(st[1]);
-                break;
               case "met":
                 metValue = double.Parse(st[1]);
                 break;
@@ -167,9 +168,6 @@ namespace MLServer
                 break;
               case "mrt":
                 mrtValue = double.Parse(st[1]);
-                break;
-              case "sspan":
-                cmdSSpan = Math.Max(0, int.Parse(st[1]));
                 break;
               case "show_cfactor":
                 showCFButton = bool.Parse(st[1]);
@@ -344,7 +342,7 @@ namespace MLServer
           for (int i = 0; i < portList.Length; i++)
           {
             if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
-              scanCoordinator(portList[i], baudRate);
+              scanCoordinator(portList[i], BAUD_RATE);
           }
           Thread.Sleep(SCAN_COORDINATOR_TSPAN);
         }
@@ -879,7 +877,7 @@ namespace MLServer
 
         //各ポートへの接続を試行
         for (int i = 0; i < portList.Length; i++)
-          scanCoordinator(portList[i], baudRate);
+          scanCoordinator(portList[i], BAUD_RATE);
       }
     }
 
@@ -982,7 +980,7 @@ namespace MLServer
         for (int i = 0; i < adds.Length; i++)
         {
           sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false));
-          Thread.Sleep(cmdSSpan);
+          Thread.Sleep(CMD_TSPAN);
         }
       });
     }
@@ -1002,7 +1000,7 @@ namespace MLServer
         for (int i = 0; i < adds.Length; i++)
         {
           sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true));
-          Thread.Sleep(cmdSSpan);
+          Thread.Sleep(CMD_TSPAN);
         }
       });
     }
@@ -1052,7 +1050,7 @@ namespace MLServer
           item.Click += delegate (object sender, EventArgs e)
           {
             appendLog(String.Format(i18n.Resources.MF_TryConnectPort, portName));
-            scanCoordinator(portName, baudRate);
+            scanCoordinator(portName, BAUD_RATE);
           };
         }
       }
