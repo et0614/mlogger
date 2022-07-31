@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Popolo" Version="2.3.1.35" />
+    <PackageReference Include="Popolo" Version="2.3.1.39" />
     <PackageReference Include="System.IO.Ports" Version="6.0.0" />
     <PackageReference Include="XBeeLibrary.Core" Version="1.0.2" />
   </ItemGroup>

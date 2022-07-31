@@ -8,7 +8,7 @@
     ".NETCoreApp,Version=v6.0": {
       "MLServer/1.0.0": {
         "dependencies": {
-          "Popolo": "2.3.1.35",
+          "Popolo": "2.3.1.39",
           "System.IO.Ports": "6.0.0",
           "XBeeLibrary.Core": "1.0.2",
           "MLLib": "1.0.0.0"
@@ -73,7 +73,7 @@
       },
       "Microsoft.NETCore.Platforms/1.0.1": {},
       "Microsoft.NETCore.Targets/1.0.1": {},
-      "Popolo/2.3.1.35": {
+      "Popolo/2.3.1.39": {
         "dependencies": {
           "System.Text.Json": "4.7.2"
         },
@@ -431,12 +431,12 @@
       "path": "microsoft.netcore.targets/1.0.1",
       "hashPath": "microsoft.netcore.targets.1.0.1.nupkg.sha512"
     },
-    "Popolo/2.3.1.35": {
+    "Popolo/2.3.1.39": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-m+Tubsbv7JvtN/IIeZySZNx1wufaQKPRaAe9/hA7RAfD97zt1I3zLLjsAhulwABXrqc3UQClmXgBLRr/kxobpw==",
-      "path": "popolo/2.3.1.35",
-      "hashPath": "popolo.2.3.1.35.nupkg.sha512"
+      "sha512": "sha512-d5ZyfeP8aUUM7k7lFGZiZA7wt1o/yFH5+S2kGAqs1Cc81fX4fl5Aqc1mpfxcz6sCSB3DgIufpjeT/JYGJiA/yA==",
+      "path": "popolo/2.3.1.39",
+      "hashPath": "popolo.2.3.1.39.nupkg.sha512"
     },
     "runtime.linux-arm.runtime.native.System.IO.Ports/6.0.0": {
       "type": "package",

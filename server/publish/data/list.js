@@ -1,4 +1,4 @@
-﻿/*! List.js v1.5.0 (http://listjs.com) by Jonny Str旦mberg (http://javve.com) */
+/*! List.js v1.5.0 (http://listjs.com) by Jonny Str旦mberg (http://javve.com) */
 var List =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache

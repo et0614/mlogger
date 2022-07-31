@@ -21,7 +21,7 @@ namespace MLServer
     #region 定数宣言
 
     /// <summary>XBEE端末の共通上部アドレス</summary>
-    private const string UP_ADD = "0013A200";
+    private const string HIGH_ADD = "0013A200";
 
     /// <summary>ログの最大表示文字数</summary>
     private const int MAX_LOG_LENGTH = 5000;
@@ -46,34 +46,34 @@ namespace MLServer
     #region readonly 初期化パラメータ
 
     /// <summary>代謝量[met]</summary>
-    private static readonly double metValue = 1.1;
+    private readonly double metValue = 1.1;
 
     /// <summary>着衣量[clo]</summary>
-    private static readonly double cloValue = 1.0;
+    private readonly double cloValue = 1.0;
 
     /// <summary>乾球温度[C]</summary>
-    private static readonly double dbtValue = 25.0;
+    private readonly double dbtValue = 25.0;
 
     /// <summary>相対湿度[%]</summary>
-    private static readonly double rhdValue = 50.0;
+    private readonly double rhdValue = 50.0;
 
     /// <summary>相対気流速度[m/s]</summary>
-    private static readonly double velValue = 0.2;
+    private readonly double velValue = 0.2;
 
     /// <summary>平均放射温度[C]</summary>
-    private static readonly double mrtValue = 25.0;
+    private readonly double mrtValue = 25.0;
 
     /// <summary>UART通信のボーレート</summary>
-    private static readonly int baudRate = 9600;
+    private readonly int baudRate = 9600;
 
     /// <summary>設定および計測開始命令の送信をずらす秒数[msec]</summary>
-    private static readonly int cmdSSpan = 500;
+    private readonly int cmdSSpan = 500;
 
     /// <summary>補正係数設定ボタンを表示するか否か</summary>
-    private static readonly bool showCFButton = false;
+    private readonly bool showCFButton = false;
 
     /// <summary>SDカード書き出しを有効化するか否か</summary>
-    private static readonly bool enableSDOutput = false;
+    private readonly bool enableSDOutput = false;
 
     #endregion
 
@@ -106,14 +106,17 @@ namespace MLServer
     /// <summary>MLoggerに関連付けられたリストビューのリスト（計測値）</summary>
     private readonly Dictionary<MLogger, ListViewItem> lviVals = new Dictionary<MLogger, ListViewItem>();
 
+    /// <summary>並び替えが昇順か否か（計測設定）</summary>
+    private bool[] isAscendingSets = new bool[20];
+
+    /// <summary>並び替えが昇順か否か（計測値）</summary>
+    private bool[] isAscendingVals = new bool[11];
+
     /// <summary>通信用XBee端末リスト</summary>
     private readonly Dictionary<ZigBeeDevice, xbeeInfo> coordinators = new Dictionary<ZigBeeDevice, xbeeInfo>();
 
     /// <summary>ログの一時保存</summary>
     private StringBuilder logString = new StringBuilder();
-
-    /// <summary>並び替えが昇順か否か</summary>
-    private bool[] isAscending = new bool[20];
 
     /// <summary>補正係数設定用フォーム</summary>
     private CFForm cfForm;
@@ -125,71 +128,74 @@ namespace MLServer
 
     #region コンストラクタ
 
-    /// <summary>staticコンストラクタ：初期化パラメータ読み込み</summary>
-    static MainForm()
-    {
-      //初期設定ファイルを読む
-      using (StreamReader sReader = new StreamReader
-        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "setting.ini"))
-      {
-        string line;
-        while ((line = sReader.ReadLine()) != null)
-        {
-          line = line.Remove(line.IndexOf(';'));
-          string[] st = line.Split('=');
-          switch (st[0])
-          {
-            case "baud_rate":
-              baudRate = int.Parse(st[1]);
-              break;
-            case "met":
-              metValue = double.Parse(st[1]);
-              break;
-            case "clo":
-              cloValue = double.Parse(st[1]);
-              break;
-            case "dbt":
-              dbtValue = double.Parse(st[1]);
-              break;
-            case "rhd":
-              rhdValue = double.Parse(st[1]);
-              break;
-            case "vel":
-              velValue = double.Parse(st[1]);
-              break;
-            case "mrt":
-              mrtValue = double.Parse(st[1]);
-              break;
-            case "sspan":
-              cmdSSpan = int.Parse(st[1]);
-              break;
-            case "show_cfactor":
-              showCFButton = bool.Parse(st[1]);
-              break;
-            case "enable_sd":
-              enableSDOutput = bool.Parse(st[1]);
-              break;
-          }
-        }
-      }
-
-      //MLoggerのアドレス-名称対応リストを読む
-      using (StreamReader sReader = new StreamReader
-        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt"))
-      {
-        string line;
-        while ((line = sReader.ReadLine()) != null)
-        {
-          string[] bf = line.Split(':');
-          mlNames.Add(UP_ADD + bf[0], bf[1]);
-        }
-      }
-    }
-
     /// <summary>インスタンスを初期化する</summary>
     public MainForm()
     {
       InitializeComponent();
+
+      //初期設定ファイル読み込み
+      string sFile = AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "setting.ini";
+      if (File.Exists(sFile))
+      {
+        using (StreamReader sReader = new StreamReader
+        (sFile))
+        {
+          string line;
+          while ((line = sReader.ReadLine()) != null)
+          {
+            line = line.Remove(line.IndexOf(';'));
+            string[] st = line.Split('=');
+            switch (st[0])
+            {
+              case "baud_rate":
+                baudRate = int.Parse(st[1]);
+                break;
+              case "met":
+                metValue = double.Parse(st[1]);
+                break;
+              case "clo":
+                cloValue = double.Parse(st[1]);
+                break;
+              case "dbt":
+                dbtValue = double.Parse(st[1]);
+                break;
+              case "rhd":
+                rhdValue = double.Parse(st[1]);
+                break;
+              case "vel":
+                velValue = double.Parse(st[1]);
+                break;
+              case "mrt":
+                mrtValue = double.Parse(st[1]);
+                break;
+              case "sspan":
+                cmdSSpan = Math.Max(0, int.Parse(st[1]));
+                break;
+              case "show_cfactor":
+                showCFButton = bool.Parse(st[1]);
+                break;
+              case "enable_sd":
+                enableSDOutput = bool.Parse(st[1]);
+                break;
+            }
+          }
+        }
+      }
+
+      //End Device名称リスト読み込み
+      string nFile = AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt";
+      if (File.Exists(nFile))
+      {
+        using (StreamReader sReader = new StreamReader(nFile))
+        {
+          string line;
+          while ((line = sReader.ReadLine()) != null)
+          {
+            string[] bf = line.Split(':');
+            mlNames.Add(HIGH_ADD + bf[0], bf[1]);
+          }
+        }
+      }
 
       //コントローラの国際化対応
       initControlLang();
@@ -200,7 +206,11 @@ namespace MLServer
 
       //データ格納用のディレクトリを作成
       dataDirectory = AppDomain.CurrentDomain.BaseDirectory + "data";
+      string s_cs = dataDirectory + Path.DirectorySeparatorChar + "style.css";
+      string l_js = dataDirectory + Path.DirectorySeparatorChar + "list.js";
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
+      if (!File.Exists(s_cs)) File.WriteAllText(s_cs, Properties.Resources.style_css);
+      if (!File.Exists(l_js)) File.WriteAllText(l_js, Properties.Resources.list_js);
 
       //XBee端末切断状態から開始
       disconnectXBee();
@@ -226,7 +236,8 @@ namespace MLServer
       lbl_vel.Text = i18n.Resources.Velocity;
       rbtn_ill.Text = i18n.Resources.Illuminance;
       rbtn_prox.Text = i18n.Resources.Proximity;
-      lbl_gpv1.Text = i18n.Resources.GeneralPurposeVoltage + " 1";
+      lbl_gpv1.Text = i18n.Resources.GeneralPurposeVoltage;
+      //lbl_gpv1.Text = i18n.Resources.GeneralPurposeVoltage + " 1";
       lbl_gpv2.Text = i18n.Resources.GeneralPurposeVoltage + " 2";
       lbl_gpv3.Text = i18n.Resources.GeneralPurposeVoltage + " 3";
       lbl_SDTime.Text = i18n.Resources.MF_MStartDTime;
@@ -252,15 +263,18 @@ namespace MLServer
       lvhd_illMeasure.Text = i18n.Resources.Illuminance;
       lvhd_illInterval.Text = i18n.Resources.Interval;
       lvhd_startTime.Text = i18n.Resources.MF_MStartDTime;
-      lvhd_gv1Measure.Text = i18n.Resources.GeneralPurposeVoltage + "1";
+      //lvhd_gv1Measure.Text = i18n.Resources.GeneralPurposeVoltage + "1";
+      lvhd_gv1Measure.Text = i18n.Resources.GeneralPurposeVoltage;
       lvhd_gv1Interval.Text = i18n.Resources.Interval;
-      lvhd_gv2Measure.Text = i18n.Resources.GeneralPurposeVoltage + "2";
-      lvhd_gv2Interval.Text = i18n.Resources.Interval;
-      lvhd_gv3Measure.Text = i18n.Resources.GeneralPurposeVoltage + "3";
-      lvhd_gv3Interval.Text = i18n.Resources.Interval;
+      //lvhd_gv2Measure.Text = i18n.Resources.GeneralPurposeVoltage + "2";
+      //lvhd_gv2Interval.Text = i18n.Resources.Interval;
+      //lvhd_gv3Measure.Text = i18n.Resources.GeneralPurposeVoltage + "3";
+      //lvhd_gv3Interval.Text = i18n.Resources.Interval;
       lvhd_prxMeasure.Text = i18n.Resources.Proximity;
 
       //計測値ListViewの項目
+      lvhd2_name.Text = "ID";
+      lvhd2_name.Text = i18n.Resources.Name;
       lvhd2_dbt.Text = i18n.Resources.DBTemp;
       lvhd2_hmd.Text = i18n.Resources.RHumid;
       lvhd2_glb.Text = i18n.Resources.GlbTemp;
@@ -349,8 +363,10 @@ namespace MLServer
           //初期化未了のEndDeviceを初期化
           foreach (string key in mLoggers.Keys)
           {
-            if (mLoggers[key].CurrentStatus == MLogger.Status.Initializing)
+            if (!mLoggers[key].MeasuringSettingLoaded && mLoggers[key].CurrentStatus == MLogger.Status.Initializing)
               sndMsg(key, MLogger.MakeLoadMeasuringSettingCommand());
+            if (!mLoggers[key].VersionLoaded && mLoggers[key].CurrentStatus == MLogger.Status.Initializing)
+              sndMsg(key, MLogger.MakeGetVersionCommand());
           }
 
           Thread.Sleep(SCAN_ENDDEVICE_TSPAN);
@@ -386,8 +402,8 @@ namespace MLServer
             ml.Velocity.Measure ? "true" : "false", ml.Velocity.Interval.ToString(),
             ml.Illuminance.Measure ? "true" : "false", ml.Illuminance.Interval.ToString(),
             ml.GeneralVoltage1.Measure ? "true" : "false", ml.GeneralVoltage1.Interval.ToString(),
-            ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
-            ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
+            //ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
+            //ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
             ml.MeasureProximity ? "true" : "false",
             ml.StartMeasuringDateTime.ToString(DT_FORMAT) });
           lviSets.Add(ml, lvm);
@@ -429,11 +445,12 @@ namespace MLServer
         item.SubItems[11].Text = ml.StartMeasuringDateTime.ToString(DT_FORMAT);
         item.SubItems[12].Text = ml.GeneralVoltage1.Measure ? "true" : "false";
         item.SubItems[13].Text = ml.GeneralVoltage1.Interval.ToString();
-        item.SubItems[14].Text = ml.GeneralVoltage2.Measure ? "true" : "false";
+        /*item.SubItems[14].Text = ml.GeneralVoltage2.Measure ? "true" : "false";
         item.SubItems[15].Text = ml.GeneralVoltage2.Interval.ToString();
         item.SubItems[16].Text = ml.GeneralVoltage3.Measure ? "true" : "false";
         item.SubItems[17].Text = ml.GeneralVoltage3.Interval.ToString();
-        item.SubItems[18].Text = ml.MeasureProximity ? "true" : "false";
+        item.SubItems[18].Text = ml.MeasureProximity ? "true" : "false";*/
+        item.SubItems[14].Text = ml.MeasureProximity ? "true" : "false";
       }
     }
 
@@ -635,9 +652,6 @@ namespace MLServer
 
       if (!mLoggers.ContainsKey(add)) return; //未登録のノードからの受信は無視
 
-      //HTML更新フラグを立てる
-      hasNewData = true;
-
       MLogger mlg = mLoggers[add];
 
       //受信データを追加
@@ -719,6 +733,9 @@ namespace MLServer
 
     private void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
     {
+      //HTML更新フラグを立てる
+      hasNewData = true;
+
       MLogger ml = (MLogger)sender;
       updateLVSettingItem(ml);
       updateLVValueItem(ml);
@@ -740,9 +757,10 @@ namespace MLServer
             ml.VelocityVoltage.ToString("F3") + "," + 
             ml.Velocity.LastValue.ToString("F4") + "," +
             ml.Illuminance.LastValue.ToString("F2") + "," +
-            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
-            ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
-            ml.GeneralVoltage3.LastValue.ToString("F3"));
+            ml.GeneralVoltage1.LastValue.ToString("F3"));
+            //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+            //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
+            //ml.GeneralVoltage3.LastValue.ToString("F3"));
         }
       }
       catch
@@ -805,7 +823,7 @@ namespace MLServer
         {
           //ListViewの更新処理
           for (int i = 0; i < lv_setting.Items.Count; i++)
-            if (key == getXBee(UP_ADD + lv_setting.Items[i].SubItems[0].Text))
+            if (key == getXBee(HIGH_ADD + lv_setting.Items[i].SubItems[0].Text))
               lv_setting.Items.RemoveAt(i);
 
           //イベント解除
@@ -963,7 +981,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          sndMsg(UP_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false));
+          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false));
           Thread.Sleep(cmdSSpan);
         }
       });
@@ -983,7 +1001,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          sndMsg(UP_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true));
+          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true));
           Thread.Sleep(cmdSSpan);
         }
       });
@@ -992,12 +1010,14 @@ namespace MLServer
     /// <summary>並び替える</summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void lv_setting_ColumnClick(object sender, ColumnClickEventArgs e)
+    private void listView_ColumnClick(object sender, ColumnClickEventArgs e)
     {
       int colNum = e.Column;
-      isAscending[colNum] = !isAscending[colNum];
 
-      lv_setting.ListViewItemSorter = new MLoggerComparer(colNum, isAscending[colNum]);
+      ListView lv = (ListView)sender;
+      bool[] isAc = (lv == lv_setting) ? isAscendingSets : isAscendingVals;
+      isAc[colNum] = !isAc[colNum];
+      lv_setting.ListViewItemSorter = new MLoggerComparer(colNum, isAc[colNum]);
     }
 
     /// <summary>接続先一覧表示時の処理</summary>
@@ -1059,12 +1079,14 @@ namespace MLServer
       tbx_illInterval.Text = item.SubItems[10].Text;
       cbx_gpv1Measure.Checked = (item.SubItems[12].Text == "true");
       tbx_gpv1Interval.Text = item.SubItems[13].Text;
-      cbx_gpv2Measure.Checked = (item.SubItems[14].Text == "true");
-      tbx_gpv2Interval.Text = item.SubItems[15].Text;
-      cbx_gpv3Measure.Checked = (item.SubItems[16].Text == "true");
-      tbx_gpv3Interval.Text = item.SubItems[17].Text;
-      rbtn_ill.Checked = (item.SubItems[18].Text != "true");
-      rbtn_prox.Checked = (item.SubItems[18].Text == "true");
+      //cbx_gpv2Measure.Checked = (item.SubItems[14].Text == "true");
+      //tbx_gpv2Interval.Text = item.SubItems[15].Text;
+      //cbx_gpv3Measure.Checked = (item.SubItems[16].Text == "true");
+      //tbx_gpv3Interval.Text = item.SubItems[17].Text;
+      //rbtn_ill.Checked = (item.SubItems[18].Text != "true");
+      //rbtn_prox.Checked = (item.SubItems[18].Text == "true");
+      rbtn_ill.Checked = (item.SubItems[14].Text != "true");
+      rbtn_prox.Checked = (item.SubItems[14].Text == "true");
       dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, DT_FORMAT, null);
 
       reflectCheckBoxState();
@@ -1077,7 +1099,7 @@ namespace MLServer
     {
       //選択されていなければ無視
       if (lv_setting.SelectedIndices.Count == 0) return;
-      string add = UP_ADD + lv_setting.SelectedItems[0].SubItems[0].Text;
+      string add = HIGH_ADD + lv_setting.SelectedItems[0].SubItems[0].Text;
 
       //受信用ウィンドウを用意
       if (cfForm != null) cfForm.Close();
@@ -1098,7 +1120,8 @@ namespace MLServer
       if (lv_setting.SelectedItems.Count == 0) return;
 
       //設定内容をチェック1
-      int itTH, itRD, itVL, itIL, itGV1, itGV2, itGV3;
+      int itTH, itRD, itVL, itIL, itGV1;
+      //int itGV2, itGV3;
       if (!int.TryParse(tbx_thInterval.Text, out itTH))
       {
         MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.DBTemp));
@@ -1121,10 +1144,11 @@ namespace MLServer
       }
       if (!int.TryParse(tbx_gpv1Interval.Text, out itGV1))
       {
-        MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 1"));
+        //MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 1"));
+        MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage));
         return;
       }
-      if (!int.TryParse(tbx_gpv2Interval.Text, out itGV2))
+      /*if (!int.TryParse(tbx_gpv2Interval.Text, out itGV2))
       {
         MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 2"));
         return;
@@ -1133,11 +1157,13 @@ namespace MLServer
       {
         MessageBox.Show(String.Format(i18n.Resources.MF_Alrt_InvalidInput, i18n.Resources.GeneralPurposeVoltage + " 3"));
         return;
-      }
+      }*/
 
       //設定内容をチェック2
-      if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 || itGV2 < 1 || itGV3 < 1
-        || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1 || 86400 < itGV2 || 86400 < itGV3)
+      if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 
+        || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1)
+      //if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 || itGV2 < 1 || itGV3 < 1
+      //  || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1 || 86400 < itGV2 || 86400 < itGV3)
       {
         MessageBox.Show(i18n.Resources.MF_Alrt_Interval);
         return;
@@ -1151,14 +1177,16 @@ namespace MLServer
         cbx_velMeasure.Checked, itVL,
         cbx_illMeasure.Checked, itIL,
         cbx_gpv1Measure.Checked, itGV1,
-        cbx_gpv2Measure.Checked, itGV2,
-        cbx_gpv3Measure.Checked, itGV3,
+        false, 87600,
+        false, 87600,
+        //cbx_gpv2Measure.Checked, itGV2,
+        //cbx_gpv3Measure.Checked, itGV3,
         rbtn_prox.Checked);
 
       //1件ずつコマンドを送信
       for (int i = 0; i < lv_setting.SelectedItems.Count; i++)
       {
-        sndMsg(UP_ADD + lv_setting.SelectedItems[i].SubItems[0].Text,
+        sndMsg(HIGH_ADD + lv_setting.SelectedItems[i].SubItems[0].Text,
           "\r" + sData + "\r"); //\rを送ってからコマンドを送ると安心
       }
     }
@@ -1179,10 +1207,10 @@ namespace MLServer
         rbtn_ill.Enabled = rbtn_prox.Enabled = tbx_illInterval.Enabled = cbx.Checked;
       else if (cbx.Equals(cbx_gpv1Measure))
         lbl_gpv1.Enabled = tbx_gpv1Interval.Enabled = cbx.Checked;
-      else if (cbx.Equals(cbx_gpv2Measure))
-        lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx.Checked;
-      else if (cbx.Equals(cbx_gpv3Measure))
-        lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx.Checked;
+      //else if (cbx.Equals(cbx_gpv2Measure))
+      //  lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx.Checked;
+      //else if (cbx.Equals(cbx_gpv3Measure))
+      //  lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx.Checked;
     }
 
     private void reflectCheckBoxState()
@@ -1192,8 +1220,8 @@ namespace MLServer
       lbl_vel.Enabled = tbx_velInterval.Enabled = cbx_velMeasure.Checked;
       rbtn_ill.Enabled = rbtn_prox.Enabled = tbx_illInterval.Enabled = cbx_illMeasure.Checked;
       lbl_gpv1.Enabled = tbx_gpv1Interval.Enabled = cbx_gpv1Measure.Checked;
-      lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx_gpv2Measure.Checked;
-      lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx_gpv3Measure.Checked;
+      //lbl_gpv2.Enabled = tbx_gpv2Interval.Enabled = cbx_gpv2Measure.Checked;
+      //lbl_gpv3.Enabled = tbx_gpv3Interval.Enabled = cbx_gpv3Measure.Checked;
     }
 
     private void sndMsg(string longAddress, string msg)

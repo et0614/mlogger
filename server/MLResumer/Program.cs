@@ -381,9 +381,10 @@ namespace MLServer
             ml.VelocityVoltage.ToString("F3") + "," +
             ml.Velocity.LastValue.ToString("F4") + "," +
             ml.Illuminance.LastValue.ToString("F2") + "," +
-            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
-            ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
-            ml.GeneralVoltage3.LastValue.ToString("F3"));
+            ml.GeneralVoltage1.LastValue.ToString("F3"));
+          //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+          //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
+          //ml.GeneralVoltage3.LastValue.ToString("F3"));
         }
       }
       catch

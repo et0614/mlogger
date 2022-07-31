@@ -50,10 +50,6 @@
       this.lvhd_startTime = new System.Windows.Forms.ColumnHeader();
       this.lvhd_gv1Measure = new System.Windows.Forms.ColumnHeader();
       this.lvhd_gv1Interval = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv2Measure = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv2Interval = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv3Measure = new System.Windows.Forms.ColumnHeader();
-      this.lvhd_gv3Interval = new System.Windows.Forms.ColumnHeader();
       this.lvhd_prxMeasure = new System.Windows.Forms.ColumnHeader();
       this.lv_measure = new System.Windows.Forms.ListView();
       this.lvhd2_xbeeID = new System.Windows.Forms.ColumnHeader();
@@ -220,10 +216,6 @@
             this.lvhd_startTime,
             this.lvhd_gv1Measure,
             this.lvhd_gv1Interval,
-            this.lvhd_gv2Measure,
-            this.lvhd_gv2Interval,
-            this.lvhd_gv3Measure,
-            this.lvhd_gv3Interval,
             this.lvhd_prxMeasure});
       this.lv_setting.Dock = System.Windows.Forms.DockStyle.Fill;
       this.lv_setting.FullRowSelect = true;
@@ -234,7 +226,7 @@
       this.lv_setting.TabIndex = 3;
       this.lv_setting.UseCompatibleStateImageBehavior = false;
       this.lv_setting.View = System.Windows.Forms.View.Details;
-      this.lv_setting.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lv_setting_ColumnClick);
+      this.lv_setting.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView_ColumnClick);
       this.lv_setting.SelectedIndexChanged += new System.EventHandler(this.lv_setting_SelectedIndexChanged);
       // 
       // lvhd_xbeeID
@@ -332,30 +324,6 @@
       this.lvhd_gv1Interval.Text = "測定間隔";
       this.lvhd_gv1Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
       this.lvhd_gv1Interval.Width = 100;
-      // 
-      // lvhd_gv2Measure
-      // 
-      this.lvhd_gv2Measure.Text = "電圧2";
-      this.lvhd_gv2Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Measure.Width = 100;
-      // 
-      // lvhd_gv2Interval
-      // 
-      this.lvhd_gv2Interval.Text = "測定間隔";
-      this.lvhd_gv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv2Interval.Width = 100;
-      // 
-      // lvhd_gv3Measure
-      // 
-      this.lvhd_gv3Measure.Text = "電圧3";
-      this.lvhd_gv3Measure.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Measure.Width = 100;
-      // 
-      // lvhd_gv3Interval
-      // 
-      this.lvhd_gv3Interval.Text = "測定間隔";
-      this.lvhd_gv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-      this.lvhd_gv3Interval.Width = 100;
       // 
       // lvhd_prxMeasure
       // 
@@ -540,6 +508,7 @@
       this.lbl_gpv3.Size = new System.Drawing.Size(302, 32);
       this.lbl_gpv3.TabIndex = 13;
       this.lbl_gpv3.Text = "General purpose voltage 3";
+      this.lbl_gpv3.Visible = false;
       // 
       // lbl_gpv2
       // 
@@ -550,6 +519,7 @@
       this.lbl_gpv2.Size = new System.Drawing.Size(302, 32);
       this.lbl_gpv2.TabIndex = 13;
       this.lbl_gpv2.Text = "General purpose voltage 2";
+      this.lbl_gpv2.Visible = false;
       // 
       // lbl_gpv1
       // 
@@ -580,6 +550,7 @@
       this.label9.Size = new System.Drawing.Size(48, 32);
       this.label9.TabIndex = 11;
       this.label9.Text = "sec";
+      this.label9.Visible = false;
       // 
       // lbl_glb
       // 
@@ -600,6 +571,7 @@
       this.label7.Size = new System.Drawing.Size(48, 32);
       this.label7.TabIndex = 11;
       this.label7.Text = "sec";
+      this.label7.Visible = false;
       // 
       // lbl_th
       // 
@@ -622,6 +594,7 @@
       this.cbx_gpv3Measure.TabStop = false;
       this.cbx_gpv3Measure.Text = "Measure";
       this.cbx_gpv3Measure.UseVisualStyleBackColor = true;
+      this.cbx_gpv3Measure.Visible = false;
       this.cbx_gpv3Measure.CheckedChanged += new System.EventHandler(this.cbx_measure_CheckedChanged);
       // 
       // label4
@@ -645,6 +618,7 @@
       this.cbx_gpv2Measure.TabStop = false;
       this.cbx_gpv2Measure.Text = "Measure";
       this.cbx_gpv2Measure.UseVisualStyleBackColor = true;
+      this.cbx_gpv2Measure.Visible = false;
       this.cbx_gpv2Measure.CheckedChanged += new System.EventHandler(this.cbx_measure_CheckedChanged);
       // 
       // btn_startCollecting
@@ -670,6 +644,7 @@
       this.tbx_gpv3Interval.TabIndex = 6;
       this.tbx_gpv3Interval.Text = "60";
       this.tbx_gpv3Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this.tbx_gpv3Interval.Visible = false;
       // 
       // cbx_gpv1Measure
       // 
@@ -693,6 +668,7 @@
       this.tbx_gpv2Interval.TabIndex = 5;
       this.tbx_gpv2Interval.Text = "60";
       this.tbx_gpv2Interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+      this.tbx_gpv2Interval.Visible = false;
       // 
       // label5
       // 
@@ -913,7 +889,8 @@
       this.MinimumSize = new System.Drawing.Size(2400, 1350);
       this.Name = "MainForm";
       this.ShowIcon = false;
-      this.Text = "MLServer version 1.0.5";
+      this.Text = "MLServer version 1.0.6";
+      this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
       this.toolStrip.ResumeLayout(false);
       this.toolStrip.PerformLayout();
       this.splitContainer1.Panel1.ResumeLayout(false);
@@ -988,10 +965,6 @@
     private System.Windows.Forms.TextBox tbx_gpv1Interval;
     private System.Windows.Forms.ColumnHeader lvhd_gv1Measure;
     private System.Windows.Forms.ColumnHeader lvhd_gv1Interval;
-    private System.Windows.Forms.ColumnHeader lvhd_gv2Measure;
-    private System.Windows.Forms.ColumnHeader lvhd_gv2Interval;
-    private System.Windows.Forms.ColumnHeader lvhd_gv3Measure;
-    private System.Windows.Forms.ColumnHeader lvhd_gv3Interval;
     private System.Windows.Forms.RadioButton rbtn_ill;
     private System.Windows.Forms.RadioButton rbtn_prox;
     private System.Windows.Forms.ColumnHeader lvhd_prxMeasure;

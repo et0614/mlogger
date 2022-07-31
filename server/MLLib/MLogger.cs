@@ -1,9 +1,5 @@
-﻿using System;
-
-using Popolo.HumanBody;
+﻿using Popolo.HumanBody;
 using System.Text;
-
-using System.Collections.Generic;
 
 namespace MLLib
 {
@@ -88,19 +84,25 @@ namespace MLLib
     public DateTime LastMeasured { get; private set; }
 
     /// <summary>バージョン（メジャー）を取得する</summary>
-    public int Version_Major { get; private set; }
+    public int Version_Major { get; private set; } = 0;
 
     /// <summary>バージョン（マイナー）を取得する</summary>
-    public int Version_Minor { get; private set; }
+    public int Version_Minor { get; private set; } = 0;
 
     /// <summary>バージョン（リビジョン）を取得する</summary>
-    public int Version_Revision { get; private set; }
+    public int Version_Revision { get; private set; } = 0;
 
     /// <summary>現在の状態を取得する</summary>
     public Status CurrentStatus { get; private set; } = Status.Initializing;
 
     /// <summary>計測開始日時を取得する</summary>
     public DateTime StartMeasuringDateTime { get; private set; } = new DateTime(2000, 1, 1, 0, 0, 0);
+
+    /// <summary>計測設定値が読み込み済か否か</summary>
+    public bool MeasuringSettingLoaded { get; private set; } = false;
+
+    /// <summary>バージョンが読み込み済か否か</summary>
+    public bool VersionLoaded { get; private set; } = false;
 
     #endregion
 
@@ -287,12 +289,10 @@ namespace MLLib
           break;
 
         case "CMS":
-          CurrentStatus = Status.WaitingForCommand;
           solveMS();
           break;
 
         case "LMS":
-          CurrentStatus = Status.WaitingForCommand;
           solveMS();
           break;
 
@@ -301,7 +301,7 @@ namespace MLLib
           break;
 
         case "WFC":
-          if(CurrentStatus != Status.Initializing)
+          if(CurrentStatus == Status.Initializing && VersionLoaded && MeasuringSettingLoaded)
             CurrentStatus = Status.WaitingForCommand;
 
           //イベント通知
@@ -435,6 +435,10 @@ namespace MLLib
       //計測開始日時
       StartMeasuringDateTime = GetDateTimeFromUTime(long.Parse(buff[8]));
 
+      //測定設定読み込み済フラグをON
+      MeasuringSettingLoaded = true;
+      if (VersionLoaded) CurrentStatus = Status.WaitingForCommand;
+
       //イベント通知
       MeasurementSettingReceivedEvent?.Invoke(this, EventArgs.Empty);
     }
@@ -447,6 +451,10 @@ namespace MLLib
       Version_Minor = int.Parse(vers[1]);
       if (3 <= vers.Length)
         Version_Revision = int.Parse(vers[2]);
+
+      //バージョン読み込み済フラグをON
+      VersionLoaded = true; 
+      if (MeasuringSettingLoaded) CurrentStatus = Status.WaitingForCommand;
 
       //イベント通知
       VersionReceivedEvent?.Invoke(this, EventArgs.Empty);
@@ -639,6 +647,10 @@ namespace MLLib
     public static string GetLowAddress(ulong longAddress)
     { return GetLongHexAddress(longAddress); }
 
+    /// <summary>HTMLでMLoggerの一覧表を作成する</summary>
+    /// <param name="baseHTML">基礎となるHTML</param>
+    /// <param name="mLoggers">MLogger</param>
+    /// <returns>HTMLでMLoggerの一覧表</returns>
     public static string MakeHTMLTable(string baseHTML, MLogger[] mLoggers)
     {
       //編集

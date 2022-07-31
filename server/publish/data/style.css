@@ -1,4 +1,4 @@
-﻿body {
+body {
   font-family: "Open Sans", sans-serif;
   line-height: 1.25;
   background-color: #ffffff;
@@ -8,7 +8,7 @@ table {
   border-collapse: collapse;
   margin: 0 auto;
   padding: 0;
-  width: 2100px;
+  width: 1900px;
   table-layout: fixed;
 }
 
@@ -48,7 +48,10 @@ table tbody th {
   background: #EDAD0B;
 }
 .illlog_h {
-    background: #ff6a00;
+  background: #ff6a00;
+}
+.cmftlog_h {
+  background: #cc528b;
 }
 
 .general{
@@ -64,7 +67,10 @@ table tbody th {
   background: #FCF1D3;
 }
 .illlog {
-    background: #ffe3cf;
+  background: #ffe3cf;
+}
+.cmftlog {
+  background: #f4c9dd;
 }
 
 @media screen and (max-width: 600px) {

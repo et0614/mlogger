@@ -8,10 +8,10 @@
     ".NETCoreApp,Version=v6.0": {
       "MLResumer/1.0.0": {
         "dependencies": {
-          "MLLib": "1.0.0",
           "Popolo": "2.3.1.39",
           "System.IO.Ports": "6.0.0",
-          "XBeeLibrary.Core": "1.0.2"
+          "XBeeLibrary.Core": "1.0.2",
+          "MLLib": "1.0.0.0"
         },
         "runtime": {
           "MLResumer.dll": {}
@@ -375,12 +375,12 @@
           }
         }
       },
-      "MLLib/1.0.0": {
-        "dependencies": {
-          "Popolo": "2.3.1.39"
-        },
+      "MLLib/1.0.0.0": {
         "runtime": {
-          "MLLib.dll": {}
+          "MLLib.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       }
     }
@@ -657,8 +657,8 @@
       "path": "xbeelibrary.core/1.0.2",
       "hashPath": "xbeelibrary.core.1.0.2.nupkg.sha512"
     },
-    "MLLib/1.0.0": {
-      "type": "project",
+    "MLLib/1.0.0.0": {
+      "type": "reference",
       "serviceable": false,
       "sha512": ""
     }
