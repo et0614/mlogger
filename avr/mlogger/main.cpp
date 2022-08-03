@@ -11,6 +11,7 @@
  * 3.0.3	ADC基準電圧を2.0Vに変更
  * 3.0.4	CMSコマンド実行時にもEEPROMに設定を保存するように変更
  * 3.0.5	機器名称関連のコマンド（LLN,CLN）を実装
+ * 3.0.6	AHT20のエラー時のリセット処理を追加
  */
 
 /**XBee端末の設定****************************************
@@ -149,6 +150,7 @@ int main(void)
 	my_i2c::InitializeI2C(); //I2C
 	//my_i2c::InitializeOPT(OPT_ADDRESS);  //照度センサとしてOPTxxxxを使う場合
 	my_xbee::Initialize();  //XBee（UART）
+	my_i2c::InitializeAHT20();
 	
 	//タイマ初期化
 	initialize_timer();
@@ -338,7 +340,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.5\r");
+		my_xbee::bltx_chars("VER:3.0.6\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{

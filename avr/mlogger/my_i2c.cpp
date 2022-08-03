@@ -14,6 +14,9 @@
 //VCNLのアドレス。同部品には4種のアドレスがあるので型番に注意。
 const uint8_t VCNL_ADD = 0x60 << 1;
 
+//AHT20のアドレス（0x38=0b00111000）(0x70=0b01110000)
+const uint8_t AHT20_ADD = 0x38 << 1;
+
 enum 
 {
 	I2C_INIT = 0,
@@ -23,7 +26,7 @@ enum
 	I2C_ERROR,
 	I2C_SUCCESS
 };
- 
+  
 //書き込み終了を待つ
 static uint8_t _i2c_WaitW(void)
  {
@@ -281,27 +284,34 @@ uint8_t my_i2c::ReadAHT20(float* tempValue, float* humiValue)
 	*humiValue = -99;
 	*tempValue = -99;
 	
-	const uint8_t AHT_ADD = 0x38 << 1; //AHT20のアドレス（0x38=0b00111000）
 	uint8_t buffer[7];
 	
-	//初期化コマンド(送信後10ms待つ)
-	if(_start_writing(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0xBE) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0x08) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
-	_bus_stop();
-	_delay_ms(10);
+	if((ReadAHT20Status()&0x18)!=0x18) //Statusが0x18以外の場合にはリセット
+	{
+		//レジスタ初期化
+		ResetAHT20(0x1b);
+		ResetAHT20(0x1c);
+		ResetAHT20(0x1e);
+		_delay_ms(10);
+	}
 	
 	//測定命令(計測終了まで80ms必要)
-	if(_start_writing(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0xAC) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0x33) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
 	_bus_stop();
 	_delay_ms(80);
+	
+	uint16_t cnt = 0;
+	while(((ReadAHT20Status()&0x80)==0x80)) //bit[7]=1の間はbusy
+	{
+		_delay_ms(2);
+		if(cnt++>=100) break;
+	}
 			
 	//測定値を受信
-	if(_start_reading(AHT_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:状態
 	//Busyの場合
 	if((buffer[0] & (1<<7))) { _bus_stop(); return 0; }
@@ -414,7 +424,69 @@ void my_i2c::ScanAddress(uint8_t minAddress, uint8_t maxAddress)
 		}
 		_bus_stop();
 		_delay_ms(10);
-	}	
+	}
+}
+
+void my_i2c::InitializeAHT20()
+{
+	//Statusが0x18以外の場合にはリセット
+	if((ReadAHT20Status()&0x18)!=0x18)
+	{
+		//レジスタ初期化
+		ResetAHT20(0x1b);
+		ResetAHT20(0x1c);
+		ResetAHT20(0x1e);
+		_delay_ms(10);
+	}
 	
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0xa8) != I2C_ACKED) { _bus_stop(); return; } //NOR operating mode
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; }
+	_bus_stop();
+	_delay_ms(10);
+	
+	//初期化コマンド(送信後10ms待つ)
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0xBE) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x08) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; }
+	_bus_stop();
+	_delay_ms(10);
+}
+
+uint8_t my_i2c::ReadAHT20Status()
+{
+	uint8_t buff;
+	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_read(0, 1, &buff) != I2C_SUCCESS) { _bus_stop(); return 0; }
+	return buff;
+}
+
+void my_i2c::ResetAHT20(uint8_t code)
+{
+	uint8_t Byte_first,Byte_second,Byte_third;
+	
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(code) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; }
+	_bus_stop();
+	_delay_ms(5);
+	
+	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_read(1, 0, &Byte_first) != I2C_SUCCESS) { _bus_stop(); return; }
+	if(_bus_read(1, 0, &Byte_second) != I2C_SUCCESS) { _bus_stop(); return; }
+	if(_bus_read(0, 1, &Byte_third) != I2C_SUCCESS) { _bus_stop(); return; }
+	_delay_ms(10);
+	
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0xB0|code) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(Byte_second) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(Byte_third) != I2C_ACKED) { _bus_stop(); return; }
+	_bus_stop();
+	
+	Byte_second=0x00;
+	Byte_third =0x00;
 }
 	

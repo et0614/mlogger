@@ -38,6 +38,26 @@ class my_i2c
 		
 		/**
 		 * @fn
+		 * AHT20をリセットする
+		 * @param (code) リセットするコード（0x1B or 0x1C or 0x1E）
+		 */
+		static void ResetAHT20(uint8_t code);
+		
+		/**
+		 * @fn
+		 * AHT20の状態を読み取る
+		 * @return 状態を表すバイト
+		 */
+		static uint8_t ReadAHT20Status();
+		
+		/**
+		 * @fn
+		 * AHT20を初期化する
+		 */
+		static void InitializeAHT20();
+		
+		/**
+		 * @fn
 		 * OPTxxxから照度を読み取る
 		 * @param (add) アドレス
 		 * @return 照度[lx]
