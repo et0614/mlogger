@@ -5,7 +5,7 @@
     <ProjectVersion>7.0</ProjectVersion>
     <ToolchainName>com.Atmel.AVRGCC8.CPP</ToolchainName>
     <ProjectGuid>dce6c7e3-ee26-4d79-826b-08594b9ad897</ProjectGuid>
-    <avrdevice>AVR64DA32</avrdevice>
+    <avrdevice>AVR64DB32</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>Executable</OutputType>
     <Language>CPP</Language>
@@ -30,7 +30,7 @@
     <EraseKey />
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
     <avrtoolserialnumber>J41800113374</avrtoolserialnumber>
-    <avrdeviceexpectedsignature>0x1E9614</avrdeviceexpectedsignature>
+    <avrdeviceexpectedsignature>0x1E9618</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
@@ -61,7 +61,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
       <AvrGccCpp>
-  <avrgcc.common.Device>-mmcu=avr64da32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64da32"</avrgcc.common.Device>
+  <avrgcc.common.Device>-mmcu=avr64db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64db32"</avrgcc.common.Device>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
@@ -117,7 +117,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <ToolchainSettings>
       <AvrGccCpp>
-  <avrgcc.common.Device>-mmcu=avr64da32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64da32"</avrgcc.common.Device>
+  <avrgcc.common.Device>-mmcu=avr64db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64db32"</avrgcc.common.Device>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>

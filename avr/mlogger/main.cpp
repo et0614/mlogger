@@ -12,6 +12,7 @@
  * 3.0.4	CMSコマンド実行時にもEEPROMに設定を保存するように変更
  * 3.0.5	機器名称関連のコマンド（LLN,CLN）を実装
  * 3.0.6	AHT20のエラー時のリセット処理を追加
+ * 3.0.7	SDカード書き出しの省電力化
  */
 
 /**XBee端末の設定****************************************
@@ -81,6 +82,9 @@ const bool IS_MCP9700 = false; //MCP9701ならばfalse
 //AM2320かAHT20か
 const bool IS_AM2320 = false;
 
+//何行分のデータを一時保存するか
+const int N_LINE_BUFF = 45;
+
 //広域変数定義********************************************************
 //日時関連
 volatile static time_t currentTime = 0; //現在時刻（UNIX時間）
@@ -116,6 +120,10 @@ static uint8_t wc_time = 0;
 //SDカード関連
 volatile bool initSD = false; //SDカード初期化フラグ
 static FATFS* fSystem;
+static char lineBuff[my_xbee::MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
+static uint8_t buffNumber = 0; //一時保存回数
+static uint8_t lastSavedMinute = 0; //最後に保存した分
+static uint8_t blinkCount = 0; //SD書き出し時のLED点滅時間間隔保持変数
 
 //リセット処理用
 volatile static unsigned int resetTime = 0;
@@ -340,7 +348,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.6\r");
+		my_xbee::bltx_chars("VER:3.0.7\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -686,15 +694,33 @@ ISR(RTC_PIT_vect)
 
 			if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
 			if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
-			if(outputToSDCard) writeSDcard(dtNow, charBuff); //SD card出力
+			if(outputToSDCard)  //SD card出力
+			{
+				//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す
+				if(N_LINE_BUFF <= buffNumber || lastSavedMinute != dtNow.tm_min)
+				{
+					writeSDcard(dtNow, lineBuff); //SD card出力
+					buffNumber = 0;
+					lineBuff[0] = '\0';
+					lastSavedMinute = dtNow.tm_min;
+				}
+				//一時保存文字列の末尾に足す
+				strncat(lineBuff, charBuff, sizeof(charBuff));
+				buffNumber++;
+				
+				blinkCount++;
+				if(5 <= blinkCount)
+				{
+					blinkCount = 0;
+					blinkLED(1); //SDカード記録中は5秒ごとにLED点滅
+				}
+			}
 		}
 				
 		//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 		//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
 		//while(! my_uart::tx_done());
 		_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う
-		
-		if(outputToSDCard) blinkLED(1); //SDカード記録中は毎秒LED点滅
 	}
 	else
 	{
