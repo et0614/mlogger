@@ -224,6 +224,10 @@ namespace MLServer
 
       //定期的にエンドデバイスを探索・初期化する
       loopEndDeviceInitialize();
+
+      //ListViewの列幅調整
+      resizeLVColumns(lv_setting);
+      resizeLVColumns(lv_measure);
     }
 
     /// <summary>コントロールの国際化対応処理</summary>
@@ -1303,6 +1307,18 @@ namespace MLServer
       return null;
     }
 
+    private static void resizeLVColumns(ListView lv)
+    {
+      lv.Columns[0].TextAlign = HorizontalAlignment.Center;
+      int ave = Math.Max(1, lv.Width / lv.Columns.Count);
+      foreach (ColumnHeader ch in lv.Columns) ch.Width = ave;
+    }
+
+    private void listView_SizeChanged(object sender, EventArgs e)
+    {
+      resizeLVColumns((ListView)sender);
+    }
+
     #endregion
 
     #region インナークラスの定義
@@ -1321,6 +1337,6 @@ namespace MLServer
     }
 
     #endregion
-
+        
   }
 }

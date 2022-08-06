@@ -228,6 +228,7 @@
       this.lv_setting.View = System.Windows.Forms.View.Details;
       this.lv_setting.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView_ColumnClick);
       this.lv_setting.SelectedIndexChanged += new System.EventHandler(this.lv_setting_SelectedIndexChanged);
+      this.lv_setting.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd_xbeeID
       // 
@@ -352,6 +353,7 @@
       this.lv_measure.TabIndex = 4;
       this.lv_measure.UseCompatibleStateImageBehavior = false;
       this.lv_measure.View = System.Windows.Forms.View.Details;
+      this.lv_measure.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd2_xbeeID
       // 
