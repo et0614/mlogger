@@ -301,7 +301,11 @@ namespace MLLib
           break;
 
         case "WFC":
-          if(CurrentStatus == Status.Initializing && VersionLoaded && MeasuringSettingLoaded)
+          //初期化済の場合
+          if (CurrentStatus == Status.Initializing && VersionLoaded && MeasuringSettingLoaded)
+            CurrentStatus = Status.WaitingForCommand;
+          //計測中が解除された場合
+          else if (CurrentStatus == Status.Measuring || CurrentStatus == Status.StartMeasuring)
             CurrentStatus = Status.WaitingForCommand;
 
           //イベント通知

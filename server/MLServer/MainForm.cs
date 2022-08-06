@@ -794,6 +794,8 @@ namespace MLServer
         disconnectXBee(coordinators[key].portName);
       connectedPorts.Clear(); //ここから3行は最後のXBee切断処理時に呼び出されるはずだが、必要？
       lv_setting.Items.Clear();
+      lv_measure.Items.Clear();
+
       mLoggers.Clear();
 
       //接続ボタンを設定
@@ -823,6 +825,10 @@ namespace MLServer
           for (int i = 0; i < lv_setting.Items.Count; i++)
             if (key == getXBee(HIGH_ADD + lv_setting.Items[i].SubItems[0].Text))
               lv_setting.Items.RemoveAt(i);
+
+          for (int i = 0; i < lv_measure.Items.Count; i++)
+            if (key == getXBee(HIGH_ADD + lv_measure.Items[i].SubItems[0].Text))
+              lv_measure.Items.RemoveAt(i);
 
           //イベント解除
           key.GetNetwork().DeviceDiscovered -= Net_DeviceDiscovered;

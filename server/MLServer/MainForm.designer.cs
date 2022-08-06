@@ -726,7 +726,7 @@
       // 
       // dtp_timer
       // 
-      this.dtp_timer.CustomFormat = "yyyy/MM/dd hh:mm";
+      this.dtp_timer.CustomFormat = "yyyy/MM/dd HH:mm";
       this.dtp_timer.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
       this.dtp_timer.Location = new System.Drawing.Point(60, 857);
       this.dtp_timer.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
