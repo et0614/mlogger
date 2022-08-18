@@ -511,12 +511,18 @@ namespace MLLib
     #region 送信コマンド作成処理
 
     /// <summary>測定開始コマンドをつくる</summary>
-    /// <param name="outputToSDCard">SDカードに書き出すか否か</param>
+    /// <param name="useZigbee">Zigbeeで出力するか</param>
+    /// <param name="useBluetooth">Bluetoothで出力するか</param>
+    /// <param name="useSDCard">SDカードに書き出すか否か</param>
     /// <returns>測定開始コマンド</returns>
-    public static string MakeStartMeasuringCommand(bool outputToSDCard)
+    public static string MakeStartMeasuringCommand(bool useZigbee, bool useBluetooth, bool useSDCard)
     {
       //tffはxbee-on,bluetooth-off,sdcard-off
-      return "\rSTL" + String.Format("{0:D10}", GetUnixTime(DateTime.Now)) + (outputToSDCard ? "fft\r" : "ttf\r");
+      return "\rSTL" + 
+        String.Format("{0:D10}", GetUnixTime(DateTime.Now)) +
+        (useZigbee ? "t" : "f") +
+        (useBluetooth ? "t" : "f") +
+        (useSDCard ? "t\r" : "f\r");
     }
 
     /// <summary>計測設定コマンドをつくる</summary>

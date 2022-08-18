@@ -989,7 +989,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false));
+          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true, false, false));
           Thread.Sleep(CMD_TSPAN);
         }
       });
@@ -1009,7 +1009,7 @@ namespace MLServer
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true));
+          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(false, false, true));
           Thread.Sleep(CMD_TSPAN);
         }
       });

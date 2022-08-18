@@ -891,7 +891,7 @@
       this.MinimumSize = new System.Drawing.Size(2400, 1350);
       this.Name = "MainForm";
       this.ShowIcon = false;
-      this.Text = "MLServer version 1.0.6";
+      this.Text = "MLServer version 1.0.7";
       this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
       this.toolStrip.ResumeLayout(false);
       this.toolStrip.PerformLayout();
