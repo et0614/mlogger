@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="DDNSUpdater.sh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ddns.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

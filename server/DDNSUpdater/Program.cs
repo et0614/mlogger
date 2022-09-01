@@ -76,7 +76,10 @@ namespace DDNSUpdater
       {
         while (true)
         {
-          checkUpdating();
+          //ネットワークにつながっていれば更新
+          if (System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
+            checkUpdating();
+
           Thread.Sleep(5000); //5secごとにIPアドレスを確認
         }
       });
@@ -87,7 +90,16 @@ namespace DDNSUpdater
     private static async void checkUpdating()
     {
       //Global IPを再取得
-      string ipAdd = await GetGlobalIP();
+      string ipAdd;
+      try
+      {
+        ipAdd = await GetGlobalIP();
+      }
+      catch
+      {
+        Console.WriteLine("No network connection.");
+        return;
+      }
 
       if (ipAdd != lastIP || update <= (DateTime.Now - lastUpdate).TotalSeconds)
       {
@@ -137,7 +149,7 @@ namespace DDNSUpdater
       if (!weakreference.TryGetTarget(out client))
         weakreference.SetTarget(client = new HttpClient());
 
-      return client.GetStringAsync("https://api.ipify.org");
+      return client.GetStringAsync(gip);
     }
 
     #endregion

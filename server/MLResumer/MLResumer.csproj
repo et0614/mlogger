@@ -37,6 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="MLResumer.sh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="mlnames.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
