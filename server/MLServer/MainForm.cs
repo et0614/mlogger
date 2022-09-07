@@ -187,7 +187,7 @@ namespace MLServer
         using (StreamReader sReader = new StreamReader(nFile))
         {
           string line;
-          while ((line = sReader.ReadLine()) != null)
+          while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
             string[] bf = line.Split(':');
             mlNames.Add(HIGH_ADD + bf[0], bf[1]);

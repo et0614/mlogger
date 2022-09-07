@@ -70,6 +70,8 @@ namespace MLServer
 
     static void Main(string[] args)
     {
+      showTitle();
+
       //データ格納用のディレクトリを作成
       dataDirectory = AppDomain.CurrentDomain.BaseDirectory + "data";
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
@@ -78,14 +80,17 @@ namespace MLServer
       loadInitFile(out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
 
       //MLoggerのアドレス-名称対応リストを読む
-      using (StreamReader sReader = new StreamReader
-        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt"))
+      string nFile = AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt";
+      if (File.Exists(nFile))
       {
-        string line;
-        while ((line = sReader.ReadLine()) != null)
+        using (StreamReader sReader = new StreamReader(nFile))
         {
-          string[] bf = line.Split(':');
-          mlNames.Add(HIGH_ADD + bf[0], bf[1]);
+          string line;
+          while ((line = sReader.ReadLine()) != null && line.Contains(':'))
+          {
+            string[] bf = line.Split(':');
+            mlNames.Add(HIGH_ADD + bf[0], bf[1]);
+          }
         }
       }
 
@@ -110,6 +115,11 @@ namespace MLServer
       scanEndDevice();
 
       while (true) ;
+    }
+
+    private static void showTitle()
+    {
+      Console.WriteLine("MLResumer Version 1.0.0");
     }
 
     private static void loadInitFile
@@ -249,40 +259,40 @@ namespace MLServer
       });
     }
 
+    private static void addXBeeDevice(RemoteXBeeDevice rdv)
+    {
+      string add = rdv.GetAddressString();
+      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
+      MLogger ml = new MLogger(add);
+
+      //名前を設定
+      if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
+
+      //熱的快適性計算のための情報を設定
+      ml.CloValue = cloValue;
+      ml.MetValue = metValue;
+      ml.DefaultTemperature = dbtValue;
+      ml.DefaultRelativeHumidity = rhdValue;
+      ml.DefaultGlobeTemperature = mrtValue;
+      ml.DefaultVelocity = velValue;
+
+      //イベント登録
+      ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
+
+      mLoggers.Add(add, ml);
+
+      //子機のアドレスと通信用XBeeを対応付ける
+      if (!coordinators[dv].longAddress.Contains(add))
+        coordinators[dv].longAddress.Add(add);
+    }
+
     private static void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
     {
       //HTML更新フラグを立てる
       hasNewData = true;
 
-      RemoteXBeeDevice rdv = e.DiscoveredDevice;
-      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
-
       //MLoggerリストに追加
-      string add = rdv.GetAddressString();
-      if (!mLoggers.ContainsKey(add))
-      {
-        MLogger ml = new MLogger(add);
-        
-        //名前を設定
-        if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
-
-        //熱的快適性計算のための情報を設定
-        ml.CloValue = cloValue;
-        ml.MetValue = metValue;
-        ml.DefaultTemperature = dbtValue;
-        ml.DefaultRelativeHumidity = rhdValue;
-        ml.DefaultGlobeTemperature = mrtValue;
-        ml.DefaultVelocity = velValue;
-
-        //イベント登録
-        ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
-
-        mLoggers.Add(add, ml);
-      }
-
-      //子機のアドレスと通信用XBeeを対応付ける
-      if (!coordinators[dv].longAddress.Contains(add))
-        coordinators[dv].longAddress.Add(add);
+      addXBeeDevice(e.DiscoveredDevice);
     }
 
     private static void Device_DataReceived(object sender, XBeeLibrary.Core.Events.DataReceivedEventArgs e)
@@ -291,7 +301,9 @@ namespace MLServer
       string add = rdv.GetAddressString();
       string rcvStr = e.DataReceived.DataString;
 
-      if (!mLoggers.ContainsKey(add)) return; //未登録のノードからの受信は無視
+      //未登録のノードからの受信の場合
+      if (!mLoggers.ContainsKey(add))
+        addXBeeDevice(rdv);      
 
       //HTML更新フラグを立てる
       hasNewData = true;

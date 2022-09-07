@@ -353,6 +353,7 @@
       this.lv_measure.TabIndex = 4;
       this.lv_measure.UseCompatibleStateImageBehavior = false;
       this.lv_measure.View = System.Windows.Forms.View.Details;
+      this.lv_measure.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView_ColumnClick);
       this.lv_measure.SizeChanged += new System.EventHandler(this.listView_SizeChanged);
       // 
       // lvhd2_xbeeID
@@ -891,7 +892,7 @@
       this.MinimumSize = new System.Drawing.Size(2400, 1350);
       this.Name = "MainForm";
       this.ShowIcon = false;
-      this.Text = "MLServer version 1.0.7";
+      this.Text = "MLServer version 1.0.8";
       this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
       this.toolStrip.ResumeLayout(false);
       this.toolStrip.PerformLayout();
