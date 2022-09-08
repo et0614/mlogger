@@ -19,7 +19,7 @@ namespace MLServer {
     // または Visual Studio のようなツールを使用して自動生成されました。
     // メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
     // ResGen を実行し直すか、または VS プロジェクトをビルドし直します。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -85,67 +85,37 @@ namespace MLServer {
         
         /// <summary>
         ///   body {
-        ///  font-family: &quot;Open Sans&quot;, sans-serif;
-        ///  line-height: 1.25;
-        ///  background-color: #ffffff;
+        ///    font-family: &quot;Open Sans&quot;, sans-serif;
+        ///    line-height: 1.25;
+        ///    background-color: #ffffff;
         ///}
         ///
         ///table {
-        ///  border-collapse: collapse;
-        ///  margin: 0 auto;
-        ///  padding: 0;
-        ///  width: 2100px;
-        ///  table-layout: fixed;
+        ///    border-collapse: collapse;
+        ///    margin: 0 auto;
+        ///    padding: 0;
+        ///    width: 2100px;
+        ///    table-layout: fixed;
         ///}
         ///
-        ///table tr {
-        ///  background-color: #e6f2f5;
-        ///  padding: .35em;
-        ///  border-bottom: 2px solid #fff;
-        ///}
-        ///table th,
-        ///table td {
-        ///  padding: 1em 10px 1em 1em;
-        ///  border-right: 2px solid #fff;
-        ///  text-align: center;
-        ///}
-        ///table th {
-        ///  font-size: 1.0em;
-        ///}
-        ///table thead tr{
-        ///  background-color: #16 [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
+        ///    table tr {
+        ///        background-color: #e6f2f5;
+        ///        padding: .35em;
+        ///        border-bottom: 2px solid #fff;
+        ///    }
+        ///
+        ///    table th,
+        ///    table td {
+        ///        padding: 1em 10px 1em 1em;
+        ///        border-right: 2px solid #fff;
+        ///        text-align: center;
+        ///    }
+        ///
+        /// [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string style_css {
             get {
                 return ResourceManager.GetString("style_css", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   &lt;html lang=&quot;ja&quot;&gt;
-        ///&lt;head&gt;
-        ///&lt;meta charset=&quot;utf-8&quot;&gt;
-        ///&lt;meta name=&quot;robots&quot; content=&quot;noindex,nofollow&quot;&gt;
-        ///&lt;title&gt;測定状況&lt;/title&gt;
-        ///&lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;
-        ///&lt;/head&gt;
-        ///&lt;body&gt;
-        ///
-        ///&lt;h2&gt;IPアドレス &lt;!--IP_ADDRESS--&gt; の計測状況&lt;/h2&gt;
-        ///
-        ///&lt;b&gt;接続台数：&lt;/b&gt;&lt;!--ML_NUMBER--&gt; 台&lt;br&gt;&lt;br&gt;
-        ///&lt;b&gt;測定器一覧：&lt;/b&gt;&lt;br&gt;
-        ///    &lt;div id=&quot;loggers&quot;&gt;
-        ///        抽出 &lt;input class=&quot;search&quot;&gt;&lt;br&gt;&lt;br&gt;
-        ///        &lt;table align=&quot;left&quot;&gt;
-        ///          &lt;thead&gt;
-        ///              &lt;tr&gt;
-        ///                  &lt;th class=&quot;sort general_h&quot; data-sort=&quot;dt_last&quot;&gt;最終接続&lt;/th&gt;
-        ///                  [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string topPage_html {
-            get {
-                return ResourceManager.GetString("topPage_html", resourceCulture);
             }
         }
     }

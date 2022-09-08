@@ -595,6 +595,10 @@ namespace MLServer
       ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
       string add = rdv.GetAddressString();
 
+      //親機が見つかった場合には終了
+      foreach (ZigBeeDevice cd in coordinators.Keys)
+        if (cd.GetAddressString() == add) return;
+
       //新規デバイスでなければ終了
       if (mLoggers.ContainsKey(add)) return;
 
@@ -955,10 +959,10 @@ namespace MLServer
         //既に探索中の場合は一旦停止
         if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
 
-        //探索開始
-        net.SetDiscoveryTimeout((long)(SCAN_ENDDEVICE_TSPAN * 0.9));
         try
         {
+          //探索開始
+          net.SetDiscoveryTimeout((long)(SCAN_ENDDEVICE_TSPAN * 0.9));
           net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
         }
         catch (Exception e)

@@ -262,6 +262,13 @@ namespace MLServer
     private static void addXBeeDevice(RemoteXBeeDevice rdv)
     {
       string add = rdv.GetAddressString();
+
+      //親機が見つかった場合には終了
+      foreach (ZigBeeDevice cd in coordinators.Keys)
+        if (cd.GetAddressString() == add) return;
+
+      if (mLoggers.ContainsKey(add)) return;
+
       ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
       MLogger ml = new MLogger(add);
 
@@ -411,7 +418,7 @@ namespace MLServer
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
-      string html = MLogger.MakeHTMLTable(Resources.topPage_html, loggers);
+      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
       { sWriter.Write(html); }
