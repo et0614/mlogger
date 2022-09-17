@@ -190,7 +190,9 @@ namespace MLServer
           while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
             string[] bf = line.Split(':');
-            mlNames.Add(HIGH_ADD + bf[0], bf[1]);
+            string key = HIGH_ADD + bf[0];
+            if (mlNames.ContainsKey(key)) mlNames[key] = bf[1];
+            else mlNames.Add(key, bf[1]);
           }
         }
       }
@@ -1029,7 +1031,7 @@ namespace MLServer
       ListView lv = (ListView)sender;
       bool[] isAc = (lv == lv_setting) ? isAscendingSets : isAscendingVals;
       isAc[colNum] = !isAc[colNum];
-      lv_setting.ListViewItemSorter = new MLoggerComparer(colNum, isAc[colNum]);
+      lv.ListViewItemSorter = new MLoggerComparer(colNum, isAc[colNum]);
     }
 
     /// <summary>接続先一覧表示時の処理</summary>
