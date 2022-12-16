@@ -5,7 +5,7 @@
     <ProjectVersion>7.0</ProjectVersion>
     <ToolchainName>com.Atmel.AVRGCC8.CPP</ToolchainName>
     <ProjectGuid>dce6c7e3-ee26-4d79-826b-08594b9ad897</ProjectGuid>
-    <avrdevice>AVR64DB32</avrdevice>
+    <avrdevice>AVR128DB32</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>Executable</OutputType>
     <Language>CPP</Language>
@@ -29,8 +29,8 @@
     <eraseonlaunchrule>1</eraseonlaunchrule>
     <EraseKey />
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800113374</avrtoolserialnumber>
-    <avrdeviceexpectedsignature>0x1E9618</avrdeviceexpectedsignature>
+    <avrtoolserialnumber>J42700018795</avrtoolserialnumber>
+    <avrdeviceexpectedsignature>0x1E970D</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
@@ -40,7 +40,7 @@
         <InterfaceName>UPDI</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800113374</ToolNumber>
+      <ToolNumber>J42700018795</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>UPDI</avrtoolinterface>
@@ -61,7 +61,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
       <AvrGccCpp>
-  <avrgcc.common.Device>-mmcu=avr64db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64db32"</avrgcc.common.Device>
+  <avrgcc.common.Device>-mmcu=avr128db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr128db32"</avrgcc.common.Device>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
@@ -117,7 +117,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <ToolchainSettings>
       <AvrGccCpp>
-  <avrgcc.common.Device>-mmcu=avr64db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64db32"</avrgcc.common.Device>
+  <avrgcc.common.Device>-mmcu=avr128db32 -B "%24(PackRepoDir)\Atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr128db32"</avrgcc.common.Device>
   <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
   <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
   <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>

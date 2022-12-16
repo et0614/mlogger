@@ -13,6 +13,7 @@
  * 3.0.5	機器名称関連のコマンド（LLN,CLN）を実装
  * 3.0.6	AHT20のエラー時のリセット処理を追加
  * 3.0.7	SDカード書き出しの省電力化
+ * 3.0.8	SDカード書き出し時のLED点灯バグ修正
  */
 
 /**XBee端末の設定****************************************
@@ -348,7 +349,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.7\r");
+		my_xbee::bltx_chars("VER:3.0.8\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -551,9 +552,20 @@ ISR(RTC_PIT_vect)
 				
 	//ロギング中であれば
 	if(logging)
-	{		
+	{
 		//計測開始時刻の前ならば終了
 		if(currentTime < startTime) return;
+		
+		//SDカードロギング中は5秒ごとに点灯
+		if(outputToSDCard)  //SD card出力
+		{
+			blinkCount++;
+			if(5 <= blinkCount)
+			{
+				blinkCount = 0;
+				blinkLED(1);
+			}
+		}
 		
 		//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
 		if(my_eeprom::measure_vel && my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
@@ -707,13 +719,6 @@ ISR(RTC_PIT_vect)
 				//一時保存文字列の末尾に足す
 				strncat(lineBuff, charBuff, sizeof(charBuff));
 				buffNumber++;
-				
-				blinkCount++;
-				if(5 <= blinkCount)
-				{
-					blinkCount = 0;
-					blinkLED(1); //SDカード記録中は5秒ごとにLED点滅
-				}
 			}
 		}
 				
