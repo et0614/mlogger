@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.DataReceive"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="{x:Static res:MLSResource.DR_Title}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IsEnabled="False" IconOverride="trans.png"/>
+    </Shell.BackButtonBehavior>
+
+    <Grid BackgroundColor="{StaticResource Lightest_G}">
+        <ScrollView Orientation="Vertical" VerticalScrollBarVisibility="Never">
+            <StackLayout>
+                <Grid Margin="20,20,20,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0" x:Name="title_tmp" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_tmp" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_tmp" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°CDB" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="2" Grid.Column="0" x:Name="title_hmd" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_hmd" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_hmd" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="3" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="4" Grid.Column="0" x:Name="title_glb" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_glb" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_glb" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="5" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="6" Grid.Column="0" x:Name="title_vel" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_vel" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_vel" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="7" Grid.Column="2" Text="m/s" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="8" Grid.Column="0" x:Name="title_lux" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_lux" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_lux" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="9" Grid.Column="2" Text="lux" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="10" Grid.Column="0" Text="MRT" VerticalTextAlignment="End"/>
+                    <!--<Label Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2" Text="-" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>-->
+                    <Label Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_mrt" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="11" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="12" Grid.Column="0" Text="PMV" VerticalTextAlignment="End"/>
+                    <!--<Label Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2" Text="-" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>-->
+                    <Label Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_pmv" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="13" Grid.Column="2" Text="-" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="14" Grid.Column="0" Text="PPD" VerticalTextAlignment="End"/>
+                    <!--<Label Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2" Text="-" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>-->
+                    <Label Grid.Row="15" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_ppd" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="15" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="16" Grid.Column="0" Text="SETStar" VerticalTextAlignment="End"/>
+                    <!--<Label Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="2" Text="-" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>-->
+                    <Label Grid.Row="17" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_set" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="17" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="cloTitle" HorizontalTextAlignment="Start"/>
+                    <Slider Grid.Row="1" Grid.Column="0" x:Name="cloSlider" Maximum="3" Margin="30,0,0,0" Value="1.2" ValueChanged="slider_ValueChanged"/>
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding Source={x:Reference cloSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" TextColor="black"/>
+
+                    <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" x:Name="metTitle" HorizontalTextAlignment="Start"/>
+                    <Slider Grid.Row="3" Grid.Column="0" x:Name="metSlider" Maximum="8" Margin="30,0,0,0" Value="1.1" ValueChanged="slider_ValueChanged"/>
+                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding Source={x:Reference metSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" TextColor="black"/>
+
+                    <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnCloth" Clicked="CloBtn_Clicked"/>
+
+                    <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectActivity}" x:Name="btnActivity" Clicked="ActBtn_Clicked"/>
+                    <!--<Picker Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" x:Name="metList" SelectedIndexChanged="metList_SelectedIndexChanged"/>-->
+                </Grid>
+
+                <Button x:Name="quitBtn" Clicked="QuitBtn_Clicked" Margin="30,0,30,30"
+                        BorderColor="{StaticResource Dark_O}" TextColor="{StaticResource Dark_O}" BackgroundColor="{StaticResource Lightest_O}"/>
+            </StackLayout>
+        </ScrollView>
+
+        <!--インジケータ-->
+        <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
+        <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
+            <StackLayout>
+                <ActivityIndicator Color="Black" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+            </StackLayout>
+        </Frame>
+        <!--インジケータここまで-->
+    </Grid>
+</ContentPage>

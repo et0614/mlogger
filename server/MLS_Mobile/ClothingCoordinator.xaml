@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.ClothingCoordinator"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="{x:Static res:MLSResource.CC_Title}">
+    <Grid Padding="0" 
+          RowSpacing="5"
+          ColumnSpacing="5"
+          RowDefinitions="Auto, *" 
+          ColumnDefinitions="*, 100">
+
+        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" BackgroundColor="Transparent"/>
+        <Label Grid.Row="0" Grid.Column="0" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" FontSize="20"
+                        x:Name="CloValueLabel" TextColor="{StaticResource Dark_G}"/>
+        <Button Text="Apply" Grid.Row="0" Grid.Column="1" Margin="5" x:Name="btnApply" Clicked="Button_Clicked"/>
+
+        <CollectionView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="cloView"
+                        ItemsSource="{Binding Clothes}" IsGrouped="true" SelectionMode="Multiple" 
+                        SelectionChanged="OnCollectionViewSelectionChanged">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid 
+                        Padding="5" 
+                        RowDefinitions="Auto, Auto"
+                        ColumnDefinitions="Auto, *" 
+                        RowSpacing="5"
+                        ColumnSpacing="5">
+                        <Image 
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.RowSpan="2" 
+                            Source="{Binding Appearance}" 
+                            Aspect="AspectFill"
+                            HeightRequest="80" 
+                            WidthRequest="80" />
+                        <Label 
+                            Grid.Row="0"
+                            Grid.Column="1" 
+                            Text="{Binding Name}" 
+                            FontSize="18"
+                            FontAttributes="Bold" 
+                            VerticalOptions="Start"/>
+                        <Label 
+                            Grid.Row="1"
+                            Grid.Column="1" 
+                            Text="{Binding CloValue, StringFormat='{0:F2} clo'}"
+                            FontSize="16"
+                            VerticalOptions="Start" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate>
+                    <Label Text="{Binding Name}"
+                           TextColor="White"
+                           BackgroundColor="{StaticResource Dark_G}"
+                           FontSize="20"
+                           FontAttributes="Bold" Padding="10,0,0,0" />
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

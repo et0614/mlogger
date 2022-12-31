@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+	<application android:allowBackup="true"
+			 android:icon="@mipmap/appicon"
+			 android:roundIcon="@mipmap/appicon_round"
+			 android:supportsRtl="true">
+	</application>
+	
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.INTERNET" />
+
+	<!--Add this line to your manifest if you want to declare that your app is available to BLE-capable devices only:-->
+	<uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+
+	<!-- Request legacy Bluetooth + location permissions on older devices. -->
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+	<uses-permission android:name="android.permission.BLUETOOTH"/>
+	<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+	
+	<!-- Needed only if your app looks for Bluetooth devices.
+         You must add an attribute to this permission, or declare the
+         ACCESS_FINE_LOCATION permission, depending on the results when you
+         check location usage in your app. -->
+	<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+	<!-- Needed only if your app communicates with already-paired Bluetooth devices. -->
+	<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+	<!-- Needed only if your app makes the device discoverable to Bluetooth devices. -->
+	<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+	<!-- Sleep機能の制御 -->
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	
+</manifest>

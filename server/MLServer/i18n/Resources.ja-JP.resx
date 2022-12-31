@@ -1,0 +1,256 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CFF_Bvoltage" xml:space="preserve">
+    <value>無風電圧：</value>
+  </data>
+  <data name="CFF_CValue" xml:space="preserve">
+    <value>補正値 =</value>
+  </data>
+  <data name="CFF_MValue" xml:space="preserve">
+    <value>* 計測値 =</value>
+  </data>
+  <data name="CFF_Title" xml:space="preserve">
+    <value>補正係数</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="DateTime" xml:space="preserve">
+    <value>日時</value>
+  </data>
+  <data name="DBTandRH" xml:space="preserve">
+    <value>温湿度</value>
+  </data>
+  <data name="DBTemp" xml:space="preserve">
+    <value>乾球温度</value>
+  </data>
+  <data name="GeneralPurposeVoltage" xml:space="preserve">
+    <value>汎用電圧</value>
+  </data>
+  <data name="GlbTemp" xml:space="preserve">
+    <value>グローブ温度</value>
+  </data>
+  <data name="Illuminance" xml:space="preserve">
+    <value>照度</value>
+  </data>
+  <data name="Interval" xml:space="preserve">
+    <value>測定間隔</value>
+  </data>
+  <data name="MF_Alrt_Interval" xml:space="preserve">
+    <value>計測時間間隔は1-86400秒の範囲で設定してください</value>
+  </data>
+  <data name="MF_Alrt_InvalidInput" xml:space="preserve">
+    <value>{0}の計測時間間隔の入力が不正です</value>
+  </data>
+  <data name="MF_ApplySetting" xml:space="preserve">
+    <value>設定を反映する</value>
+  </data>
+  <data name="MF_Connect" xml:space="preserve">
+    <value>接続</value>
+  </data>
+  <data name="MF_ConnectionSucceeded" xml:space="preserve">
+    <value>接続成功。</value>
+  </data>
+  <data name="MF_ConnectPort" xml:space="preserve">
+    <value>{0}のXBeeに接続する</value>
+  </data>
+  <data name="MF_Connect_Def" xml:space="preserve">
+    <value>COMポートでXBee（コーディネータ）に接続します</value>
+  </data>
+  <data name="MF_Disconnect" xml:space="preserve">
+    <value>切断</value>
+  </data>
+  <data name="MF_DisconnectPort" xml:space="preserve">
+    <value>{0}のXBeeを切断する</value>
+  </data>
+  <data name="MF_Disconnect_Def" xml:space="preserve">
+    <value>COMポートのXbee（コーディネータ）を切断します</value>
+  </data>
+  <data name="MF_Editable" xml:space="preserve">
+    <value>設定可能</value>
+  </data>
+  <data name="MF_ErrCF" xml:space="preserve">
+    <value>cf.iniの読み込みに失敗しました</value>
+  </data>
+  <data name="MF_FileIsUsing" xml:space="preserve">
+    <value>{0}は使用中です。</value>
+  </data>
+  <data name="MF_Initializing" xml:space="preserve">
+    <value>初期化中</value>
+  </data>
+  <data name="MF_MeasureCBX" xml:space="preserve">
+    <value>計測</value>
+  </data>
+  <data name="MF_Measuring" xml:space="preserve">
+    <value>計測中</value>
+  </data>
+  <data name="MF_MStartDTime" xml:space="preserve">
+    <value>計測開始日時</value>
+  </data>
+  <data name="MF_PortChg" xml:space="preserve">
+    <value>以下のPortへの接続を試みます:</value>
+  </data>
+  <data name="MF_Search" xml:space="preserve">
+    <value>探索</value>
+  </data>
+  <data name="MF_Search_Def" xml:space="preserve">
+    <value>MLogger（XBeeエンドデバイス）を探索します</value>
+  </data>
+  <data name="MF_SetCorrectionFactors" xml:space="preserve">
+    <value>補正係数を修正する</value>
+  </data>
+  <data name="MF_StartDataCollecting" xml:space="preserve">
+    <value>データ収集を開始する</value>
+  </data>
+  <data name="MF_StartLoggingToSDCard" xml:space="preserve">
+    <value>ロギング（SDカード）を開始する</value>
+  </data>
+  <data name="MF_StartSearch" xml:space="preserve">
+    <value>MLoggerの探索を開始します・・・</value>
+  </data>
+  <data name="MF_TryConnectPort" xml:space="preserve">
+    <value>{0}のXBeeへの接続を試みます</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Proximity" xml:space="preserve">
+    <value>近接</value>
+  </data>
+  <data name="RadTemp" xml:space="preserve">
+    <value>放射温度</value>
+  </data>
+  <data name="RHumid" xml:space="preserve">
+    <value>相対湿度</value>
+  </data>
+  <data name="Set" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>状態</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="topPage_html" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\html\index.ja-JP.htm;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="Velocity" xml:space="preserve">
+    <value>風速</value>
+  </data>
+</root>

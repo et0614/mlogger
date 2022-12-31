@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="MLS_Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:MLS_Mobile"
+    Shell.FlyoutBehavior="Disabled">
+
+    <Shell.Resources>
+        <ResourceDictionary>
+            <!--Bluetooth-->
+            <Style TargetType="Tab" x:Key="BLTab">
+                <Style.Triggers>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="True">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf293;" FontFamily="FAB" Size="24" Color="{StaticResource Light_G}"/>
+                        </Setter>
+                    </Trigger>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="False">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf294;" FontFamily="FAB" Size="24" Color="White"/>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--DataFiles-->
+            <Style TargetType="Tab" x:Key="DFTab">
+                <Style.Triggers>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="True">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf15c;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
+                        </Setter>
+                    </Trigger>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="False">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf15c;" FontFamily="FAR" Size="24" Color="White"/>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--ThermalComfort-->
+            <Style TargetType="Tab" x:Key="TCTab">
+                <Style.Triggers>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="True">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf583;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
+                        </Setter>
+                    </Trigger>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="False">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf583;" FontFamily="FAR" Size="24" Color="White"/>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--MoistAir-->
+            <Style TargetType="Tab" x:Key="MATab">
+                <Style.Triggers>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="True">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf769;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
+                        </Setter>
+                    </Trigger>
+                    <Trigger TargetType="Tab" Property="IsChecked" Value="False">
+                        <Setter Property="Icon">
+                            <FontImageSource Glyph="&#xf76b;" FontFamily="FAS" Size="24" Color="White"/>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+        </ResourceDictionary>
+    </Shell.Resources>
+
+    <TabBar>
+        <Tab Title="ML Scanner" Style="{StaticResource BLTab}">
+            <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
+        </Tab>
+        <Tab Title="Data Files" Style="{StaticResource DFTab}">
+            <ShellContent ContentTemplate="{DataTemplate local:LoggingDataList}"/>
+        </Tab>
+        <Tab Title="Thermal comfort" Style="{StaticResource TCTab}">
+            <ShellContent ContentTemplate="{DataTemplate local:ThermalComfortCalculator}"/>
+        </Tab>
+        <Tab Title="Moist air" Style="{StaticResource MATab}">
+            <ShellContent ContentTemplate="{DataTemplate local:MoistAirCalculator}"/>
+        </Tab>
+    </TabBar>
+</Shell>

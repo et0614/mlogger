@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.LoggingData"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="{x:Static res:MLSResource.LD_Title}">
+
+    <StackLayout BackgroundColor="{StaticResource Lightest_G}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" x:Name="lblFname" Text="File: MLogger_xxxx_yyyyMMdd.txt" Margin="5,10,5,10"/>
+
+            <Button Grid.Row="1" Grid.Column="0" x:Name="btnCopy" Clicked="copy_Clicked" Margin="5,0,5,0"/>
+            <Button Grid.Row="1" Grid.Column="2" x:Name="btnDelete" Clicked="delete_Clicked" Margin="5,0,5,0"/>
+        </Grid>
+
+        <ScrollView Margin="5,10,5,0" Orientation="Both" VerticalOptions="FillAndExpand" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
+            <StackLayout>
+                <Label x:Name="lbl_data" VerticalOptions="FillAndExpand" BackgroundColor="White" Padding="5"/>
+            </StackLayout>
+        </ScrollView>
+    </StackLayout>
+</ContentPage>

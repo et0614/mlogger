@@ -1,0 +1,522 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Act_Aircraft_Combat" xml:space="preserve">
+    <value>戦闘機</value>
+  </data>
+  <data name="Act_Aircraft_InstrumentLanding" xml:space="preserve">
+    <value>飛行機着陸</value>
+  </data>
+  <data name="Act_Aircraft_Routine" xml:space="preserve">
+    <value>飛行機</value>
+  </data>
+  <data name="Act_Automobile" xml:space="preserve">
+    <value>自動車</value>
+  </data>
+  <data name="Act_Basketball" xml:space="preserve">
+    <value>バスケットボール</value>
+  </data>
+  <data name="Act_Calisthenics" xml:space="preserve">
+    <value>エクササイズ</value>
+  </data>
+  <data name="Act_Cooking" xml:space="preserve">
+    <value>調理</value>
+  </data>
+  <data name="Act_Dancing" xml:space="preserve">
+    <value>社交ダンス</value>
+  </data>
+  <data name="Act_FilingSeated" xml:space="preserve">
+    <value>座位ファイル作業</value>
+  </data>
+  <data name="Act_FilingStanding" xml:space="preserve">
+    <value>立位ファイル作業</value>
+  </data>
+  <data name="Act_HandlingBags" xml:space="preserve">
+    <value>50kg程度の荷物運搬作業</value>
+  </data>
+  <data name="Act_Heavy" xml:space="preserve">
+    <value>重い機械作業</value>
+  </data>
+  <data name="Act_HeavyLimbMovement" xml:space="preserve">
+    <value>着席中の激しい手作業</value>
+  </data>
+  <data name="Act_HeavyVehicle" xml:space="preserve">
+    <value>大型車両</value>
+  </data>
+  <data name="Act_HouseCleaning" xml:space="preserve">
+    <value>清掃</value>
+  </data>
+  <data name="Act_Lifting_Packing" xml:space="preserve">
+    <value>運搬・梱包</value>
+  </data>
+  <data name="Act_Light" xml:space="preserve">
+    <value>軽い機械作業</value>
+  </data>
+  <data name="Act_Of_Seated" xml:space="preserve">
+    <value>座位読み書き</value>
+  </data>
+  <data name="Act_PickAndShovelWork" xml:space="preserve">
+    <value>シャベルによる掘削作業</value>
+  </data>
+  <data name="Act_Reclining" xml:space="preserve">
+    <value>リクライニング</value>
+  </data>
+  <data name="Act_Sawing" xml:space="preserve">
+    <value>のこ引き</value>
+  </data>
+  <data name="Act_Seated_quiet" xml:space="preserve">
+    <value>座位安静</value>
+  </data>
+  <data name="Act_Sleeping" xml:space="preserve">
+    <value>睡眠</value>
+  </data>
+  <data name="Act_Standing_relaxed" xml:space="preserve">
+    <value>立位安静</value>
+  </data>
+  <data name="Act_Tennis" xml:space="preserve">
+    <value>シングルテニス</value>
+  </data>
+  <data name="Act_Title_Driving" xml:space="preserve">
+    <value>運転</value>
+  </data>
+  <data name="Act_Title_LeisureActivities" xml:space="preserve">
+    <value>レジャー</value>
+  </data>
+  <data name="Act_Title_MachineWork" xml:space="preserve">
+    <value>機械作業</value>
+  </data>
+  <data name="Act_Title_OccupationalActivities" xml:space="preserve">
+    <value>専門作業</value>
+  </data>
+  <data name="Act_Title_OfficeActivities" xml:space="preserve">
+    <value>事務作業</value>
+  </data>
+  <data name="Act_Title_Resting" xml:space="preserve">
+    <value>休息</value>
+  </data>
+  <data name="Act_Title_Walking" xml:space="preserve">
+    <value>歩行</value>
+  </data>
+  <data name="Act_Typing" xml:space="preserve">
+    <value>キーボード作業</value>
+  </data>
+  <data name="Act_WalkingAbout" xml:space="preserve">
+    <value>歩行</value>
+  </data>
+  <data name="Act_Walking_09" xml:space="preserve">
+    <value>0.9 m/s, 3.2 km/h, 2.0 mph</value>
+  </data>
+  <data name="Act_Walking_12" xml:space="preserve">
+    <value>1.2 m/s, 4.3 km/h, 2.7 mph</value>
+  </data>
+  <data name="Act_Walking_18" xml:space="preserve">
+    <value>1.8 m/s, 6.8 km/h, 4.2 mph</value>
+  </data>
+  <data name="Act_Wrestling" xml:space="preserve">
+    <value>レスリング</value>
+  </data>
+  <data name="Basketball" xml:space="preserve">
+    <value>バスケットボール</value>
+  </data>
+  <data name="Clo_AnkleLengthAthleticSocks" xml:space="preserve">
+    <value>足首丈運動用靴下</value>
+  </data>
+  <data name="Clo_Boots" xml:space="preserve">
+    <value>ブーツ</value>
+  </data>
+  <data name="Clo_Bra" xml:space="preserve">
+    <value>ブラジャー</value>
+  </data>
+  <data name="Clo_CalfLengthSocks" xml:space="preserve">
+    <value>ふくらはぎ丈靴下</value>
+  </data>
+  <data name="Clo_Coveralls" xml:space="preserve">
+    <value>カバーオール</value>
+  </data>
+  <data name="Clo_DoubleBreastedThick" xml:space="preserve">
+    <value>厚手ダブルジャケット</value>
+  </data>
+  <data name="Clo_DoubleBreastedThin" xml:space="preserve">
+    <value>薄手ダブルジャケット</value>
+  </data>
+  <data name="Clo_FullSlip" xml:space="preserve">
+    <value>フルスリップ</value>
+  </data>
+  <data name="Clo_HalfSlip" xml:space="preserve">
+    <value>ハーフスリップ</value>
+  </data>
+  <data name="Clo_KneeSocks_Thick" xml:space="preserve">
+    <value>膝丈厚手靴下</value>
+  </data>
+  <data name="Clo_LongSleeveDressShirt" xml:space="preserve">
+    <value>長袖ドレスシャツ</value>
+  </data>
+  <data name="Clo_LongSleeveFlannel" xml:space="preserve">
+    <value>長袖フランネルシャツ</value>
+  </data>
+  <data name="Clo_LongSleeveLongGownThick" xml:space="preserve">
+    <value>厚手長袖ロングガウン</value>
+  </data>
+  <data name="Clo_LongSleeveLongWrapRobeThick" xml:space="preserve">
+    <value>厚手長袖ロングラップローブ</value>
+  </data>
+  <data name="Clo_LongSleevePajamasThick" xml:space="preserve">
+    <value>厚手長袖パジャマ</value>
+  </data>
+  <data name="Clo_LongSleeveShirtDressThick" xml:space="preserve">
+    <value>厚手長袖シャツドレス</value>
+  </data>
+  <data name="Clo_LongSleeveShirtDressThin" xml:space="preserve">
+    <value>薄手長袖シャツドレス</value>
+  </data>
+  <data name="Clo_LongSleeveShortWrapRobeThick" xml:space="preserve">
+    <value>厚手長袖ショートラップローブ</value>
+  </data>
+  <data name="Clo_LongSleeveSweatShirt" xml:space="preserve">
+    <value>長袖スウェットシャツ</value>
+  </data>
+  <data name="Clo_LongSleeveThick" xml:space="preserve">
+    <value>厚手長袖セーター</value>
+  </data>
+  <data name="Clo_LongSleeveThin" xml:space="preserve">
+    <value>薄手長袖セーター</value>
+  </data>
+  <data name="Clo_LongUnderwearBottoms" xml:space="preserve">
+    <value>ズボン下</value>
+  </data>
+  <data name="Clo_LongUnderwearTop" xml:space="preserve">
+    <value>長袖下着上</value>
+  </data>
+  <data name="Clo_MensBriefs" xml:space="preserve">
+    <value>パンツ</value>
+  </data>
+  <data name="Clo_Overalls" xml:space="preserve">
+    <value>オーバーオール</value>
+  </data>
+  <data name="Clo_Panties" xml:space="preserve">
+    <value>ショーツ</value>
+  </data>
+  <data name="Clo_Pantyhose_Stockings" xml:space="preserve">
+    <value>パンティーストッキング</value>
+  </data>
+  <data name="Clo_Sandals_Thongs" xml:space="preserve">
+    <value>サンダル</value>
+  </data>
+  <data name="Clo_Shoes" xml:space="preserve">
+    <value>運動靴</value>
+  </data>
+  <data name="Clo_ShortShorts" xml:space="preserve">
+    <value>短パン</value>
+  </data>
+  <data name="Clo_ShortSleeveDressShirt" xml:space="preserve">
+    <value>半袖ドレスシャツ</value>
+  </data>
+  <data name="Clo_ShortSleeveHospitalGown" xml:space="preserve">
+    <value>院内着</value>
+  </data>
+  <data name="Clo_ShortSleeveKnit" xml:space="preserve">
+    <value>半袖運動着</value>
+  </data>
+  <data name="Clo_ShortSleevePajamasThin" xml:space="preserve">
+    <value>薄手半袖パジャマ</value>
+  </data>
+  <data name="Clo_ShortSleeveShirtDressThin" xml:space="preserve">
+    <value>薄手半袖初ドレス</value>
+  </data>
+  <data name="Clo_ShortSleeveShortRobeThin" xml:space="preserve">
+    <value>薄手半袖ショートローブ</value>
+  </data>
+  <data name="Clo_SingleBreastedThick" xml:space="preserve">
+    <value>厚手シングルジャケット</value>
+  </data>
+  <data name="Clo_SingleBreastedThin" xml:space="preserve">
+    <value>薄手シングルジャケット</value>
+  </data>
+  <data name="Clo_SkirtThick" xml:space="preserve">
+    <value>厚手スカート</value>
+  </data>
+  <data name="Clo_SkirtThin" xml:space="preserve">
+    <value>薄手スカート</value>
+  </data>
+  <data name="Clo_Sleeveless" xml:space="preserve">
+    <value>袖なしスコープネックブラウス</value>
+  </data>
+  <data name="Clo_SleevelessLongGownThin" xml:space="preserve">
+    <value>薄手袖なしロングガウン</value>
+  </data>
+  <data name="Clo_SleevelessShortGownThin" xml:space="preserve">
+    <value>薄手袖なしショートガウン</value>
+  </data>
+  <data name="Clo_SleevelessSweatVestThick" xml:space="preserve">
+    <value>厚手袖なし毛糸ベスト</value>
+  </data>
+  <data name="Clo_SleevelessSweatVestThin" xml:space="preserve">
+    <value>薄手袖なし毛糸ベスト</value>
+  </data>
+  <data name="Clo_SleevelessThick" xml:space="preserve">
+    <value>厚手袖なしスコープネックジャンパー</value>
+  </data>
+  <data name="Clo_SleevelessThin" xml:space="preserve">
+    <value>薄手袖なしシャツドレス</value>
+  </data>
+  <data name="Clo_SleevelessVestThick" xml:space="preserve">
+    <value>厚手袖なしベスト</value>
+  </data>
+  <data name="Clo_SleevelessVestThin" xml:space="preserve">
+    <value>薄手袖なしベスト</value>
+  </data>
+  <data name="Clo_Slippers" xml:space="preserve">
+    <value>スリッパ</value>
+  </data>
+  <data name="Clo_StraightTrousersThick" xml:space="preserve">
+    <value>厚手長ズボン</value>
+  </data>
+  <data name="Clo_StraightTrousersThin" xml:space="preserve">
+    <value>薄手長ズボン</value>
+  </data>
+  <data name="Clo_Sweatpants" xml:space="preserve">
+    <value>スウェットパンツ</value>
+  </data>
+  <data name="Clo_Title_DressAndSkirts" xml:space="preserve">
+    <value>ドレスとスカート（膝丈）</value>
+  </data>
+  <data name="Clo_Title_Footwear" xml:space="preserve">
+    <value>靴下</value>
+  </data>
+  <data name="Clo_Title_ShirtsAndBlouses" xml:space="preserve">
+    <value>シャツとブラウス</value>
+  </data>
+  <data name="Clo_Title_SleepwearAndRobes" xml:space="preserve">
+    <value>寝衣</value>
+  </data>
+  <data name="Clo_Title_SuitJacketsAndVests" xml:space="preserve">
+    <value>スーツジャケットとベスト</value>
+  </data>
+  <data name="Clo_Title_Sweaters" xml:space="preserve">
+    <value>セーター</value>
+  </data>
+  <data name="Clo_Title_TrousersAndCoveralls" xml:space="preserve">
+    <value>ズボンとカバーオール</value>
+  </data>
+  <data name="Clo_Title_Underwear" xml:space="preserve">
+    <value>下着</value>
+  </data>
+  <data name="Clo_TShirt" xml:space="preserve">
+    <value>Tシャツ</value>
+  </data>
+  <data name="Clo_WalkingShorts" xml:space="preserve">
+    <value>膝上丈パンツ</value>
+  </data>
+  <data name="Cooling" xml:space="preserve">
+    <value>調理</value>
+  </data>
+  <data name="Dancing" xml:space="preserve">
+    <value>ダンス</value>
+  </data>
+  <data name="Driving_Aircraft1" xml:space="preserve">
+    <value>運転：飛行機</value>
+  </data>
+  <data name="Driving_Aircraft2" xml:space="preserve">
+    <value>運転：飛行機着陸</value>
+  </data>
+  <data name="Driving_Aircraft3" xml:space="preserve">
+    <value>運転：戦闘機</value>
+  </data>
+  <data name="Driving_Automobile" xml:space="preserve">
+    <value>運転：自動車</value>
+  </data>
+  <data name="Driving_Heavy" xml:space="preserve">
+    <value>運転：大型車両</value>
+  </data>
+  <data name="Exercise" xml:space="preserve">
+    <value>運動</value>
+  </data>
+  <data name="HeavyLimbMovement" xml:space="preserve">
+    <value>着席中の激しい手作業</value>
+  </data>
+  <data name="HouseCleaning" xml:space="preserve">
+    <value>清掃</value>
+  </data>
+  <data name="Mw_HandlingBags" xml:space="preserve">
+    <value>50kg程度の荷物運搬作業</value>
+  </data>
+  <data name="Mw_Heavy" xml:space="preserve">
+    <value>激しい機械作業</value>
+  </data>
+  <data name="Mw_Light" xml:space="preserve">
+    <value>軽い機械作業</value>
+  </data>
+  <data name="Mw_Sawing" xml:space="preserve">
+    <value>のこ引き</value>
+  </data>
+  <data name="Mw_ShovelWork" xml:space="preserve">
+    <value>シャベルによる掘削作業</value>
+  </data>
+  <data name="Of_FilingSeated" xml:space="preserve">
+    <value>オフィス作業：座位ファイル作業</value>
+  </data>
+  <data name="Of_FilingStanding" xml:space="preserve">
+    <value>オフィス作業：立位ファイル作業</value>
+  </data>
+  <data name="Of_Lifting" xml:space="preserve">
+    <value>オフィス作業：運搬・梱包</value>
+  </data>
+  <data name="Of_Seated" xml:space="preserve">
+    <value>オフィス作業：座位読み書き</value>
+  </data>
+  <data name="Of_Typing" xml:space="preserve">
+    <value>オフィス作業：タイピング</value>
+  </data>
+  <data name="Of_Walking" xml:space="preserve">
+    <value>オフィス作業：歩行</value>
+  </data>
+  <data name="Rs_Reclining" xml:space="preserve">
+    <value>休息：リクライニング</value>
+  </data>
+  <data name="Rs_Seated" xml:space="preserve">
+    <value>休息：座位安静</value>
+  </data>
+  <data name="Rs_Sleeping" xml:space="preserve">
+    <value>休息：睡眠</value>
+  </data>
+  <data name="Rs_Standing" xml:space="preserve">
+    <value>休息：立位安静</value>
+  </data>
+  <data name="SelectActivity" xml:space="preserve">
+    <value>活動を選択</value>
+  </data>
+  <data name="SelectClothes" xml:space="preserve">
+    <value>着衣を選択</value>
+  </data>
+  <data name="Tennis" xml:space="preserve">
+    <value>テニス</value>
+  </data>
+  <data name="Walking_09" xml:space="preserve">
+    <value>歩行：0.9 m/s, 3.2 km/h, 2.0 mph</value>
+  </data>
+  <data name="Walking_12" xml:space="preserve">
+    <value>歩行：1.2 m/s, 4.3 km/h, 2.7 mph</value>
+  </data>
+  <data name="Walking_18" xml:space="preserve">
+    <value>歩行：1.8 m/s, 6.8 km/h, 4.2 mph</value>
+  </data>
+  <data name="Wrestling" xml:space="preserve">
+    <value>レスリング</value>
+  </data>
+</root>

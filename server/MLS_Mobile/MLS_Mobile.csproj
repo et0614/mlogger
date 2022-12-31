@@ -1,0 +1,368 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- 国際化に関するバグ対応。いずれ削除 -->
+	<PropertyGroup>
+		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
+		<!-- <EnableAssemblyILStripping>true</EnableAssemblyILStripping> -->
+	</PropertyGroup>
+	<!-- 国際化に関するバグ対応。いずれ削除 -->
+
+	<PropertyGroup>
+		<!-- <TargetFrameworks>net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks> -->
+		<!-- <TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks> -->
+		<TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>MLS_Mobile</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<!-- Display name -->
+		<ApplicationTitle>MLS_Mobile</ApplicationTitle>
+
+		<!-- App Identifier -->
+		<ApplicationId>net.hvacsimulator.mls</ApplicationId>
+		<ApplicationIdGuid>ED4E93F9-84C1-4B33-9703-E27553D4DCF9</ApplicationIdGuid>
+
+		<!-- Versions -->
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>		
+		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+		<CodesignKey>iPhone Developer</CodesignKey>
+		<CodesignProvision></CodesignProvision>
+		<ProvisioningType>automatic</ProvisioningType>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework.Contains('-ios')) and '$(Configuration)' == 'Release'">
+		<RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
+		<CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+		<CodesignProvision>mls_dist</CodesignProvision>
+		<ArchiveOnBuild>true</ArchiveOnBuild>
+		<TcpPort>58181</TcpPort>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='net7.0-ios'">
+	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	  <ProvisioningType>automatic</ProvisioningType>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.3</ApplicationDisplayVersion>
+	  <ApplicationVersion>6</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.3</ApplicationDisplayVersion>
+	  <ApplicationVersion>6</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.3</ApplicationDisplayVersion>
+	  <ApplicationVersion>6</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.3</ApplicationDisplayVersion>
+	  <ApplicationVersion>6</ApplicationVersion>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<!-- App icon for android （小さい）-->
+		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" ForegroundScale="0.6" Color="White" />
+
+		<!-- App icon for all other platforms （スケールなし）-->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
+
+		<!-- Splash Screen -->
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="ForestGreen" BaseSize="128,128" />
+		
+		<!-- Images -->
+		<MauiImage Include="Resources\Images\*" />
+
+		<!-- Custom Fonts -->
+		<MauiFont Include="Resources\Fonts\*" />
+
+		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Compile Remove="MainPage.xaml.cs" />
+	  <Compile Remove="MLogger.cs" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <MauiXaml Remove="MainPage.xaml" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Remove="Resources\Activities\Act_Aircraft_Combat.png" />
+	  <None Remove="Resources\Activities\Act_Aircraft_InstrumentLanding.png" />
+	  <None Remove="Resources\Activities\Act_Aircraft_Routine.png" />
+	  <None Remove="Resources\Activities\Act_Automobile.png" />
+	  <None Remove="Resources\Activities\Act_Basketball.png" />
+	  <None Remove="Resources\Activities\Act_Calisthenics.png" />
+	  <None Remove="Resources\Activities\Act_Cooking.png" />
+	  <None Remove="Resources\Activities\Act_Dancing.png" />
+	  <None Remove="Resources\Activities\Act_FilingSeated.png" />
+	  <None Remove="Resources\Activities\Act_FilingStanding.png" />
+	  <None Remove="Resources\Activities\Act_HandlingBags.png" />
+	  <None Remove="Resources\Activities\Act_Heavy.png" />
+	  <None Remove="Resources\Activities\Act_HeavyLimbMovement.png" />
+	  <None Remove="Resources\Activities\Act_HeavyVehicle.png" />
+	  <None Remove="Resources\Activities\Act_HouseCleaning.png" />
+	  <None Remove="Resources\Activities\Act_Lifting_Packing.png" />
+	  <None Remove="Resources\Activities\Act_Light.png" />
+	  <None Remove="Resources\Activities\Act_Of_Seated.png" />
+	  <None Remove="Resources\Activities\Act_PickAndShovelWork.png" />
+	  <None Remove="Resources\Activities\Act_Reclining.png" />
+	  <None Remove="Resources\Activities\Act_Sawing.png" />
+	  <None Remove="Resources\Activities\Act_Seated_quiet.png" />
+	  <None Remove="Resources\Activities\Act_Sleeping.png" />
+	  <None Remove="Resources\Activities\Act_Standing_relaxed.png" />
+	  <None Remove="Resources\Activities\Act_Tennis.png" />
+	  <None Remove="Resources\Activities\Act_Typing.png" />
+	  <None Remove="Resources\Activities\Act_WalkingAbout.png" />
+	  <None Remove="Resources\Activities\Act_Walking_09.png" />
+	  <None Remove="Resources\Activities\Act_Walking_12.png" />
+	  <None Remove="Resources\Activities\Act_Walking_18.png" />
+	  <None Remove="Resources\Activities\Act_Wrestling.png" />
+	  <None Remove="Resources\Clothes\Clo_AnkleLengthAthleticSocks.png" />
+	  <None Remove="Resources\Clothes\Clo_Boots.png" />
+	  <None Remove="Resources\Clothes\Clo_Bra.png" />
+	  <None Remove="Resources\Clothes\Clo_CalfLengthSocks.png" />
+	  <None Remove="Resources\Clothes\Clo_Coveralls.png" />
+	  <None Remove="Resources\Clothes\Clo_DoubleBreastedThick.png" />
+	  <None Remove="Resources\Clothes\Clo_DoubleBreastedThin.png" />
+	  <None Remove="Resources\Clothes\Clo_FullSlip.png" />
+	  <None Remove="Resources\Clothes\Clo_HalfSlip.png" />
+	  <None Remove="Resources\Clothes\Clo_KneeSocks_Thick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveDressShirt.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveFlannel.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveLongGownThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveLongWrapRobeThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleevePajamasThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveShirtDressThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveShirtDressThin.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveShortWrapRobeThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveSweatShirt.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveThick.png" />
+	  <None Remove="Resources\Clothes\Clo_LongSleeveThin.png" />
+	  <None Remove="Resources\Clothes\Clo_LongUnderwearBottoms.png" />
+	  <None Remove="Resources\Clothes\Clo_LongUnderwearTop.png" />
+	  <None Remove="Resources\Clothes\Clo_MensBriefs.png" />
+	  <None Remove="Resources\Clothes\Clo_Overalls.png" />
+	  <None Remove="Resources\Clothes\Clo_Panties.png" />
+	  <None Remove="Resources\Clothes\Clo_Pantyhose_Stockings.png" />
+	  <None Remove="Resources\Clothes\Clo_Sandals_Thongs.png" />
+	  <None Remove="Resources\Clothes\Clo_Shoes.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortShorts.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleeveDressShirt.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleeveHospitalGown.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleeveKnit.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleevePajamasThin.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleeveShirtDressThin.png" />
+	  <None Remove="Resources\Clothes\Clo_ShortSleeveShortRobeThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SingleBreastedThick.png" />
+	  <None Remove="Resources\Clothes\Clo_SingleBreastedThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SkirtThick.png" />
+	  <None Remove="Resources\Clothes\Clo_SkirtThin.png" />
+	  <None Remove="Resources\Clothes\Clo_Sleeveless.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessLongGownThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessShortGownThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessSweatVestThick.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessSweatVestThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessThick.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessThin.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessVestThick.png" />
+	  <None Remove="Resources\Clothes\Clo_SleevelessVestThin.png" />
+	  <None Remove="Resources\Clothes\Clo_Slippers.png" />
+	  <None Remove="Resources\Clothes\Clo_StraightTrousersThick.png" />
+	  <None Remove="Resources\Clothes\Clo_StraightTrousersThin.png" />
+	  <None Remove="Resources\Clothes\Clo_Sweatpants.png" />
+	  <None Remove="Resources\Clothes\Clo_TShirt.png" />
+	  <None Remove="Resources\Clothes\Clo_WalkingShorts.png" />
+	  <None Remove="Resources\Fonts\Brands-Regular-400.otf" />
+	  <None Remove="Resources\Fonts\Free-Regular-400.otf" />
+	  <None Remove="Resources\Fonts\Free-Solid-900.otf" />
+	  <None Remove="Resources\Images\trans.png" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <EmbeddedResource Include="Resources\Activities\Act_Aircraft_Combat.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Aircraft_InstrumentLanding.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Aircraft_Routine.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Automobile.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Basketball.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Calisthenics.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Cooking.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Dancing.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_FilingSeated.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_FilingStanding.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_HandlingBags.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Heavy.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_HeavyLimbMovement.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_HeavyVehicle.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_HouseCleaning.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Lifting_Packing.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Light.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Of_Seated.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_PickAndShovelWork.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Reclining.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Sawing.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Seated_quiet.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Sleeping.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Standing_relaxed.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Tennis.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Typing.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_WalkingAbout.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Walking_09.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Walking_12.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Walking_18.png" />
+	  <EmbeddedResource Include="Resources\Activities\Act_Wrestling.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_AnkleLengthAthleticSocks.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Boots.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Bra.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_CalfLengthSocks.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Coveralls.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_DoubleBreastedThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_DoubleBreastedThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_FullSlip.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_HalfSlip.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_KneeSocks_Thick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveDressShirt.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveFlannel.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveLongGownThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveLongWrapRobeThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleevePajamasThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveShirtDressThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveShirtDressThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveShortWrapRobeThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveSweatShirt.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongSleeveThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongUnderwearBottoms.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_LongUnderwearTop.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_MensBriefs.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Overalls.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Panties.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Pantyhose_Stockings.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Sandals_Thongs.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Shoes.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortShorts.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleeveDressShirt.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleeveHospitalGown.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleeveKnit.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleevePajamasThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleeveShirtDressThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_ShortSleeveShortRobeThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SingleBreastedThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SingleBreastedThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SkirtThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SkirtThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Sleeveless.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessLongGownThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessShortGownThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessSweatVestThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessSweatVestThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessVestThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_SleevelessVestThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Slippers.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_StraightTrousersThick.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_StraightTrousersThin.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_Sweatpants.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_TShirt.png" />
+	  <EmbeddedResource Include="Resources\Clothes\Clo_WalkingShorts.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="CommunityToolkit.Maui" Version="3.1.0" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="7.0.1" />
+	  <PackageReference Include="Plugin.BLE" Version="3.0.0-beta.2" />
+	  <PackageReference Include="Popolo" Version="2.3.1.43" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
+	  <ProjectReference Include="..\XBeeLibrary.Core\XBeeLibrary.Core.csproj" />
+	  <ProjectReference Include="..\xbeelibrary.xamarin\XBeeLibrary.Xamarin.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="SRP">
+	    <HintPath>..\xbeelibrary.xamarin\SRP.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources\i18n\MLSResource.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>MLSResource.resx</DependentUpon>
+	  </Compile>
+	  <Compile Update="Resources\i18n\TCResource.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>TCResource.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources\i18n\MLSResource.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>MLSResource.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\i18n\TCResource.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>TCResource.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Update="AboutPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="ActivitySelector.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="CFSetting.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="ClothingCoordinator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="DataReceive.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="DeviceSetting.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="LoggingData.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="LoggingDataList.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="MLoggerScanner.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="MoistAirCalculator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="ThermalComfortCalculator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
+</Project>
