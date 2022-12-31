@@ -22,16 +22,14 @@ Since this instrument uses Atmel's ATMega328P, it is being developed in Atmel St
 
 ### server
 The measured data is sent to a PC via Zigbee communication using XBee. <br>
-A software project file for receiving this data on a PC is available. <br>
-The software is developed with Microsoft's Visual Studio, and since .NET 5 is the target, it has also been confirmed to work on Linux.
-
-### mobile
+A solution file which contains a software project file for receiving this data on a PC is available. <br>
+The software is developed with Microsoft's Visual Studio, and since .NET 5 is the target, it has also been confirmed to work on Linux.<br>
 XBee can also communicate via Bluetooth from 3.0. <br>
 Therefore, data can also be received by ordinary smartphones. <br>
-This directory contains Xamarin project files to receive measurements on iPhone and Android.
+The solution file also contains MAUI project file to receive measurements on iPhone and Android.
 
 ### license
-Copyright Eisuke Togashi 2022. <br>
+Copyright Eisuke Togashi 2023. <br>
 This source describes Open Hardware and is licensed under the CERN-OHL-P v2 <br>
 You may redistribute and modify this documentation and make products using it under the terms of the CERN-OHL-P v2 (https:/cern.ch/cern-ohl).  <br>
 This documentation is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A PARTICULAR PURPOSE.  <br>
