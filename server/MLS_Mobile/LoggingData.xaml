@@ -5,27 +5,40 @@
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.LD_Title}">
 
-    <StackLayout BackgroundColor="{StaticResource Lightest_G}">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40"/>
-                <RowDefinition Height="40"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" x:Name="lblFname" Text="File: MLogger_xxxx_yyyyMMdd.txt" Margin="5,10,5,10"/>
+    <Grid Margin="0" RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,*,*">
+        <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" x:Name="lblFname" Text="File: MLogger_xxxx_yyyyMMdd.txt" Margin="5" />
 
-            <Button Grid.Row="1" Grid.Column="0" x:Name="btnCopy" Clicked="copy_Clicked" Margin="5,0,5,0"/>
-            <Button Grid.Row="1" Grid.Column="2" x:Name="btnDelete" Clicked="delete_Clicked" Margin="5,0,5,0"/>
-        </Grid>
+        <Button Grid.Row="2" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Copy}" Clicked="copy_Clicked" ContentLayout="Top, 5" Margin="5">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xf0ea;" FontFamily="FAR" Size="30" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
+        </Button>
+        <Button Grid.Row="2" Grid.Column="1" Text="Format" Clicked="format_Clicked" x:Name="btnFormat" ContentLayout="Top, 5" Margin="5">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xf00a;" FontFamily="FAS" Size="30" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
+        </Button>
+        <Button Grid.Row="2" Grid.Column="2" Text="{x:Static res:MLSResource.LD_Delete}" Clicked="delete_Clicked" ContentLayout="Top, 5" Margin="5">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="30" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
+        </Button>
 
-        <ScrollView Margin="5,10,5,0" Orientation="Both" VerticalOptions="FillAndExpand" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
-            <StackLayout>
-                <Label x:Name="lbl_data" VerticalOptions="FillAndExpand" BackgroundColor="White" Padding="5"/>
+        <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5,10" Orientation="Both" VerticalOptions="FillAndExpand" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
+            <StackLayout x:Name="myStack">
+                <Label Text="{Binding MData}" x:Name="lbl_data" BackgroundColor="White" Padding="5" IsVisible="true"/>
             </StackLayout>
         </ScrollView>
-    </StackLayout>
+
+
+        <!--インジケータ-->
+        <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" Grid.RowSpan="3" Grid.ColumnSpan="3"/>
+        <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" Grid.RowSpan="3" Grid.ColumnSpan="3" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
+            <StackLayout>
+                <ActivityIndicator Color="Black" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+            </StackLayout>
+        </Frame>
+        <!--インジケータここまで-->
+    </Grid>
 </ContentPage>

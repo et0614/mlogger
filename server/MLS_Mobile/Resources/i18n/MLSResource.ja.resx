@@ -171,8 +171,8 @@
   <data name="ConnectMLogger" xml:space="preserve">
     <value>MLoggerへ接続する</value>
   </data>
-  <data name="DateAndTime" xml:space="preserve">
-    <value>日時</value>
+  <data name="Date" xml:space="preserve">
+    <value>日付</value>
   </data>
   <data name="Density" xml:space="preserve">
     <value>比重量</value>
@@ -262,13 +262,19 @@
     <value>照度</value>
   </data>
   <data name="LD_Copy" xml:space="preserve">
-    <value>データコピー</value>
+    <value>コピー</value>
   </data>
   <data name="LD_Delete" xml:space="preserve">
-    <value>データ削除</value>
+    <value>削除</value>
   </data>
   <data name="LD_DeleteAlert" xml:space="preserve">
     <value>データを削除して良いですか？</value>
+  </data>
+  <data name="LD_Format" xml:space="preserve">
+    <value>整形</value>
+  </data>
+  <data name="LD_Formatting" xml:space="preserve">
+    <value>整形中</value>
   </data>
   <data name="LD_List" xml:space="preserve">
     <value>測定データ一覧</value>
@@ -371,6 +377,9 @@
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>熱的快適性の計算機</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>時刻</value>
   </data>
   <data name="Velocity" xml:space="preserve">
     <value>風速</value>

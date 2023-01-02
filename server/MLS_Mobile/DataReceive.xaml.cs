@@ -290,9 +290,7 @@ public partial class DataReceive : ContentPage
       Logger.Velocity.LastValue.ToString("F3") + "," +
       Logger.Illuminance.LastValue.ToString("F2") + "," +
       Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
-      Logger.VelocityVoltage.ToString("F3") + "," +
-      Logger.MetValue.ToString("F2") + "," +
-      Logger.CloValue.ToString("F2") + Environment.NewLine;
+      Logger.VelocityVoltage.ToString("F3") + Environment.NewLine;
 
     string fileName = Logger.Name + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
     MLUtility.AppendData(fileName, line);

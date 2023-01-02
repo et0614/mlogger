@@ -223,11 +223,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Date and time.
+        ///   Looks up a localized string similar to Date.
         /// </summary>
-        internal static string DateAndTime {
+        internal static string Date {
             get {
-                return ResourceManager.GetString("DateAndTime", resourceCulture);
+                return ResourceManager.GetString("Date", resourceCulture);
             }
         }
         
@@ -493,7 +493,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Copy to CLP.
+        ///   Looks up a localized string similar to Copy.
         /// </summary>
         internal static string LD_Copy {
             get {
@@ -516,6 +516,24 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string LD_DeleteAlert {
             get {
                 return ResourceManager.GetString("LD_DeleteAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Format.
+        /// </summary>
+        internal static string LD_Format {
+            get {
+                return ResourceManager.GetString("LD_Format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formatting.
+        /// </summary>
+        internal static string LD_Formatting {
+            get {
+                return ResourceManager.GetString("LD_Formatting", resourceCulture);
             }
         }
         
@@ -822,6 +840,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string TC_Title {
             get {
                 return ResourceManager.GetString("TC_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Time.
+        /// </summary>
+        internal static string Time {
+            get {
+                return ResourceManager.GetString("Time", resourceCulture);
             }
         }
         

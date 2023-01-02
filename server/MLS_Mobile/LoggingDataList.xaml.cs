@@ -40,8 +40,7 @@ public partial class LoggingDataList : ContentPage
   {
     if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
 
-    LoggingData ld = new LoggingData();
-    ld.LoadData(((logFile)e.CurrentSelection[0]).FileName);
+    LoggingData ld = new LoggingData(((logFile)e.CurrentSelection[0]).FileName);
     Navigation.PushAsync(ld);
   }
 

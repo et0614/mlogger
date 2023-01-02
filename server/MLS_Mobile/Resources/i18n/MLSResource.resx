@@ -171,8 +171,8 @@
   <data name="ConnectMLogger" xml:space="preserve">
     <value>Connect to MLogger</value>
   </data>
-  <data name="DateAndTime" xml:space="preserve">
-    <value>Date and time</value>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
   </data>
   <data name="Density" xml:space="preserve">
     <value>Density</value>
@@ -262,13 +262,19 @@
     <value>Illuminance</value>
   </data>
   <data name="LD_Copy" xml:space="preserve">
-    <value>Copy to CLP</value>
+    <value>Copy</value>
   </data>
   <data name="LD_Delete" xml:space="preserve">
     <value>Delete</value>
   </data>
   <data name="LD_DeleteAlert" xml:space="preserve">
     <value>Are you sure you want to delete the file?</value>
+  </data>
+  <data name="LD_Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="LD_Formatting" xml:space="preserve">
+    <value>Formatting</value>
   </data>
   <data name="LD_List" xml:space="preserve">
     <value>Measured data files</value>
@@ -371,6 +377,9 @@
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>Thermal comfort calculator</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Time</value>
   </data>
   <data name="Velocity" xml:space="preserve">
     <value>Velocity</value>

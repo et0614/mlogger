@@ -60,13 +60,12 @@ public partial class CFSetting : ContentPage
     showIndicator(MLSResource.CF_Loading);
     Task.Run(async () =>
     {
-      try
+      int tryNum = 0;
+      isInitialized = false;
+      while (!isInitialized)
       {
-        //補正係数読み込みコマンド
-        MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rLCF\r"));
-
-        await Task.Delay(5000);
-        if (!isInitialized)
+        //5回失敗したらエラーで戻る
+        if (5 <= tryNum)
         {
           Application.Current.Dispatcher.Dispatch(() =>
           {
@@ -74,14 +73,15 @@ public partial class CFSetting : ContentPage
             Navigation.PopAsync();
           });
         }
-      }
-      catch (Exception ex)
-      {
-        Application.Current.Dispatcher.Dispatch(() =>
+        tryNum++;
+
+        try
         {
-          DisplayAlert("Alert", ex.Message, "OK");
-          Navigation.PopAsync();
-        });
+          //補正係数読み込みコマンド
+          MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rLCF\r"));
+          await Task.Delay(500);
+        }
+        catch { }
       }
     });
   }
@@ -252,11 +252,6 @@ public partial class CFSetting : ContentPage
     {
       lbl_dbt.TextColor = lbl_hmd.TextColor = lbl_glb.TextColor = lbl_vel.TextColor = lbl_lux.TextColor = Colors.Black;
     });
-
-    /*Device.BeginInvokeOnMainThread(() =>
-    {
-      lbl_dbt.TextColor = lbl_hmd.TextColor = lbl_glb.TextColor = lbl_vel.TextColor = lbl_lux.TextColor = Colors.Black;
-    });*/
     isEdited = false;
   }
 
@@ -300,13 +295,13 @@ public partial class CFSetting : ContentPage
 
       cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
       cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");
+
+      resetLabelColor();
+
+      isEdited = false;
+      isInitialized = true;
+      hideIndicator();
     });
-
-    resetLabelColor();
-
-    isEdited = false;
-    isInitialized = true;
-    hideIndicator();
   }
 
   #endregion
@@ -321,12 +316,6 @@ public partial class CFSetting : ContentPage
       indicatorLabel.Text = message;
       grayback.IsVisible = indicator.IsVisible = true;
     });
-
-    /*Device.BeginInvokeOnMainThread(() =>
-    {
-      indicatorLabel.Text = message;
-      grayback.IsVisible = indicator.IsVisible = true;
-    });*/
   }
 
   /// <summary>インジケータを隠す</summary>
@@ -336,11 +325,6 @@ public partial class CFSetting : ContentPage
     {
       grayback.IsVisible = indicator.IsVisible = false;
     });
-
-    /*Device.BeginInvokeOnMainThread(() =>
-    {
-      grayback.IsVisible = indicator.IsVisible = false;
-    });*/
   }
 
   #endregion
