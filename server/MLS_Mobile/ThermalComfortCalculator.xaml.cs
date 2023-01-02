@@ -23,13 +23,6 @@ public partial class ThermalComfortCalculator : ContentPage
   {
     InitializeComponent();
 
-    dbtTitle.Text = MLSResource.DrybulbTemperature + " [ÅãCDB]";
-    rhmdTitle.Text = MLSResource.RelativeHumidity + " [%]";
-    mrtTitle.Text = MLSResource.MeanRadiantTemperature + " [ÅãC]";
-    velTitle.Text = MLSResource.RelativeAirVelocity + " [m/s]";
-    cloTitle.Text = MLSResource.ClothingUnit + " [clo]";
-    metTitle.Text = MLSResource.MetabolicUnit + " [met]";
-
     metSlider.Value = 1.2;
   }
 

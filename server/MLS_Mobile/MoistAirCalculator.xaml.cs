@@ -17,9 +17,6 @@ public partial class MoistAirCalculator : ContentPage
 	{
 		InitializeComponent();
 
-    btnSummer.Text = MLSResource.MA_SummerButton;
-    btnWinter.Text = MLSResource.MA_WinterButton;
-
     pairs.Add(MLSResource.MA_DbtAndRhmd); //0
     pairs.Add(MLSResource.MA_DbtAndAhmd);
     pairs.Add(MLSResource.MA_DbtAndWbt);
@@ -35,19 +32,9 @@ public partial class MoistAirCalculator : ContentPage
     pairs.Add(MLSResource.MA_AhmdAndEnth);
     pairs.Add(MLSResource.MA_AhmdAndDens);
 
-    //pairs.Add(MLSResource.MA_WbtAndEnth); //12
     pairs.Add(MLSResource.MA_WbtAndDens); //12
 
     pairList.ItemsSource = pairs;
-
-    //タイトル設定
-    dbtTitle.Text = MLSResource.DrybulbTemperature + " [°CDB]";
-    rhmdTitle.Text = MLSResource.RelativeHumidity + " [%]";
-    ahmdTitle.Text = MLSResource.AbsoluteHumidity + " [g/kg]";
-    wbtTitle.Text = MLSResource.WetbulbTemperature + " [°CWB]";
-    entTitle.Text = MLSResource.Enthalpy + " [kJ/kg]";
-    dnsTitle.Text = MLSResource.Density + " [kg/m3]";
-    atmTitle.Text = MLSResource.AtmosphericPressure + "[kPa]";
 
     //選択を初期化
     if (pairList.SelectedIndex == -1)
@@ -260,11 +247,17 @@ public partial class MoistAirCalculator : ContentPage
 
   private void Button_Clicked(object sender, EventArgs e)
   {
-    bool isSummer = (Button)sender == btnSummer;
+    Button target = (Button)sender;
 
     pairList.SelectedIndex = 0;
-    dbtSlider.Value = isSummer ? 26 : 22;
-    rhmdSlider.Value = isSummer ? 50 : 40;
+    dbtSlider.Value = 
+      (target == btnSummerIndoor ? 26 : 
+      (target == btnWinterIndoor ? 22 : 
+      (target == btnSummerOutdoor ? 35 : 2)));
+    rhmdSlider.Value =
+      (target == btnSummerIndoor ? 50 :
+      (target == btnWinterIndoor ? 40 :
+      (target == btnSummerOutdoor ? 70 : 40)));
     atmSlider.Value = 101.3;
     updateValue();
   }

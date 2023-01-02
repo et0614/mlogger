@@ -33,6 +33,7 @@ public partial class DataReceive : ContentPage
   /// <summary>計測終了フラグ</summary>
   private bool isEnded = false;
 
+  /// <summary>計測終了コマンド送信中フラグ</summary>
   private bool isEnding = false;
 
   /// <summary>Bluetooth通信デバイスを設定・取得する</summary>
@@ -43,9 +44,6 @@ public partial class DataReceive : ContentPage
 
   /// <summary>ロガーを設定・取得する</summary>
   public MLogger Logger { get; set; }
-
-
-  private readonly ObservableCollection<string> metItems = new ObservableCollection<string>();
 
   #endregion
 
@@ -181,7 +179,7 @@ public partial class DataReceive : ContentPage
   protected override void OnAppearing()
   {
     //スリープ禁止
-    //DependencyService.Get<IDeviceService>().DisableSleep();
+    DeviceDisplay.Current.KeepScreenOn = true;
 
     //XBeeイベント登録      
     MLXBee.SerialDataReceived += MLXBee_SerialDataReceived;
@@ -211,7 +209,7 @@ public partial class DataReceive : ContentPage
     base.OnDisappearing();
 
     //スリープ解除
-    //DependencyService.Get<IDeviceService>().EnableSleep();
+    DeviceDisplay.Current.KeepScreenOn = false;
 
     //XBeeイベント解除
     MLXBee.SerialDataReceived -= MLXBee_SerialDataReceived;

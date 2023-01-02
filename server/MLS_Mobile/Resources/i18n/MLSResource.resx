@@ -315,8 +315,11 @@
   <data name="MA_RhmdAndWbt" xml:space="preserve">
     <value>Relative humidity and Wet-bulb temperature</value>
   </data>
-  <data name="MA_SummerButton" xml:space="preserve">
-    <value>Summer condition</value>
+  <data name="MA_SummerIndoor" xml:space="preserve">
+    <value>Summer-indoor</value>
+  </data>
+  <data name="MA_SummerOutdoor" xml:space="preserve">
+    <value>Summer-outdoor</value>
   </data>
   <data name="MA_WbtAndDens" xml:space="preserve">
     <value>Wet-bulb temperature and Density</value>
@@ -324,8 +327,11 @@
   <data name="MA_WbtAndEnth" xml:space="preserve">
     <value>Wet-bulb temperature and Enthalpy</value>
   </data>
-  <data name="MA_WinterButton" xml:space="preserve">
-    <value>Winter condition</value>
+  <data name="MA_WinterIndoor" xml:space="preserve">
+    <value>Winter-indoor</value>
+  </data>
+  <data name="MA_WinterOutdoor" xml:space="preserve">
+    <value>Winter-outdoor</value>
   </data>
   <data name="MeanRadiantTemperature" xml:space="preserve">
     <value>Mean radiant temperature</value>

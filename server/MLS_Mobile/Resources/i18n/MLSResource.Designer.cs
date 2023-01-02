@@ -655,11 +655,20 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Summer condition.
+        ///   Looks up a localized string similar to Summer-indoor.
         /// </summary>
-        internal static string MA_SummerButton {
+        internal static string MA_SummerIndoor {
             get {
-                return ResourceManager.GetString("MA_SummerButton", resourceCulture);
+                return ResourceManager.GetString("MA_SummerIndoor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Summer-outdoor.
+        /// </summary>
+        internal static string MA_SummerOutdoor {
+            get {
+                return ResourceManager.GetString("MA_SummerOutdoor", resourceCulture);
             }
         }
         
@@ -682,11 +691,20 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Winter condition.
+        ///   Looks up a localized string similar to Winter-indoor.
         /// </summary>
-        internal static string MA_WinterButton {
+        internal static string MA_WinterIndoor {
             get {
-                return ResourceManager.GetString("MA_WinterButton", resourceCulture);
+                return ResourceManager.GetString("MA_WinterIndoor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Winter-outdoor.
+        /// </summary>
+        internal static string MA_WinterOutdoor {
+            get {
+                return ResourceManager.GetString("MA_WinterOutdoor", resourceCulture);
             }
         }
         

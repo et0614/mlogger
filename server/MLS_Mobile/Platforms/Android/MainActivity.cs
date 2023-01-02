@@ -9,9 +9,6 @@ namespace MLS_Mobile;
 public class MainActivity : MauiAppCompatActivity
 {
 
-
-
-
   /*public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
   {
     //Microsoft.Maui.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);

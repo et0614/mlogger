@@ -315,8 +315,11 @@
   <data name="MA_RhmdAndWbt" xml:space="preserve">
     <value>相対湿度と湿球温度</value>
   </data>
-  <data name="MA_SummerButton" xml:space="preserve">
-    <value>夏季標準条件</value>
+  <data name="MA_SummerIndoor" xml:space="preserve">
+    <value>夏季-屋内</value>
+  </data>
+  <data name="MA_SummerOutdoor" xml:space="preserve">
+    <value>夏季-屋外</value>
   </data>
   <data name="MA_WbtAndDens" xml:space="preserve">
     <value>湿球温度と比重量</value>
@@ -324,8 +327,11 @@
   <data name="MA_WbtAndEnth" xml:space="preserve">
     <value>湿球温度と比エンタルピー</value>
   </data>
-  <data name="MA_WinterButton" xml:space="preserve">
-    <value>冬季標準条件</value>
+  <data name="MA_WinterIndoor" xml:space="preserve">
+    <value>冬季-屋内</value>
+  </data>
+  <data name="MA_WinterOutdoor" xml:space="preserve">
+    <value>冬季-屋外</value>
   </data>
   <data name="MeanRadiantTemperature" xml:space="preserve">
     <value>平均放射温度</value>
