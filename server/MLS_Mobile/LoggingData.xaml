@@ -5,8 +5,14 @@
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.LD_Title}">
 
-    <Grid Margin="0" RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,*,*">
-        <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" x:Name="lblFname" Text="File: MLogger_xxxx_yyyyMMdd.txt" Margin="5" />
+    <Grid Margin="0" RowDefinitions="*,Auto,Auto" ColumnDefinitions="*,*,*">
+        <ScrollView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" Orientation="Both" VerticalOptions="FillAndExpand" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
+            <StackLayout x:Name="myStack">
+                <Label Text="{Binding ClipData}" x:Name="lbl_data" BackgroundColor="White" Padding="5" IsVisible="true"/>
+            </StackLayout>
+        </ScrollView>
+        
+        <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding DataTitle}" Margin="5" FontSize="20" HorizontalTextAlignment="End"/>
 
         <Button Grid.Row="2" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Copy}" Clicked="copy_Clicked" ContentLayout="Top, 5" Margin="5">
             <Button.ImageSource>
@@ -23,13 +29,6 @@
                 <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="30" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>
         </Button>
-
-        <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5,10" Orientation="Both" VerticalOptions="FillAndExpand" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
-            <StackLayout x:Name="myStack">
-                <Label Text="{Binding MData}" x:Name="lbl_data" BackgroundColor="White" Padding="5" IsVisible="true"/>
-            </StackLayout>
-        </ScrollView>
-
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" Grid.RowSpan="3" Grid.ColumnSpan="3"/>
