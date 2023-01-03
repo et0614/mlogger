@@ -1,5 +1,6 @@
 ﻿using Popolo.HumanBody;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MLLib
 {
@@ -55,6 +56,9 @@ namespace MLLib
     /// <summary>測定終了通知受信イベント</summary>
     public event EventHandler? EndMeasuringMessageReceivedEvent;
 
+    /// <summary>ロガー名称受信イベント</summary>
+    public event EventHandler? LoggerNameReceivedEvent;
+
     #endregion
 
     #region インスタンス変数・プロパティ
@@ -68,8 +72,12 @@ namespace MLLib
     /// <summary>次のコマンドを取得する</summary>
     public string NextCommand { get; private set; } = "";
 
-    /// <summary>名称を設定・取得する</summary>
-    public string Name { get; set; }
+    /// <summary>MLogger名称を取得する</summary>
+    /// <remarks>書き換えるためにはコマンドでMLogger内部にデータ送信が必要</remarks>
+    public string Name { get; private set; } = "Anonymous";
+
+    /// <summary>汎用の名称を設定・取得する</summary>
+    public string LocalName { get; set; }
 
     /// <summary>初回の保存か否か</summary>
     public bool IsFirstSave { get; set; } = true;
@@ -196,7 +204,7 @@ namespace MLLib
     public MLogger(string longAddress)
     {
       LongAddress = longAddress;
-      Name = LowAddress;
+      LocalName = LowAddress;
     }
 
     #endregion
@@ -343,9 +351,19 @@ namespace MLLib
           solveCF();
           break;
 
+        //ロギング終了命令
         case "ENL":
           //イベント通知
           EndMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+          break;
+
+        //名称受信
+        case "LLN":
+          solveLN();
+          break;
+
+        case "CLN":
+          solveLN();
           break;
       }
 
@@ -481,7 +499,7 @@ namespace MLLib
       VersionReceivedEvent?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>補正係数を読み込む</summary>
+    /// <summary>補正係数設定コマンド(SCF,LCF)を処理する</summary>
     private void solveCF()
     {
       string[] buff = NextCommand.Substring(4).Split(',');
@@ -521,6 +539,14 @@ namespace MLLib
 
       //イベント通知
       CorrectionFactorsReceivedEvent?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>ロガー名称設定コマンド()を処理する</summary>
+    private void solveLN()
+    {
+      Name = NextCommand.Substring(4, 20).TrimEnd();
+      //イベント通知
+      LoggerNameReceivedEvent?.Invoke(this, EventArgs.Empty);
     }
 
     #endregion
@@ -571,7 +597,7 @@ namespace MLLib
       bool measureGPV3, int intervalGPV3,
       bool measureProx)
     {
-      return "CMS"
+      return "\rCMS"
         + (measureTH ? "t" : "f") + string.Format("{0,5}", intervalTH)
         + (measureGlb ? "t" : "f") + string.Format("{0,5}", intervalGlb)
         + (measureVel ? "t" : "f") + string.Format("{0,5}", intervalVel)
@@ -580,7 +606,7 @@ namespace MLLib
         + (measureGPV1 ? "t" : "f") + string.Format("{0,5}", intervalGPV1)
         + (measureGPV2 ? "t" : "f") + string.Format("{0,5}", intervalGPV2)
         + (measureGPV3 ? "t" : "f") + string.Format("{0,5}", intervalGPV3)
-        + (measureProx ? "t" : "f");
+        + (measureProx ? "t" : "f") + "\r";
     }
 
     /// <summary>補正係数設定コマンドをつくる</summary>
@@ -638,6 +664,35 @@ namespace MLLib
       return "\rLCF\r";
     }
 
+    /// <summary>測定終了コマンドをつくる</summary>
+    /// <returns>測定終了コマンド</returns>
+    public static string MakeEndLoggingCommand()
+    {
+      return "\rENL\r";
+    }
+
+    /// <summary>名称設定コマンドをつくる</summary>
+    /// <param name="name">名称</param>
+    /// <returns>名称設定コマンド</returns>
+    /// <exception cref="Exception"></exception>
+    public static string MakeChangeLoggerNameCommand(string name)
+    {
+      //半角文字のみとする
+      Regex re = new Regex(@"[^-+*a-zA-Z0-9]"); // 「英数字と-、+、*」以外  
+      name = re.Replace(name, "");
+
+      //20字以内に縮めた上で右端を半角スペースで埋める
+      if (20 < name.Length) name = name.Substring(0, 20);
+      return "\rCLN" + name.PadRight(20) + '\r';
+    }
+
+    /// <summary>名称取得コマンドをつくる</summary>
+    /// <returns>名称取得コマンド</returns>
+    public static string MakeLoadLoggerNameCommand()
+    {
+      return "\rLLN\r";
+    }
+
     #endregion
 
     #region staticメソッド
@@ -692,7 +747,7 @@ namespace MLLib
         contents.AppendLine("<tr>");
         //一般情報
         contents.AppendLine("<td class=\"dt_last general\">" + ml.LastCommunicated.ToString("M/d HH:mm:ss") + "</td>");
-        contents.AppendLine("<td class=\"name general\">" + ml.Name + "</td>");
+        contents.AppendLine("<td class=\"name general\">" + ml.LocalName + "</td>");
         contents.AppendLine("<td class=\"id general\">" + ml.LowAddress + "</td>");
         //温湿度
         contents.AppendLine("<td class=\"dt_th thlog\">" + ml.DrybulbTemperature.LastMeasureTime.ToString("M/d HH:mm:ss") + "</td>");
@@ -727,7 +782,7 @@ namespace MLLib
       for (int i = 0; i < mLoggers.Length; i++)
       {
         MLogger ml = mLoggers[i];
-        sBuilder.Append(ml.Name);
+        sBuilder.Append(ml.LocalName);
         //温湿度
         sBuilder.Append("," + ml.DrybulbTemperature.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.DrybulbTemperature.LastValue.ToString("F1"));
         sBuilder.Append("," + ml.RelativeHumdity.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.RelativeHumdity.LastValue.ToString("F1"));

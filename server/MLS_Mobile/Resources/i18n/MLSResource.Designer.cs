@@ -349,6 +349,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The name must be one-byte characters.
+        /// </summary>
+        internal static string DS_OnebyteAlert {
+            get {
+                return ResourceManager.GetString("DS_OnebyteAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save.
         /// </summary>
         internal static string DS_SaveSetting {
@@ -363,6 +372,24 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_SDLogging {
             get {
                 return ResourceManager.GetString("DS_SDLogging", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set MLogger name.
+        /// </summary>
+        internal static string DS_SetName {
+            get {
+                return ResourceManager.GetString("DS_SetName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to XBee name.
+        /// </summary>
+        internal static string DS_SpecLocalName {
+            get {
+                return ResourceManager.GetString("DS_SpecLocalName", resourceCulture);
             }
         }
         
@@ -403,7 +430,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Start.
+        ///   Looks up a localized string similar to Start logging.
         /// </summary>
         internal static string DS_Start {
             get {

@@ -289,6 +289,7 @@
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="3.1.0" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="7.0.1" />
+	  <PackageReference Include="Mopups" Version="1.1.0" />
 	  <PackageReference Include="Plugin.BLE" Version="3.0.0-beta.2" />
 	  <PackageReference Include="Popolo" Version="2.3.1.43" />
 	</ItemGroup>
@@ -358,6 +359,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="MoistAirCalculator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="SettingNamePopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">

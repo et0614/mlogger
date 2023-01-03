@@ -10,6 +10,7 @@ using Plugin.BLE.Abstractions.Contracts;
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
+using Mopups.Services;
 
 public partial class DeviceSetting : ContentPage
 {
@@ -25,8 +26,11 @@ public partial class DeviceSetting : ContentPage
   /// <summary>ロギング開始フラグ</summary>
   private bool isStarted = false;
 
-  /// <summary>バージョン情報読み込み済みか</summary>
+  /// <summary>バージョン情報は読み込み済みか</summary>
   private bool verstionLoaded = false;
+
+  /// <summary>名称情報は読み込み済みか</summary>
+  private bool nameLoaded = false;
 
   /// <summary>設定読み込み済みか</summary>
   private bool settingLoaded = false;
@@ -49,32 +53,50 @@ public partial class DeviceSetting : ContentPage
   {
     InitializeComponent();
 
-    title1.Text = MLSResource.DS_TargetAndTimeInterval;
-    //title2.Text = MLSResource.DS_StartDTime;
-    title3.Text = MLSResource.DS_Communicate;
-    title4.Text = MLSResource.DS_Info;
-
-    lbl_th.Text = MLSResource.DS_TemperatureAndHumidity;
-    lbl_glb.Text = MLSResource.GlobeTemperature;
-    lbl_vel.Text = MLSResource.Velocity;
-    lbl_lux.Text = MLSResource.Illuminance;
-
-    btnLoad.Text = MLSResource.DS_LoadSetting;
-    btnSave.Text = MLSResource.DS_SaveSetting;
-    btnStart.Text = MLSResource.DS_Start;
-    btnCFactor.Text = MLSResource.DS_CFactor;
-    btnSDLogging.Text = MLSResource.DS_SDLogging;
+    //ポップで戻ってきた場合
+    MopupService.Instance.Popped += Instance_Popped;
 
     spc_name.Text = MLSResource.DS_SpecName + ": -";
+    spc_localName.Text = MLSResource.DS_SpecLocalName + ": -";
     spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": -";
     spc_mcadds.Text = MLSResource.DS_SpecMACAdd + ": -";
     spc_vers.Text = MLSResource.DS_SpecVersion + ": -";
+  }
+
+  private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
+  {
+    if (!(e.Page is SettingNamePopup)) return;
+
+    SettingNamePopup snPop = (SettingNamePopup)e.Page;
+
+    //名称更新
+    if (snPop.HasChanged)
+    {
+      nameLoaded = false;
+      Task.Run(() =>
+      {
+        try
+        {
+          for (int i = 0; i < 5; i++)
+          {
+            //設定コマンドを送信
+            MLXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(snPop.Name)));
+            Task.Delay(500);
+            if (nameLoaded) break;
+          }
+        }
+        catch { }
+      });
+    }
   }
 
   public void InitializeMLogger()
   {
     //バージョン更新
     loadVersion();
+
+    //名称更新
+    loadName();
 
     Task.Run(() =>
     {
@@ -86,7 +108,7 @@ public partial class DeviceSetting : ContentPage
 
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
+          spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
           spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + xbAdd;
           spc_mcadds.Text = MLSResource.DS_SpecMACAdd + ": " + mcAdd;
         });
@@ -118,6 +140,7 @@ public partial class DeviceSetting : ContentPage
     Logger.VersionReceivedEvent += Logger_VersionReceivedEvent;
     Logger.MeasurementSettingReceivedEvent += Logger_MeasurementSettingReceivedEvent;
     Logger.StartMeasuringMessageReceivedEvent += Logger_StartMeasuringMessageReceivedEvent;
+    Logger.LoggerNameReceivedEvent += Logger_NameReceivedEvent;
 
     //SDカード書き出しの可視状態更新
     btnSDLogging.IsVisible = MLUtility.SDCardEnabled;
@@ -192,6 +215,16 @@ public partial class DeviceSetting : ContentPage
     });
   }
 
+  private void Logger_NameReceivedEvent(object sender, EventArgs e)
+  {
+    nameLoaded = true;
+
+    Application.Current.Dispatcher.Dispatch(() =>
+    {
+      spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
+    });
+  }
+
   #endregion
 
   #region コントロール操作時の処理
@@ -215,7 +248,15 @@ public partial class DeviceSetting : ContentPage
     if (!isInputsCorrect(out thSpan, out glbSpan, out velSpan, out luxSpan)) return;
 
     //設定コマンドを作成
-    string sData = "CMS"
+    string sData = MLogger.MakeChangeMeasuringSettingCommand(
+      ST_DTIME,
+      cbx_th.IsToggled, thSpan,
+      cbx_glb.IsToggled, glbSpan,
+      cbx_vel.IsToggled, velSpan,
+      cbx_lux.IsToggled, luxSpan,
+      false, 0, false, 0, false, 0, false);
+
+    string sData2 = "CMS"
       + (cbx_th.IsToggled ? "t" : "f") + string.Format("{0,5}", thSpan)
       + (cbx_glb.IsToggled ? "t" : "f") + string.Format("{0,5}", glbSpan)
       + (cbx_vel.IsToggled ? "t" : "f") + string.Format("{0,5}", velSpan)
@@ -227,7 +268,7 @@ public partial class DeviceSetting : ContentPage
       try
       {
         //設定コマンドを送信
-        MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\r" + sData + "\r"));
+        MLXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
       }
       catch (Exception ex)
       {
@@ -288,26 +329,7 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //設定内容取得コマンドを送信
-          MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rLMS\r"));
-          await Task.Delay(1000);
-        }
-        catch { }
-      }
-    });
-  }
-
-  private void loadVersion()
-  {
-    if (verstionLoaded) return;
-
-    Task.Run(async () =>
-    {
-      while (!verstionLoaded)
-      {
-        try
-        {
-          //バージョン取得コマンドを送信
-          MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rVER\r"));
+          MLXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadMeasuringSettingCommand()));
           await Task.Delay(1000);
         }
         catch { }
@@ -329,16 +351,16 @@ public partial class DeviceSetting : ContentPage
           Application.Current.Dispatcher.Dispatch(() =>
           {
             DisplayAlert("Alert", MLSResource.DR_FailStarting, "OK");
-            //Navigation.PopAsync();
+            return;
           });
         }
         tryNum++;
 
         try
         {
-          //開始コマンドを送信//xbee通信無効,bluetooth通信有効,sdcard書き出し無効(ftf)
+          //開始コマンドを送信
           MLXBee.SendSerialData
-          (Encoding.ASCII.GetBytes("\rSTL" + MLogger.GetUnixTime(DateTime.Now) + "fft\r"));
+          (Encoding.ASCII.GetBytes(MLogger.MakeStartMeasuringCommand(false, false, true)));
           await Task.Delay(500);
         }
         catch { }
@@ -357,6 +379,53 @@ public partial class DeviceSetting : ContentPage
     cfs.MLXBee = MLXBee;
     cfs.Logger = this.Logger;
     Navigation.PushAsync(cfs);
+  }
+
+  private void SetNameButton_Clicked(object sender, EventArgs e)
+  {
+    MopupService.Instance.PushAsync(new SettingNamePopup(Logger.Name));
+  }
+
+  #endregion
+
+  #region MLogger情報更新処理
+
+  private void loadVersion()
+  {
+    if (verstionLoaded) return;
+
+    Task.Run(async () =>
+    {
+      while (!verstionLoaded)
+      {
+        try
+        {
+          //バージョン取得コマンドを送信
+          MLXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
+          await Task.Delay(500);
+        }
+        catch { }
+      }
+    });
+  }
+
+  private void loadName()
+  {
+    if (nameLoaded) return;
+
+    Task.Run(async () =>
+    {
+      while (!nameLoaded)
+      {
+        try
+        {
+          //バージョン取得コマンドを送信
+          MLXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand()));
+          await Task.Delay(500);
+        }
+        catch { }
+      }
+    });
   }
 
   #endregion
@@ -400,5 +469,6 @@ public partial class DeviceSetting : ContentPage
   }
 
   #endregion
+
 
 }

@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Localization;
+using Mopups.Hosting;
 
 namespace MLS_Mobile;
 
@@ -10,6 +11,7 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
+			.ConfigureMopups()
 			.UseMauiCommunityToolkit()
 			.ConfigureFonts(fonts =>
 			{

@@ -33,7 +33,7 @@
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" Grid.RowSpan="3" Grid.ColumnSpan="3"/>
         <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" Grid.RowSpan="3" Grid.ColumnSpan="3" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
-            <StackLayout>
+            <StackLayout BackgroundColor="White">
                 <ActivityIndicator Color="Black" IsRunning="True"/>
                 <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
             </StackLayout>

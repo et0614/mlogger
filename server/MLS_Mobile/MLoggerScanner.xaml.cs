@@ -268,7 +268,7 @@ public partial class MLoggerScanner : ContentPage
   private MLogger loadMLogger(string address, string name)
   {
     MLogger logger = new MLogger(address);
-    logger.Name = name;
+    logger.LocalName = name;
     return logger;
   }
 

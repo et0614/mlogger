@@ -64,10 +64,6 @@ public partial class LoggingData : ContentPage
         new RowDefinition()
       }
     };
-    /*ColumnDefinition colDef = new ColumnDefinition() { Width = new GridLength(80) };
-    for (int i = 0; i < 8; i++) myGrid.AddColumnDefinition(colDef);
-    myGrid.AddRowDefinition(new RowDefinition() { Height = new GridLength(60) });
-    myGrid.AddRowDefinition(new RowDefinition());*/
 
     //全データを改行コードで分割
     string[] lines = ClipData.Split(Environment.NewLine);

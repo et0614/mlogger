@@ -202,10 +202,10 @@
     <value>データ受信機</value>
   </data>
   <data name="DS_CFactor" xml:space="preserve">
-    <value>補正係数設定</value>
+    <value>補正係数の設定</value>
   </data>
   <data name="DS_Communicate" xml:space="preserve">
-    <value>通信</value>
+    <value>MLoggerとの通信</value>
   </data>
   <data name="DS_Info" xml:space="preserve">
     <value>計測器情報</value>
@@ -218,6 +218,12 @@
   </data>
   <data name="DS_SDLogging" xml:space="preserve">
     <value>SDカードへロギング開始</value>
+  </data>
+  <data name="DS_SetName" xml:space="preserve">
+    <value>MLoggerの名称を設定</value>
+  </data>
+  <data name="DS_SpecLocalName" xml:space="preserve">
+    <value>XBee名称</value>
   </data>
   <data name="DS_SpecMACAdd" xml:space="preserve">
     <value>MACアドレス</value>
@@ -232,7 +238,7 @@
     <value>XBeeアドレス</value>
   </data>
   <data name="DS_Start" xml:space="preserve">
-    <value>計測開始</value>
+    <value>ロギング開始</value>
   </data>
   <data name="DS_StartDTime" xml:space="preserve">
     <value>測定開始日時</value>

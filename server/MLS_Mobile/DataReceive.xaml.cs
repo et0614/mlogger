@@ -4,8 +4,6 @@ using MLLib;
 
 using MLS_Mobile.Resources.i18n;
 
-using System.Collections.ObjectModel;
-
 using System.Text;
 
 using Plugin.BLE.Abstractions.Contracts;
@@ -71,7 +69,7 @@ public partial class DataReceive : ContentPage
 
   public void StartLogging()
   {
-    this.Title = Logger.Name;
+    this.Title = Logger.LocalName;
 
     //Clo値,代謝量初期化
     initializing = true;
@@ -99,9 +97,9 @@ public partial class DataReceive : ContentPage
 
         try
         {
-          //開始コマンドを送信//xbee通信無効,bluetooth通信有効,sdcard書き出し無効(ftf)
+          //開始コマンドを送信
           MLXBee.SendSerialData
-          (Encoding.ASCII.GetBytes("\rSTL" + MLogger.GetUnixTime(DateTime.Now) + "ftf\r"));
+          (Encoding.ASCII.GetBytes(MLogger.MakeStartMeasuringCommand(false, true, false)));
           await Task.Delay(500);
         }
         catch { }
@@ -147,7 +145,7 @@ public partial class DataReceive : ContentPage
 
           try
           {
-            MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rENL\r"));
+            MLXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand()));
             await Task.Delay(500);
           }
           catch { }
@@ -178,6 +176,8 @@ public partial class DataReceive : ContentPage
   #region ロード・アンロードイベント
   protected override void OnAppearing()
   {
+    base.OnAppearing();
+
     //スリープ禁止
     DeviceDisplay.Current.KeepScreenOn = true;
 
@@ -292,7 +292,7 @@ public partial class DataReceive : ContentPage
       Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
       Logger.VelocityVoltage.ToString("F3") + Environment.NewLine;
 
-    string fileName = Logger.Name + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+    string fileName = Logger.LocalName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
     MLUtility.AppendData(fileName, line);
   }
 

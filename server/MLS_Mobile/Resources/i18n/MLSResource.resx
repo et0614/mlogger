@@ -213,11 +213,20 @@
   <data name="DS_LoadSetting" xml:space="preserve">
     <value>Load</value>
   </data>
+  <data name="DS_OnebyteAlert" xml:space="preserve">
+    <value>The name must be one-byte characters</value>
+  </data>
   <data name="DS_SaveSetting" xml:space="preserve">
     <value>Save</value>
   </data>
   <data name="DS_SDLogging" xml:space="preserve">
     <value>Start logging to SD card</value>
+  </data>
+  <data name="DS_SetName" xml:space="preserve">
+    <value>Set MLogger name</value>
+  </data>
+  <data name="DS_SpecLocalName" xml:space="preserve">
+    <value>XBee name</value>
   </data>
   <data name="DS_SpecMACAdd" xml:space="preserve">
     <value>MAC address</value>
@@ -232,7 +241,7 @@
     <value>XBee address</value>
   </data>
   <data name="DS_Start" xml:space="preserve">
-    <value>Start</value>
+    <value>Start logging</value>
   </data>
   <data name="DS_StartDTime" xml:space="preserve">
     <value>Starting date and time</value>
