@@ -5,12 +5,12 @@
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.CC_Title}">
     <Grid Padding="0" 
-          RowSpacing="5"
-          ColumnSpacing="5"
+          RowSpacing="0"
+          ColumnSpacing="0"
           RowDefinitions="Auto, *" 
           ColumnDefinitions="*, 100">
 
-        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" BackgroundColor="Transparent"/>
+        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" BackgroundColor="Transparent" />
         <Label Grid.Row="0" Grid.Column="0" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" FontSize="20"
                         x:Name="CloValueLabel" TextColor="{StaticResource Dark_G}"/>
         <Button Text="Apply" Grid.Row="0" Grid.Column="1" Margin="5" x:Name="btnApply" Clicked="Button_Clicked"/>
@@ -26,7 +26,13 @@
                         ColumnDefinitions="Auto, *" 
                         RowSpacing="0"
                         ColumnSpacing="10">
-                        <Image 
+                        <Border Grid.Row="0"
+                                Grid.Column="0"
+                                Grid.RowSpan="2"
+                                StrokeShape="RoundRectangle 15"
+                                Stroke="{StaticResource Dark_G}"
+                                StrokeThickness="1">
+                            <Image 
                             Grid.Row="0"
                             Grid.Column="0"
                             Grid.RowSpan="2" 
@@ -34,16 +40,11 @@
                             Aspect="AspectFill"
                             HeightRequest="80" 
                             WidthRequest="80">
-                            <Image.Clip>
-                                <RoundRectangleGeometry CornerRadius="15" Rect="0,0,80,80" />
-                            </Image.Clip>
-                        </Image>
-                        <Border Grid.Row="0"
-                                Grid.Column="0"
-                                Grid.RowSpan="2"
-                                StrokeShape="RoundRectangle 15"
-                                Stroke="{StaticResource Dark_G}"
-                                StrokeThickness="1"/>
+                                <Image.Clip>
+                                    <RoundRectangleGeometry CornerRadius="15" Rect="0,0,80,80" />
+                                </Image.Clip>
+                            </Image>
+                        </Border>
                         <Label 
                             Grid.Row="0"
                             Grid.Column="1" 

@@ -66,13 +66,13 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.5</ApplicationDisplayVersion>
-	  <ApplicationVersion>8</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
+	  <ApplicationVersion>9</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.5</ApplicationDisplayVersion>
-	  <ApplicationVersion>8</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
+	  <ApplicationVersion>9</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
