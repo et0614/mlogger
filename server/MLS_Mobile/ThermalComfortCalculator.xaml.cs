@@ -6,14 +6,20 @@ using MLS_Mobile.Resources.i18n;
 
 using Microsoft.Maui.Devices.Sensors;
 
+[QueryProperty(nameof(CloValue), "CloValue")]
+[QueryProperty(nameof(MetValue), "MetValue")]
 public partial class ThermalComfortCalculator : ContentPage
 {
 
   #region インスタンス変数・プロパティ・定数宣言
 
-  private ClothingCoordinator cCoordinator;
+  /// <summary>Clo値を設定・取得する</summary>
+  public double CloValue
+  { get; set; } = 1.2;
 
-  private ActivitySelector actSelector;
+  /// <summary>Met値を設定・取得する</summary>
+  public double MetValue
+  { get; set; } = 1.1;
 
   #endregion
 
@@ -23,26 +29,16 @@ public partial class ThermalComfortCalculator : ContentPage
   {
     InitializeComponent();
 
-    metSlider.Value = 1.2;
+    BindingContext = this;
   }
 
   protected override void OnAppearing()
   {
     base.OnAppearing();
 
-    //着衣量設定時は反映
-    if (cCoordinator != null && cCoordinator.ApplyChange)
-    {
-      cCoordinator.ApplyChange = false;
-      cloSlider.Value = cCoordinator.CloValue;
-    }
-
-    //活動量設定時は反映
-    if (actSelector != null && actSelector.ApplyChange)
-    {
-      actSelector.ApplyChange = false;
-      metSlider.Value = actSelector.MetValue;
-    }
+    //着衣量と代謝量を反映
+    cloSlider.Value = CloValue;
+    metSlider.Value = MetValue;
 
     //更新
     updateIndices();
@@ -115,19 +111,13 @@ public partial class ThermalComfortCalculator : ContentPage
   //着衣量設定ボタンクリック時の処理
   private void CloBtn_Clicked(object sender, EventArgs e)
   {
-    if (cCoordinator == null)
-      cCoordinator = new ClothingCoordinator();
-
-    Navigation.PushAsync(cCoordinator, true);
+    Shell.Current.GoToAsync(nameof(ClothingCoordinator));
   }
 
   //活動量設定ボタンクリック時の処理
   private void ActBtn_Clicked(object sender, EventArgs e)
   {
-    if (actSelector == null)
-      actSelector = new ActivitySelector();
-
-    Navigation.PushAsync(actSelector, true);
+    Shell.Current.GoToAsync(nameof(ActivitySelector));
   }
 
   #endregion

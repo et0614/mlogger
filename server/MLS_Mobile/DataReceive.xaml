@@ -39,27 +39,27 @@
                         <ColumnDefinition Width="40"/>
                     </Grid.ColumnDefinitions>
 
-                    <Label Grid.Row="0" Grid.Column="0" x:Name="title_tmp" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.DrybulbTemperature}" VerticalTextAlignment="End"/>
                     <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_tmp" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_tmp" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="1" Grid.Column="2" Text="°CDB" HorizontalTextAlignment="Start"/>
 
-                    <Label Grid.Row="2" Grid.Column="0" x:Name="title_hmd" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="2" Grid.Column="0" Text ="{x:Static res:MLSResource.RelativeHumidity}" VerticalTextAlignment="End"/>
                     <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_hmd" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_hmd" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="3" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
 
-                    <Label Grid.Row="4" Grid.Column="0" x:Name="title_glb" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="4" Grid.Column="0" Text ="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="End"/>
                     <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_glb" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_glb" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="5" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
 
-                    <Label Grid.Row="6" Grid.Column="0" x:Name="title_vel" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="6" Grid.Column="0" Text ="{x:Static res:MLSResource.Velocity}" VerticalTextAlignment="End"/>
                     <Label Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_vel" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_vel" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="7" Grid.Column="2" Text="m/s" HorizontalTextAlignment="Start"/>
 
-                    <Label Grid.Row="8" Grid.Column="0" x:Name="title_lux" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="8" Grid.Column="0" Text ="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="End"/>
                     <Label Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" x:Name="dtm_lux" Text="yyyy/M/d HH:mm:ss" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" x:Name="val_lux" Text="-" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="9" Grid.Column="2" Text="lux" HorizontalTextAlignment="Start"/>
@@ -100,11 +100,11 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="cloTitle" HorizontalTextAlignment="Start"/>
-                    <Slider Grid.Row="1" Grid.Column="0" x:Name="cloSlider" Maximum="3" Margin="30,0,0,0" Value="1.2" ValueChanged="slider_ValueChanged"/>
+                    <Slider Grid.Row="1" Grid.Column="0" x:Name="cloSlider" Maximum="3" Margin="30,0,0,0" Value="{Binding CloValue}" ValueChanged="slider_ValueChanged"/>
                     <Label Grid.Row="1" Grid.Column="1" Text="{Binding Source={x:Reference cloSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" TextColor="black"/>
 
                     <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" x:Name="metTitle" HorizontalTextAlignment="Start"/>
-                    <Slider Grid.Row="3" Grid.Column="0" x:Name="metSlider" Maximum="8" Margin="30,0,0,0" Value="1.1" ValueChanged="slider_ValueChanged"/>
+                    <Slider Grid.Row="3" Grid.Column="0" x:Name="metSlider" Maximum="8" Margin="30,0,0,0" Value="{Binding MetValue}" ValueChanged="slider_ValueChanged"/>
                     <Label Grid.Row="3" Grid.Column="1" Text="{Binding Source={x:Reference metSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" TextColor="black"/>
 
                     <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnCloth" Clicked="CloBtn_Clicked"/>
@@ -113,7 +113,7 @@
                     <!--<Picker Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" x:Name="metList" SelectedIndexChanged="metList_SelectedIndexChanged"/>-->
                 </Grid>
 
-                <Button x:Name="quitBtn" Clicked="QuitBtn_Clicked" Margin="30,0,30,30"
+                <Button Text ="{x:Static res:MLSResource.DR_FinishMeasurement}" Clicked="QuitBtn_Clicked" Margin="30,0,30,30"
                         BorderColor="{StaticResource Dark_O}" TextColor="{StaticResource Dark_O}" BackgroundColor="{StaticResource Lightest_O}"/>
             </StackLayout>
         </ScrollView>

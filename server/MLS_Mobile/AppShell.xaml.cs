@@ -14,5 +14,9 @@ public partial class AppShell : Shell
 
     //データディレクトリを用意する
     MLUtility.InitDirAndFiles();
+
+    //ルート登録
+    Routing.RegisterRoute(nameof(ActivitySelector), typeof(ActivitySelector));
+    Routing.RegisterRoute(nameof(ClothingCoordinator), typeof(ClothingCoordinator));
   }
 }

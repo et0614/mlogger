@@ -7,9 +7,6 @@ public partial class ClothingCoordinator : ContentPage
 
   #region インスタンス変数・プロパティ
 
-  /// <summary>設定を反映するか否か</summary>
-  public bool ApplyChange { get; set; } = false;
-
   /// <summary>CLO値を取得する</summary>
   public double CloValue { get; private set; }
 
@@ -158,8 +155,11 @@ public partial class ClothingCoordinator : ContentPage
   /// <param name="e"></param>
   private void Button_Clicked(object sender, EventArgs e)
   {
-    ApplyChange = true;
-    Navigation.PopAsync();
+    var navigationParameter = new Dictionary<string, object>
+    {
+        { "CloValue", CloValue }
+    };
+    Shell.Current.GoToAsync($"..", navigationParameter);
   }
 
   #endregion

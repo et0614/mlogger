@@ -80,14 +80,14 @@
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.ClothingUnit}, StringFormat='{0} [clo]'}"
                    />
-            <Slider Grid.Row="9" Grid.Column="0" x:Name="cloSlider" Minimum="0" Maximum="3" Margin="30,0,0,0" Value="1.2" ValueChanged="slider_ValueChanged"/>
+            <Slider Grid.Row="9" Grid.Column="0" x:Name="cloSlider" Minimum="0" Maximum="3" Margin="30,0,0,0" Value="{Binding CloValue}" ValueChanged="slider_ValueChanged"/>
             <Label Grid.Row="9" Grid.Column="1" Text="{Binding Source={x:Reference cloSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
 
             <Label Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" 
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.MetabolicUnit}, StringFormat='{0} [met]'}"
                    />
-            <Slider Grid.Row="11" Grid.Column="0" x:Name="metSlider" Minimum="0" Maximum="8" Margin="30,0,0,0" Value="1.1" ValueChanged="slider_ValueChanged"/>
+            <Slider Grid.Row="11" Grid.Column="0" x:Name="metSlider" Minimum="0" Maximum="8" Margin="30,0,0,0" Value="{Binding MetValue}" ValueChanged="slider_ValueChanged"/>
             <Label Grid.Row="11" Grid.Column="1" Text="{Binding Source={x:Reference metSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
 
             <Button Margin="10,20,10,0" Grid.Row ="12" Grid.Column="0" Grid.ColumnSpan="2" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnClothing" Clicked="CloBtn_Clicked"/>

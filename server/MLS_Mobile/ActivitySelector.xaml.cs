@@ -7,9 +7,6 @@ public partial class ActivitySelector : ContentPage
 
   #region インスタンス変数・プロパティ
 
-  /// <summary>設定を反映するか否か</summary>
-  public bool ApplyChange { get; set; } = false;
-
   /// <summary>Met値を取得する</summary>
   public double MetValue { get; private set; }
 
@@ -115,12 +112,14 @@ public partial class ActivitySelector : ContentPage
   /// <param name="e"></param>
   private void OnCollectionViewSelectionChanged(object sender, SelectionChangedEventArgs e)
   {
-    ApplyChange = true;
-
     if (actView.SelectedItem != null)
       MetValue = ((Activity)actView.SelectedItem).MetValue;
 
-    Navigation.PopAsync();
+    var navigationParameter = new Dictionary<string, object>
+    {
+        { "MetValue", MetValue }
+    };
+    Shell.Current.GoToAsync($"..", navigationParameter);
   }
 
   #endregion

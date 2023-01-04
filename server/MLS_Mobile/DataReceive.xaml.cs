@@ -13,14 +13,12 @@ using XBeeLibrary.Core.Events.Relay;
 
 using Microsoft.Maui.Controls;
 
+[QueryProperty(nameof(CloValue), "CloValue")]
+[QueryProperty(nameof(MetValue), "MetValue")]
 public partial class DataReceive : ContentPage
 {
 
   #region インスタンス変数・プロパティ
-
-  private ClothingCoordinator cCoordinator;
-
-  private ActivitySelector actSelector;
 
   /// <summary>初期化フラグ</summary>
   private bool initializing = true;
@@ -43,6 +41,14 @@ public partial class DataReceive : ContentPage
   /// <summary>ロガーを設定・取得する</summary>
   public MLogger Logger { get; set; }
 
+  /// <summary>Clo値を設定・取得する</summary>
+  public double CloValue
+  { get; set; } = 1.2;
+
+  /// <summary>Met値を設定・取得する</summary>
+  public double MetValue
+  { get; set; } = 1.1;
+
   #endregion
 
   #region コンストラクタ
@@ -51,20 +57,10 @@ public partial class DataReceive : ContentPage
   {
     InitializeComponent();
 
-    title_tmp.Text = MLSResource.DrybulbTemperature;
-    title_hmd.Text = MLSResource.RelativeHumidity;
-    title_glb.Text = MLSResource.GlobeTemperature;
-    title_vel.Text = MLSResource.Velocity;
-    title_lux.Text = MLSResource.Illuminance;
-
-    quitBtn.Text = MLSResource.DR_FinishMeasurement;
-
+    BindingContext = this;
 
     cloTitle.Text = MLSResource.ClothingUnit + " [clo]";
     metTitle.Text = MLSResource.MetabolicUnit + " [met]";
-
-    //活動量
-    metSlider.Value = 1.2;
   }
 
   public void StartLogging()
@@ -114,10 +110,7 @@ public partial class DataReceive : ContentPage
   //着衣量設定ボタンクリック時の処理
   private void CloBtn_Clicked(object sender, EventArgs e)
   {
-    if (cCoordinator == null)
-      cCoordinator = new ClothingCoordinator();
-
-    Navigation.PushAsync(cCoordinator, true);
+    Shell.Current.GoToAsync(nameof(ClothingCoordinator));
   }
 
   private async void QuitBtn_Clicked(object sender, EventArgs e)
@@ -165,10 +158,7 @@ public partial class DataReceive : ContentPage
   //活動量設定ボタンクリック時の処理
   private void ActBtn_Clicked(object sender, EventArgs e)
   {
-    if (actSelector == null)
-      actSelector = new ActivitySelector();
-
-    Navigation.PushAsync(actSelector, true);
+    Shell.Current.GoToAsync(nameof(ActivitySelector));
   }
 
   #endregion
@@ -190,18 +180,9 @@ public partial class DataReceive : ContentPage
     Logger.EndMeasuringMessageReceivedEvent += Logger_EndMeasuringMessageReceivedEvent;
 
     //着衣量設定時は反映
-    if (cCoordinator != null && cCoordinator.ApplyChange)
-    {
-      cCoordinator.ApplyChange = false;
-      cloSlider.Value = cCoordinator.CloValue;
-    }
-
-    //活動量設定時は反映
-    if (actSelector != null && actSelector.ApplyChange)
-    {
-      actSelector.ApplyChange = false;
-      metSlider.Value = actSelector.MetValue;
-    }
+    //着衣量と代謝量を反映
+    cloSlider.Value = CloValue;
+    metSlider.Value = MetValue;
   }
 
   protected override void OnDisappearing()
