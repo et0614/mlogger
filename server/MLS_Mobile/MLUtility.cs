@@ -1,13 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Storage;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Plugin.BLE.Abstractions.Contracts;
 using System.Text;
-using System.Threading.Tasks;
+
+using XBeeLibrary.Xamarin;
+using XBeeLibrary.Core.Events.Relay;
+
+using MLLib;
 
 namespace MLS_Mobile
 {
+  /// <summary>ユーティリティクラス</summary>
   public static class MLUtility
   {
 
@@ -18,6 +19,9 @@ namespace MLS_Mobile
 
     /// <summary>SDカード使用に関する初期設定ファイル</summary>
     private const string SD_F_NAME = "sd.ini";
+
+    /// <summary>MLogger付属のXBeeのパスワード</summary>
+    private const string ML_PASS = "ml_pass";
 
     #endregion
 
@@ -41,6 +45,84 @@ namespace MLS_Mobile
         {
           sWriter.Write(value ? "1" : "0");
         }
+      }
+    }
+
+    /// <summary>ロガー付属のXBeeを取得する</summary>
+    public static ZigBeeBLEDevice LoggerSideXBee { get; private set; }
+
+    /// <summary>ロガーを取得する</summary>
+    public static MLogger Logger { get; private set; }
+
+    #endregion
+
+    #region XBee通信関連の処理
+
+    /// <summary>MLoggerのXBeeと接続する</summary>
+    /// <param name="device"></param>
+    public static void StartXBeeCommunication(IDevice device)
+    {
+      //通信中のXBeeがある場合は接続を閉じる
+      EndXBeeCommunication();
+
+      if (DeviceInfo.Current.Platform == DevicePlatform.Android)
+        LoggerSideXBee = new ZigBeeBLEDevice(device.Id.ToString(), ML_PASS);
+      else LoggerSideXBee = new ZigBeeBLEDevice(device, ML_PASS);
+
+      //XBeeをOpen
+      LoggerSideXBee.Open();
+
+      //イベント処理用ロガーを用意
+      Logger = new MLogger(LoggerSideXBee.GetAddressString());
+      Logger.LocalName = device.Name;
+
+      //イベント登録      
+      LoggerSideXBee.SerialDataReceived += LoggerSideXBee_SerialDataReceived;
+    }
+
+    /// <summary>MLoggerのXbeeとの接続を解除する</summary>
+    public static void EndXBeeCommunication()
+    {
+      //通信中のXBeeがある場合は接続を閉じる
+      if (LoggerSideXBee != null)
+      {
+        //イベントを解除する
+        LoggerSideXBee.SerialDataReceived -= LoggerSideXBee_SerialDataReceived;
+
+        //開いていれば別スレッドで閉じる
+        if (LoggerSideXBee.IsOpen)
+        {
+          ZigBeeBLEDevice clsBee = LoggerSideXBee;
+          Task.Run(() =>
+          {
+            try
+            {
+              clsBee.Close();
+            }
+            catch { }
+          });
+        }
+      }
+
+      Logger = null;
+    }
+
+    /// <summary>シリアルデータ受信時の処理</summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private static void LoggerSideXBee_SerialDataReceived
+      (object sender, SerialDataReceivedEventArgs e)
+    {
+      Logger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
+
+      //コマンド処理
+      while (Logger.HasCommand)
+      {
+        try
+        {
+          Logger.SolveCommand();
+        }
+        catch { }
       }
     }
 

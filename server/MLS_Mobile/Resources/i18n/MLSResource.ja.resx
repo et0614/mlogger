@@ -138,6 +138,9 @@
   <data name="CF_Discard" xml:space="preserve">
     <value>設定を破棄しますか？</value>
   </data>
+  <data name="CF_FailSetting" xml:space="preserve">
+    <value>補正係数の設定に失敗しました</value>
+  </data>
   <data name="CF_Invalid" xml:space="preserve">
     <value>{1}の補正係数{0}が不正です</value>
   </data>
@@ -158,6 +161,9 @@
   </data>
   <data name="CF_Set" xml:space="preserve">
     <value>設定</value>
+  </data>
+  <data name="CF_Setting" xml:space="preserve">
+    <value>補正係数読込中...</value>
   </data>
   <data name="CF_Title" xml:space="preserve">
     <value>補正係数の設定</value>

@@ -6,21 +6,27 @@
              Title="{x:Static res:MLSResource.SC_Title}">
     <RefreshView x:Name="refView">
         <Grid>
-            <CollectionView x:Name="mlList" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
+            <CollectionView x:Name="mlList"
+                            ItemsSource="{Binding MLXBees}" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid    
-                            Padding="5" 
-                            RowDefinitions="Auto"
-                            ColumnDefinitions="Auto" 
-                            RowSpacing="5"
-                            ColumnSpacing="5">
+                        <Grid
+                            Padding="10" 
+                            RowDefinitions="Auto, Auto"
+                            ColumnDefinitions="Auto">
                             <Label 
                                 Grid.Row="0" Grid.Column="0"
                                 Text="{Binding Name}" 
-                                FontSize="18"
+                                FontSize="20"
                                 HorizontalOptions="Start"
-                                VerticalOptions="Center" Padding="5"/>
+                                VerticalOptions="Center" Padding="5,0,0,0"/>
+                            <Label 
+                                Grid.Row="1" Grid.Column="0"
+                                Text="{Binding Id}" 
+                                FontSize="14"
+                                TextColor="Gray"
+                                HorizontalOptions="Start"
+                                VerticalOptions="Center" Padding="20,2,0,0"/>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

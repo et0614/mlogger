@@ -15,10 +15,14 @@
                                            BackgroundColor="{StaticResource Dark_O}"
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
-                                    <SwipeItem.IconImageSource>
+                                    <!--<SwipeItem.IconImageSource>
                                         <FontImageSource Glyph="&#xf294;" FontFamily="FAB" Size="10" Color="White"/>
-                                        <!--<FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="24" Color="White"/>-->
-                                    </SwipeItem.IconImageSource>
+                                    </SwipeItem.IconImageSource>-->
+                                </SwipeItem>
+                                <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
+                                           BackgroundColor="{StaticResource Light_G}"
+                                           Command="{Binding CopyCommand}"
+                                           CommandParameter="{Binding .}">
                                 </SwipeItem>
                             </SwipeItems>
                         </SwipeView.RightItems>

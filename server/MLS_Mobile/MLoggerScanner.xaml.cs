@@ -4,11 +4,8 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 
-using XBeeLibrary.Xamarin;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
-
-using MLLib;
 
 using MLS_Mobile.Resources.i18n;
 using System.Windows.Input;
@@ -21,22 +18,19 @@ public partial class MLoggerScanner : ContentPage
   /// <summary>XBeeを探索する時間[msec]</summary>
   private const int SCAN_TIME = 1000;
 
-  private const string ML_PASS = "ml_pass";
-
-  private readonly ObservableCollection<xBee> xbees = new ObservableCollection<xBee>();
-
-  ZigBeeBLEDevice MLXBee;
+  /// <summary>MLogger搭載のXBeeのリスト</summary>
+  public ObservableCollection<IDevice> MLXBees { get; private set; } = new ObservableCollection<IDevice>();
 
   #endregion
 
   #region コンストラクタ
 
+  /// <summary>インスタンスを初期化する</summary>
   public MLoggerScanner()
   {
     InitializeComponent();
 
-    Title = MLSResource.SC_Title;
-    mlList.ItemsSource = xbees;
+    BindingContext = this;
 
     //リフレッシュコマンド定義
     ICommand refreshCommand = new Command(() =>
@@ -61,19 +55,8 @@ public partial class MLoggerScanner : ContentPage
 
   private void scanXBees()
   {
-    //接続済みのXBeeがある場合には、別スレッドで接続を解除
-    if (MLXBee != null && MLXBee.IsOpen)
-    {
-      ZigBeeBLEDevice cls = MLXBee;
-      Task.Run(() =>
-      {
-        try
-        {
-          cls.Close();
-        }
-        catch { }
-      });
-    }
+    //接続済みのXBeeがある場合には解除
+    MLUtility.EndXBeeCommunication();
 
     //Bluetoothを用意
     IBluetoothLE bluetoothLE = CrossBluetoothLE.Current;
@@ -100,151 +83,48 @@ public partial class MLoggerScanner : ContentPage
       if (dvName != null && dvName != "" && dvName.StartsWith("MLogger_"))
       {
         bool newItem = true;
-        for (int i = 0; i < xbees.Count; i++)
+        for (int i = 0; i < MLXBees.Count; i++)
         {
-          if (xbees[i].Name == dvName)
+          if (MLXBees[i].Name == dvName)
           {
             newItem = false;
             break;
           }
         }
         if (newItem)
-          xbees.Add(new xBee(dvName, ev.Device.Id));
+          MLXBees.Add(ev.Device);
       }
     };
 
     //非同期スキャン開始
-    xbees.Clear();
+    MLXBees.Clear();
     adapter.StartScanningForDevicesAsync();
-  }
-
-  protected override void OnDisappearing()
-  {
-    base.OnDisappearing();
-
-    //Bluetoothを用意
-    /*IBluetoothLE bluetoothLe = CrossBluetoothLE.Current;
-    if (bluetoothLe.State == BluetoothState.Off)
-    {
-      DisplayAlert("Alert", "Bluetoothを有効にしてください", "OK");
-      return;
-    }*/
-
-    //アダプタを用意。スキャン中ならば停止
-    /*IAdapter adapter = bluetoothLe.Adapter;
-    if (adapter.IsScanning)
-      adapter.StopScanningForDevicesAsync();*/
   }
 
   #endregion
 
   #region コントロール操作時の処理
 
-  private void mlList_ItemSelected(object sender, SelectedItemChangedEventArgs e)
-  {
-    if (e.SelectedItem == null) return;
-
-    xBee selectedXBee = (xBee)e.SelectedItem;
-    mlList.SelectedItem = null;
-
-    if (xbees.Count == 1 && xbees[0].Name == MLSResource.SC_Empty)
-      return;
-
-    //インジケータを表示して制御不可にする
-    showIndicator(MLSResource.SC_Connecting);
-
-    Task.Run(async () =>
-    {
-      try
-      {
-        //BLE Deviceに接続
-        IAdapter adapter = CrossBluetoothLE.Current.Adapter;
-        IDevice mlDevice = await adapter.ConnectToKnownDeviceAsync(selectedXBee.Id);
-
-        if (DeviceInfo.Current.Platform == DevicePlatform.Android)
-          MLXBee = new ZigBeeBLEDevice(selectedXBee.Id.ToString(), ML_PASS);
-        else MLXBee = new ZigBeeBLEDevice(mlDevice, ML_PASS);
-
-        //XBeeをOpen
-        MLXBee.Open();
-
-        //Openに成功したら設定ページへ移動
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          DeviceSetting dvset = new DeviceSetting();
-          dvset.MLXBee = MLXBee;
-          dvset.MLDevice = mlDevice;
-          dvset.Logger = loadMLogger(MLXBee.GetAddressString(), selectedXBee.Name);
-          mlList.SelectedItem = null; //選択解除
-
-          dvset.InitializeMLogger();
-
-          Navigation.PushAsync(dvset, true);
-        });
-
-      }
-      catch (Exception bex)
-      {
-        //失敗した場合にはエラーメッセージを出す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          DisplayAlert("Alert", bex.Message, "OK");
-        });
-      }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
-
-  }
-
   private void mlList_SelectionChanged(object sender, SelectionChangedEventArgs e)
   {
     if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
 
-    xBee selectedXBee = (xBee)e.CurrentSelection[0];
+    IDevice selectedXBee = (IDevice)e.CurrentSelection[0];
     mlList.SelectedItem = null;
 
-    if (xbees.Count == 1 && xbees[0].Name == MLSResource.SC_Empty)
-      return;
-
-    //インジケータを表示して制御不可にする
+    //インジケータを表示して制御不可にしてから接続処理
     showIndicator(MLSResource.SC_Connecting);
-
-    Task.Run(async () =>
+    Task.Run(() =>
     {
       try
       {
-        //BLE Deviceに接続
-        IAdapter adapter = CrossBluetoothLE.Current.Adapter;
-        IDevice mlDevice = await adapter.ConnectToKnownDeviceAsync(selectedXBee.Id);
-
-        if (DeviceInfo.Current.Platform == DevicePlatform.Android)
-          MLXBee = new ZigBeeBLEDevice(selectedXBee.Id.ToString(), ML_PASS);
-        else MLXBee = new ZigBeeBLEDevice(mlDevice, ML_PASS);
-
-        //XBeeをOpen
-        MLXBee.Open();
+        MLUtility.StartXBeeCommunication(selectedXBee);
 
         //Openに成功したら設定ページへ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          DeviceSetting dvset = new DeviceSetting();
-          dvset.MLXBee = MLXBee;
-          dvset.MLDevice = mlDevice;
-          dvset.Logger = loadMLogger(MLXBee.GetAddressString(), selectedXBee.Name);
-          mlList.SelectedItem = null; //選択解除
-
-          dvset.InitializeMLogger();
-
-          Navigation.PushAsync(dvset, true);
+          Shell.Current.GoToAsync(nameof(DeviceSetting));
         });
-
       }
       catch (Exception bex)
       {
@@ -254,7 +134,7 @@ public partial class MLoggerScanner : ContentPage
           DisplayAlert("Alert", bex.Message, "OK");
         });
       }
-      finally
+      finally 
       {
         //インジケータを隠す
         Application.Current.Dispatcher.Dispatch(() =>
@@ -263,13 +143,6 @@ public partial class MLoggerScanner : ContentPage
         });
       }
     });
-  }
-
-  private MLogger loadMLogger(string address, string name)
-  {
-    MLogger logger = new MLogger(address);
-    logger.LocalName = name;
-    return logger;
   }
 
   #endregion
@@ -296,25 +169,5 @@ public partial class MLoggerScanner : ContentPage
   }
 
   #endregion
-
-  #region インナークラスの定義
-
-  private class xBee
-  {
-
-    public string Name { get; private set; }
-
-    public Guid Id { get; private set; }
-
-    public xBee(string name, Guid id)
-    {
-      Name = name;
-      Id = id;
-    }
-
-  }
-
-  #endregion
-
 
 }

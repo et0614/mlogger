@@ -5,10 +5,6 @@
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.DR_Title}">
 
-    <Shell.BackButtonBehavior>
-        <BackButtonBehavior IsEnabled="False" IconOverride="trans.png"/>
-    </Shell.BackButtonBehavior>
-
     <Grid BackgroundColor="{StaticResource Lightest_G}">
         <ScrollView Orientation="Vertical" VerticalScrollBarVisibility="Never">
             <StackLayout>
@@ -110,11 +106,7 @@
                     <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnCloth" Clicked="CloBtn_Clicked"/>
 
                     <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectActivity}" x:Name="btnActivity" Clicked="ActBtn_Clicked"/>
-                    <!--<Picker Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" x:Name="metList" SelectedIndexChanged="metList_SelectedIndexChanged"/>-->
                 </Grid>
-
-                <Button Text ="{x:Static res:MLSResource.DR_FinishMeasurement}" Clicked="QuitBtn_Clicked" Margin="30,0,30,30"
-                        BorderColor="{StaticResource Dark_O}" TextColor="{StaticResource Dark_O}" BackgroundColor="{StaticResource Lightest_O}"/>
             </StackLayout>
         </ScrollView>
 

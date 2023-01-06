@@ -18,5 +18,9 @@ public partial class AppShell : Shell
     //ルート登録
     Routing.RegisterRoute(nameof(ActivitySelector), typeof(ActivitySelector));
     Routing.RegisterRoute(nameof(ClothingCoordinator), typeof(ClothingCoordinator));
+    Routing.RegisterRoute(nameof(LoggingData), typeof(LoggingData));
+    Routing.RegisterRoute(nameof(DeviceSetting), typeof(DeviceSetting));
+    Routing.RegisterRoute(nameof(CFSetting), typeof(CFSetting));
+    Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
   }
 }

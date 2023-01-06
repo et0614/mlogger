@@ -124,6 +124,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Fail to set correction factors..
+        /// </summary>
+        internal static string CF_FailSetting {
+            get {
+                return ResourceManager.GetString("CF_FailSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Correction factor {0} of {1} is invalid..
         /// </summary>
         internal static string CF_Invalid {
@@ -183,6 +192,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string CF_Set {
             get {
                 return ResourceManager.GetString("CF_Set", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading correction factors....
+        /// </summary>
+        internal static string CF_Setting {
+            get {
+                return ResourceManager.GetString("CF_Setting", resourceCulture);
             }
         }
         

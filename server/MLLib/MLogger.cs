@@ -35,6 +35,9 @@ namespace MLLib
 
     #region イベント定義
 
+    /// <summary>コマンド待ち通知受信イベント</summary>
+    public event EventHandler? WaitingForCommandMessageReceivedEvent;
+
     /// <summary>測定値受信イベント</summary>
     public event EventHandler? MeasuredValueReceivedEvent;
 
@@ -47,9 +50,6 @@ namespace MLLib
     /// <summary>補正係数受信イベント</summary>
     public event EventHandler? CorrectionFactorsReceivedEvent;
 
-    /// <summary>コマンド待ち通知受信イベント</summary>
-    public event EventHandler? WaitingForCommandMessageReceivedEvent;
-
     /// <summary>測定開始通知受信イベント</summary>
     public event EventHandler? StartMeasuringMessageReceivedEvent;
 
@@ -58,6 +58,31 @@ namespace MLLib
 
     /// <summary>ロガー名称受信イベント</summary>
     public event EventHandler? LoggerNameReceivedEvent;
+
+    #endregion
+
+    #region イベント用プロパティ
+
+    /// <summary>測定値を受信したか否かを設定・取得する</summary>
+    public bool HasMeasuredValueReceived { get; set; } = false;
+
+    /// <summary>測定設定を受信したか否かを設定・取得する</summary>
+    public bool HasMeasurementSettingReceived { get; set; } = false;
+
+    /// <summary>バージョンを受信したか否かを設定・取得する</summary>
+    public bool HasVersionReceived { get; set; } = false;
+
+    /// <summary>補正係数を受信したか否かを設定・取得する</summary>
+    public bool HasCorrectionFactorsReceived { get; set; } = false;
+
+    /// <summary>測定開始通知を受信したか否かを設定・取得する</summary>
+    public bool HasStartMeasuringMessageReceived { get; set; } = false;
+
+    /// <summary>測定終了通知を受信したか否かを設定・取得する</summary>
+    public bool HasEndMeasuringMessageReceived { get; set; } = false;
+
+    /// <summary>ロガー名称を受信したか否かを設定・取得する</summary>
+    public bool HasLoggerNameReceived { get; set; } = false;
 
     #endregion
 
@@ -196,7 +221,7 @@ namespace MLLib
 
     #region コンストラクタ
 
-    public MLogger()
+    private MLogger()
       : this("0000000000000000") { }
 
     /// <summary>インスタンスを初期化する</summary>
@@ -334,6 +359,7 @@ namespace MLLib
 
           //イベント通知
           StartMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+          HasStartMeasuringMessageReceived = true;
           break;
 
         //バージョン受信
@@ -355,6 +381,7 @@ namespace MLLib
         case "ENL":
           //イベント通知
           EndMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+          HasEndMeasuringMessageReceived = true;
           break;
 
         //名称受信
@@ -439,12 +466,11 @@ namespace MLLib
 
         //イベント通知
         MeasuredValueReceivedEvent?.Invoke(this, EventArgs.Empty);
+        HasMeasuredValueReceived = true;
+        HasStartMeasuringMessageReceived = true; //データ受信されたということは開始しているということだからこちらもtrueにする
       }
       //通信の問題で不正な文字が送信されるような場合に備える
-      catch
-      {
-
-      }
+      catch { }
     }
 
     /// <summary>測定設定コマンド（CMS, LMS）を処理する</summary>
@@ -480,6 +506,7 @@ namespace MLLib
 
       //イベント通知
       MeasurementSettingReceivedEvent?.Invoke(this, EventArgs.Empty);
+      HasMeasurementSettingReceived = true;
     }
 
     /// <summary>バージョンを処理する</summary>
@@ -497,6 +524,7 @@ namespace MLLib
 
       //イベント通知
       VersionReceivedEvent?.Invoke(this, EventArgs.Empty);
+      HasVersionReceived = true;
     }
 
     /// <summary>補正係数設定コマンド(SCF,LCF)を処理する</summary>
@@ -539,14 +567,17 @@ namespace MLLib
 
       //イベント通知
       CorrectionFactorsReceivedEvent?.Invoke(this, EventArgs.Empty);
+      HasCorrectionFactorsReceived = true;
     }
 
     /// <summary>ロガー名称設定コマンド()を処理する</summary>
     private void solveLN()
     {
       Name = NextCommand.Substring(4, 20).TrimEnd();
+
       //イベント通知
       LoggerNameReceivedEvent?.Invoke(this, EventArgs.Empty);
+      HasLoggerNameReceived = true;
     }
 
     #endregion

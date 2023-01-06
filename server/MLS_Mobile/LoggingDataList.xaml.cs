@@ -40,8 +40,11 @@ public partial class LoggingDataList : ContentPage
   {
     if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
 
-    LoggingData ld = new LoggingData(((logFile)e.CurrentSelection[0]).FileName);
-    Navigation.PushAsync(ld);
+    var navigationParameter = new Dictionary<string, object>
+    {
+        { "FileName", ((logFile)e.CurrentSelection[0]).FileName }
+    };
+    Shell.Current.GoToAsync($"LoggingData", navigationParameter);
   }
 
   #region インナークラス定義
@@ -60,7 +63,21 @@ public partial class LoggingDataList : ContentPage
       MLUtility.DeleteDataFile(lf.FileName);
       lf.Parent.UpdateLogFiles();
     }
+  }
 
+  public class copyCommand : ICommand
+  {
+
+    public event EventHandler CanExecuteChanged;
+
+    public bool CanExecute(object parameter)
+    { return true; }
+
+    public void Execute(object parameter)
+    {
+      logFile lf = (logFile)parameter;
+      Clipboard.Default.SetTextAsync(LoggingData.MakeClipData(lf.FileName));
+    }
   }
 
   public class logFile
@@ -75,6 +92,7 @@ public partial class LoggingDataList : ContentPage
       DTime = new DateTime(int.Parse(bf[2].Substring(0, 4)), int.Parse(bf[2].Substring(4, 2)), int.Parse(bf[2].Substring(6, 2)));
 
       DeleteCommand = new delCommand();
+      CopyCommand = new copyCommand();
     }
 
     public LoggingDataList Parent { get; private set; }
@@ -84,6 +102,8 @@ public partial class LoggingDataList : ContentPage
     public string FileName { get; private set; }
 
     public ICommand DeleteCommand { get; private set; }
+
+    public ICommand CopyCommand { get; private set; }
 
     public string MLoggerName { get; private set; }
 

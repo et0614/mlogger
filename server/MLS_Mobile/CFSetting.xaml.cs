@@ -3,9 +3,6 @@ namespace MLS_Mobile;
 using System.Text;
 using System.Threading.Tasks;
 
-using XBeeLibrary.Xamarin;
-using XBeeLibrary.Core.Events.Relay;
-
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
@@ -15,18 +12,13 @@ public partial class CFSetting : ContentPage
 
   #region インスタンス変数・プロパティ
 
-  /// <summary>初期化完了フラグ</summary>
-  private bool isInitialized = false;
-
-  public MLogger Logger { get; set; }
-
   private bool isEdited = false;
-
-  /// <summary>XBeeを設定・取得する</summary>
-  public ZigBeeBLEDevice MLXBee { get; set; }
 
   #endregion
 
+  #region コンストラクタ
+
+  /// <summary>インスタンスを初期化する</summary>
   public CFSetting()
   {
     InitializeComponent();
@@ -44,58 +36,11 @@ public partial class CFSetting : ContentPage
 
     btnBack.Text = MLSResource.CF_Back;
     btnSet.Text = MLSResource.CF_Set;
+
+    loadCorrectionFactors();
   }
 
-  protected override void OnAppearing()
-  {
-    base.OnAppearing();
-
-    //XBeeイベント登録      
-    MLXBee.SerialDataReceived += MLXBee_SerialDataReceived;
-
-    //MLoggerイベント登録
-    Logger.CorrectionFactorsReceivedEvent += Logger_CorrectionFactorsReceivedEvent;
-
-    //補正係数読み込み処理
-    showIndicator(MLSResource.CF_Loading);
-    Task.Run(async () =>
-    {
-      int tryNum = 0;
-      isInitialized = false;
-      while (!isInitialized)
-      {
-        //5回失敗したらエラーで戻る
-        if (5 <= tryNum)
-        {
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            DisplayAlert("Alert", MLSResource.CF_LoadingError, "OK");
-            Navigation.PopAsync();
-          });
-        }
-        tryNum++;
-
-        try
-        {
-          //補正係数読み込みコマンド
-          MLXBee.SendSerialData(Encoding.ASCII.GetBytes("\rLCF\r"));
-          await Task.Delay(500);
-        }
-        catch { }
-      }
-    });
-  }
-
-  protected override void OnDisappearing()
-  {
-    base.OnDisappearing();
-
-    //XBeeイベント解除
-    MLXBee.SerialDataReceived -= MLXBee_SerialDataReceived;
-
-    //MLoggerイベント解除
-    Logger.CorrectionFactorsReceivedEvent -= Logger_CorrectionFactorsReceivedEvent;
-  }
+  #endregion
 
   #region Entry操作時の処理
 
@@ -138,9 +83,9 @@ public partial class CFSetting : ContentPage
     if (isEdited)
     {
       if (await DisplayAlert("Alert", MLSResource.CF_Discard, "OK", "Cancel"))
-        await Navigation.PopAsync();
+        await Shell.Current.GoToAsync("..");
     }
-    else await Navigation.PopAsync();
+    else await Shell.Current.GoToAsync("..");
   }
 
   private void Set_Clicked(object sender, EventArgs e)
@@ -217,33 +162,79 @@ public partial class CFSetting : ContentPage
     }
 
     if (hasError) DisplayAlert("Alert", errMsg, "OK");
-    else
-    {
-      //補正係数設定コマンドを送信
-      Task.Run(() =>
-      {
-        try
-        {
-          MLXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeCorrectionFactorsSettingCommand
-          (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV)));
-        }
-        catch (Exception ex)
-        {
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            DisplayAlert("Alert", ex.Message, "OK");
-            Navigation.PopAsync();
-          });
+    else 
+      setCFactor(MLogger.MakeCorrectionFactorsSettingCommand
+          (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV));
+  }
 
-          /*Device.BeginInvokeOnMainThread(() =>
+  private void setCFactor(string command)
+  {
+    MLUtility.Logger.HasCorrectionFactorsReceived = false;
+
+    //インジケータ表示
+    showIndicator(MLSResource.CF_Setting);
+
+    Task.Run(async () =>
+    {
+      try
+      {
+        int tryNum = 0;
+        while (!MLUtility.Logger.HasCorrectionFactorsReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
           {
-            DisplayAlert("Alert", ex.Message, "OK");
-            Navigation.PopAsync();
-          });*/
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
+              return;
+            });
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
+
+          await Task.Delay(500);
         }
-      });
-    }
+
+        //補正係数を反映
+        loadCorrectionFactors();
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
+  }
+
+  private void loadCorrectionFactors()
+  {
+    cA_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
+    cB_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
+
+    cA_hmd.Text = MLUtility.Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
+    cB_hmd.Text = MLUtility.Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
+
+    cA_glb.Text = MLUtility.Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
+    cB_glb.Text = MLUtility.Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
+
+    cA_vel.Text = MLUtility.Logger.Velocity.CorrectionFactorA.ToString("F3");
+    cB_vel.Text = MLUtility.Logger.Velocity.CorrectionFactorB.ToString("F3");
+    vel_0V.Text = MLUtility.Logger.VelocityMinVoltage.ToString("F3");
+
+    cA_lux.Text = MLUtility.Logger.Illuminance.CorrectionFactorA.ToString("F3");
+    cB_lux.Text = MLUtility.Logger.Illuminance.CorrectionFactorB.ToString("F0");
+
+    resetLabelColor();
+
+    isEdited = false;
+    hideIndicator();
   }
 
   private void resetLabelColor()
@@ -253,55 +244,6 @@ public partial class CFSetting : ContentPage
       lbl_dbt.TextColor = lbl_hmd.TextColor = lbl_glb.TextColor = lbl_vel.TextColor = lbl_lux.TextColor = Colors.Black;
     });
     isEdited = false;
-  }
-
-
-  #endregion
-
-  #region 通信処理
-
-  private void MLXBee_SerialDataReceived(object sender, SerialDataReceivedEventArgs e)
-  {
-    //受信データを追加
-    Logger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
-
-    //コマンド処理
-    while (Logger.HasCommand)
-    {
-      try
-      {
-        Logger.SolveCommand();
-      }
-      catch { }
-    }
-  }
-
-  private void Logger_CorrectionFactorsReceivedEvent(object sender, EventArgs e)
-  {
-    Application.Current.Dispatcher.Dispatch(() =>
-    {
-      cA_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
-      cB_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
-
-      cA_hmd.Text = Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
-      cB_hmd.Text = Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
-
-      cA_glb.Text = Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
-      cB_glb.Text = Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
-
-      cA_vel.Text = Logger.Velocity.CorrectionFactorA.ToString("F3");
-      cB_vel.Text = Logger.Velocity.CorrectionFactorB.ToString("F3");
-      vel_0V.Text = Logger.VelocityMinVoltage.ToString("F3");
-
-      cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
-      cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");
-
-      resetLabelColor();
-
-      isEdited = false;
-      isInitialized = true;
-      hideIndicator();
-    });
   }
 
   #endregion

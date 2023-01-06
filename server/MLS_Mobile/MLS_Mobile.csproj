@@ -50,29 +50,29 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net7.0-ios'">
-	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
-	  <ProvisioningType>automatic</ProvisioningType>
+	  <CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+	  <CodesignProvision>mls_dist</CodesignProvision>
+	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
-	  <ApplicationVersion>9</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.7</ApplicationDisplayVersion>
+	  <ApplicationVersion>10</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
-	  <ApplicationVersion>9</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.7</ApplicationDisplayVersion>
+	  <ApplicationVersion>10</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
-	  <ApplicationVersion>9</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.7</ApplicationDisplayVersion>
+	  <ApplicationVersion>10</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.6</ApplicationDisplayVersion>
-	  <ApplicationVersion>9</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.7</ApplicationDisplayVersion>
+	  <ApplicationVersion>10</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>

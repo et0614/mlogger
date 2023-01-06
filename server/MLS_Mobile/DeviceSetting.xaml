@@ -4,101 +4,112 @@
              x:Class="MLS_Mobile.DeviceSetting"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.DS_Title}">
-    <ScrollView Orientation="Vertical">
-        <StackLayout Padding="15">
+    <Grid>
+        <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{StaticResource Lightest_G}">
+            <StackLayout Padding="15">
 
-            <!--測定設定-->
-            <Label Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
-            <Grid Margin="10,5,0,20"
+                <!--測定設定-->
+                <Label Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
+                <Grid Margin="10,5,0,20"
                   RowDefinitions="40,40,40,40,Auto"
                   ColumnDefinitions="60,*,80,30">
 
-                <!--温湿度計-->
-                <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_th" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_th" Text="{x:Static res:MLSResource.DS_TemperatureAndHumidity}" VerticalTextAlignment="Center" LineBreakMode="WordWrap"/>
-                <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
-                    <Entry x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                </Border>
-                <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
+                    <!--温湿度計-->
+                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_th" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_th" Text="{x:Static res:MLSResource.DS_TemperatureAndHumidity}" VerticalTextAlignment="Center" LineBreakMode="WordWrap"/>
+                    <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
+                        <Entry x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                    </Border>
+                    <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
-                <!--グローブ温度計-->
-                <Switch Grid.Row="1" Grid.Column="0" x:Name="cbx_glb" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_glb" Text="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="Center"/>
-                <Border Grid.Row="1" Grid.Column="2" Margin="5,2,5,2">
-                    <Entry x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                </Border>
-                <Label Grid.Row="1" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
+                    <!--グローブ温度計-->
+                    <Switch Grid.Row="1" Grid.Column="0" x:Name="cbx_glb" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_glb" Text="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="Center"/>
+                    <Border Grid.Row="1" Grid.Column="2" Margin="5,2,5,2">
+                        <Entry x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                    </Border>
+                    <Label Grid.Row="1" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
-                <!--微風速計-->
-                <Switch Grid.Row="2" Grid.Column="0" x:Name="cbx_vel" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_vel" Text="{x:Static res:MLSResource.Velocity}"  VerticalTextAlignment="Center"/>
-                <Border Grid.Row="2" Grid.Column="2" Margin="5,2,5,2">
-                    <Entry x:Name="ent_vel" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                </Border>
-                <Label Grid.Row="2" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
+                    <!--微風速計-->
+                    <Switch Grid.Row="2" Grid.Column="0" x:Name="cbx_vel" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_vel" Text="{x:Static res:MLSResource.Velocity}"  VerticalTextAlignment="Center"/>
+                    <Border Grid.Row="2" Grid.Column="2" Margin="5,2,5,2">
+                        <Entry x:Name="ent_vel" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                    </Border>
+                    <Label Grid.Row="2" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
-                <!--照度計-->
-                <Switch Grid.Row="3" Grid.Column="0" x:Name="cbx_lux" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                <Label Grid.Row="3" Grid.Column="1" x:Name="lbl_lux" Text="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="Center"/>
-                <Border Grid.Row="3" Grid.Column="2" Margin="5,2,5,2">
-                    <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                </Border>
-                <Label Grid.Row="3" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
+                    <!--照度計-->
+                    <Switch Grid.Row="3" Grid.Column="0" x:Name="cbx_lux" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="3" Grid.Column="1" x:Name="lbl_lux" Text="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="Center"/>
+                    <Border Grid.Row="3" Grid.Column="2" Margin="5,2,5,2">
+                        <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                    </Border>
+                    <Label Grid.Row="3" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
-                <!--設定ボタン-->
-                <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" HorizontalOptions="End">
-                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="LoadButton_Clicked">
+                    <!--設定ボタン-->
+                    <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" HorizontalOptions="End">
+                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="LoadButton_Clicked">
+                            <Button.ImageSource>
+                                <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            </Button.ImageSource>
+                        </Button>
+                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="SaveButton_Clicked">
+                            <Button.ImageSource>
+                                <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            </Button.ImageSource>
+                        </Button>
+                    </HorizontalStackLayout>
+
+                </Grid>
+
+                <!--MLoggerとの通信-->
+                <Label Text="{x:Static res:MLSResource.DS_Communicate}" FontSize="Subtitle"/>
+                <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
+                    <!--ロギング開始-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
                     </Button>
-                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="SaveButton_Clicked">
+                    <!--SDカード書き込み-->
+                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btnSDLogging" Text="{x:Static res:MLSResource.DS_SDLogging}" Clicked="SDButton_Clicked" IsVisible="false" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                    <!--補正係数の設定-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CFactor}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                </StackLayout>
+
+                <!--MLoggerの基本情報-->
+                <Label Text="{x:Static res:MLSResource.DS_Info}" FontSize="Subtitle"/>
+                <Label x:Name="spc_name" Margin="10,5,0,0" FontSize="16"/>
+                <Label x:Name="spc_localName" Margin="10,0,0,0" FontSize="16"/>
+                <Label x:Name="spc_xbadds" Margin="10,0,0,0" FontSize="16"/>
+                <Label x:Name="spc_vers" Margin="10,0,0,0" FontSize="16"/>
+                <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" HorizontalOptions="End">
+                    <Button Margin="5,10,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetName}" Clicked="SetNameButton_Clicked">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf5b7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
                     </Button>
                 </HorizontalStackLayout>
-                
-            </Grid>
 
-            <!--MLoggerとの通信-->
-            <Label Text="{x:Static res:MLSResource.DS_Communicate}" FontSize="Subtitle"/>
-            <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
-                <!--ロギング開始-->
-                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
-                <!--SDカード書き込み-->
-                <Button Margin="5" ContentLayout="Left, 20" x:Name="btnSDLogging" Text="{x:Static res:MLSResource.DS_SDLogging}" Clicked="SDButton_Clicked" IsVisible="false" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
-                <!--補正係数の設定-->
-                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CFactor}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
             </StackLayout>
+        </ScrollView>
 
-            <!--MLoggerの基本情報-->
-            <Label Text="{x:Static res:MLSResource.DS_Info}" FontSize="Subtitle"/>
-            <Label x:Name="spc_name" Margin="10,5,0,0" FontSize="16"/>
-            <Label x:Name="spc_localName" Margin="10,0,0,0" FontSize="16"/>
-            <Label x:Name="spc_xbadds" Margin="10,0,0,0" FontSize="16"/>
-            <Label x:Name="spc_mcadds" Margin="10,0,0,0" FontSize="16"/>
-            <Label x:Name="spc_vers" Margin="10,0,0,0" FontSize="16"/>
-            <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" HorizontalOptions="End">
-                <Button Margin="5,10,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetName}" Clicked="SetNameButton_Clicked">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf5b7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
-            </HorizontalStackLayout>
-
-        </StackLayout>
-    </ScrollView>
+        <!--インジケータ-->
+        <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
+        <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
+            <StackLayout BackgroundColor="White">
+                <ActivityIndicator Color="Black" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+            </StackLayout>
+        </Frame>
+        <!--インジケータここまで-->
+    </Grid>
 </ContentPage>
