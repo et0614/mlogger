@@ -708,8 +708,8 @@ namespace MLLib
     /// <exception cref="Exception"></exception>
     public static string MakeChangeLoggerNameCommand(string name)
     {
-      //半角文字のみとする
-      Regex re = new Regex(@"[^-+*a-zA-Z0-9]"); // 「英数字と-、+、*」以外  
+      //半角文字のみとする 
+      Regex re = new Regex(@"[^a-zA-Z\w\d\s]"); // 「英数字,半角スペース,アンダースコア」以外  
       name = re.Replace(name, "");
 
       //20字以内に縮めた上で右端を半角スペースで埋める
