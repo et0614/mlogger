@@ -15,6 +15,8 @@ public partial class MLoggerScanner : ContentPage
 
   #region インスタンス変数・プロパティ・定数宣言
 
+  private bool bleChecked = false;
+
   /// <summary>XBeeを探索する時間[msec]</summary>
   private const int SCAN_TIME = 1000;
 
@@ -45,12 +47,18 @@ public partial class MLoggerScanner : ContentPage
 
   #region ロード・アンロードイベント
 
-  protected override void OnAppearing()
+  protected override async void OnAppearing()
   {
     base.OnAppearing();
 
     //スキャン実行
     refView.Command.Execute(null);
+
+    if (!bleChecked)
+    {
+      await checkBLEPermission();
+      bleChecked = true;
+    }
   }
 
   private void scanXBees()
@@ -60,11 +68,11 @@ public partial class MLoggerScanner : ContentPage
 
     //Bluetoothを用意
     IBluetoothLE bluetoothLE = CrossBluetoothLE.Current;
-    if (bluetoothLE.State == BluetoothState.Off)
+    /*if (bluetoothLE.State == BluetoothState.Off)
     {
-      DisplayAlert("Alert", MLSResource.SC_Bluetooth, "OK");
+      Shell.Current.DisplayAlert("Alert", MLSResource.SC_Bluetooth, "OK");
       return;
-    }
+    }*/
 
     //アダプタを用意
     IAdapter adapter = bluetoothLE.Adapter;
@@ -134,7 +142,7 @@ public partial class MLoggerScanner : ContentPage
           DisplayAlert("Alert", bex.Message, "OK");
         });
       }
-      finally 
+      finally
       {
         //インジケータを隠す
         Application.Current.Dispatcher.Dispatch(() =>
@@ -147,7 +155,20 @@ public partial class MLoggerScanner : ContentPage
 
   #endregion
 
-  #region インジケータの操作
+  private async Task checkBLEPermission()
+  {
+#if ANDROID
+    var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+    if (status == PermissionStatus.Granted) return;
+
+    if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
+      await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_Bluetooth, "OK");
+
+    status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+#endif
+  }
+
+#region インジケータの操作
 
   /// <summary>インジケータを表示する</summary>
   private void showIndicator(string message)
@@ -168,6 +189,6 @@ public partial class MLoggerScanner : ContentPage
     });
   }
 
-  #endregion
+#endregion
 
 }

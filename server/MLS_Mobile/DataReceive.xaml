@@ -103,9 +103,17 @@
                     <Slider Grid.Row="3" Grid.Column="0" x:Name="metSlider" Maximum="8" Margin="30,0,0,0" Value="{Binding MetValue}" ValueChanged="slider_ValueChanged"/>
                     <Label Grid.Row="3" Grid.Column="1" Text="{Binding Source={x:Reference metSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" TextColor="black"/>
 
-                    <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnCloth" Clicked="CloBtn_Clicked"/>
+                    <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectClothes}" x:Name="btnCloth" Clicked="CloBtn_Clicked" ContentLayout="Left, 10">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf553;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
 
-                    <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectActivity}" x:Name="btnActivity" Clicked="ActBtn_Clicked"/>
+                    <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,10,0" Text="{x:Static res:TCResource.SelectActivity}" x:Name="btnActivity" Clicked="ActBtn_Clicked" ContentLayout="Left, 10">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf70c;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                 </Grid>
             </StackLayout>
         </ScrollView>

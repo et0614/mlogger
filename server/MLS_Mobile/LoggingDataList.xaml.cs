@@ -1,13 +1,12 @@
 namespace MLS_Mobile;
 
-using Microsoft.Maui.Storage;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
 public partial class LoggingDataList : ContentPage
 {
 
-  public ObservableCollection<logFile> LogFiles { get; set; } = new ObservableCollection<logFile>();
+  public ObservableCollection<LogFileGroup> LogFiles { get; set; } = new ObservableCollection<LogFileGroup>();
 
   public LoggingDataList()
 	{
@@ -18,15 +17,23 @@ public partial class LoggingDataList : ContentPage
 
   public void UpdateLogFiles()
   {
-    LogFiles.Clear();
-
+    //ファイルリストを作成
     string[] files = MLUtility.GetDataFiles();
+    SortedDictionary<string, List<LogFile>> lfDict = new SortedDictionary<string, List<LogFile>>();
     foreach (string file in files)
     {
       string fName = file.Substring(file.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-      if (fName.StartsWith("MLogger"))
-        LogFiles.Add(new logFile(fName, this));
+      if (fName.StartsWith("MLogger_"))
+      {
+        LogFile lf = new LogFile(fName, this);
+        if (!lfDict.ContainsKey(lf.MLoggerName)) lfDict.Add(lf.MLoggerName, new List<LogFile>());
+        lfDict[lf.MLoggerName].Add(lf);
+      }
     }
+
+    LogFiles.Clear();
+    foreach (string key in lfDict.Keys)
+      LogFiles.Add(new LogFileGroup(key, new List<LogFile>(lfDict[key].OrderBy(n => n.DTime))));
   }
 
   protected override void OnAppearing()
@@ -42,12 +49,59 @@ public partial class LoggingDataList : ContentPage
 
     var navigationParameter = new Dictionary<string, object>
     {
-        { "FileName", ((logFile)e.CurrentSelection[0]).FileName }
+        { "FileName", ((LogFile)e.CurrentSelection[0]).FileName }
     };
     Shell.Current.GoToAsync($"LoggingData", navigationParameter);
   }
 
   #region インナークラス定義
+
+  public class LogFileGroup : List<LogFile>
+  {
+    public string MLoggerName { get; private set; }
+
+    public LogFileGroup(string mlName, List<LogFile> logFiles) : base(logFiles)
+    {
+      MLoggerName = mlName;
+    }
+  }
+
+  public class LogFile
+  {
+    public LogFile(string fName, LoggingDataList parent)
+    {
+      FileName = fName;
+      Parent = parent;
+
+      string[] bf = fName.Split('_');
+      MLoggerName = "MLogger_" + bf[1];
+      DTime = new DateTime(int.Parse(bf[2].Substring(0, 4)), int.Parse(bf[2].Substring(4, 2)), int.Parse(bf[2].Substring(6, 2)));
+
+      FileSize = MLUtility.GetFileSize(FileName);
+
+      DeleteCommand = new delCommand();
+      CopyCommand = new copyCommand();
+    }
+
+    public LoggingDataList Parent { get; private set; }
+
+
+    /// <summary>ファイル名称を取得する</summary>
+    public string FileName { get; private set; }
+
+    /// <summary>ファイルサイズ[byte]を取得する</summary>
+    public long FileSize { get; private set; }
+
+    public ICommand DeleteCommand { get; private set; }
+
+    public ICommand CopyCommand { get; private set; }
+
+    /// <summary>計測機器名称を取得する</summary>
+    public string MLoggerName { get; private set; }
+
+    /// <summary>計測日を取得する</summary>
+    public DateTime DTime { get; private set; }
+  }
 
   public class delCommand : ICommand
   {
@@ -59,7 +113,7 @@ public partial class LoggingDataList : ContentPage
 
     public void Execute(object parameter)
     {
-      logFile lf = (logFile)parameter;
+      LogFile lf = (LogFile)parameter;
       MLUtility.DeleteDataFile(lf.FileName);
       lf.Parent.UpdateLogFiles();
     }
@@ -75,40 +129,9 @@ public partial class LoggingDataList : ContentPage
 
     public void Execute(object parameter)
     {
-      logFile lf = (logFile)parameter;
+      LogFile lf = (LogFile)parameter;
       Clipboard.Default.SetTextAsync(LoggingData.MakeClipData(lf.FileName));
     }
-  }
-
-  public class logFile
-  {
-    public logFile(string fName, LoggingDataList parent)
-    {
-      FileName = fName;
-      Parent = parent;
-
-      string[] bf = fName.Split('_');
-      MLoggerName = "MLogger_" + bf[1];
-      DTime = new DateTime(int.Parse(bf[2].Substring(0, 4)), int.Parse(bf[2].Substring(4, 2)), int.Parse(bf[2].Substring(6, 2)));
-
-      DeleteCommand = new delCommand();
-      CopyCommand = new copyCommand();
-    }
-
-    public LoggingDataList Parent { get; private set; }
-
-    public string Name { get { return MLoggerName + ": " + DTime.ToString("yyyy/MM/dd"); } }
-
-    public string FileName { get; private set; }
-
-    public ICommand DeleteCommand { get; private set; }
-
-    public ICommand CopyCommand { get; private set; }
-
-    public string MLoggerName { get; private set; }
-
-    public DateTime DTime { get; private set; }
-
   }
 
   #endregion

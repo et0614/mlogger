@@ -34,10 +34,7 @@ public partial class CFSetting : ContentPage
 
     vel_voltage.Text = MLSResource.CF_VelocityVoltage;
 
-    btnBack.Text = MLSResource.CF_Back;
-    btnSet.Text = MLSResource.CF_Set;
-
-    loadCorrectionFactors();
+    applyCorrectionFactors();
   }
 
   #endregion
@@ -78,17 +75,12 @@ public partial class CFSetting : ContentPage
 
   #region ボタンクリックイベント発生時の処理
 
-  private async void Cancel_Clicked(object sender, EventArgs e)
+  private void Load_Clicked(object sender, EventArgs e)
   {
-    if (isEdited)
-    {
-      if (await DisplayAlert("Alert", MLSResource.CF_Discard, "OK", "Cancel"))
-        await Shell.Current.GoToAsync("..");
-    }
-    else await Shell.Current.GoToAsync("..");
+    loadCorrectionFactors();
   }
 
-  private void Set_Clicked(object sender, EventArgs e)
+  private void Save_Clicked(object sender, EventArgs e)
   {
     if (!isEdited) return;
 
@@ -163,11 +155,11 @@ public partial class CFSetting : ContentPage
 
     if (hasError) DisplayAlert("Alert", errMsg, "OK");
     else 
-      setCFactor(MLogger.MakeCorrectionFactorsSettingCommand
+      saveCorrectionFactors(MLogger.MakeCorrectionFactorsSettingCommand
           (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV));
   }
 
-  private void setCFactor(string command)
+  private void saveCorrectionFactors(string command)
   {
     MLUtility.Logger.HasCorrectionFactorsReceived = false;
 
@@ -198,8 +190,11 @@ public partial class CFSetting : ContentPage
           await Task.Delay(500);
         }
 
-        //補正係数を反映
-        loadCorrectionFactors();
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          applyCorrectionFactors();
+        });
       }
       catch { }
       finally
@@ -214,6 +209,55 @@ public partial class CFSetting : ContentPage
   }
 
   private void loadCorrectionFactors()
+  {
+    MLUtility.Logger.HasCorrectionFactorsReceived = false;
+
+    //インジケータ表示
+    showIndicator(MLSResource.CF_Setting);
+
+    Task.Run(async () =>
+    {
+      try
+      {
+        int tryNum = 0;
+        while (!MLUtility.Logger.HasCorrectionFactorsReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
+              return;
+            });
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
+
+          await Task.Delay(500);
+        }
+
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          applyCorrectionFactors();
+        });
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
+  }
+
+  private void applyCorrectionFactors()
   {
     cA_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
     cB_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");

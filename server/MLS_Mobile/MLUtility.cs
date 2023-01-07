@@ -163,9 +163,18 @@ namespace MLS_Mobile
       string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
         + Path.DirectorySeparatorChar + fileName;
 
+      //先頭の1000行を読み込む
+      int lines = 0;
+      StringBuilder sBuilder = new StringBuilder();
       using (StreamReader sReader = new StreamReader(filePath, Encoding.UTF8))
       {
-        return sReader.ReadToEnd();
+        string buff;
+        while ((buff = sReader.ReadLine()) != null && lines < 1000)
+        {
+          sBuilder.AppendLine(buff);
+          lines++;
+        }
+        return sBuilder.ToString();
       }
     }
 
@@ -186,7 +195,23 @@ namespace MLS_Mobile
     {
       string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
         + Path.DirectorySeparatorChar + fileName;
-      File.Delete(filePath);
+      if(File.Exists(filePath))
+        File.Delete(filePath);
+    }
+
+    /// <summary>ファイルサイズ[byte]を取得する</summary>
+    /// <param name="fileName"></param>
+    /// <returns></returns>
+    public static long GetFileSize(string fileName)
+    {
+      string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
+        + Path.DirectorySeparatorChar + fileName;
+      if (File.Exists(filePath))
+      {
+        FileInfo file = new FileInfo(filePath);
+        return file.Length;
+      }
+      return 0;
     }
 
     #endregion

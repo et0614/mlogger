@@ -9,7 +9,7 @@
 
             <!--乾球温度-->
             <Label FontSize="20" x:Name="lbl_dbt"/>
-            <Grid Margin="10,0,0,20">
+            <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
@@ -32,7 +32,7 @@
 
             <!--相対湿度-->
             <Label FontSize="20" x:Name="lbl_hmd"/>
-            <Grid Margin="10,0,0,20">
+            <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
@@ -55,7 +55,7 @@
 
             <!--グローブ温度-->
             <Label FontSize="20" x:Name="lbl_glb"/>
-            <Grid Margin="10,0,0,20">
+            <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
@@ -78,7 +78,7 @@
 
             <!--微風速-->
             <Label FontSize="20" x:Name="lbl_vel"/>
-            <Grid Margin="10,0,0,20">
+            <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                     <RowDefinition/>
@@ -91,7 +91,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Grid.Row="0" Grid.Column="0" x:Name="cV_vel" VerticalOptions="Center" HorizontalOptions="Center"/>
-                <Border Grid.Row="0" Grid.Column="1">
+                <Border Grid.Row="0" Grid.Column="1" >
                     <Entry x:Name="cA_vel" VerticalOptions="Center" HorizontalOptions="Fill" Keyboard="Numeric" TextChanged="vel_TextChanged" HorizontalTextAlignment="Center"/>
                 </Border>
                 <Label Grid.Row="0" Grid.Column="2" x:Name="ms_vel" VerticalOptions="Center" HorizontalOptions="Center"/>
@@ -106,7 +106,7 @@
 
             <!--照度-->
             <Label FontSize="20" x:Name="lbl_lux"/>
-            <Grid Margin="10,0,0,20">
+            <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
@@ -127,19 +127,19 @@
                 </Border>
             </Grid>
 
-            <Grid Margin="0,0,0,20">
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Row="0" Grid.Column="0" x:Name="btnBack" BorderWidth="1" VerticalOptions="Center" HorizontalOptions="Fill" FontSize="Large" Clicked="Cancel_Clicked"/>
-                <Button Grid.Row="0" Grid.Column="2" x:Name="btnSet" BorderWidth="1" VerticalOptions="Center" HorizontalOptions="Fill" FontSize="Large" Clicked="Set_Clicked"/>
-            </Grid>
+            <!--設定ボタン-->
+            <HorizontalStackLayout HorizontalOptions="End">
+                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="Load_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="Save_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+            </HorizontalStackLayout>
 
         </StackLayout>
 

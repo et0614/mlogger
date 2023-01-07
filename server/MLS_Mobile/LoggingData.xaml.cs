@@ -12,6 +12,8 @@ public partial class LoggingData : ContentPage
 
   #region インスタンス変数・プロパティ
 
+  private bool isInitialized = false;
+
   private bool isFormatted = false;
 
   public string FileName { get; set; }
@@ -27,19 +29,47 @@ public partial class LoggingData : ContentPage
   public LoggingData()
 	{
 		InitializeComponent();
+
+    BindingContext = this;
   }
 
   protected override void OnAppearing()
   {
     base.OnAppearing();
 
-    string[] bf = FileName.Split('_');
-    DataTitle = "MLogger_" + bf[1] + ": "
-      + bf[2].Substring(0, 4) + "/" + bf[2].Substring(4, 2) + "/" + bf[2].Substring(6, 2);
+    if (!isInitialized)
+    {
+      isInitialized = true;
 
-    ClipData = MakeClipData(FileName);
+      string[] bf = FileName.Split('_');
+      DataTitle = "MLogger_" + bf[1] + ": "
+        + bf[2].Substring(0, 4) + "/" + bf[2].Substring(4, 2) + "/" + bf[2].Substring(6, 2);
+      ClipData = MakeClipData(FileName);
 
-    BindingContext = this;
+      //テーブル表示
+      showIndicator(MLSResource.LD_Formatting);
+      Task.Run(() =>
+      {
+        try
+        {
+          Grid grd = makeGrid();
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            lbl_data.IsVisible = false;
+            myStack.Children.Add(grd);
+          });
+        }
+        catch { }
+        finally
+        {
+          //インジケータを隠す
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            hideIndicator();
+          });
+        }
+      });
+    }
   }
 
   #endregion
@@ -143,36 +173,6 @@ public partial class LoggingData : ContentPage
       MLUtility.DeleteDataFile(FileName);
       await Shell.Current.GoToAsync("..");
     }
-  }
-
-  private void format_Clicked(object sender, EventArgs e)
-  {
-    if (isFormatted) return;
-
-    showIndicator(MLSResource.LD_Formatting);
-
-    Task.Run(() =>
-    {
-      try
-      {
-        Grid grd = makeGrid();
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          btnFormat.IsEnabled = false;
-          lbl_data.IsVisible = false;
-          myStack.Children.Add(grd);
-        });        
-      }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
   }
 
   #endregion

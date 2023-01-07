@@ -4,8 +4,9 @@
              x:Class="MLS_Mobile.LoggingDataList"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.LD_List}">
-    <StackLayout>
-        <CollectionView x:Name="fileList" ItemsSource="{Binding LogFiles}" SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always">
+    <Grid>
+        <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}"
+                        SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <SwipeView>
@@ -15,30 +16,49 @@
                                            BackgroundColor="{StaticResource Dark_O}"
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
-                                    <!--<SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xf294;" FontFamily="FAB" Size="10" Color="White"/>
-                                    </SwipeItem.IconImageSource>-->
+                                    <SwipeItem.IconImageSource>
+                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="24" Color="White"/>
+                                    </SwipeItem.IconImageSource>
                                 </SwipeItem>
                                 <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
                                            BackgroundColor="{StaticResource Light_G}"
                                            Command="{Binding CopyCommand}"
                                            CommandParameter="{Binding .}">
+                                    <SwipeItem.IconImageSource>
+                                        <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="24" Color="White"/>
+                                    </SwipeItem.IconImageSource>
                                 </SwipeItem>
                             </SwipeItems>
                         </SwipeView.RightItems>
-                        <Grid Padding="5" 
+                        <Grid Padding="5"
                               RowDefinitions="Auto"
-                              ColumnDefinitions="Auto" 
+                              ColumnDefinitions="Auto, Auto" 
                               RowSpacing="5"
                               ColumnSpacing="5">
                             <Label Grid.Row="0" Grid.Column="0"
-                                   Text="{Binding Name}" 
-                                   FontSize="18" Padding="5"
+                                   Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
+                                   FontSize="18" Padding="10,0"
                                    HorizontalOptions="Start" VerticalOptions="Center"/>
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding Path=FileSize, StringFormat='{0} bytes'}" 
+                                   FontSize="12" Padding="10,0"
+                                   HorizontalOptions="Start" VerticalOptions="Center"
+                                   TextColor="Gray"/>
                         </Grid>
-                    </SwipeView>                    
+                    </SwipeView>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
+
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate>
+                    <Label Text="{Binding MLoggerName}"
+                           TextColor="Black"
+                           BackgroundColor="Transparent"
+                           FontSize="20"
+                           FontAttributes="Bold" Padding="10" />
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
+
             <CollectionView.EmptyView>
                 <Grid 
                     Padding="5" 
@@ -55,5 +75,5 @@
                 </Grid>
             </CollectionView.EmptyView>
         </CollectionView>
-    </StackLayout>
+    </Grid>
 </ContentPage>
