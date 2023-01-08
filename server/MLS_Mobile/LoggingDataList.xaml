@@ -4,76 +4,81 @@
              x:Class="MLS_Mobile.LoggingDataList"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.LD_List}">
-    <Grid>
-        <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}"
+    <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}"
                         SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <SwipeView>
-                        <SwipeView.RightItems>
-                            <SwipeItems Mode="Reveal">
-                                <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}" 
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <SwipeView BackgroundColor="{StaticResource Lightest_G}">
+                    <SwipeView.RightItems>
+                        <SwipeItems Mode="Reveal">
+                            <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}" 
                                            BackgroundColor="{StaticResource Dark_O}"
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
-                                    <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="24" Color="White"/>
-                                    </SwipeItem.IconImageSource>
-                                </SwipeItem>
-                                <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
+                                <SwipeItem.IconImageSource>
+                                    <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="24" Color="White"/>
+                                </SwipeItem.IconImageSource>
+                            </SwipeItem>
+                            <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
                                            BackgroundColor="{StaticResource Light_G}"
                                            Command="{Binding CopyCommand}"
                                            CommandParameter="{Binding .}">
-                                    <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="24" Color="White"/>
-                                    </SwipeItem.IconImageSource>
-                                </SwipeItem>
-                            </SwipeItems>
-                        </SwipeView.RightItems>
+                                <SwipeItem.IconImageSource>
+                                    <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="24" Color="White"/>
+                                </SwipeItem.IconImageSource>
+                            </SwipeItem>
+                        </SwipeItems>
+                    </SwipeView.RightItems>
+                    <Border Margin="20,0,20,0" Stroke="{StaticResource Dark_G}">
                         <Grid Padding="5"
                               RowDefinitions="Auto"
                               ColumnDefinitions="Auto, Auto" 
                               RowSpacing="5"
-                              ColumnSpacing="5">
-                            <Label Grid.Row="0" Grid.Column="0"
-                                   Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
-                                   FontSize="18" Padding="10,0"
-                                   HorizontalOptions="Start" VerticalOptions="Center"/>
-                            <Label Grid.Row="0" Grid.Column="1"
-                                   Text="{Binding Path=FileSize, StringFormat='{0} bytes'}" 
-                                   FontSize="12" Padding="10,0"
-                                   HorizontalOptions="Start" VerticalOptions="Center"
-                                   TextColor="Gray"/>
-                        </Grid>
-                    </SwipeView>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
+                              ColumnSpacing="5"
+                              BackgroundColor="White">
 
-            <CollectionView.GroupHeaderTemplate>
-                <DataTemplate>
+                            <Label Grid.Row="0" Grid.Column="0"
+                               Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
+                               FontSize="18" Padding="10,0"
+                               HorizontalOptions="Start" VerticalOptions="Center"/>
+                            <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Path=FileSize, StringFormat='{0} bytes'}" 
+                               FontSize="12" Padding="10,0"
+                               HorizontalTextAlignment="Start"
+                               HorizontalOptions="FillAndExpand" VerticalOptions="Center"
+                               TextColor="Gray"/>
+                        </Grid>
+                    </Border>
+                </SwipeView>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.GroupHeaderTemplate>
+            <DataTemplate>
+                <VerticalStackLayout>
                     <Label Text="{Binding MLoggerName}"
-                           TextColor="Black"
+                           TextColor="{StaticResource Darkest_G}"
                            BackgroundColor="Transparent"
                            FontSize="20"
-                           FontAttributes="Bold" Padding="10" />
-                </DataTemplate>
-            </CollectionView.GroupHeaderTemplate>
+                           FontAttributes="Bold" Padding="10,15,10,5" />
+                </VerticalStackLayout>
+            </DataTemplate>
+        </CollectionView.GroupHeaderTemplate>
 
-            <CollectionView.EmptyView>
-                <Grid 
+        <CollectionView.EmptyView>
+            <Grid 
                     Padding="5" 
                     RowDefinitions="Auto, *"
                     ColumnDefinitions="*" 
                     RowSpacing="5"
                     ColumnSpacing="5">
-                    <Label 
+                <Label 
                         Grid.Row="0" Grid.Column="0"
                         Text="{x:Static res:MLSResource.SC_Empty}" 
                         FontSize="18"
                         HorizontalOptions="Start"
                         VerticalOptions="Center" Padding="5"/>
-                </Grid>
-            </CollectionView.EmptyView>
-        </CollectionView>
-    </Grid>
+            </Grid>
+        </CollectionView.EmptyView>
+    </CollectionView>
 </ContentPage>

@@ -14,11 +14,7 @@ public partial class LoggingData : ContentPage
 
   private bool isInitialized = false;
 
-  private bool isFormatted = false;
-
   public string FileName { get; set; }
-
-  public string DataTitle { get; private set; }
 
   public string ClipData { get; private set; }
 
@@ -42,7 +38,7 @@ public partial class LoggingData : ContentPage
       isInitialized = true;
 
       string[] bf = FileName.Split('_');
-      DataTitle = "MLogger_" + bf[1] + ": "
+      this.Title = "MLogger_" + bf[1] + ": "
         + bf[2].Substring(0, 4) + "/" + bf[2].Substring(4, 2) + "/" + bf[2].Substring(6, 2);
       ClipData = MakeClipData(FileName);
 
@@ -52,11 +48,9 @@ public partial class LoggingData : ContentPage
       {
         try
         {
-          Grid grd = makeGrid();
           Application.Current.Dispatcher.Dispatch(() =>
           {
-            lbl_data.IsVisible = false;
-            myStack.Children.Add(grd);
+            makeGrid();
           });
         }
         catch { }
@@ -89,21 +83,8 @@ public partial class LoggingData : ContentPage
         MLUtility.LoadDataFile(fileName);
   }
 
-  private Grid makeGrid()
+  private void makeGrid()
   {
-    //表の形状を設定
-    ColumnDefinition colDef = new ColumnDefinition() { Width = new GridLength(80) };
-    Grid myGrid = new Grid()
-    {
-      BackgroundColor = Colors.ForestGreen,
-      Padding = new Thickness(1),
-      ColumnDefinitions = { colDef, colDef, colDef, colDef, colDef, colDef, colDef, colDef },
-      RowDefinitions = {
-        new RowDefinition() { Height = new GridLength(60) } ,
-        new RowDefinition()
-      }
-    };
-
     //全データを改行コードで分割
     string[] lines = ClipData.Split(Environment.NewLine);
 
@@ -111,7 +92,7 @@ public partial class LoggingData : ContentPage
     string[] bf = lines[0].Split(',');
     for (int j = 1; j < 9; j++)
     {
-      myGrid.Add(new Label
+      tableGrid.Add(new Label
       {
         Text = bf[j],
         BackgroundColor = Colors.White,
@@ -141,7 +122,7 @@ public partial class LoggingData : ContentPage
     }
     for (int i = 0; i < 8; i++)
     {
-      myGrid.Add(new Label
+      tableGrid.Add(new Label
       {
         Text = sBuilds[i].ToString().TrimEnd('\n'),
         BackgroundColor = Colors.White,
@@ -152,8 +133,6 @@ public partial class LoggingData : ContentPage
         Margin = new Thickness(1)
       }, i, 1);
     }
-
-    return myGrid;
   }
 
   #endregion
