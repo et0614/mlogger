@@ -1,23 +1,25 @@
 namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
+using System.Reflection.Metadata;
 using System.Windows.Input;
 
 public partial class LoggingDataList : ContentPage
 {
 
-  public ObservableCollection<LogFileGroup> LogFiles { get; set; } = new ObservableCollection<LogFileGroup>();
+  //public ObservableCollection<LogFileGroup> LogFiles { get; set; } = new ObservableCollection<LogFileGroup>();
 
   public LoggingDataList()
 	{
 		InitializeComponent();
+
+    UpdateLogFiles();
 
     BindingContext = this;
   }
 
   public void UpdateLogFiles()
   {
-    //ファイルリストを作成
     string[] files = MLUtility.GetDataFiles();
     SortedDictionary<string, List<LogFile>> lfDict = new SortedDictionary<string, List<LogFile>>();
     foreach (string file in files)
@@ -31,9 +33,11 @@ public partial class LoggingDataList : ContentPage
       }
     }
 
-    LogFiles.Clear();
+    //毎回新しいObservableCollectionを作っているが、本来は動的に変えるべき。ただ、2023.1.8現在、iOSにバグがあり、落ちる
+    ObservableCollection<LogFileGroup> logFiles = new ObservableCollection<LogFileGroup>();
     foreach (string key in lfDict.Keys)
-      LogFiles.Add(new LogFileGroup(key, new List<LogFile>(lfDict[key].OrderBy(n => n.DTime))));
+      logFiles.Add(new LogFileGroup(key, new List<LogFile>(lfDict[key].OrderBy(n => n.DTime))));
+    fileList.ItemsSource = logFiles;
   }
 
   protected override void OnAppearing()
@@ -58,6 +62,7 @@ public partial class LoggingDataList : ContentPage
 
   public class LogFileGroup : List<LogFile>
   {
+
     public string MLoggerName { get; private set; }
 
     public LogFileGroup(string mlName, List<LogFile> logFiles) : base(logFiles)
@@ -79,12 +84,13 @@ public partial class LoggingDataList : ContentPage
 
       FileSize = MLUtility.GetFileSize(FileName);
 
-      DeleteCommand = new delCommand();
-      CopyCommand = new copyCommand();
+      DeleteCommand = new Command<LogFile>(OnDeleteCommand);
+      CopyCommand = new Command<LogFile>(OnCopyCommand);
     }
 
-    public LoggingDataList Parent { get; private set; }
+    #region プロパティ
 
+    public LoggingDataList Parent { get; private set; }
 
     /// <summary>ファイル名称を取得する</summary>
     public string FileName { get; private set; }
@@ -92,45 +98,29 @@ public partial class LoggingDataList : ContentPage
     /// <summary>ファイルサイズ[byte]を取得する</summary>
     public long FileSize { get; private set; }
 
-    public ICommand DeleteCommand { get; private set; }
+    public Command<LogFile> DeleteCommand { get; private set; }
 
-    public ICommand CopyCommand { get; private set; }
+    public Command<LogFile> CopyCommand { get; private set; }
 
     /// <summary>計測機器名称を取得する</summary>
     public string MLoggerName { get; private set; }
 
     /// <summary>計測日を取得する</summary>
     public DateTime DTime { get; private set; }
-  }
 
-  public class delCommand : ICommand
-  {
+    #endregion
 
-    public event EventHandler CanExecuteChanged;
 
-    public bool CanExecute(object parameter)
-    { return true; }
-
-    public void Execute(object parameter)
+    private void OnDeleteCommand(LogFile logFile)
     {
-      LogFile lf = (LogFile)parameter;
-      MLUtility.DeleteDataFile(lf.FileName);
-      lf.Parent.UpdateLogFiles();
+      MLUtility.DeleteDataFile(logFile.FileName);
+      logFile.Parent.UpdateLogFiles();
     }
-  }
 
-  public class copyCommand : ICommand
-  {
-
-    public event EventHandler CanExecuteChanged;
-
-    public bool CanExecute(object parameter)
-    { return true; }
-
-    public void Execute(object parameter)
+    private void OnCopyCommand(LogFile logFile)
     {
-      LogFile lf = (LogFile)parameter;
-      Clipboard.Default.SetTextAsync(LoggingData.MakeClipData(lf.FileName));
+      Clipboard.Default.SetTextAsync
+        (LoggingData.MakeClipData(logFile.FileName));
     }
   }
 
