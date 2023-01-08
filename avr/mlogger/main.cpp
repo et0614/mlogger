@@ -14,6 +14,7 @@
  * 3.0.6	AHT20のエラー時のリセット処理を追加
  * 3.0.7	SDカード書き出しの省電力化
  * 3.0.8	SDカード書き出し時のLED点灯バグ修正
+ * 3.0.9	ロギング終了時の風速計停止処理忘れを修正
  */
 
 /**XBee端末の設定****************************************
@@ -349,7 +350,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.8\r");
+		my_xbee::bltx_chars("VER:3.0.9\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -729,6 +730,7 @@ ISR(RTC_PIT_vect)
 	}
 	else
 	{
+		sleep_anemo(); //風速計を停止 2023.01.09 Bugfix
 		wakeup_xbee(); //XBeeスリープ解除
 		_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
 		
