@@ -6,10 +6,10 @@
              Title="{x:Static res:MLSResource.LD_Title}">
 
     <Grid Margin="0" RowDefinitions="*,60" ColumnDefinitions="*,*">
-        <ScrollView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Orientation="Both" VerticalOptions="Fill" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
-            <Grid x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80,80"/>
+        <ScrollView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Orientation="Both" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
+            <Grid Padding="1" x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80,80"/>
         </ScrollView>
-        
+
         <Button Grid.Row="1" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Copy}" Clicked="copy_Clicked" ContentLayout="Left, 10" Margin="5">
             <Button.ImageSource>
                 <FontImageSource Glyph="&#xf0ea;" FontFamily="FAR" Size="24" Color="{StaticResource Dark_G}"/>
