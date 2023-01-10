@@ -573,7 +573,8 @@ namespace MLLib
     /// <summary>ロガー名称設定コマンド()を処理する</summary>
     private void solveLN()
     {
-      Name = NextCommand.Substring(4, 20).TrimEnd();
+      Name = NextCommand.Remove(0, 4).TrimEnd('\r');
+      Name = Name.TrimEnd();
 
       //イベント通知
       LoggerNameReceivedEvent?.Invoke(this, EventArgs.Empty);

@@ -116,15 +116,22 @@ public partial class LoggingData : ContentPage
         for (int j = 1; j < 9; j++)
         {
           if (i == 1) sBuilds[j - 1] = new StringBuilder("");
-          sBuilds[j - 1].Append(bf[j] + "\n");
+          if(i == lines.Length-1) sBuilds[j - 1].Append(bf[j]);
+          else sBuilds[j - 1].AppendLine(bf[j]);
         }
       }
     }
+    //データが少ない場合には空行を入れておく
+    if (lines.Length < 40)
+      for (int i = 0; i < 40 - lines.Length; i++)
+        for (int j = 1; j < 9; j++)
+          sBuilds[j - 1].AppendLine();
+
     for (int i = 0; i < 8; i++)
     {
       tableGrid.Add(new Label
       {
-        Text = sBuilds[i].ToString().TrimEnd('\n'),
+        Text = sBuilds[i].ToString(),
         BackgroundColor = Colors.White,
         HorizontalTextAlignment = TextAlignment.Center,
         VerticalTextAlignment = TextAlignment.Center,

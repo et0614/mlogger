@@ -97,7 +97,7 @@ volatile unsigned int my_eeprom::interval_AD3 = 60;
 volatile bool my_eeprom::startAuto = false;
 
 //ロガー名称
-char my_eeprom::mlName[21];
+char my_eeprom::mlName[20];
 
 //メモリを初期化する
 void initMemory()
@@ -174,7 +174,7 @@ void initMemory()
 	
 	//名前
 	eeprom_busy_wait();
-	eeprom_update_block("ML00000", EEP_NAME, 20);
+	eeprom_update_block("ML_0000", EEP_NAME, 20);
 	
 	//初期化フラグ
 	eeprom_busy_wait();
@@ -366,8 +366,8 @@ void my_eeprom::SetMeasurementSetting()
 //名称を書き込む
 void my_eeprom::SaveName()
 {
-	eeprom_busy_wait();
-	eeprom_update_block(mlName, EEP_NAME, sizeof(mlName));
+	eeprom_busy_wait();	
+	eeprom_update_block(mlName, EEP_NAME, 20);
 }
 
 //補正係数を読み込む

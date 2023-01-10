@@ -15,6 +15,7 @@
  * 3.0.7	SDカード書き出しの省電力化
  * 3.0.8	SDカード書き出し時のLED点灯バグ修正
  * 3.0.9	ロギング終了時の風速計停止処理忘れを修正
+ * 3.0.10	名称設定取得のバグを修正
  */
 
 /**XBee端末の設定****************************************
@@ -350,7 +351,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.9\r");
+		my_xbee::bltx_chars("VER:3.0.10\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -511,7 +512,7 @@ static void solve_command(void)
 	//Load Logger Name
 	else if(strncmp(command, "LLN", 3) == 0)
 	{
-		char name[21+4];
+		char name[21 + 4];
 		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
 		my_xbee::bltx_chars(name);
 	}

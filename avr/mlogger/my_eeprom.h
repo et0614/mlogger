@@ -24,7 +24,7 @@ class my_eeprom
 		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3;
 		
 		//–¼Ì
-		static char mlName[21];
+		static char mlName[20];
 
 		//•â³ŒW”‚ğ‘‚«‚Ş
 		static void SetCorrectionFactor(const char * data);
