@@ -89,7 +89,8 @@ namespace MLServer
           while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
             string[] bf = line.Split(':');
-            mlNames.Add(HIGH_ADD + bf[0], bf[1]);
+            if(!mlNames.ContainsKey(HIGH_ADD + bf[0]))
+              mlNames.Add(HIGH_ADD + bf[0], bf[1]);
           }
         }
       }
@@ -119,7 +120,7 @@ namespace MLServer
 
     private static void showTitle()
     {
-      Console.WriteLine("MLResumer Version 1.0.0");
+      Console.WriteLine("MLResumer Version 1.0.1");
     }
 
     private static void loadInitFile
@@ -273,7 +274,7 @@ namespace MLServer
       MLogger ml = new MLogger(add);
 
       //名前を設定
-      if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
+      if (mlNames.ContainsKey(add)) ml.LocalName = mlNames[add];
 
       //熱的快適性計算のための情報を設定
       ml.CloValue = cloValue;
@@ -325,12 +326,12 @@ namespace MLServer
       {
         try
         {
-          Console.WriteLine(mlg.Name + ": " + mlg.NextCommand);
+          Console.WriteLine(mlg.LocalName + ": " + mlg.NextCommand);
           mlg.SolveCommand();
         }
         catch (Exception exc)
         {
-          Console.WriteLine(mlg.Name + " : " + exc.Message);
+          Console.WriteLine(mlg.LocalName + " : " + exc.Message);
           mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
         }
       }
@@ -404,7 +405,7 @@ namespace MLServer
       }
       catch
       {
-        Console.WriteLine(ml.Name + ": Can't access to file.");
+        Console.WriteLine(ml.LocalName + ": Can't access to file.");
         return;
       }
     }

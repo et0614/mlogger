@@ -80,7 +80,7 @@ namespace DDNSUpdater
           if (System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
             checkUpdating();
 
-          Thread.Sleep(5000); //5secごとにIPアドレスを確認
+          Thread.Sleep(5000); //5secごとにIPアドレスを更新すべきかを確認
         }
       });
 
@@ -101,6 +101,7 @@ namespace DDNSUpdater
         return;
       }
 
+      //IPアドレスが変わったか、前回の更新から一定時間が経過した場合に更新する
       if (ipAdd != lastIP || update <= (DateTime.Now - lastUpdate).TotalSeconds)
       {
         using (HttpClient client = new HttpClient())
@@ -128,6 +129,7 @@ namespace DDNSUpdater
 
             Console.WriteLine(rsp.Trim());
             Console.WriteLine(DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss") + " DDNS updated.");
+            Console.WriteLine("IP Address : " + ipAdd);
             Console.WriteLine();
           }
           catch (Exception ex)

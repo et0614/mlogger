@@ -400,7 +400,7 @@ namespace MLServer
         {
           ListViewItem lvm = new ListViewItem(new string[]
           { 
-            ml.LowAddress, ml.Name, i18n.Resources.MF_Initializing,
+            ml.LowAddress, ml.LocalName, i18n.Resources.MF_Initializing,
             ml.DrybulbTemperature.Measure ? "true" : "false", ml.DrybulbTemperature.Interval.ToString(),
             ml.GlobeTemperature.Measure ? "true" : "false", ml.GlobeTemperature.Interval.ToString(),
             ml.Velocity.Measure ? "true" : "false", ml.Velocity.Interval.ToString(),
@@ -436,7 +436,7 @@ namespace MLServer
         }
 
         ListViewItem item = lviSets[ml];
-        item.SubItems[1].Text = ml.Name;
+        item.SubItems[1].Text = ml.LocalName;
         item.SubItems[2].Text = status;
         item.SubItems[3].Text = ml.DrybulbTemperature.Measure ? "true" : "false";
         item.SubItems[4].Text = ml.DrybulbTemperature.Interval.ToString();
@@ -481,7 +481,7 @@ namespace MLServer
         {
           ListViewItem lvm = new ListViewItem(new string[]
           { 
-            ml.LowAddress, ml.Name,
+            ml.LowAddress, ml.LocalName,
             ml.DrybulbTemperature.LastValue.ToString("F1"),
             ml.RelativeHumdity.LastValue.ToString("F1"),
             ml.GlobeTemperature.LastValue.ToString("F1"),
@@ -499,7 +499,7 @@ namespace MLServer
 
       //測定値を更新
       ListViewItem item = lviVals[ml];
-      item.SubItems[1].Text = ml.Name;
+      item.SubItems[1].Text = ml.LocalName;
       item.SubItems[2].Text = ml.DrybulbTemperature.LastValue.ToString("F1");
       item.SubItems[3].Text = ml.RelativeHumdity.LastValue.ToString("F1");
       item.SubItems[4].Text = ml.GlobeTemperature.LastValue.ToString("F1");
@@ -610,7 +610,7 @@ namespace MLServer
       MLogger ml = new MLogger(add);
 
       //名前を設定
-      if (mlNames.ContainsKey(add)) ml.Name = mlNames[add];
+      if (mlNames.ContainsKey(add)) ml.LocalName = mlNames[add];
 
       //熱的快適性計算のための情報を設定
       ml.CloValue = cloValue;
@@ -670,7 +670,7 @@ namespace MLServer
       {
         try
         {
-          appendLog(mlg.Name + ": " + mlg.NextCommand);
+          appendLog(mlg.LocalName + ": " + mlg.NextCommand);
           mlg.SolveCommand();
         }
         catch (Exception exc)
@@ -702,9 +702,10 @@ namespace MLServer
             dvv.PacketReceived += Device_PacketReceived;
             return;
           }
-          catch
+          catch(Exception ex)
           {
-            appendLog("Re-connect Error");
+            appendLog("Re-connect Error:" + ex.Message);
+            appendErrorLog("Re-connect Error:" + ex.Message);
           }
         }
 
@@ -956,6 +957,9 @@ namespace MLServer
     {
       Task.Run(() =>
       {
+        //ネットワークが閉じていたら開く
+        if (!coordinator.IsOpen) coordinator.Open();
+
         XBeeNetwork net = coordinator.GetNetwork();
 
         //既に探索中の場合は一旦停止
@@ -1299,7 +1303,7 @@ namespace MLServer
     {
       using (StreamWriter sWriter = new StreamWriter("errLog.txt", true))
       {
-        sWriter.WriteLine(log);
+        sWriter.WriteLine(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " : " + log);
       }
     }
 
