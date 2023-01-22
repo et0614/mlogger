@@ -207,6 +207,9 @@
   <data name="MF_PortChg" xml:space="preserve">
     <value>Attempt to connect to the following ports: </value>
   </data>
+  <data name="MF_SaveToSDCard" xml:space="preserve">
+    <value>Save to SD card</value>
+  </data>
   <data name="MF_Search" xml:space="preserve">
     <value>Search</value>
   </data>

@@ -202,6 +202,7 @@ namespace MLServer
 
       //コントローラ表示の初期化
       btn_outputSD.Enabled = enableSDOutput;
+      cbx_saveToSDCard.Enabled = enableSDOutput;
       btn_setCFactor.Visible = showCFButton;
 
       //データ格納用のディレクトリを作成
@@ -248,6 +249,7 @@ namespace MLServer
 
       cbx_thMeasure.Text = cbx_glbMeasure.Text = cbx_velMeasure.Text = cbx_illMeasure.Text
         = cbx_gpv1Measure.Text = cbx_gpv2Measure.Text = cbx_gpv3Measure.Text = i18n.Resources.MF_MeasureCBX;
+      cbx_saveToSDCard.Text = i18n.Resources.MF_SaveToSDCard;
 
       btn_applySetting.Text = i18n.Resources.MF_ApplySetting;
       btn_startCollecting.Text = i18n.Resources.MF_StartDataCollecting;
@@ -957,17 +959,30 @@ namespace MLServer
     {
       Task.Run(() =>
       {
-        //ネットワークが閉じていたら開く
-        if (!coordinator.IsOpen) coordinator.Open();
+        //切断されていたら再接続を試みる
+        if (!coordinator.IsOpen)
+        {
+          try
+          {
+            coordinator.Open();
+            coordinator.DataReceived += Device_DataReceived;
+            coordinator.PacketReceived += Device_PacketReceived;
+          }
+          catch (Exception e)
+          {
+            Console.WriteLine(e.Message);
+            return;
+          }
+        }
 
         XBeeNetwork net = coordinator.GetNetwork();
 
         //既に探索中の場合は一旦停止
         if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
-
+        
+        //探索開始
         try
-        {
-          //探索開始
+        {          
           net.SetDiscoveryTimeout((long)(SCAN_ENDDEVICE_TSPAN * 0.9));
           net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
         }
@@ -993,13 +1008,15 @@ namespace MLServer
       string[] adds = new string[lv_setting.SelectedItems.Count];
       for (int i = 0; i < adds.Length; i++) adds[i] = lv_setting.SelectedItems[i].SubItems[0].Text;
 
+      bool saveToSDCard = cbx_saveToSDCard.Checked;
+
       //別スレッドで計測開始処理。同時通信を防ぐため、ずらして計測を開始させる
       Task.Run(() =>
       {
         //1件ずつコマンドを送信
         for (int i = 0; i < adds.Length; i++)
         {
-          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true, false, false));
+          sndMsg(HIGH_ADD + adds[i], MLogger.MakeStartMeasuringCommand(true, false, saveToSDCard));
           Thread.Sleep(CMD_TSPAN);
         }
       });
@@ -1178,10 +1195,15 @@ namespace MLServer
       }*/
 
       //設定内容をチェック2
-      if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 
-        || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1)
-      //if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 || itGV2 < 1 || itGV3 < 1
-      //  || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1 || 86400 < itGV2 || 86400 < itGV3)
+      if(
+        (cbx_thMeasure.Checked && (itTH < 1 || 86400 < itTH)) ||
+        (cbx_glbMeasure.Checked && (itRD < 1 || 86400 < itRD)) ||
+        (cbx_velMeasure.Checked && (itVL < 1 || 86400 < itVL)) ||
+        (cbx_illMeasure.Checked && (itIL < 1 || 86400 < itIL)) ||
+        (cbx_gpv1Measure.Checked && (itGV1 < 1 || 86400 < itGV1))
+        )
+      //if (itTH < 1 || itRD < 1 || itVL < 1 || itIL < 1 || itGV1 < 1 
+      //  || 86400 < itTH || 86400 < itRD || 86400 < itVL || 86400 < itIL || 86400 < itGV1)
       {
         MessageBox.Show(i18n.Resources.MF_Alrt_Interval);
         return;

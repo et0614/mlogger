@@ -65,6 +65,7 @@
       this.lvhd2_dtime = new System.Windows.Forms.ColumnHeader();
       this.tbx_log = new System.Windows.Forms.TextBox();
       this.pnl_settingEdit = new System.Windows.Forms.Panel();
+      this.cbx_saveToSDCard = new System.Windows.Forms.CheckBox();
       this.rbtn_ill = new System.Windows.Forms.RadioButton();
       this.rbtn_prox = new System.Windows.Forms.RadioButton();
       this.lbl_gpv3 = new System.Windows.Forms.Label();
@@ -176,8 +177,8 @@
       // splitContainer1.Panel2
       // 
       this.splitContainer1.Panel2.Controls.Add(this.tbx_log);
-      this.splitContainer1.Size = new System.Drawing.Size(1866, 1221);
-      this.splitContainer1.SplitterDistance = 887;
+      this.splitContainer1.Size = new System.Drawing.Size(1866, 1403);
+      this.splitContainer1.SplitterDistance = 1018;
       this.splitContainer1.SplitterWidth = 9;
       this.splitContainer1.TabIndex = 17;
       // 
@@ -195,8 +196,8 @@
       // splitContainer2.Panel2
       // 
       this.splitContainer2.Panel2.Controls.Add(this.lv_measure);
-      this.splitContainer2.Size = new System.Drawing.Size(1866, 887);
-      this.splitContainer2.SplitterDistance = 486;
+      this.splitContainer2.Size = new System.Drawing.Size(1866, 1018);
+      this.splitContainer2.SplitterDistance = 557;
       this.splitContainer2.TabIndex = 5;
       // 
       // lv_setting
@@ -222,7 +223,7 @@
       this.lv_setting.Location = new System.Drawing.Point(0, 0);
       this.lv_setting.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.lv_setting.Name = "lv_setting";
-      this.lv_setting.Size = new System.Drawing.Size(1866, 486);
+      this.lv_setting.Size = new System.Drawing.Size(1866, 557);
       this.lv_setting.TabIndex = 3;
       this.lv_setting.UseCompatibleStateImageBehavior = false;
       this.lv_setting.View = System.Windows.Forms.View.Details;
@@ -347,9 +348,10 @@
             this.lvhd2_set,
             this.lvhd2_dtime});
       this.lv_measure.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.lv_measure.FullRowSelect = true;
       this.lv_measure.Location = new System.Drawing.Point(0, 0);
       this.lv_measure.Name = "lv_measure";
-      this.lv_measure.Size = new System.Drawing.Size(1866, 397);
+      this.lv_measure.Size = new System.Drawing.Size(1866, 457);
       this.lv_measure.TabIndex = 4;
       this.lv_measure.UseCompatibleStateImageBehavior = false;
       this.lv_measure.View = System.Windows.Forms.View.Details;
@@ -430,11 +432,12 @@
       this.tbx_log.Name = "tbx_log";
       this.tbx_log.ReadOnly = true;
       this.tbx_log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.tbx_log.Size = new System.Drawing.Size(1866, 325);
+      this.tbx_log.Size = new System.Drawing.Size(1866, 376);
       this.tbx_log.TabIndex = 5;
       // 
       // pnl_settingEdit
       // 
+      this.pnl_settingEdit.Controls.Add(this.cbx_saveToSDCard);
       this.pnl_settingEdit.Controls.Add(this.rbtn_ill);
       this.pnl_settingEdit.Controls.Add(this.rbtn_prox);
       this.pnl_settingEdit.Controls.Add(this.lbl_gpv3);
@@ -475,8 +478,20 @@
       this.pnl_settingEdit.Location = new System.Drawing.Point(0, 58);
       this.pnl_settingEdit.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.pnl_settingEdit.Name = "pnl_settingEdit";
-      this.pnl_settingEdit.Size = new System.Drawing.Size(508, 1221);
+      this.pnl_settingEdit.Size = new System.Drawing.Size(508, 1403);
       this.pnl_settingEdit.TabIndex = 2;
+      // 
+      // cbx_saveToSDCard
+      // 
+      this.cbx_saveToSDCard.AutoSize = true;
+      this.cbx_saveToSDCard.Location = new System.Drawing.Point(20, 1206);
+      this.cbx_saveToSDCard.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
+      this.cbx_saveToSDCard.Name = "cbx_saveToSDCard";
+      this.cbx_saveToSDCard.Size = new System.Drawing.Size(214, 36);
+      this.cbx_saveToSDCard.TabIndex = 16;
+      this.cbx_saveToSDCard.TabStop = false;
+      this.cbx_saveToSDCard.Text = "Save to SD card";
+      this.cbx_saveToSDCard.UseVisualStyleBackColor = true;
       // 
       // rbtn_ill
       // 
@@ -742,7 +757,7 @@
       // btn_outputSD
       // 
       this.btn_outputSD.Image = global::MLServer.Properties.Resources.sd;
-      this.btn_outputSD.Location = new System.Drawing.Point(20, 1060);
+      this.btn_outputSD.Location = new System.Drawing.Point(20, 1133);
       this.btn_outputSD.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_outputSD.Name = "btn_outputSD";
       this.btn_outputSD.Size = new System.Drawing.Size(468, 55);
@@ -756,7 +771,7 @@
       // btn_setCFactor
       // 
       this.btn_setCFactor.Image = global::MLServer.Properties.Resources.ram;
-      this.btn_setCFactor.Location = new System.Drawing.Point(20, 1133);
+      this.btn_setCFactor.Location = new System.Drawing.Point(20, 1060);
       this.btn_setCFactor.Margin = new System.Windows.Forms.Padding(7, 9, 7, 9);
       this.btn_setCFactor.Name = "btn_setCFactor";
       this.btn_setCFactor.Size = new System.Drawing.Size(468, 55);
@@ -884,7 +899,7 @@
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(2374, 1279);
+      this.ClientSize = new System.Drawing.Size(2374, 1461);
       this.Controls.Add(this.splitContainer1);
       this.Controls.Add(this.pnl_settingEdit);
       this.Controls.Add(this.toolStrip);
@@ -984,6 +999,7 @@
     private System.Windows.Forms.ColumnHeader lvhd2_dtime;
     private System.Windows.Forms.SplitContainer splitContainer2;
     private System.Windows.Forms.ColumnHeader lvhd2_ill;
+    private System.Windows.Forms.CheckBox cbx_saveToSDCard;
   }
 }
 

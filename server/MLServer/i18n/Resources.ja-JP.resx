@@ -207,6 +207,9 @@
   <data name="MF_PortChg" xml:space="preserve">
     <value>以下のPortへの接続を試みます:</value>
   </data>
+  <data name="MF_SaveToSDCard" xml:space="preserve">
+    <value>SDカードにも保存</value>
+  </data>
   <data name="MF_Search" xml:space="preserve">
     <value>探索</value>
   </data>

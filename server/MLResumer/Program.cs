@@ -18,6 +18,8 @@ namespace MLServer
 
     #region 定数宣言
 
+    private const string VERSION = "1.0.4";
+
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
 
@@ -113,14 +115,14 @@ namespace MLServer
       scanCoordinator();
 
       //子機を探す
-      scanEndDevice();
+      //scanEndDevice();
 
       while (true) ;
     }
 
     private static void showTitle()
     {
-      Console.WriteLine("MLResumer Version 1.0.1");
+      Console.WriteLine("MLResumer Version " + VERSION);
     }
 
     private static void loadInitFile
@@ -186,12 +188,31 @@ namespace MLServer
               tsk.Start();
             }
           }
+
+          //接続が切れた場合には再接続を試みる
+          foreach (ZigBeeDevice device in coordinators.Keys)
+          {
+            if (!device.IsOpen)
+            {
+              try
+              {
+                device.Open();
+                device.DataReceived += Device_DataReceived; //データ受信イベント
+                device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
+              }
+              catch (Exception ex)
+              {
+                Console.WriteLine(ex.Message);
+              }
+            }
+          }
+
           Thread.Sleep(XBEE_SCAN_SPAN);
         }
       });
     }
 
-    private static void scanEndDevice()
+    /*private static void scanEndDevice()
     {
       //定期的にXBeeコーディネータを探索する
       Task scanEndDeviceTask = Task.Run(() =>
@@ -200,16 +221,30 @@ namespace MLServer
         {
           foreach (ZigBeeDevice coordinator in coordinators.Keys)
           {
+            //切断されていたら接続を試みる
+            if (!coordinator.IsOpen)
+            {
+              try
+              {
+                coordinator.Open();
+              }
+              catch (Exception e)
+              {
+                Console.WriteLine(e.Message);
+                break;
+              }
+            }
+
             XBeeNetwork net = coordinator.GetNetwork();
 
             //既に探索中の場合は一旦停止
             if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
 
             //探索開始
-            net.SetDiscoveryTimeout((int)(ENDDV_SCAN_SPAN * 0.9)); //5秒
             try
-            {
+            {              
               Console.WriteLine("Start scanning end devices...");
+              net.SetDiscoveryTimeout((int)(ENDDV_SCAN_SPAN * 0.9));
               net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
             }
             catch (Exception e)
@@ -221,7 +256,7 @@ namespace MLServer
           Thread.Sleep(ENDDV_SCAN_SPAN);
         }
       });
-    }
+    }*/
 
     #endregion
 
@@ -239,24 +274,22 @@ namespace MLServer
         try
         {
           device.Open();
+
+          coordinators.Add(device, new xbeeInfo(pName));
+          Console.WriteLine(pName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
+
+          //イベント登録
+          device.DataReceived += Device_DataReceived; //データ受信イベント
+          device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
+
+          connectedPorts.Add(pName);
         }
         catch (Exception ex)
         {
           excludedPorts.Add(pName);
           Console.WriteLine(pName + ": " + ex.Message);
           return;
-        }
-        coordinators.Add(device, new xbeeInfo(pName));
-        Console.WriteLine(pName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
-
-        //イベント登録
-        XBeeNetwork net = device.GetNetwork();
-        device.GetNetwork().DeviceDiscovered += Net_DeviceDiscovered; //xbeeノード発見イベント
-                                                                      //
-        device.DataReceived += Device_DataReceived; //データ受信イベント
-        device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
-
-        connectedPorts.Add(pName);
+        }        
       });
     }
 
@@ -294,14 +327,14 @@ namespace MLServer
         coordinators[dv].longAddress.Add(add);
     }
 
-    private static void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
+    /*private static void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
     {
       //HTML更新フラグを立てる
       hasNewData = true;
 
       //MLoggerリストに追加
       addXBeeDevice(e.DiscoveredDevice);
-    }
+    }*/
 
     private static void Device_DataReceived(object sender, XBeeLibrary.Core.Events.DataReceivedEventArgs e)
     {
