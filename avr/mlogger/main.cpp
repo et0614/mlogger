@@ -16,26 +16,27 @@
  * 3.0.8	SDカード書き出し時のLED点灯バグ修正
  * 3.0.9	ロギング終了時の風速計停止処理忘れを修正
  * 3.0.10	名称設定取得のバグを修正
+ * 3.0.11	日付変更時にSDカード書き出しが実行されるように修正,SDカード書き出しとZigbee通信の同時実行に対応
  */
 
 /**XBee端末の設定****************************************
  * ・親機子機共通
- *   1) FirmwareはZIGBEE TH Reg version 4061, XB3-24,Digi XBee3 Zigbee 3.0 TH 100D
+ *   1) Firmwareは、Product family:「XB3-24」,Function set:「Digi XBee3 Zigbee 3.0」,Firmware version:「1010」
  *   2) PAN IDを同じ値にする
  *   3) SP:Cyclic Sleep Period = 0x64（=1000 msec）,SN:Number of Cyclic Sleep Periods = 3600
  *      これで3600×3=3hourはネットワークから外れない
- *   4) AP:API Enable = API enabled
+ *   4) AP:API Mode Without Escapes[1]
  * ・親機のみ
  *   1) CE:Coordinator Enable = Enabled
  *   2) SM:Sleep Mode = No sleep
  *   3) AR:many-to-one routing = 0
  *   4) NJ:Node Join Time = FF（時間無制限にネットワーク参加可能）
  * ・子機のみ
- *   1) CE:Coordinator Enable = Disabled
- *   2) SM:Sleep Mode = Pin Hibernate（ATMegaからの指令でスリープ解除するため）
+ *   1) CE:Coordinator Enable = Join Network [0]
+ *   2) SM:Sleep Mode = Pin Hibernate [1]（ATMegaからの指令でスリープ解除するため）
  *   以下はBluetooth対応の場合のみ
- *   3) BT:Bluetooth Enable = Enabled
- *   4) BI:Bluetooth Identifier = "MLogger_xxx"（xxxは適当な文字で良い）
+ *   3) BT:Bluetooth Enable = Enabled [1]
+ *   4) BI:Bluetooth Identifier = "MLogger_xxxx"（xxxxは適当な桁数の数字でIDとして使う）
  *   5) Bluetooth Authenticationに「ml_pass」
 *********************************************************/
 
@@ -125,7 +126,7 @@ volatile bool initSD = false; //SDカード初期化フラグ
 static FATFS* fSystem;
 static char lineBuff[my_xbee::MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
 static uint8_t buffNumber = 0; //一時保存回数
-static uint8_t lastSavedMinute = 0; //最後に保存した分
+static tm lastSavedTime; //最後に保存した日時（UNIX時間）
 static uint8_t blinkCount = 0; //SD書き出し時のLED点滅時間間隔保持変数
 
 //リセット処理用
@@ -351,7 +352,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.10\r");
+		my_xbee::bltx_chars("VER:3.0.11\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -360,6 +361,9 @@ static void solve_command(void)
 		num[10] = '\0';
 		strncpy(num, command + 3, 10);
 		currentTime = atol(num);
+		//最終計測日時=現在時刻とする
+		time_t ct = currentTime - UNIX_OFFSET;
+		gmtime_r(&ct, &lastSavedTime);
 		
 		//Bluetooth接続か否か(xはxbee,bはbluetooth)
 		outputToXBee = (command[13]=='t'); //XBeeで親機に書き出すか否か
@@ -698,9 +702,9 @@ ISR(RTC_PIT_vect)
 			gmtime_r(&ct, &dtNow);
 			
 			//書き出し文字列を作成
-			snprintf(charBuff, sizeof(charBuff), "%s%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
-			(outputToSDCard ? "" : "DTT:"), dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+			snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+				dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
+				tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
 			
 			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
@@ -710,14 +714,22 @@ ISR(RTC_PIT_vect)
 			if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
 			if(outputToSDCard)  //SD card出力
 			{
-				//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す
-				if(N_LINE_BUFF <= buffNumber || lastSavedMinute != dtNow.tm_min)
-				{
+				//データが十分に溜まるか、1h以上の時間間隔があいたら書き出す。時刻を比べるので日付が変わった場合にも確実に書き出される
+				if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_hour != dtNow.tm_hour)
+				{					
 					writeSDcard(dtNow, lineBuff); //SD card出力
 					buffNumber = 0;
 					lineBuff[0] = '\0';
-					lastSavedMinute = dtNow.tm_min;
+					lastSavedTime = dtNow;
 				}
+				
+				//SDカード書き出し時は冒頭のDTTが不要。もう少しキレイなプログラムにできそうだが。。。
+				snprintf(charBuff, sizeof(charBuff), "%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+				dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
+				tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+				//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
+				charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
+				charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
 				//一時保存文字列の末尾に足す
 				strncat(lineBuff, charBuff, sizeof(charBuff));
 				buffNumber++;
