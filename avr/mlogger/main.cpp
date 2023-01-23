@@ -17,6 +17,7 @@
  * 3.0.9	ロギング終了時の風速計停止処理忘れを修正
  * 3.0.10	名称設定取得のバグを修正
  * 3.0.11	日付変更時にSDカード書き出しが実行されるように修正,SDカード書き出しとZigbee通信の同時実行に対応
+ * 3.0.12	3.0.11の機能のバグ修正,風速計の予熱時間を30secに変更
  */
 
 /**XBee端末の設定****************************************
@@ -352,7 +353,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.11\r");
+		my_xbee::bltx_chars("VER:3.0.12\r");
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -717,7 +718,7 @@ ISR(RTC_PIT_vect)
 				//データが十分に溜まるか、1h以上の時間間隔があいたら書き出す。時刻を比べるので日付が変わった場合にも確実に書き出される
 				if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_hour != dtNow.tm_hour)
 				{					
-					writeSDcard(dtNow, lineBuff); //SD card出力
+					writeSDcard(lastSavedTime, lineBuff); //SD card出力
 					buffNumber = 0;
 					lineBuff[0] = '\0';
 					lastSavedTime = dtNow;
