@@ -192,39 +192,23 @@ void my_eeprom::SetCorrectionFactor(const char data[])
 	strncpy(num, data + 3, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-	{
 		my_eeprom::Cf_dbtA = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_DBTCF_A, buff);
-	}
 	//Š£‹…‰·“x•â³ŒW”B
 	strncpy(num, data + 7, 4);
 	buff = 0.01 * atol(num);
 	if(-3.0 <= buff && buff <= 3.0)
-	{
 		my_eeprom::Cf_dbtB = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_DBTCF_B, buff);
-	}
 	
 	//‘Š‘ÎŽ¼“x•â³ŒW”A
 	strncpy(num, data + 11, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-	{
 		my_eeprom::Cf_hmdA = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_HMDCF_A, buff);
-	}
 	//‘Š‘ÎŽ¼“x•â³ŒW”B
 	strncpy(num, data + 15, 4);
 	buff = 0.01 * atol(num);
 	if(-9.99 <= buff && buff <= 9.99)
-	{
 		my_eeprom::Cf_hmdB = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_HMDCF_B, buff);
-	}
 	
 	//ƒOƒ[ƒu‰·“x•â³ŒW”A
 	strncpy(num, data + 19, 4);
@@ -232,18 +216,12 @@ void my_eeprom::SetCorrectionFactor(const char data[])
 	if(0.8 <= buff && buff <= 1.2)
 	{
 		my_eeprom::Cf_glbA = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_GLBCF_A, buff);
 	}
 	//ƒOƒ[ƒu‰·“x•â³ŒW”B
 	strncpy(num, data + 23, 4);
 	buff = 0.01 * atol(num);
 	if(-3.0 <= buff && buff <= 3.0)
-	{
 		my_eeprom::Cf_glbB = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_GLBCF_B, buff);
-	}
 	
 	//Æ“x•â³ŒW”A
 	strncpy(num, data + 27, 4);
@@ -251,18 +229,12 @@ void my_eeprom::SetCorrectionFactor(const char data[])
 	if(0.8 <= buff && buff <= 1.2)
 	{
 		my_eeprom::Cf_luxA = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_LUXCF_A, buff);
 	}
 	//Æ“x•â³ŒW”B
 	strncpy(num, data + 31, 4);
 	buff = atol(num);
 	if(-999 <= buff && buff <= 999)
-	{
 		my_eeprom::Cf_luxB = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_LUXCF_B, buff);
-	}
 	
 	//•—‘¬•â³ŒW”A
 	strncpy(num, data + 35, 4);
@@ -270,27 +242,55 @@ void my_eeprom::SetCorrectionFactor(const char data[])
 	if(0.8 <= buff && buff <= 1.2)
 	{
 		my_eeprom::Cf_velA = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_VELCF_A, buff);
 	}
 	//•—‘¬•â³ŒW”B
 	strncpy(num, data + 39, 4);
 	buff = 0.001 * atol(num);
 	if(-0.5 <= buff && buff <= 0.5)
-	{
 		my_eeprom::Cf_velB = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_VELCF_B, buff);
-	}
 	//•—‘¬–³•—“dˆ³
 	strncpy(num, data + 43, 4);
 	buff = 0.001 * atol(num);
 	if(1.40 <= buff && buff <= 1.50)
-	{
 		my_eeprom::Cf_vel0 = buff;
-		eeprom_busy_wait();
-		eeprom_update_float (&EEP_VEL0, buff);
-	}
+	
+	SetCorrectionFactor();
+}
+
+//•â³ŒW”‚ð‘‚«ž‚Þ
+void my_eeprom::SetCorrectionFactor()
+{
+	//Š£‹…‰·“x•â³ŒW”A,B
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_DBTCF_A, my_eeprom::Cf_dbtA);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_DBTCF_B, my_eeprom::Cf_dbtB);
+		
+	//‘Š‘ÎŽ¼“x•â³ŒW”A,B
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_HMDCF_A, my_eeprom::Cf_hmdA);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_HMDCF_B, my_eeprom::Cf_hmdB);
+	
+	//ƒOƒ[ƒu‰·“x•â³ŒW”A,B
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_GLBCF_A, my_eeprom::Cf_glbA);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_GLBCF_B, my_eeprom::Cf_glbB);
+	
+	//Æ“x•â³ŒW”A,B
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_LUXCF_A, my_eeprom::Cf_luxA);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_LUXCF_B, my_eeprom::Cf_luxB);
+	
+	//•—‘¬•â³ŒW”A,B,–³•—“dˆ³
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VELCF_A, my_eeprom::Cf_velA);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VELCF_B, my_eeprom::Cf_velB);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VEL0, my_eeprom::Cf_vel0);
 }
 
 //•â³ŒW”‚ð•\‚·•¶Žš—ñ‚ðì¬‚·‚é

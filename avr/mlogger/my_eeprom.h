@@ -28,6 +28,9 @@ class my_eeprom
 
 		//•â³ŒW”‚ğ‘‚«‚Ş
 		static void SetCorrectionFactor(const char * data);
+		
+		//•â³ŒW”‚ğ‘‚«‚Ş
+		static void SetCorrectionFactor();
 
 		//•â³ŒW”‚ğ•\‚·•¶š—ñ‚ğì¬‚·‚é
 		static void MakeCorrectionFactorString(char * txbuff, const char * command);

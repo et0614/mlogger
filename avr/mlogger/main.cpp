@@ -18,6 +18,7 @@
  * 3.0.10	名称設定取得のバグを修正
  * 3.0.11	日付変更時にSDカード書き出しが実行されるように修正,SDカード書き出しとZigbee通信の同時実行に対応
  * 3.0.12	3.0.11の機能のバグ修正,風速計の予熱時間を30secに変更
+ * 3.1.0	風速計の自動校正処理を追加
  */
 
 /**XBee端末の設定****************************************
@@ -75,6 +76,8 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
+const char VERSION_NUMBER[] = "VER:3.1.0\r";
+
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
 
@@ -135,6 +138,11 @@ volatile static unsigned int resetTime = 0;
 
 //汎用の文字列配列
 static char charBuff[my_xbee::MAX_CMD_CHAR];
+
+//風速計自動校正処理用
+static bool vSensorInitproc= false;
+static unsigned int vSensorInitTimer = 0;
+static float vSensorInitVoltage;
 
 //マクロ定義********************************************************
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array[0]))
@@ -353,7 +361,7 @@ static void solve_command(void)
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars("VER:3.0.12\r");
+		my_xbee::bltx_chars(VERSION_NUMBER);
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
@@ -381,7 +389,7 @@ static void solve_command(void)
 		pass_ad3 = my_eeprom::interval_AD3;
 		
 		//ロギング設定をEEPROMに保存
-		//my_eeprom::startAuto = outputToXBee; //リセットスイッチを持つ基盤が用意できたらコメントアウトする
+		//my_eeprom::startAuto = outputToXBee; //リセットスイッチを持つ基板が用意できたらコメントアウトする
 		my_eeprom::SetMeasurementSetting();
 		
 		//ロギング開始
@@ -546,7 +554,7 @@ ISR(RTC_PIT_vect)
 	if(!(PORTA.IN & PIN2_bm))
 	{
 		resetTime++;
-		if(3 < resetTime)
+		if(resetTime == 3)
 		{
 			logging=false;	//ロギング停止
 			initSD = false;	//SDカード再マウント
@@ -554,11 +562,45 @@ ISR(RTC_PIT_vect)
 			blinkLED(3);	//LED点滅
 			return;
 		}
+		else if(resetTime == 10)
+		{
+			blinkLED(3);	//LED点滅
+			vSensorInitproc = true;
+			vSensorInitTimer = 0;
+			vSensorInitVoltage = 0;
+			wakeup_anemo();
+		}
 	}
 	else resetTime = 0; //Resetボタン押し込み時間を0に戻す
-				
+	
+	//風速計校正処理
+	if(vSensorInitproc)
+	{	
+		const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
+		const unsigned int VS_INIT_AVE = 300; //風速校正の積算時間[sec]
+		
+		//LED点灯を反転
+		toggleLED();
+	
+		vSensorInitTimer++;
+		if(VS_INIT_WAIT < vSensorInitTimer)
+			vSensorInitVoltage += readVelVoltage(); //AD変換
+		if(VS_INIT_AVE + VS_INIT_WAIT < vSensorInitTimer)
+		{
+			vSensorInitVoltage /= (VS_INIT_AVE - VS_INIT_WAIT);
+			if(1.4 < vSensorInitVoltage && vSensorInitVoltage < 1.55)
+			{
+				my_eeprom::Cf_vel0 = vSensorInitVoltage;
+				my_eeprom::SetCorrectionFactor();
+			}
+			
+			turnOffLED();
+			sleep_anemo();
+			vSensorInitproc = false;
+		}
+	}		
 	//ロギング中であれば
-	if(logging)
+	else if(logging)
 	{
 		//計測開始時刻の前ならば終了
 		if(currentTime < startTime) return;
@@ -857,19 +899,34 @@ inline static void wakeup_xbee(void)
 	PORTF.OUTCLR = PIN5_bm;
 }
 
+inline static void turnOnLED(void)
+{
+	PORTD.OUTSET = PIN6_bm; //点灯
+}
+
+inline static void turnOffLED(void)
+{
+	PORTD.OUTCLR = PIN6_bm; //消灯
+}
+
+inline static void toggleLED(void)
+{
+	PORTD.OUTTGL = PIN6_bm; //反転
+}
+
 inline static void blinkLED(int iterNum)
 {
 	if(iterNum < 1) return;
 
 	//初回
-	PORTD.OUTCLR = PIN6_bm; //一旦必ず消灯して
+	turnOffLED(); //一旦必ず消灯して
 	//点滅
 	for(int i=0;i<iterNum;i++)
 	{
 		_delay_ms(100);
-		PORTD.OUTSET = PIN6_bm; //点灯
+		turnOnLED(); //点灯
 		_delay_ms(25);
-		PORTD.OUTCLR = PIN6_bm; //消灯
+		turnOffLED(); //消灯
 	}
 }
 

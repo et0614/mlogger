@@ -39,6 +39,12 @@ inline static void sleep_xbee(void);
 
 inline static void wakeup_xbee(void);
 
+inline static void turnOnLED(void);
+
+inline static void turnOffLED(void);
+
+inline static void toggleLED(void);
+
 inline static void blinkLED(int iterNum);
 
 inline static float max(float x, float y);
