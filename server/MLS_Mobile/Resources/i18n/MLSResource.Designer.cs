@@ -331,6 +331,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adjust velocity voltage.
+        /// </summary>
+        internal static string DS_AdjustVelocityVoltage {
+            get {
+                return ResourceManager.GetString("DS_AdjustVelocityVoltage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Set correction factor.
         /// </summary>
         internal static string DS_CFactor {
@@ -354,6 +363,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_Info {
             get {
                 return ResourceManager.GetString("DS_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid number.
+        /// </summary>
+        internal static string DS_InvalidNumber {
+            get {
+                return ResourceManager.GetString("DS_InvalidNumber", resourceCulture);
             }
         }
         
@@ -489,6 +507,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_Title {
             get {
                 return ResourceManager.GetString("DS_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting up for voltage adjustment.
+        /// </summary>
+        internal static string DS_VelocityVoltageSetting {
+            get {
+                return ResourceManager.GetString("DS_VelocityVoltageSetting", resourceCulture);
             }
         }
         
@@ -912,6 +939,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string VelocityVoltage {
             get {
                 return ResourceManager.GetString("VelocityVoltage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enclose the velocity probe so that there is no wind, wait 30 seconds for it to stabilize, and then adjust the voltage to a range of 1.45 ± 0.5 V..
+        /// </summary>
+        internal static string VT_VelocityAdjustMessage {
+            get {
+                return ResourceManager.GetString("VT_VelocityAdjustMessage", resourceCulture);
             }
         }
         

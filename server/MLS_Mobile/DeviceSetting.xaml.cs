@@ -6,6 +6,7 @@ using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using Mopups.Services;
+using System;
 
 public partial class DeviceSetting : ContentPage
 {
@@ -288,22 +289,22 @@ public partial class DeviceSetting : ContentPage
     if (!int.TryParse(ent_th.Text, out thSpan))
     {
       hasError = true;
-      alert += "温湿度の測定間隔が整数ではありません\r\n";
+      alert +=　MLSResource.DS_InvalidNumber + "(" + MLSResource.DrybulbTemperature + ")\r\n";
     }
     if (!int.TryParse(ent_glb.Text, out glbSpan))
     {
       hasError = true;
-      alert += "グローブ温度の測定間隔が整数ではありません\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.GlobeTemperature + ")\r\n";
     }
     if (!int.TryParse(ent_vel.Text, out velSpan))
     {
       hasError = true;
-      alert += "微風速の測定間隔が整数ではありません\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Velocity + ")\r\n";
     }
     if (!int.TryParse(ent_lux.Text, out luxSpan))
     {
       hasError = true;
-      alert += "照度の測定間隔が整数ではありません\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
     }
 
     if (hasError)
@@ -367,6 +368,84 @@ public partial class DeviceSetting : ContentPage
         Application.Current.Dispatcher.Dispatch(() =>
         {
           Shell.Current.GoToAsync(nameof(CFSetting));
+        });
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
+  }
+
+  private void VoltageButton_Clicked(object sender, EventArgs e)
+  {
+    //設定コマンドを作成
+    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan)) return;
+    string sData = MLogger.MakeChangeMeasuringSettingCommand(
+      ST_DTIME, 
+      cbx_th.IsToggled, thSpan, 
+      cbx_glb.IsToggled, glbSpan, 
+      true, 1, cbx_lux.IsToggled, //風速は1秒固定
+      luxSpan, false, 
+      1, false, 1, false, 1, false);
+
+    //インジケータ表示
+    showIndicator(MLSResource.DS_VelocityVoltageSetting);
+    Task.Run(async () =>
+    {
+      try
+      {
+        int tryNum = 0;
+
+        //情報が更新されるまで命令を繰り返す
+        MLUtility.Logger.HasMeasurementSettingReceived = false;
+        while (!MLUtility.Logger.HasMeasurementSettingReceived)
+        {
+          //5回試す
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              return;
+            });
+          }
+          tryNum++;
+
+          //設定設定取得コマンドを送信
+          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
+          await Task.Delay(500);
+        }
+
+        MLUtility.Logger.HasStartMeasuringMessageReceived = false;
+        while (!MLUtility.Logger.HasStartMeasuringMessageReceived)
+        {
+          //5回試す
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.DR_FailStarting, "OK");
+              return;
+            });
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.LoggerSideXBee.SendSerialData
+          (Encoding.ASCII.GetBytes(MLogger.MakeStartMeasuringCommand(false, true, false)));
+
+          await Task.Delay(500);
+        }
+
+        //開始に成功したらページ移動
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          Shell.Current.GoToAsync(nameof(VelocityTuner));
         });
       }
       catch { }

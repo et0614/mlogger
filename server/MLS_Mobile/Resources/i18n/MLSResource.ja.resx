@@ -207,6 +207,9 @@
   <data name="DR_Title" xml:space="preserve">
     <value>データ受信機</value>
   </data>
+  <data name="DS_AdjustVelocityVoltage" xml:space="preserve">
+    <value>無風電圧を調整</value>
+  </data>
   <data name="DS_CFactor" xml:space="preserve">
     <value>補正係数の設定</value>
   </data>
@@ -215,6 +218,9 @@
   </data>
   <data name="DS_Info" xml:space="preserve">
     <value>計測器情報</value>
+  </data>
+  <data name="DS_InvalidNumber" xml:space="preserve">
+    <value>無効な数値です</value>
   </data>
   <data name="DS_LoadSetting" xml:space="preserve">
     <value>設定受信</value>
@@ -257,6 +263,9 @@
   </data>
   <data name="DS_Title" xml:space="preserve">
     <value>測定方法の設定</value>
+  </data>
+  <data name="DS_VelocityVoltageSetting" xml:space="preserve">
+    <value>電圧調整のための起動中</value>
   </data>
   <data name="EditMeasuredData" xml:space="preserve">
     <value>収集データを操作する</value>
@@ -398,6 +407,9 @@
   </data>
   <data name="VelocityVoltage" xml:space="preserve">
     <value>風速電圧</value>
+  </data>
+  <data name="VT_VelocityAdjustMessage" xml:space="preserve">
+    <value>風速プローブを囲って無風状態にし、安定するまで30秒間待ってから、電圧を1.45±0.5Vの範囲に調整してください。</value>
   </data>
   <data name="WetbulbTemperature" xml:space="preserve">
     <value>湿球温度</value>

@@ -10,9 +10,6 @@ public partial class DataReceive : ContentPage
 
   #region インスタンス変数・プロパティ
 
-  /// <summary>計測終了コマンド送信中フラグ</summary>
-  private bool isEnding = false;
-
   /// <summary>Clo値を設定・取得する</summary>
   public double CloValue
   { get; set; } = 1.2;
@@ -42,6 +39,13 @@ public partial class DataReceive : ContentPage
 
     //MLoggerイベント登録
     MLUtility.Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+  }
+
+  /// <summary>デストラクタ</summary>
+  ~DataReceive()
+  {
+    //MLoggerイベント解除
+    MLUtility.Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   #endregion
@@ -95,8 +99,6 @@ public partial class DataReceive : ContentPage
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
   {
-    if (!isEnding) hideIndicator();
-
     Application.Current.Dispatcher.Dispatch(() =>
     {
       val_tmp.Text = MLUtility.Logger.DrybulbTemperature.LastValue.ToString("F1");

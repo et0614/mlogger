@@ -77,6 +77,12 @@
                             <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
                     </Button>
+                    <!--風速電圧の調整-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_AdjustVelocityVoltage}" Clicked="VoltageButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                     <!--補正係数の設定-->
                     <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CFactor}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
