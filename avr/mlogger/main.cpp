@@ -587,7 +587,7 @@ ISR(RTC_PIT_vect)
 			vSensorInitVoltage += readVelVoltage(); //AD•ÏŠ·
 		if(VS_INIT_AVE + VS_INIT_WAIT < vSensorInitTimer)
 		{
-			vSensorInitVoltage /= (VS_INIT_AVE - VS_INIT_WAIT);
+			vSensorInitVoltage /= VS_INIT_AVE;
 			if(1.4 < vSensorInitVoltage && vSensorInitVoltage < 1.55)
 			{
 				my_eeprom::Cf_vel0 = vSensorInitVoltage;
