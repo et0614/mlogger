@@ -19,6 +19,7 @@
  * 3.0.11	日付変更時にSDカード書き出しが実行されるように修正,SDカード書き出しとZigbee通信の同時実行に対応
  * 3.0.12	3.0.11の機能のバグ修正,風速計の予熱時間を30secに変更
  * 3.1.0	風速計の自動校正処理を追加
+ * 3.1.1	温度計の自動校正処理を追加
  */
 
 /**XBee端末の設定****************************************
@@ -69,6 +70,7 @@ extern "C"{
 #include "my_eeprom.h"	//EEPROM処理
 #include "my_i2c.h"		//I2C通信
 #include "my_xbee.h"	//XBee通信
+#include "RecursiveLeastSquares.h"
 
 //FatFs関連
 #include "ff/ff.h"
@@ -76,7 +78,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.1.0\r";
+const char VERSION_NUMBER[] = "VER:3.1.1\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -140,9 +142,15 @@ volatile static unsigned int resetTime = 0;
 static char charBuff[my_xbee::MAX_CMD_CHAR];
 
 //風速計自動校正処理用
-static bool vSensorInitproc= false;
+static bool tuningVSensor= false;
 static unsigned int vSensorInitTimer = 0;
+static unsigned long vSensorTuningTime = 300; //5分
 static float vSensorInitVoltage;
+
+//温度計自動校正処理用
+static bool tuningTSensor= false;
+static unsigned int tSensorInitTimer = 0;
+static unsigned long tSensorTuningTime = 86400; //1日
 
 //マクロ定義********************************************************
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array[0]))
@@ -183,6 +191,38 @@ int main(void)
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
+
+	//DEBUG*************************
+	/*RecursiveLeastSquares::InitializeCoefficients(22.25561, 22.96658);
+	float a0 = RecursiveLeastSquares::coefA;
+	float b0 = RecursiveLeastSquares::coefB;
+	float c0 = a0 + b0;
+	RecursiveLeastSquares::UpdateCoefficients(22.28847, 23.03905);
+	float a1 = RecursiveLeastSquares::coefA;
+	float b1 = RecursiveLeastSquares::coefB;
+	float c1 = a1 + b1;
+	RecursiveLeastSquares::UpdateCoefficients(22.30725, 23.01064);
+	float a2 = RecursiveLeastSquares::coefA;
+	float b2 = RecursiveLeastSquares::coefB;
+	float c2 = a2 + b2;
+	RecursiveLeastSquares::UpdateCoefficients(22.33542, 23.00472);
+	float a3 = RecursiveLeastSquares::coefA;
+	float b3 = RecursiveLeastSquares::coefB;
+	float c3 = a3 + b3;
+	RecursiveLeastSquares::UpdateCoefficients(22.33542,	22.95189);
+	float a4 = RecursiveLeastSquares::coefA;
+	float b4 = RecursiveLeastSquares::coefB;
+	float c4 = a4 + b4;
+	RecursiveLeastSquares::UpdateCoefficients(22.33386, 23.0423);
+	float a5 = RecursiveLeastSquares::coefA;
+	float b5 = RecursiveLeastSquares::coefB;
+	float c5 = a5 + b5;
+	
+	float xxxxxxxx = c0+c1+c2+c3+c4+c5;
+	if(xxxxxxxx < 0.0) return 1;
+
+	while(true);*/
+	//DEBUG*************************
 
 	//割り込み再開
 	sei();
@@ -359,6 +399,9 @@ static void solve_command(void)
 {
 	char* command = (char*)cmdBuff;
 	
+	//チューニング中は指令を受け取らない
+	if(tuningVSensor || tuningTSensor) return;
+	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
 		my_xbee::bltx_chars(VERSION_NUMBER);
@@ -529,6 +572,39 @@ static void solve_command(void)
 		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
 		my_xbee::bltx_chars(name);
 	}
+	//風速計の自動校正
+	else if(strncmp(command, "TNV", 3) == 0)
+	{
+		char buff[11];
+		buff[5] = '\0';
+		strncpy(buff, command + 3, 5);
+		vSensorTuningTime = atol(buff);
+		if(vSensorTuningTime < 60) vSensorTuningTime = 60;
+		if(86400 < vSensorTuningTime)vSensorTuningTime = 3600;
+		sprintf(buff, "TNV:%lo\r", vSensorTuningTime);
+		my_xbee::bltx_chars(buff);
+		
+		tuningVSensor = true;
+		vSensorInitTimer = 0;
+		vSensorInitVoltage = 0;
+		wakeup_anemo();
+	}
+	//温度計の自動校正
+	else if(strncmp(command, "TNT", 3) == 0)
+	{
+		char buff[11];
+		buff[5] = '\0';
+		strncpy(buff, command + 3, 5);
+		tSensorTuningTime = atol(buff);
+		if(tSensorTuningTime < 60) tSensorTuningTime = 60;
+		if(86400 < tSensorTuningTime)tSensorTuningTime = 3600;
+		sprintf(buff, "TNT:%lo\r", tSensorTuningTime);
+		my_xbee::bltx_chars(buff);
+
+		RecursiveLeastSquares::Initialized = false;
+		tuningTSensor = true;
+		tSensorInitTimer = 0;
+	}
 	
 	//コマンドを削除
 	cmdBuff[0] = '\0';
@@ -550,7 +626,7 @@ ISR(RTC_PIT_vect)
 	
 	currentTime++; //1秒進める
 	
-	//リセットボタン押し込み確認
+	//リセットボタン押し込み確認********************************
 	if(!(PORTA.IN & PIN2_bm))
 	{
 		resetTime++;
@@ -562,228 +638,19 @@ ISR(RTC_PIT_vect)
 			blinkLED(3);	//LED点滅
 			return;
 		}
-		else if(resetTime == 10)
-		{
-			blinkLED(3);	//LED点滅
-			vSensorInitproc = true;
-			vSensorInitTimer = 0;
-			vSensorInitVoltage = 0;
-			wakeup_anemo();
-		}
 	}
 	else resetTime = 0; //Resetボタン押し込み時間を0に戻す
 	
-	//風速計校正処理
-	if(vSensorInitproc)
-	{	
-		const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
-		const unsigned int VS_INIT_AVE = 300; //風速校正の積算時間[sec]
-		
-		//LED点灯を反転
-		toggleLED();
+	//風速計校正処理*******************************************
+	if(tuningVSensor) tuneVelocitySensor();
 	
-		vSensorInitTimer++;
-		if(VS_INIT_WAIT < vSensorInitTimer)
-			vSensorInitVoltage += readVelVoltage(); //AD変換
-		if(VS_INIT_AVE + VS_INIT_WAIT < vSensorInitTimer)
-		{
-			vSensorInitVoltage /= VS_INIT_AVE;
-			if(1.4 < vSensorInitVoltage && vSensorInitVoltage < 1.55)
-			{
-				my_eeprom::Cf_vel0 = vSensorInitVoltage;
-				my_eeprom::SetCorrectionFactor();
-			}
-			
-			turnOffLED();
-			sleep_anemo();
-			vSensorInitproc = false;
-		}
-	}		
-	//ロギング中であれば
-	else if(logging)
-	{
-		//計測開始時刻の前ならば終了
-		if(currentTime < startTime) return;
-		
-		//SDカードロギング中は5秒ごとに点灯
-		if(outputToSDCard)  //SD card出力
-		{
-			blinkCount++;
-			if(5 <= blinkCount)
-			{
-				blinkCount = 0;
-				blinkLED(1);
-			}
-		}
-		
-		//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
-		if(my_eeprom::measure_vel && my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
-		
-		bool hasNewData = false;
-		char tmpS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
-		char hmdS[7] = "n/a"; //0.00 ~ 100.00//6文字+\r
-		char glbTS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
-		char glbVS[7] = "n/a";
-		char velS[7] = "n/a"; //0.0000 ~ 1.5000//6文字+\r
-		char velVS[7] = "n/a";
-		char illS[9] = "n/a"; //0.01~83865.60
-		char adV1S[7] = "n/a";
-		char adV2S[7] = "n/a";
-		char adV3S[7] = "n/a";
-		
-		//微風速測定************
-		pass_vel++;
-		if(my_eeprom::measure_vel && my_eeprom::interval_vel <= pass_vel)
-		{
-			double velV = readVelVoltage(); //AD変換
-			dtostrf(velV,6,4,velVS);
-			
-			float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
-			float vel = bff * (2.3595 + bff * (-12.029 + bff * 79.744)); //電圧-風速換算式
-			dtostrf(vel,6,4,velS);
-			
-			pass_vel = 0;
-			hasNewData = true;
-			//次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
-			if(V_WAKEUP_TIME <= my_eeprom::interval_vel) sleep_anemo();
-		}
-		
-		//温湿度測定************
-		pass_th++;
-		if(my_eeprom::measure_th && my_eeprom::interval_th <= pass_th)
-		{
-			float tmp_f = 0;
-			float hmd_f = 0;
-			if((IS_AM2320 && my_i2c::ReadAM2320(&tmp_f, &hmd_f)) || (!IS_AM2320  &&  my_i2c::ReadAHT20(&tmp_f, &hmd_f)))
-			{
-				tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
-				hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
-				dtostrf(tmp_f,6,2,tmpS);
-				dtostrf(hmd_f,6,2,hmdS);
-			}
-			pass_th = 0;
-			hasNewData = true;
-		}
+	//温度計校正処理*******************************************
+	else if(tuningTSensor) tuneTemperatureSensor();
 	
-		//グローブ温度測定************
-		pass_glb++;
-		if(my_eeprom::measure_glb && my_eeprom::interval_glb <= pass_glb)
-		{
-			float glbV = readGlbVoltage(); //AD変換
-			dtostrf(glbV,6,4,glbVS);
-			
-			float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
-			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
-			dtostrf(glbT,6,2,glbTS);
-			
-			pass_glb = 0;
-			hasNewData = true;			
-		}
-		
-		//照度センサ測定**************
-		pass_ill++;
-		if(my_eeprom::measure_ill && my_eeprom::interval_ill <= pass_ill)
-		{
-			
-			if(my_eeprom::measure_Prox) 
-			{
-				float ill_d = my_i2c::ReadVCNL4030_PS();
-				dtostrf(ill_d,8,2,illS);
-			}
-			else
-			{
-				float ill_d = my_i2c::ReadVCNL4030_ALS();
-				ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
-				dtostrf(ill_d,8,2,illS);
-			}
-			pass_ill = 0;
-			hasNewData = true;
-		}
-		
-		//汎用AD変換測定1
-		pass_ad1++;
-		if(my_eeprom::measure_AD1 && my_eeprom::interval_AD1 <= pass_ad1)
-		{
-			float adV = readVoltage(1); //AD変換
-			dtostrf(adV,6,4,adV1S);
-			pass_ad1 = 0;
-			hasNewData = true;
-		}
-		
-		//汎用AD変換測定2
-		pass_ad2++;
-		if(my_eeprom::measure_AD2 && my_eeprom::interval_AD2 <= pass_ad2)
-		{
-			float adV = readVoltage(2); //AD変換
-			dtostrf(adV,6,4,adV2S);
-			pass_ad2 = 0;
-			hasNewData = true;
-		}
-		
-		//汎用AD変換測定3
-		pass_ad3++;
-		if(my_eeprom::measure_AD3 && my_eeprom::interval_AD3 <= pass_ad3)
-		{
-			float adV = readVoltage(3); //AD変換
-			dtostrf(adV,6,4,adV3S);
-			pass_ad3 = 0;
-			hasNewData = true;
-		}
-		
-		//新規データがある場合は送信
-		if(hasNewData)
-		{
-			if(outputToXBee || outputToBLE) 
-			{
-				wakeup_xbee(); //XBeeスリープ解除
-				_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
-			}
-			
-			//日時を作成
-			time_t ct = currentTime - UNIX_OFFSET;
-			tm dtNow;
-			gmtime_r(&ct, &dtNow);
-			
-			//書き出し文字列を作成
-			snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
-				dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-				tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
-			
-			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
-			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-			charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
-
-			if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
-			if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
-			if(outputToSDCard)  //SD card出力
-			{
-				//データが十分に溜まるか、1h以上の時間間隔があいたら書き出す。時刻を比べるので日付が変わった場合にも確実に書き出される
-				if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_hour != dtNow.tm_hour)
-				{					
-					writeSDcard(lastSavedTime, lineBuff); //SD card出力
-					buffNumber = 0;
-					lineBuff[0] = '\0';
-					lastSavedTime = dtNow;
-				}
-				
-				//SDカード書き出し時は冒頭のDTTが不要。もう少しキレイなプログラムにできそうだが。。。
-				snprintf(charBuff, sizeof(charBuff), "%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
-				dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-				tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
-				//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
-				charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-				charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
-				//一時保存文字列の末尾に足す
-				strncat(lineBuff, charBuff, sizeof(charBuff));
-				buffNumber++;
-			}
-		}
-				
-		//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
-		//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
-		//while(! my_uart::tx_done());
-		_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う
-	}
+	//ロギング中であれば****************************************
+	else if(logging) execLogging();
+	
+	//待機中であれば****************************************
 	else
 	{
 		sleep_anemo(); //風速計を停止 2023.01.09 Bugfix
@@ -801,6 +668,279 @@ ISR(RTC_PIT_vect)
 		//明滅
 		if((PORTA.IN & PIN2_bm))  //Reset押し込み中は明滅停止
 			blinkLED(initSD ? 2 : 1);
+	}
+}
+
+static void execLogging()
+{
+	//計測開始時刻の前ならば終了
+	if(currentTime < startTime) return;
+	
+	//SDカードロギング中は5秒ごとに点灯
+	if(outputToSDCard)  //SD card出力
+	{
+		blinkCount++;
+		if(5 <= blinkCount)
+		{
+			blinkCount = 0;
+			blinkLED(1);
+		}
+	}
+	
+	//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
+	if(my_eeprom::measure_vel && my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
+	
+	bool hasNewData = false;
+	char tmpS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
+	char hmdS[7] = "n/a"; //0.00 ~ 100.00//6文字+\r
+	char glbTS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
+	char glbVS[7] = "n/a";
+	char velS[7] = "n/a"; //0.0000 ~ 1.5000//6文字+\r
+	char velVS[7] = "n/a";
+	char illS[9] = "n/a"; //0.01~83865.60
+	char adV1S[7] = "n/a";
+	char adV2S[7] = "n/a";
+	char adV3S[7] = "n/a";
+	
+	//微風速測定************
+	pass_vel++;
+	if(my_eeprom::measure_vel && my_eeprom::interval_vel <= pass_vel)
+	{
+		double velV = readVelVoltage(); //AD変換
+		dtostrf(velV,6,4,velVS);
+		
+		float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
+		float vel = bff * (2.3595 + bff * (-12.029 + bff * 79.744)); //電圧-風速換算式
+		dtostrf(vel,6,4,velS);
+		
+		pass_vel = 0;
+		hasNewData = true;
+		//次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
+		if(V_WAKEUP_TIME <= my_eeprom::interval_vel) sleep_anemo();
+	}
+	
+	//温湿度測定************
+	pass_th++;
+	if(my_eeprom::measure_th && my_eeprom::interval_th <= pass_th)
+	{
+		float tmp_f = 0;
+		float hmd_f = 0;
+		if((IS_AM2320 && my_i2c::ReadAM2320(&tmp_f, &hmd_f)) || (!IS_AM2320  &&  my_i2c::ReadAHT20(&tmp_f, &hmd_f)))
+		{
+			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
+			hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
+			dtostrf(tmp_f,6,2,tmpS);
+			dtostrf(hmd_f,6,2,hmdS);
+		}
+		pass_th = 0;
+		hasNewData = true;
+	}
+	
+	//グローブ温度測定************
+	pass_glb++;
+	if(my_eeprom::measure_glb && my_eeprom::interval_glb <= pass_glb)
+	{
+		float glbV = readGlbVoltage(); //AD変換
+		dtostrf(glbV,6,4,glbVS);
+		
+		float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
+		glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+		dtostrf(glbT,6,2,glbTS);
+		
+		pass_glb = 0;
+		hasNewData = true;
+	}
+	
+	//照度センサ測定**************
+	pass_ill++;
+	if(my_eeprom::measure_ill && my_eeprom::interval_ill <= pass_ill)
+	{
+		
+		if(my_eeprom::measure_Prox)
+		{
+			float ill_d = my_i2c::ReadVCNL4030_PS();
+			dtostrf(ill_d,8,2,illS);
+		}
+		else
+		{
+			float ill_d = my_i2c::ReadVCNL4030_ALS();
+			ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
+			dtostrf(ill_d,8,2,illS);
+		}
+		pass_ill = 0;
+		hasNewData = true;
+	}
+	
+	//汎用AD変換測定1
+	pass_ad1++;
+	if(my_eeprom::measure_AD1 && my_eeprom::interval_AD1 <= pass_ad1)
+	{
+		float adV = readVoltage(1); //AD変換
+		dtostrf(adV,6,4,adV1S);
+		pass_ad1 = 0;
+		hasNewData = true;
+	}
+	
+	//汎用AD変換測定2
+	pass_ad2++;
+	if(my_eeprom::measure_AD2 && my_eeprom::interval_AD2 <= pass_ad2)
+	{
+		float adV = readVoltage(2); //AD変換
+		dtostrf(adV,6,4,adV2S);
+		pass_ad2 = 0;
+		hasNewData = true;
+	}
+	
+	//汎用AD変換測定3
+	pass_ad3++;
+	if(my_eeprom::measure_AD3 && my_eeprom::interval_AD3 <= pass_ad3)
+	{
+		float adV = readVoltage(3); //AD変換
+		dtostrf(adV,6,4,adV3S);
+		pass_ad3 = 0;
+		hasNewData = true;
+	}
+	
+	//新規データがある場合は送信
+	if(hasNewData)
+	{
+		if(outputToXBee || outputToBLE)
+		{
+			wakeup_xbee(); //XBeeスリープ解除
+			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
+		}
+		
+		//日時を作成
+		time_t ct = currentTime - UNIX_OFFSET;
+		tm dtNow;
+		gmtime_r(&ct, &dtNow);
+		
+		//書き出し文字列を作成
+		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+		dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
+		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+		
+		//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
+		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
+		charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
+
+		if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
+		if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
+		if(outputToSDCard)  //SD card出力
+		{
+			//データが十分に溜まるか、1h以上の時間間隔があいたら書き出す。時刻を比べるので日付が変わった場合にも確実に書き出される
+			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_hour != dtNow.tm_hour)
+			{
+				writeSDcard(lastSavedTime, lineBuff); //SD card出力
+				buffNumber = 0;
+				lineBuff[0] = '\0';
+				lastSavedTime = dtNow;
+			}
+			
+			//SDカード書き出し時は冒頭のDTTが不要。もう少しキレイなプログラムにできそうだが。。。
+			snprintf(charBuff, sizeof(charBuff), "%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+			dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
+			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
+			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
+			charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
+			//一時保存文字列の末尾に足す
+			strncat(lineBuff, charBuff, sizeof(charBuff));
+			buffNumber++;
+		}
+	}
+	
+	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
+	//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
+	//while(! my_uart::tx_done());
+	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う	
+}
+
+static void tuneVelocitySensor()
+{
+	const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
+	
+	//LED点灯
+	blinkLED(3);
+	
+	vSensorInitTimer++;
+	
+	//残り時間を通知
+	char buff[11];
+	sprintf(buff, "TNV:%lo\r", vSensorTuningTime + VS_INIT_WAIT - vSensorInitTimer);
+	my_xbee::bltx_chars(buff);
+	
+	if(VS_INIT_WAIT < vSensorInitTimer)
+		vSensorInitVoltage += readVelVoltage(); //AD変換
+	if(vSensorTuningTime + VS_INIT_WAIT < vSensorInitTimer)
+	{
+		vSensorInitVoltage /= vSensorTuningTime;
+		if(1.4 < vSensorInitVoltage && vSensorInitVoltage < 1.55)
+		{
+			my_eeprom::Cf_vel0 = vSensorInitVoltage;
+			my_eeprom::SetCorrectionFactor();
+		}
+		
+		sleep_anemo();
+		tuningVSensor = false; //校正終了
+	}
+}
+
+static void tuneTemperatureSensor()
+{
+	const unsigned int TS_INIT_WAIT = 60; //温度校正開始までの待ち時間[sec]
+	
+	//LED点灯
+	blinkLED(3);
+	
+	tSensorInitTimer++;
+	
+	//残り時間を通知
+	char buff[11];
+	sprintf(buff, "TNV:%lo\r", tSensorTuningTime + TS_INIT_WAIT - tSensorInitTimer);
+	my_xbee::bltx_chars(buff);
+	
+	if(TS_INIT_WAIT < tSensorInitTimer)
+	{
+		//温湿度測定
+		float tmp_f = 0;
+		float hmd_f = 0;
+		if((IS_AM2320 && my_i2c::ReadAM2320(&tmp_f, &hmd_f)) || (!IS_AM2320  &&  my_i2c::ReadAHT20(&tmp_f, &hmd_f)))
+			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
+		else return;
+		
+		//グローブ温度
+		float glbV = readGlbVoltage(); //AD変換
+		float glb_f = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
+		
+		//極端に誤差が大きくなければ回帰係数を更新
+		if(abs(tmp_f - glb_f) < 3)
+		{
+			if(RecursiveLeastSquares::Initialized) 
+				RecursiveLeastSquares::UpdateCoefficients(glb_f, tmp_f);			
+			else 
+			{
+				//一旦、広くy=xで初期化すると安定する
+				RecursiveLeastSquares::InitializeCoefficients(0, 0);
+				RecursiveLeastSquares::UpdateCoefficients(10, 10);
+				RecursiveLeastSquares::UpdateCoefficients(20, 20);
+				RecursiveLeastSquares::UpdateCoefficients(30, 30);
+				RecursiveLeastSquares::UpdateCoefficients(40, 40);
+				RecursiveLeastSquares::UpdateCoefficients(glb_f, tmp_f);
+			}
+		}
+		
+		if(tSensorTuningTime + TS_INIT_WAIT < tSensorInitTimer)
+		{
+			/*if(0.8 < RecursiveLeastSquares::coefA && RecursiveLeastSquares::coefA < 1.2 
+			&& -1 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 2)
+			{*/
+				my_eeprom::Cf_glbA = RecursiveLeastSquares::coefA;
+				my_eeprom::Cf_glbB = RecursiveLeastSquares::coefB;
+				my_eeprom::SetCorrectionFactor();
+			//}
+			tuningTSensor = false; //校正終了
+		}
 	}
 }
 
@@ -875,13 +1015,13 @@ static float readVoltage(unsigned int adNumber)
 	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
 }
 
-static void sleep_anemo(void)
+//以下はinline関数************************************
+
+inline static void sleep_anemo(void)
 {
 	PORTA.OUTCLR = PIN5_bm; //リレー遮断
 	PORTA.OUTCLR = PIN4_bm; //5V昇圧停止
 }
-
-//以下はinline関数************************************
 
 inline static void wakeup_anemo(void)
 {

@@ -29,6 +29,12 @@ static float readVoltage(unsigned int adNumber);
 
 static void writeSDcard(const tm dtNow, const char write_chars[]);
 
+static void execLogging(void);
+
+static void tuneVelocitySensor(void);
+
+static void tuneTemperatureSensor(void);
+
 //à»â∫ÇÕinlineä÷êî************************************
 
 inline static void sleep_anemo(void);
