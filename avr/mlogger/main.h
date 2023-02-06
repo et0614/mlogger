@@ -31,9 +31,11 @@ static void writeSDcard(const tm dtNow, const char write_chars[]);
 
 static void execLogging(void);
 
-static void tuneVelocitySensor(void);
+static void calibrateVelocityVoltage(void);
 
-static void tuneTemperatureSensor(void);
+static void autoCalibrateVelocitySensor(void);
+
+static void autoCalibrateTemperatureSensor(void);
 
 //à»â∫ÇÕinlineä÷êî************************************
 

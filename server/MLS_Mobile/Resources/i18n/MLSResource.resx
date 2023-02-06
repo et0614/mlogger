@@ -177,6 +177,33 @@
   <data name="ConnectMLogger" xml:space="preserve">
     <value>Connect to MLogger</value>
   </data>
+  <data name="CR_AutoCalTemp" xml:space="preserve">
+    <value>Automatic temperature calibration</value>
+  </data>
+  <data name="CR_AutoCalVel" xml:space="preserve">
+    <value>Automatic velocity calibration</value>
+  </data>
+  <data name="CR_CalibrateVelocityVoltage" xml:space="preserve">
+    <value>Calibrate 0 m/s velocity voltage</value>
+  </data>
+  <data name="CR_CalibratingTime" xml:space="preserve">
+    <value>Calibrating time:</value>
+  </data>
+  <data name="CR_CFactor" xml:space="preserve">
+    <value>Set correction factor</value>
+  </data>
+  <data name="CR_Connecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="CR_ConnectionFailed" xml:space="preserve">
+    <value>Connection failed</value>
+  </data>
+  <data name="CR_EndCalibration" xml:space="preserve">
+    <value>End calibration</value>
+  </data>
+  <data name="CR_Title" xml:space="preserve">
+    <value>Calibrator</value>
+  </data>
   <data name="Date" xml:space="preserve">
     <value>Date</value>
   </data>
@@ -210,8 +237,8 @@
   <data name="DS_AdjustVelocityVoltage" xml:space="preserve">
     <value>Adjust velocity voltage</value>
   </data>
-  <data name="DS_CFactor" xml:space="preserve">
-    <value>Set correction factor</value>
+  <data name="DS_Calibrate" xml:space="preserve">
+    <value>Calibration</value>
   </data>
   <data name="DS_Communicate" xml:space="preserve">
     <value>Communicate with MLogger</value>
@@ -281,6 +308,9 @@
   </data>
   <data name="GlobeTemperatureVoltage" xml:space="preserve">
     <value>Globe temperature voltage</value>
+  </data>
+  <data name="Hour" xml:space="preserve">
+    <value>Hour</value>
   </data>
   <data name="Illuminance" xml:space="preserve">
     <value>Illuminance</value>
@@ -368,6 +398,9 @@
   </data>
   <data name="MetabolicUnit" xml:space="preserve">
     <value>Metabolic rate</value>
+  </data>
+  <data name="Minute" xml:space="preserve">
+    <value>Minute</value>
   </data>
   <data name="MS_Title" xml:space="preserve">
     <value>Moist air calculator</value>

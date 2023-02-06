@@ -241,6 +241,87 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Automatic temperature calibration.
+        /// </summary>
+        internal static string CR_AutoCalTemp {
+            get {
+                return ResourceManager.GetString("CR_AutoCalTemp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Automatic velocity calibration.
+        /// </summary>
+        internal static string CR_AutoCalVel {
+            get {
+                return ResourceManager.GetString("CR_AutoCalVel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Calibrate 0 m/s velocity voltage.
+        /// </summary>
+        internal static string CR_CalibrateVelocityVoltage {
+            get {
+                return ResourceManager.GetString("CR_CalibrateVelocityVoltage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Calibrating time:.
+        /// </summary>
+        internal static string CR_CalibratingTime {
+            get {
+                return ResourceManager.GetString("CR_CalibratingTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set correction factor.
+        /// </summary>
+        internal static string CR_CFactor {
+            get {
+                return ResourceManager.GetString("CR_CFactor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connecting....
+        /// </summary>
+        internal static string CR_Connecting {
+            get {
+                return ResourceManager.GetString("CR_Connecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection failed.
+        /// </summary>
+        internal static string CR_ConnectionFailed {
+            get {
+                return ResourceManager.GetString("CR_ConnectionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to End calibration.
+        /// </summary>
+        internal static string CR_EndCalibration {
+            get {
+                return ResourceManager.GetString("CR_EndCalibration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Calibrator.
+        /// </summary>
+        internal static string CR_Title {
+            get {
+                return ResourceManager.GetString("CR_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Date.
         /// </summary>
         internal static string Date {
@@ -340,11 +421,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Set correction factor.
+        ///   Looks up a localized string similar to Calibration.
         /// </summary>
-        internal static string DS_CFactor {
+        internal static string DS_Calibrate {
             get {
-                return ResourceManager.GetString("DS_CFactor", resourceCulture);
+                return ResourceManager.GetString("DS_Calibrate", resourceCulture);
             }
         }
         
@@ -552,6 +633,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string GlobeTemperatureVoltage {
             get {
                 return ResourceManager.GetString("GlobeTemperatureVoltage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hour.
+        /// </summary>
+        internal static string Hour {
+            get {
+                return ResourceManager.GetString("Hour", resourceCulture);
             }
         }
         
@@ -813,6 +903,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string MetabolicUnit {
             get {
                 return ResourceManager.GetString("MetabolicUnit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minute.
+        /// </summary>
+        internal static string Minute {
+            get {
+                return ResourceManager.GetString("Minute", resourceCulture);
             }
         }
         

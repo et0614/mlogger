@@ -65,30 +65,26 @@
                 <!--MLoggerとの通信-->
                 <Label Text="{x:Static res:MLSResource.DS_Communicate}" FontSize="Subtitle"/>
                 <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
-                    <!--ロギング開始-->
-                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
-                        <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
-                        </Button.ImageSource>
-                    </Button>
+                    <HorizontalStackLayout>
+                        <!--ロギング開始-->
+                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
+                            <Button.ImageSource>
+                                <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
+                            </Button.ImageSource>
+                        </Button>
+                        <!--補正係数の設定-->
+                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Calibrate}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
+                            <Button.ImageSource>
+                                <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            </Button.ImageSource>
+                        </Button>
+                    </HorizontalStackLayout>
                     <!--SDカード書き込み-->
                     <Button Margin="5" ContentLayout="Left, 20" x:Name="btnSDLogging" Text="{x:Static res:MLSResource.DS_SDLogging}" Clicked="SDButton_Clicked" IsVisible="false" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
                             <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
-                    </Button>
-                    <!--風速電圧の調整-->
-                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_AdjustVelocityVoltage}" Clicked="VoltageButton_Clicked" HorizontalOptions="FillAndExpand">
-                        <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                        </Button.ImageSource>
-                    </Button>
-                    <!--補正係数の設定-->
-                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CFactor}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
-                        <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                        </Button.ImageSource>
-                    </Button>
+                    </Button>                    
                 </StackLayout>
 
                 <!--MLoggerの基本情報-->

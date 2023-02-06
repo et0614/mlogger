@@ -24,7 +24,7 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(DeviceSetting), typeof(DeviceSetting));
     Routing.RegisterRoute(nameof(CFSetting), typeof(CFSetting));
     Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
-    Routing.RegisterRoute(nameof(VelocityTuner), typeof(VelocityTuner));
+    Routing.RegisterRoute(nameof(Calibrator), typeof(Calibrator));
 
     makeDummyFile();
   }

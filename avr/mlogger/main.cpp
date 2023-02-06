@@ -20,6 +20,7 @@
  * 3.0.12	3.0.11の機能のバグ修正,風速計の予熱時間を30secに変更
  * 3.1.0	風速計の自動校正処理を追加
  * 3.1.1	温度計の自動校正処理を追加
+ * 3.1.2	風速計の手動校正処理を追加
  */
 
 /**XBee端末の設定****************************************
@@ -78,7 +79,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.1.1\r";
+const char VERSION_NUMBER[] = "VER:3.1.2\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -142,13 +143,14 @@ volatile static unsigned int resetTime = 0;
 static char charBuff[my_xbee::MAX_CMD_CHAR];
 
 //風速計自動校正処理用
-static bool tuningVSensor= false;
+static bool autCalibratingVSensor= false;
+static bool calibratingVelocityVoltage = false;
 static unsigned int vSensorInitTimer = 0;
 static unsigned long vSensorTuningTime = 300; //5分
 static float vSensorInitVoltage;
 
 //温度計自動校正処理用
-static bool tuningTSensor= false;
+static bool autCalibratingTSensor= false;
 static unsigned int tSensorInitTimer = 0;
 static unsigned long tSensorTuningTime = 86400; //1日
 
@@ -400,7 +402,7 @@ static void solve_command(void)
 	char* command = (char*)cmdBuff;
 	
 	//チューニング中は指令を受け取らない
-	if(tuningVSensor || tuningTSensor) return;
+	if(autCalibratingVSensor || autCalibratingTSensor) return;
 	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
@@ -573,7 +575,7 @@ static void solve_command(void)
 		my_xbee::bltx_chars(name);
 	}
 	//風速計の自動校正
-	else if(strncmp(command, "TNV", 3) == 0)
+	else if(strncmp(command, "CBV", 3) == 0)
 	{
 		char buff[11];
 		buff[5] = '\0';
@@ -581,16 +583,16 @@ static void solve_command(void)
 		vSensorTuningTime = atol(buff);
 		if(vSensorTuningTime < 60) vSensorTuningTime = 60;
 		if(86400 < vSensorTuningTime)vSensorTuningTime = 3600;
-		sprintf(buff, "TNV:%lo\r", vSensorTuningTime);
+		sprintf(buff, "CBV:%lo\r", vSensorTuningTime);
 		my_xbee::bltx_chars(buff);
 		
-		tuningVSensor = true;
+		autCalibratingVSensor = true;
 		vSensorInitTimer = 0;
 		vSensorInitVoltage = 0;
 		wakeup_anemo();
 	}
 	//温度計の自動校正
-	else if(strncmp(command, "TNT", 3) == 0)
+	else if(strncmp(command, "CBT", 3) == 0)
 	{
 		char buff[11];
 		buff[5] = '\0';
@@ -598,12 +600,25 @@ static void solve_command(void)
 		tSensorTuningTime = atol(buff);
 		if(tSensorTuningTime < 60) tSensorTuningTime = 60;
 		if(86400 < tSensorTuningTime)tSensorTuningTime = 3600;
-		sprintf(buff, "TNT:%lo\r", tSensorTuningTime);
+		sprintf(buff, "CBT:%lo\r", tSensorTuningTime);
 		my_xbee::bltx_chars(buff);
 
 		RecursiveLeastSquares::Initialized = false;
-		tuningTSensor = true;
+		autCalibratingTSensor = true;
 		tSensorInitTimer = 0;
+	}
+	//風速の手動校正開始
+	else if(strncmp(command, "SCV", 3) == 0) 
+	{
+		wakeup_anemo();
+		calibratingVelocityVoltage = true;
+	}
+	//風速の手動校正終了
+	else if(strncmp(command, "ECV", 3) == 0)
+	{
+		sleep_anemo();
+		calibratingVelocityVoltage = false;
+		my_xbee::bltx_chars("ECV\r");
 	}
 	
 	//コマンドを削除
@@ -642,10 +657,13 @@ ISR(RTC_PIT_vect)
 	else resetTime = 0; //Resetボタン押し込み時間を0に戻す
 	
 	//風速計校正処理*******************************************
-	if(tuningVSensor) tuneVelocitySensor();
+	if(calibratingVelocityVoltage) calibrateVelocityVoltage();
 	
-	//温度計校正処理*******************************************
-	else if(tuningTSensor) tuneTemperatureSensor();
+	//風速計自動校正処理*******************************************
+	else if(autCalibratingVSensor) autoCalibrateVelocitySensor();
+	
+	//温度計自動校正処理*******************************************
+	else if(autCalibratingTSensor) autoCalibrateTemperatureSensor();
 	
 	//ロギング中であれば****************************************
 	else if(logging) execLogging();
@@ -856,7 +874,16 @@ static void execLogging()
 	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う	
 }
 
-static void tuneVelocitySensor()
+static void calibrateVelocityVoltage()
+{
+	char velVS[7] = "n/a";	
+	double velV = readVelVoltage(); //AD変換
+	dtostrf(velV,6,4,velVS);	
+	snprintf(charBuff, sizeof(charBuff), "SCV:%s\r", velVS);
+	my_xbee::bltx_chars(charBuff);
+}
+
+static void autoCalibrateVelocitySensor()
 {
 	const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
 	
@@ -882,11 +909,11 @@ static void tuneVelocitySensor()
 		}
 		
 		sleep_anemo();
-		tuningVSensor = false; //校正終了
+		autCalibratingVSensor = false; //校正終了
 	}
 }
 
-static void tuneTemperatureSensor()
+static void autoCalibrateTemperatureSensor()
 {
 	const unsigned int TS_INIT_WAIT = 60; //温度校正開始までの待ち時間[sec]
 	
@@ -932,14 +959,15 @@ static void tuneTemperatureSensor()
 		
 		if(tSensorTuningTime + TS_INIT_WAIT < tSensorInitTimer)
 		{
-			/*if(0.8 < RecursiveLeastSquares::coefA && RecursiveLeastSquares::coefA < 1.2 
-			&& -1 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 2)
-			{*/
+			//あまり酷い補正は採用しない
+			if(0.7 < RecursiveLeastSquares::coefA && RecursiveLeastSquares::coefA < 1.3 
+			&& -3 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 3)
+			{
 				my_eeprom::Cf_glbA = RecursiveLeastSquares::coefA;
 				my_eeprom::Cf_glbB = RecursiveLeastSquares::coefB;
 				my_eeprom::SetCorrectionFactor();
-			//}
-			tuningTSensor = false; //校正終了
+			}
+			autCalibratingTSensor = false; //校正終了
 		}
 	}
 }

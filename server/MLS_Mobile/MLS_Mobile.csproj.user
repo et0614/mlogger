@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ActiveDebugFramework>net7.0-android</ActiveDebugFramework>
+    <ActiveDebugFramework>net7.0-ios</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>Pixel 5 - API 30 (Android 11.0 - API 30)</ActiveDebugProfile>
-    <SelectedPlatformGroup>Emulator</SelectedPlatformGroup>
+    <ActiveDebugProfile>Remote Device</ActiveDebugProfile>
+    <SelectedPlatformGroup>RemoteDevice</SelectedPlatformGroup>
     <DefaultDevice>pixel_5_-_api_30</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
@@ -17,7 +17,7 @@
 		&lt;key&gt;model&lt;/key&gt;
 		&lt;string&gt;iPhone14,4&lt;/string&gt;
 		&lt;key&gt;os-version&lt;/key&gt;
-		&lt;string&gt;16.1.2&lt;/string&gt;
+		&lt;string&gt;16.2&lt;/string&gt;
 		&lt;key&gt;os&lt;/key&gt;
 		&lt;string&gt;iOS&lt;/string&gt;
 	&lt;/dict&gt;
@@ -43,6 +43,9 @@
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="ActivitySelector.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
+    <MauiXaml Update="Calibrator.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="CFSetting.xaml">
@@ -73,9 +76,6 @@
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="ThermalComfortCalculator.xaml">
-      <SubType>Designer</SubType>
-    </MauiXaml>
-    <MauiXaml Update="VelocityTuner.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
   </ItemGroup>

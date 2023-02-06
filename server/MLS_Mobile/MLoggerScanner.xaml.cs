@@ -68,11 +68,6 @@ public partial class MLoggerScanner : ContentPage
 
     //Bluetoothを用意
     IBluetoothLE bluetoothLE = CrossBluetoothLE.Current;
-    /*if (bluetoothLE.State == BluetoothState.Off)
-    {
-      Shell.Current.DisplayAlert("Alert", MLSResource.SC_Bluetooth, "OK");
-      return;
-    }*/
 
     //アダプタを用意
     IAdapter adapter = bluetoothLE.Adapter;

@@ -59,6 +59,18 @@ namespace MLLib
     /// <summary>ロガー名称受信イベント</summary>
     public event EventHandler? LoggerNameReceivedEvent;
 
+    /// <summary>風速電圧校正受信イベント</summary>
+    public event EventHandler? CalibratingVoltageReceivedEvent;
+
+    /// <summary>風速電圧校正終了イベント</summary>
+    public event EventHandler? EndCalibratingVoltageMessageReceivedEvent;
+
+    /// <summary>風速自動校正受信イベント</summary>
+    public event EventHandler? VelocityAutoCalibrationReceivedEvent;
+
+    /// <summary>温度自動校正受信イベント</summary>
+    public event EventHandler? TemperatureAutoCalibrationReceivedEvent;
+
     #endregion
 
     #region イベント用プロパティ
@@ -83,6 +95,18 @@ namespace MLLib
 
     /// <summary>ロガー名称を受信したか否かを設定・取得する</summary>
     public bool HasLoggerNameReceived { get; set; } = false;
+
+    /// <summary>風速校正開始イベントを受信したか否かを設定・取得する</summary>
+    public bool HasStartCalibratingVoltageMessageReceived { get; set; } = false;
+
+    /// <summary>風速校正終了イベントを受信したか否かを設定・取得する</summary>
+    public bool HasEndCalibratingVoltageMessageReceived { get; set; } = false;
+
+    /// <summary>風速自動校正イベントを受信したか否かを設定・取得する</summary>
+    public bool HasVelocityAutoCalibrationReceived { get; set; } = false;
+
+    /// <summary>温度自動校正イベントを受信したか否かを設定・取得する</summary>
+    public bool HasTemperatureAutoCalibrationReceived { get; set; } = false;
 
     #endregion
 
@@ -139,6 +163,12 @@ namespace MLLib
 
     /// <summary>バージョンが読み込み済か否か</summary>
     public bool VersionLoaded { get; private set; } = false;
+
+    /// <summary>風速校正残り時間[sec]を取得する</summary>
+    public int VelocityCalibrationTime { get; private set; } = 0;
+
+    /// <summary>温度校正残り時間[sec]を取得する</summary>
+    public int TemperatureCalibrationTime { get; private set; } = 0;
 
     #endregion
 
@@ -349,6 +379,9 @@ namespace MLLib
           else if (CurrentStatus == Status.Measuring || CurrentStatus == Status.StartMeasuring)
             CurrentStatus = Status.WaitingForCommand;
 
+          //校正完了とみなす
+          VelocityCalibrationTime = TemperatureCalibrationTime = 0;
+
           //イベント通知
           WaitingForCommandMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
           break;
@@ -389,8 +422,37 @@ namespace MLLib
           solveLN();
           break;
 
+        //名称変更
         case "CLN":
           solveLN();
+          break;
+
+        //風速電圧校正開始
+        case "SCV":
+          Velocity.LastMeasureTime = DateTime.Now;
+          VelocityVoltage = double.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+          HasStartCalibratingVoltageMessageReceived = true;
+          CalibratingVoltageReceivedEvent?.Invoke(this, EventArgs.Empty);
+          break;
+
+        //風速電圧校正終了
+        case "ECV":
+          HasEndCalibratingVoltageMessageReceived = true;
+          EndCalibratingVoltageMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+          break;
+
+        //風速自動校正
+        case "CBV":
+          VelocityCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+          VelocityAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
+          HasVelocityAutoCalibrationReceived = true;
+          break;
+
+        //温度自動校正
+        case "CBT":
+          TemperatureCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+          TemperatureAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
+          HasTemperatureAutoCalibrationReceived = true;
           break;
       }
 
@@ -723,6 +785,36 @@ namespace MLLib
     public static string MakeLoadLoggerNameCommand()
     {
       return "\rLLN\r";
+    }
+
+    /// <summary>風速校正開始コマンドをつくる</summary>
+    /// <returns>風速校正開始コマンド</returns>
+    public static string MakeStartCalibratingVoltageCommand()
+    {
+      return "\rSCV\r";
+    }
+
+    /// <summary>風速校正終了コマンドをつくる</summary>
+    /// <returns>風速校正終了コマンド</returns>
+    public static string MakeEndCalibratingVoltageCommand()
+    {
+      return "\rECV\r";
+    }
+
+    /// <summary>自動風速校正コマンドをつくる</summary>
+    /// <param name="sec">校正時間[sec]</param>
+    /// <returns>自動風速校正コマンド</returns>
+    public static string MakeAutoVelocityCalibrationCommand(int sec)
+    {
+      return "\rCBV" + Math.Max(1, Math.Min(99999, sec)) + "\r";
+    }
+
+    /// <summary>自動温度校正コマンドをつくる</summary>
+    /// <param name="sec">校正時間[sec]</param>
+    /// <returns>自動温度校正コマンド</returns>
+    public static string MakeAutoTemperatureCalibrationCommand(int sec)
+    {
+      return "\rCBT" + Math.Max(1, Math.Min(99999, sec)) + "\r";
     }
 
     #endregion

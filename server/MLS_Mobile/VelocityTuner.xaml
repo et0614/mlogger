@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.VelocityTuner"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="VelocityTuner">
+    <StackLayout>
+        <Label Text="{x:Static res:MLSResource.VT_VelocityAdjustMessage}" 
+                   HorizontalTextAlignment="Start"
+                   FontSize="20" TextColor="{StaticResource Dark_G}" Margin="10"/>
+        <Label x:Name="cdownLabel" Text="30" 
+                   HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" 
+                   FontSize="40" TextColor="Red" Margin="0,30,0,0"/>
+        <Label x:Name="velLabel" Text="-" 
+                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                   FontSize="80" TextColor="{StaticResource Dark_G}"
+                   HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand"/>
+    </StackLayout>
+</ContentPage>

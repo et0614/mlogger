@@ -56,23 +56,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.12</ApplicationDisplayVersion>
-	  <ApplicationVersion>15</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
+	  <ApplicationVersion>16</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.12</ApplicationDisplayVersion>
-	  <ApplicationVersion>15</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
+	  <ApplicationVersion>16</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.12</ApplicationDisplayVersion>
-	  <ApplicationVersion>15</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
+	  <ApplicationVersion>16</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.12</ApplicationDisplayVersion>
-	  <ApplicationVersion>15</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
+	  <ApplicationVersion>16</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -337,6 +337,9 @@
 	  <MauiXaml Update="ActivitySelector.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Calibrator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="CFSetting.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
@@ -365,9 +368,6 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="VelocityTuner.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

@@ -177,6 +177,33 @@
   <data name="ConnectMLogger" xml:space="preserve">
     <value>MLoggerへ接続する</value>
   </data>
+  <data name="CR_AutoCalTemp" xml:space="preserve">
+    <value>温度の自動校正</value>
+  </data>
+  <data name="CR_AutoCalVel" xml:space="preserve">
+    <value>風速の自動校正</value>
+  </data>
+  <data name="CR_CalibrateVelocityVoltage" xml:space="preserve">
+    <value>無風電圧の校正</value>
+  </data>
+  <data name="CR_CalibratingTime" xml:space="preserve">
+    <value>校正時間:</value>
+  </data>
+  <data name="CR_CFactor" xml:space="preserve">
+    <value>補正係数の設定</value>
+  </data>
+  <data name="CR_Connecting" xml:space="preserve">
+    <value>通信中</value>
+  </data>
+  <data name="CR_ConnectionFailed" xml:space="preserve">
+    <value>通信失敗</value>
+  </data>
+  <data name="CR_EndCalibration" xml:space="preserve">
+    <value>校正終了</value>
+  </data>
+  <data name="CR_Title" xml:space="preserve">
+    <value>機器の校正</value>
+  </data>
   <data name="Date" xml:space="preserve">
     <value>日付</value>
   </data>
@@ -210,8 +237,8 @@
   <data name="DS_AdjustVelocityVoltage" xml:space="preserve">
     <value>無風電圧を調整</value>
   </data>
-  <data name="DS_CFactor" xml:space="preserve">
-    <value>補正係数の設定</value>
+  <data name="DS_Calibrate" xml:space="preserve">
+    <value>校正</value>
   </data>
   <data name="DS_Communicate" xml:space="preserve">
     <value>MLoggerとの通信</value>
@@ -278,6 +305,9 @@
   </data>
   <data name="GlobeTemperatureVoltage" xml:space="preserve">
     <value>グローブ温度電圧</value>
+  </data>
+  <data name="Hour" xml:space="preserve">
+    <value>時間</value>
   </data>
   <data name="Illuminance" xml:space="preserve">
     <value>照度</value>
@@ -365,6 +395,9 @@
   </data>
   <data name="MetabolicUnit" xml:space="preserve">
     <value>代謝量</value>
+  </data>
+  <data name="Minute" xml:space="preserve">
+    <value>分間</value>
   </data>
   <data name="MS_Title" xml:space="preserve">
     <value>湿り空気熱物性の計算機</value>
