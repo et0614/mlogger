@@ -313,6 +313,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Calibration has started..
+        /// </summary>
+        internal static string CR_StartCalibration {
+            get {
+                return ResourceManager.GetString("CR_StartCalibration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Calibrator.
         /// </summary>
         internal static string CR_Title {
@@ -484,7 +493,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Start logging to SD card.
+        ///   Looks up a localized string similar to Start logging to TF/MM card.
         /// </summary>
         internal static string DS_SDLogging {
             get {

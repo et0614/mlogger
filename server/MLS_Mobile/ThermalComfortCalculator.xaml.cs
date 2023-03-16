@@ -4,8 +4,6 @@ using System.Collections.ObjectModel;
 using Popolo.HumanBody;
 using MLS_Mobile.Resources.i18n;
 
-using Microsoft.Maui.Devices.Sensors;
-
 [QueryProperty(nameof(CloValue), "CloValue")]
 [QueryProperty(nameof(MetValue), "MetValue")]
 public partial class ThermalComfortCalculator : ContentPage
@@ -43,47 +41,48 @@ public partial class ThermalComfortCalculator : ContentPage
     //更新
     updateIndices();
 
-    if (Accelerometer.Default.IsSupported)
+    //シェイク検知Off
+    /*if (Accelerometer.Default.IsSupported)
     {
       if (!Accelerometer.Default.IsMonitoring)
       {
         Accelerometer.Default.ShakeDetected += Accelerometer_ShakeDetected;
         Accelerometer.Default.Start(SensorSpeed.Game);
       }
-    }
+    }*/
   }
 
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
 
-    if (Accelerometer.Default.IsSupported)
+    /*if (Accelerometer.Default.IsSupported)
     {
       if (Accelerometer.Default.IsMonitoring)
       {
         Accelerometer.Default.Stop();
         Accelerometer.Default.ShakeDetected -= Accelerometer_ShakeDetected;
       }
-    }
+    }*/
   }
 
   #endregion
 
   #region コントロール操作時の処理
 
-  private void Accelerometer_ShakeDetected(object sender, EventArgs e)
+  /*private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
-    if (MLUtility.SDCardEnabled)
+    if (MLUtility.MMCardEnabled)
     {
-      MLUtility.SDCardEnabled = false;
+      MLUtility.MMCardEnabled = false;
       DisplayAlert("", "Debug mode disabled", "Yes");
     }
     else
     {
-      MLUtility.SDCardEnabled = true;
+      MLUtility.MMCardEnabled = true;
       DisplayAlert("", "Debug mode enabled", "Yes");
     }
-  }
+  }*/
 
   private void slider_ValueChanged(object sender, ValueChangedEventArgs e)
   {

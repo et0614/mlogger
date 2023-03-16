@@ -201,6 +201,9 @@
   <data name="CR_EndCalibration" xml:space="preserve">
     <value>校正終了</value>
   </data>
+  <data name="CR_StartCalibration" xml:space="preserve">
+    <value>自動校正を始めます</value>
+  </data>
   <data name="CR_Title" xml:space="preserve">
     <value>機器の校正</value>
   </data>
@@ -256,7 +259,7 @@
     <value>設定送信</value>
   </data>
   <data name="DS_SDLogging" xml:space="preserve">
-    <value>SDカードへロギング開始</value>
+    <value>TFC/MMCへロギング開始</value>
   </data>
   <data name="DS_SetName" xml:space="preserve">
     <value>MLoggerの名称を設定</value>

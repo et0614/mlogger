@@ -72,7 +72,7 @@ public partial class DeviceSetting : ContentPage
     isStopLogging = true;
 
     //SDカード書き出しの可視状態更新
-    btnSDLogging.IsVisible = MLUtility.SDCardEnabled;
+    btnSDLogging.IsVisible = MLUtility.MMCardEnabled;
 
     MLUtility.Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
   }

@@ -10,7 +10,7 @@
 	<PropertyGroup>
 		<!-- <TargetFrameworks>net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks> -->
 		<!-- <TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks> -->
-		<TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks>
+		<TargetFrameworks>net7.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -50,29 +50,29 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net7.0-ios'">
-	  <CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+	  <CodesignKey>iPhone Distribution</CodesignKey>
 	  <CodesignProvision>mls_dist</CodesignProvision>
-	  <ProvisioningType>manual</ProvisioningType>
+	  <ProvisioningType>automatic</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
-	  <ApplicationVersion>16</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.14</ApplicationDisplayVersion>
+	  <ApplicationVersion>17</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
-	  <ApplicationVersion>16</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.14</ApplicationDisplayVersion>
+	  <ApplicationVersion>17</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
-	  <ApplicationVersion>16</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.14</ApplicationDisplayVersion>
+	  <ApplicationVersion>17</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.13</ApplicationDisplayVersion>
-	  <ApplicationVersion>16</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.14</ApplicationDisplayVersion>
+	  <ApplicationVersion>17</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>

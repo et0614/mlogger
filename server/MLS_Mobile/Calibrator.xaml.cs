@@ -211,9 +211,10 @@ public partial class Calibrator : ContentPage
         }
 
         //開始に成功したらページ移動
-        Application.Current.Dispatcher.Dispatch(() =>
+        Application.Current.Dispatcher.Dispatch(async () =>
         {
-          Shell.Current.GoToAsync("../..");
+          await DisplayAlert("Alert", MLSResource.CR_StartCalibration, "OK");
+          await Shell.Current.GoToAsync("../..");
         });
       }
       catch { }
@@ -264,9 +265,10 @@ public partial class Calibrator : ContentPage
         }
 
         //開始に成功したらページ移動
-        Application.Current.Dispatcher.Dispatch(() =>
+        Application.Current.Dispatcher.Dispatch(async () =>
         {
-          Shell.Current.GoToAsync("../..");
+          await DisplayAlert("Alert", MLSResource.CR_StartCalibration, "OK");
+          await Shell.Current.GoToAsync("../..");
         });
       }
       catch { }
