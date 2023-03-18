@@ -12,7 +12,7 @@ namespace DataIntegrator
     static void Main(string[] args)
     {
       //DEBUG
-      //args = new string[] { "600" };
+      //args = new string[] { "60" };
 
       //引数確認
       int tStep;
@@ -39,14 +39,16 @@ namespace DataIntegrator
       {
         using (StreamReader sr = new StreamReader(file))
         {
-          DateTime dt = DateTime.ParseExact(sr.ReadLine().Split(',')[0], "yyyy/MM/dd HH:mm:ss", null);
+          string[] bf = sr.ReadLine().Split(',');
+          //DateTime dt = DateTime.ParseExact(bf[0], "yyyy/MM/dd HH:mm:ss", null);
+          DateTime dt = DateTime.ParseExact(bf[0] + "/" + bf[1] + " " + bf[2], "yyyy/MM/dd HH:mm:ss", null);
           if (dt < startDT)
           {
             startDT = dt;
             if (startDT < new DateTime(2020, 1, 1, 0, 0, 0))
             {
               Console.WriteLine("Alert: Data of the \"" + file + "\" start at " + startDT.ToString("yyyy/MM/dd HH:mm:ss"));
-              Console.WriteLine("Continue the calculation ? (yes / no)");
+              Console.WriteLine("Continue calculation ? (yes / no)");
               string arg = Console.ReadLine();
               if (arg != "yes" || arg != "y") return;
             }
@@ -65,6 +67,7 @@ namespace DataIntegrator
       ISheet illSht = book.CreateSheet("Illuminance");
 
       //計測値を整理
+      Console.WriteLine("Loading csv files.");
       DateTime endDT = new DateTime(1500, 1, 1, 0, 0, 0);
       for (int i = 0; i < files.Count; i++)
       {
@@ -81,65 +84,81 @@ namespace DataIntegrator
         DateTime dt = new DateTime(2500, 1, 1, 0, 0, 0);
         using (StreamReader sr = new StreamReader(files[i]))
         {
+          int lineNum = 0;
           int rowNum = 1;
           string line;
           double dbt, hmd, glb, vel, ill;
           dbt = hmd = glb = vel = ill = double.NaN;
           while ((line = sr.ReadLine()) != null)
           {
-            string[] buff = line.Split(',');
-            DateTime lastDT = dt;
-            dt = DateTime.ParseExact(buff[0], "yyyy/MM/dd HH:mm:ss", null);
-            //データが遡るエラーを回避
-            if (lastDT < dt)
+            lineNum++;
+            try
             {
-              //データが現在日時を超えていない場合、または次のタイムステップを超えている場合にはデータなし（NA）として行を進ませる
-              while (dt < now)
+              line = line.TrimStart('\0');
+              string[] buff = line.Split(',');
+              DateTime lastDT = dt;
+              //dt = DateTime.ParseExact(buff[0], "yyyy/MM/dd HH:mm:ss", null);
+              dt = DateTime.ParseExact(buff[0] + "/" + buff[1] + " " + buff[2], "yyyy/MM/dd HH:mm:ss", null);
+              //データが遡るエラーを回避,異常な計測年となるエラーを回避
+              if (lastDT < dt && dt.Year < now.Year + 2)
               {
-                writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                //データが現在日時を超えていない場合、または次のタイムステップを超えている場合にはデータなし（NA）として行を進ませる
+                /*while (dt < now)
+                {
+                  writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
 
-                now = now.AddSeconds(tStep);
-                rowNum++;
+                  now = now.AddSeconds(tStep);
+                  rowNum++;
+                }*/
+
+                //現在のデータの日時が次の書き出し日時を超えた場合、一時保存データがあれば書き出す。なければデータなし（NA）として行を進ませる
+                while (now.AddSeconds(tStep) <= dt)
+                {
+                  if (double.IsNaN(dbt)) writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  else writeCellValue(dbtSht, i + 1, rowNum, dbt);
+
+                  if (double.IsNaN(hmd)) writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  else writeCellValue(hmdSht, i + 1, rowNum, hmd);
+
+                  if (double.IsNaN(glb)) writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  else writeCellValue(glbSht, i + 1, rowNum, glb);
+
+                  if (double.IsNaN(vel)) writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  else writeCellValue(velSht, i + 1, rowNum, vel);
+
+                  if (double.IsNaN(ill)) writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
+                  else writeCellValue(illSht, i + 1, rowNum, ill);
+
+                  dbt = hmd = glb = vel = ill = double.NaN;
+                  now = now.AddSeconds(tStep);
+                  rowNum++;
+                }
+
+                //データが現在日時から次のタイムステップまでの間にある場合は書き出し候補とする
+                //ただし、計測間隔が短い場合には、別のデータも該当する可能性があるため、行は進めない
+                if (now <= dt && dt < now.AddSeconds(tStep))
+                {
+                  double bf;
+                  /*if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) dbt = bf;
+                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) hmd = bf;
+                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) glb = bf;
+                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) vel = bf;
+                  if (buff[8] != "NaN" && double.TryParse(buff[8], out bf)) ill = bf;*/
+                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) dbt = bf;
+                  if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) hmd = bf;
+                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) glb = bf;
+                  if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) vel = bf;
+                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) ill = bf;
+                }
               }
-
-              //データが次のタイムステップを超えた場合、一時保存データがあれば書き出す。なければデータなし（NA）として行を進ませる
-              while (now.AddSeconds(tStep) <= dt)
-              {
-                if (double.IsNaN(dbt)) writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                else writeCellValue(dbtSht, i + 1, rowNum, dbt);
-
-                if (double.IsNaN(hmd)) writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                else writeCellValue(hmdSht, i + 1, rowNum, hmd);
-
-                if (double.IsNaN(glb)) writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                else writeCellValue(glbSht, i + 1, rowNum, glb);
-
-                if (double.IsNaN(vel)) writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                else writeCellValue(velSht, i + 1, rowNum, vel);
-
-                if (double.IsNaN(ill)) writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                else writeCellValue(illSht, i + 1, rowNum, ill);
-
-                dbt = hmd = glb = vel = ill = double.NaN;
-                now = now.AddSeconds(tStep);
-                rowNum++;
-              }
-
-              //データが現在日時から次のタイムステップまでの間にある場合は書き出し候補とする
-              //ただし、計測間隔が短い場合には、別のデータも該当する可能性があるため、行は進めない
-              if (now <= dt && dt < now.AddSeconds(tStep))
-              {
-                double bf;
-                if (buff[1] != "NaN" && double.TryParse(buff[1], out bf)) dbt = bf;
-                if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) hmd = bf;
-                if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) glb = bf;
-                if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) vel = bf;
-                if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) ill = bf;
-              }
+            }
+            catch
+            {
+              Console.WriteLine("Invalid data: File " + files[i] + ", line " + lineNum + ".");
             }
           }
         }
@@ -163,8 +182,13 @@ namespace DataIntegrator
       }
 
       //結果を保存
+      Console.Write("Saving data...");
       using (var xlsxFile = new FileStream("AllData.xlsx", FileMode.Create))
       { book.Write(xlsxFile); }
+
+      //終了通知
+      Console.WriteLine("Done. Press any key.");
+      Console.ReadLine();
     }
 
     #region セル書き出し汎用メソッド
