@@ -21,6 +21,7 @@
  * 3.1.0	風速計の自動校正処理を追加
  * 3.1.1	温度計の自動校正処理を追加
  * 3.1.2	風速計の手動校正処理を追加
+ * 3.1.3	SDカード初期化未了の場合にLED点灯を回避
  */
 
 /**XBee端末の設定****************************************
@@ -35,6 +36,7 @@
  *   2) SM:Sleep Mode = No sleep
  *   3) AR:many-to-one routing = 0
  *   4) NJ:Node Join Time = FF（時間無制限にネットワーク参加可能）
+ *   5) JV:Enabled (電源投入のたびにネットワーク構築を確認する)
  * ・子機のみ
  *   1) CE:Coordinator Enable = Join Network [0]
  *   2) SM:Sleep Mode = Pin Hibernate [1]（ATMegaからの指令でスリープ解除するため）
@@ -79,7 +81,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.1.2\r";
+const char VERSION_NUMBER[] = "VER:3.1.3\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -188,43 +190,11 @@ int main(void)
 	
 	//XBeeスリープ解除
 	wakeup_xbee();
-	
+		
 	fSystem = (FATFS*) malloc(sizeof(FATFS));
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
-
-	//DEBUG*************************
-	/*RecursiveLeastSquares::InitializeCoefficients(22.25561, 22.96658);
-	float a0 = RecursiveLeastSquares::coefA;
-	float b0 = RecursiveLeastSquares::coefB;
-	float c0 = a0 + b0;
-	RecursiveLeastSquares::UpdateCoefficients(22.28847, 23.03905);
-	float a1 = RecursiveLeastSquares::coefA;
-	float b1 = RecursiveLeastSquares::coefB;
-	float c1 = a1 + b1;
-	RecursiveLeastSquares::UpdateCoefficients(22.30725, 23.01064);
-	float a2 = RecursiveLeastSquares::coefA;
-	float b2 = RecursiveLeastSquares::coefB;
-	float c2 = a2 + b2;
-	RecursiveLeastSquares::UpdateCoefficients(22.33542, 23.00472);
-	float a3 = RecursiveLeastSquares::coefA;
-	float b3 = RecursiveLeastSquares::coefB;
-	float c3 = a3 + b3;
-	RecursiveLeastSquares::UpdateCoefficients(22.33542,	22.95189);
-	float a4 = RecursiveLeastSquares::coefA;
-	float b4 = RecursiveLeastSquares::coefB;
-	float c4 = a4 + b4;
-	RecursiveLeastSquares::UpdateCoefficients(22.33386, 23.0423);
-	float a5 = RecursiveLeastSquares::coefA;
-	float b5 = RecursiveLeastSquares::coefB;
-	float c5 = a5 + b5;
-	
-	float xxxxxxxx = c0+c1+c2+c3+c4+c5;
-	if(xxxxxxxx < 0.0) return 1;
-
-	while(true);*/
-	//DEBUG*************************
 
 	//割り込み再開
 	sei();
@@ -282,12 +252,6 @@ static void initialize_port(void)
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
 	PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
 	PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
-	
-	//PORTD.OUTCLR = PIN4_bm; //グローブ温度センサ：ダウン 2022.04.19 Pullup/downはADCではそもそも無効。
-	//PORTD.OUTCLR = PIN2_bm; //風速センサ：ダウン
-	//PORTF.OUTCLR = PIN4_bm; //汎用AD変換1：ダウン
-	//PORTD.OUTCLR = PIN5_bm; //汎用AD変換2：ダウン
-	//PORTD.OUTCLR = PIN3_bm; //汎用AD変換3：ダウン
 }
 
 //タイマ初期化
@@ -697,11 +661,15 @@ static void execLogging()
 	//SDカードロギング中は5秒ごとに点灯
 	if(outputToSDCard)  //SD card出力
 	{
-		blinkCount++;
-		if(5 <= blinkCount)
+		//SDカード初期化済みならば点灯
+		if(initSD)
 		{
-			blinkCount = 0;
-			blinkLED(1);
+			blinkCount++;
+			if(5 <= blinkCount)
+			{
+				blinkCount = 0;
+				blinkLED(1);
+			}
 		}
 	}
 	

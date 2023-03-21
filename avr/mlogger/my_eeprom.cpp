@@ -85,13 +85,13 @@ volatile bool my_eeprom::measure_AD3 = false;
 volatile bool my_eeprom::measure_Prox = false;
 
 //計測間隔
-volatile unsigned int my_eeprom::interval_th = 60;
-volatile unsigned int my_eeprom::interval_glb = 60;
-volatile unsigned int my_eeprom::interval_vel = 60;
-volatile unsigned int my_eeprom::interval_ill = 60;
-volatile unsigned int my_eeprom::interval_AD1 = 60;
-volatile unsigned int my_eeprom::interval_AD2 = 60;
-volatile unsigned int my_eeprom::interval_AD3 = 60;
+volatile unsigned int my_eeprom::interval_th = 1;
+volatile unsigned int my_eeprom::interval_glb = 1;
+volatile unsigned int my_eeprom::interval_vel = 1;
+volatile unsigned int my_eeprom::interval_ill = 1;
+volatile unsigned int my_eeprom::interval_AD1 = 1;
+volatile unsigned int my_eeprom::interval_AD2 = 1;
+volatile unsigned int my_eeprom::interval_AD3 = 1;
 
 //自動通信開始設定
 volatile bool my_eeprom::startAuto = false;
@@ -154,19 +154,19 @@ void initMemory()
 	
 	//計測間隔
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_TH, 60);
+	eeprom_update_word(&EEP_STP_TH, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_GLB, 60);
+	eeprom_update_word(&EEP_STP_GLB, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_VEL, 60);
+	eeprom_update_word(&EEP_STP_VEL, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_ILL, 60);
+	eeprom_update_word(&EEP_STP_ILL, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_AD1, 60);
+	eeprom_update_word(&EEP_STP_AD1, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_AD2, 60);
+	eeprom_update_word(&EEP_STP_AD2, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_AD3, 60);
+	eeprom_update_word(&EEP_STP_AD3, 1);
 	
 	//自動通信開始設定
 	eeprom_busy_wait();
