@@ -3,25 +3,6 @@
  * @brief AVR(AVRxxDB32)を使用した計測データ収集・送信プログラム
  * @author E.Togashi
  * @date 2022/3/11
- *
- * version履歴
- * 3.0.0	AVRxxDB32シリーズ用
- * 3.0.1	Reset処理を3秒長押しで有効に。短時間押し込みは電池確認のための点灯に変更。
- * 3.0.2	ADCバグ修正
- * 3.0.3	ADC基準電圧を2.0Vに変更
- * 3.0.4	CMSコマンド実行時にもEEPROMに設定を保存するように変更
- * 3.0.5	機器名称関連のコマンド（LLN,CLN）を実装
- * 3.0.6	AHT20のエラー時のリセット処理を追加
- * 3.0.7	SDカード書き出しの省電力化
- * 3.0.8	SDカード書き出し時のLED点灯バグ修正
- * 3.0.9	ロギング終了時の風速計停止処理忘れを修正
- * 3.0.10	名称設定取得のバグを修正
- * 3.0.11	日付変更時にSDカード書き出しが実行されるように修正,SDカード書き出しとZigbee通信の同時実行に対応
- * 3.0.12	3.0.11の機能のバグ修正,風速計の予熱時間を30secに変更
- * 3.1.0	風速計の自動校正処理を追加
- * 3.1.1	温度計の自動校正処理を追加
- * 3.1.2	風速計の手動校正処理を追加
- * 3.1.3	SDカード初期化未了の場合にLED点灯を回避
  */
 
 /**XBee端末の設定****************************************
@@ -36,7 +17,6 @@
  *   2) SM:Sleep Mode = No sleep
  *   3) AR:many-to-one routing = 0
  *   4) NJ:Node Join Time = FF（時間無制限にネットワーク参加可能）
- *   5) JV:Enabled (電源投入のたびにネットワーク構築を確認する)
  * ・子機のみ
  *   1) CE:Coordinator Enable = Join Network [0]
  *   2) SM:Sleep Mode = Pin Hibernate [1]（ATMegaからの指令でスリープ解除するため）
@@ -81,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.1.3\r";
+const char VERSION_NUMBER[] = "VER:3.2.0\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -96,7 +76,7 @@ const bool IS_MCP9700 = false; //MCP9701ならばfalse
 const bool IS_AM2320 = false;
 
 //何行分のデータを一時保存するか
-const int N_LINE_BUFF = 45;
+const int N_LINE_BUFF = 30;
 
 //広域変数定義********************************************************
 //日時関連
@@ -208,13 +188,13 @@ int main(void)
 		startTime = currentTime;
 	}
 	
-    while (1) 
+    while (1)
     {
-		//Logging中でなければSDカードマウントを試みる
-		if(!logging && !initSD)
-			if(f_mount(fSystem, "", 1) == FR_OK) initSD = true;
+		//マウントできていなければとにかくマウント
+		if(!initSD) 
+			initSD = (f_mount(fSystem, "", 1) == FR_OK);
 		
-		//スリープモード設定		
+		//スリープモード設定
 		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_DOWN); //ATmega328PではPWR_SAVE
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
 
@@ -814,8 +794,8 @@ static void execLogging()
 		if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
 		if(outputToSDCard)  //SD card出力
 		{
-			//データが十分に溜まるか、1h以上の時間間隔があいたら書き出す。時刻を比べるので日付が変わった場合にも確実に書き出される
-			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_hour != dtNow.tm_hour)
+			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。分を比べるので日付が変わった場合にも確実に書き出される
+			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_min != dtNow.tm_min)
 			{
 				writeSDcard(lastSavedTime, lineBuff); //SD card出力
 				buffNumber = 0;
@@ -957,10 +937,12 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	myRTC.sec=dtNow.tm_sec;
 	
 	FIL* fl = (FIL*)malloc(sizeof(FIL));	
-	if(f_open(fl, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK){
+	if(f_open(fl, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK)
+	{
 		f_puts(write_chars, fl);
 		f_close(fl);
 	}
+	else initSD = false; //エラー時は再マウントを試みる
 	
 	free(fl);
 }
