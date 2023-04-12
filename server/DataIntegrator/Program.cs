@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-
+using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
@@ -12,7 +12,7 @@ namespace DataIntegrator
     static void Main(string[] args)
     {
       //DEBUG
-      //args = new string[] { "60" };
+      //args = new string[] { "3600" };
 
       //引数確認
       int tStep;
@@ -88,7 +88,9 @@ namespace DataIntegrator
           int rowNum = 1;
           string line;
           double dbt, hmd, glb, vel, ill;
+          int dbtNum, hmdNum, glbNum, velNum, illNum;
           dbt = hmd = glb = vel = ill = double.NaN;
+          dbtNum = hmdNum = glbNum = velNum = illNum = 0;
           while ((line = sr.ReadLine()) != null)
           {
             lineNum++;
@@ -119,21 +121,22 @@ namespace DataIntegrator
                 while (now.AddSeconds(tStep) <= dt)
                 {
                   if (double.IsNaN(dbt)) writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  else writeCellValue(dbtSht, i + 1, rowNum, dbt);
+                  else writeCellValue(dbtSht, i + 1, rowNum, dbt / dbtNum);
 
                   if (double.IsNaN(hmd)) writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  else writeCellValue(hmdSht, i + 1, rowNum, hmd);
+                  else writeCellValue(hmdSht, i + 1, rowNum, hmd / hmdNum);
 
                   if (double.IsNaN(glb)) writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  else writeCellValue(glbSht, i + 1, rowNum, glb);
+                  else writeCellValue(glbSht, i + 1, rowNum, glb / glbNum);
 
                   if (double.IsNaN(vel)) writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  else writeCellValue(velSht, i + 1, rowNum, vel);
+                  else writeCellValue(velSht, i + 1, rowNum, vel / velNum);
 
                   if (double.IsNaN(ill)) writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  else writeCellValue(illSht, i + 1, rowNum, ill);
+                  else writeCellValue(illSht, i + 1, rowNum, ill / illNum);
 
                   dbt = hmd = glb = vel = ill = double.NaN;
+                  dbtNum = hmdNum = glbNum = velNum = illNum = 0;
                   now = now.AddSeconds(tStep);
                   rowNum++;
                 }
@@ -148,11 +151,11 @@ namespace DataIntegrator
                   if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) glb = bf;
                   if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) vel = bf;
                   if (buff[8] != "NaN" && double.TryParse(buff[8], out bf)) ill = bf;*/
-                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) dbt = bf;
-                  if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) hmd = bf;
-                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) glb = bf;
-                  if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) vel = bf;
-                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) ill = bf;
+                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) { dbt = double.IsNaN(dbt) ? bf : dbt + bf; dbtNum++; }
+                  if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) { hmd = double.IsNaN(hmd) ? bf : hmd + bf; hmdNum++; }
+                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) { glb = double.IsNaN(glb) ? bf : glb + bf; glbNum++; }
+                  if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) { vel = double.IsNaN(vel) ? bf : vel + bf; velNum++; }
+                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) { ill = double.IsNaN(ill) ? bf : ill + bf; illNum++; }
                 }
               }
             }
@@ -171,13 +174,12 @@ namespace DataIntegrator
       int rn = 1;
       while (startDT <= endDT)
       {
+        startDT = startDT.AddSeconds(tStep);
         writeCellValue(dbtSht, 0, rn, startDT, style);
         writeCellValue(hmdSht, 0, rn, startDT, style);
         writeCellValue(glbSht, 0, rn, startDT, style);
         writeCellValue(velSht, 0, rn, startDT, style);
-        writeCellValue(illSht, 0, rn, startDT, style);
-
-        startDT = startDT.AddSeconds(tStep);
+        writeCellValue(illSht, 0, rn, startDT, style);        
         rn++;
       }
 
