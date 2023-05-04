@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.0\r";
+const char VERSION_NUMBER[] = "VER:3.2.1\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -216,7 +216,7 @@ static void initialize_port(void)
 	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
 	PORTA.DIRSET = PIN5_bm; //微風速計リレー
 	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧	
-	PORTA.DIRSET = PIN2_bm; //PORTA PIN2:リセット用割り込み
+	//PORTA.DIRSET = PIN2_bm; //PORTA PIN2:リセット用割り込み:2023.05.04コメントアウト（外部でプルアップしているため出力にする必要なし）
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
