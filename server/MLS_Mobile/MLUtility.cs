@@ -157,8 +157,9 @@ namespace MLS_Mobile
 
     /// <summary>データファイルの内容を取得する</summary>
     /// <param name="fileName">データファイル名称</param>
+    /// <param name="maxLine">読み込む最大行数</param>
     /// <returns>データファイルの内容</returns>
-    public static string LoadDataFile(string fileName)
+    public static string LoadDataFile(string fileName, int maxLine)
     {
       string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
         + Path.DirectorySeparatorChar + fileName;
@@ -169,13 +170,22 @@ namespace MLS_Mobile
       using (StreamReader sReader = new StreamReader(filePath, Encoding.UTF8))
       {
         string buff;
-        while ((buff = sReader.ReadLine()) != null && lines < 1000)
+        while ((buff = sReader.ReadLine()) != null && lines < maxLine)
         {
           sBuilder.AppendLine(buff);
           lines++;
         }
         return sBuilder.ToString();
       }
+    }
+
+    /// <summary>データファイルの内容を取得する</summary>
+    /// <param name="fileName">データファイル名称</param>
+    /// <param name="maxLine">読み込む最大行数</param>
+    /// <returns>データファイルの内容</returns>
+    public static string LoadDataFile(string fileName)
+    {
+      return LoadDataFile(fileName, int.MaxValue);
     }
 
     /// <summary>データファイルに追記する</summary>

@@ -16,8 +16,6 @@ public partial class LoggingData : ContentPage
 
   public string FileName { get; set; }
 
-  public string ClipData { get; private set; }
-
   #endregion
 
   #region コンストラクタ
@@ -40,8 +38,7 @@ public partial class LoggingData : ContentPage
       string[] bf = FileName.Split('_');
       this.Title = "MLogger_" + bf[1] + ": "
         + bf[2].Substring(0, 4) + "/" + bf[2].Substring(4, 2) + "/" + bf[2].Substring(6, 2);
-      ClipData = MakeClipData(FileName);
-
+      
       //テーブル表示
       showIndicator(MLSResource.LD_Formatting);
       Task.Run(() =>
@@ -70,7 +67,11 @@ public partial class LoggingData : ContentPage
 
   #region publicメソッド
 
-  public static string MakeClipData(string fileName)
+  /// <summary>ファイルからクリップボード用データを作る</summary>
+  /// <param name="fileName">ファイル名称</param>
+  /// <param name="maxLines">コピーする最大行数</param>
+  /// <returns>クリップボード用データ</returns>
+  public static string MakeClipData(string fileName, int maxLines)
   {
     return MLSResource.Date + "," + MLSResource.Time + "," +
         MLSResource.DrybulbTemperature + "," +
@@ -80,13 +81,22 @@ public partial class LoggingData : ContentPage
         MLSResource.Illuminance + "," +
         MLSResource.GlobeTemperatureVoltage + "," +
         MLSResource.VelocityVoltage + Environment.NewLine +
-        MLUtility.LoadDataFile(fileName);
+        MLUtility.LoadDataFile(fileName, maxLines);
+  }
+
+  /// <summary>ファイルからクリップボード用データを作る</summary>
+  /// <param name="fileName">ファイル名称</param>
+  /// <param name="maxLines">コピーする最大行数</param>
+  /// <returns>クリップボード用データ</returns>
+  public static string MakeClipData(string fileName)
+  {
+    return MakeClipData(fileName, int.MaxValue);
   }
 
   private void makeGrid()
   {
-    //全データを改行コードで分割
-    string[] lines = ClipData.Split(Environment.NewLine);
+    //全データを改行コードで分割//テーブル表示は500行まで（重たいので）
+    string[] lines = MakeClipData(FileName, 500).Split(Environment.NewLine);
 
     //タイトル行
     string[] bf = lines[0].Split(',');
@@ -148,7 +158,7 @@ public partial class LoggingData : ContentPage
 
   private void copy_Clicked(object sender, EventArgs e)
   {
-    Clipboard.Default.SetTextAsync(ClipData);
+    Clipboard.Default.SetTextAsync(MakeClipData(FileName));
   }
 
   private async void delete_Clicked(object sender, EventArgs e)
