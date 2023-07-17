@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Popolo" Version="2.3.1.42" />
-    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
-    <PackageReference Include="XBeeLibrary.Core" Version="1.0.2" />
+    <PackageReference Include="Popolo" Version="2.3.1.60" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MLLib\MLLib.csproj" />
+    <ProjectReference Include="..\XBeeLibrary.Core\XBeeLibrary.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

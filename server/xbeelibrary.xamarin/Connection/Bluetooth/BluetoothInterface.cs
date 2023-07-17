@@ -393,7 +393,7 @@ namespace XBeeLibrary.Xamarin.Connection.Bluetooth
 			lock (txLock)
 			{
 				Debug.WriteLine("----- WriteData " + HexUtils.ByteArrayToHexString(data));
-				bool dataWritten = false;
+				int dataWritten = 0;
 
 				// Create a task to write in the TX characteristic.
 				Task task = Task.Run(async () =>
@@ -431,7 +431,7 @@ namespace XBeeLibrary.Xamarin.Connection.Bluetooth
 				}
 
 				// If the data could not be written, decrement the counter and throw an exception.
-				if (!dataWritten)
+				if (dataWritten != 0)
 				{
 					encryptor.DecrementCounter();
 					throw new XBeeException(ERROR_WRITE);

@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Popolo" Version="2.3.1.42" />
+    <PackageReference Include="Popolo" Version="2.3.1.60" />
   </ItemGroup>
 
 </Project>
