@@ -29,7 +29,7 @@
     <eraseonlaunchrule>1</eraseonlaunchrule>
     <EraseKey />
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J42700018795</avrtoolserialnumber>
+    <avrtoolserialnumber>J42700019307</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E970D</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
@@ -40,7 +40,7 @@
         <InterfaceName>UPDI</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J42700018795</ToolNumber>
+      <ToolNumber>J42700019307</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>UPDI</avrtoolinterface>

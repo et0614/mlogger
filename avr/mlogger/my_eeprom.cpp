@@ -174,7 +174,7 @@ void initMemory()
 	
 	//–¼‘O
 	eeprom_busy_wait();
-	eeprom_update_block("ML_0000", EEP_NAME, 20);
+	eeprom_update_block("Anonymous", EEP_NAME, 20);
 	
 	//‰Šú‰»ƒtƒ‰ƒO
 	eeprom_busy_wait();

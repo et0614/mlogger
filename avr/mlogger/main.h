@@ -37,6 +37,8 @@ static void autoCalibrateVelocitySensor(void);
 
 static void autoCalibrateTemperatureSensor(void);
 
+static void checkBattery(void);
+
 //à»â∫ÇÕinlineä÷êî************************************
 
 inline static void sleep_anemo(void);

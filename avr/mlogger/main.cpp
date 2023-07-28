@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.1\r";
+const char VERSION_NUMBER[] = "VER:3.2.2\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -155,10 +155,13 @@ int main(void)
 	ADC0.CTRLB |= ADC_SAMPNUM_ACC64_gc; //64回平均化, 16, 32, 64から設定できる
 	ADC0.CTRLC |= ADC_PRESC_DIV128_gc; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
 	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
+
+	//電池残量確認
+	checkBattery();
 	
 	//スイッチ割り込み設定
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
-		
+	
 	//通信を初期化
 	my_i2c::InitializeI2C(); //I2C
 	//my_i2c::InitializeOPT(OPT_ADDRESS);  //照度センサとしてOPTxxxxを使う場合
@@ -167,7 +170,7 @@ int main(void)
 	
 	//タイマ初期化
 	initialize_timer();
-	
+		
 	//XBeeスリープ解除
 	wakeup_xbee();
 		
@@ -189,7 +192,7 @@ int main(void)
 	}
 	
     while (1)
-    {
+    {		
 		//マウントできていなければとにかくマウント
 		if(!initSD) 
 			initSD = (f_mount(fSystem, "", 1) == FR_OK);
@@ -991,6 +994,27 @@ static float readVoltage(unsigned int adNumber)
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
 	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+}
+
+//電池残量を確認する
+//内部電源は3.3Vに昇圧しているが基準電圧の2.0Vはレギュレータで作っているため、電圧降下時には後者のみが不足することを利用
+static void checkBattery(void)
+{
+	ADC0.MUXPOS = 0x44; //VDDDIV10: VDD divided by 10（0.33V程度）
+	_delay_ms(5);
+	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
+	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
+	volatile float vdd = 10.0 * 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
+	if(3.3 / 0.8 < vdd) //基準電圧が80%を下回るようであれば1sec間隔でLED点滅
+	{
+		while(true)
+		{
+			turnOnLED(); //点灯
+			_delay_ms(1000);
+			turnOffLED(); //消灯
+			_delay_ms(1000);	
+		}	
+	}
 }
 
 //以下はinline関数************************************

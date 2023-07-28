@@ -171,7 +171,7 @@ void my_i2c::InitializeI2C(void)
 	//AVR32DB32のデータシート:Clock Generationより
 	const bool IS_STANDARD_MODE = true;
 	float fScl = IS_STANDARD_MODE ? 100000 : 400000; //周波数[Hz]
-	float tRise = 0.000000001 * (IS_STANDARD_MODE ? 1000 : 300); //Rise time [sec]
+	float tRise = 0.000000001 * (IS_STANDARD_MODE ? 1000 : 250); //Rise time [sec]
 	float tOf = 0.000000001 * 250;
 	float baud = (uint8_t)(((float)F_CPU / (2 * fScl)) - 5 - ((float)F_CPU * tRise / 2));
 	float tLow = (baud + 5) / F_CPU - tOf;
