@@ -37,7 +37,9 @@ static void autoCalibrateVelocitySensor(void);
 
 static void autoCalibrateTemperatureSensor(void);
 
-static void checkBattery(void);
+static void showLowBattery(void);
+
+static bool isLowBattery(void);
 
 //à»â∫ÇÕinlineä÷êî************************************
 

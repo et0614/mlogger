@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //’è”éŒ¾***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.2\r";
+const char VERSION_NUMBER[] = "VER:3.2.3\r";
 
 //”Mü®•—‘¬Œv‚Ì—§‚¿ã‚°‚É•K—v‚ÈŠÔ[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -85,6 +85,9 @@ volatile static time_t startTime = 1609459200;   //Œv‘ªŠJniUNIXŠÔ,UTC
 
 //Œv‘ª’†‚©”Û‚©
 volatile static bool logging = false;
+
+//“d’r‚Í‘«‚è‚Ä‚¢‚é‚©
+volatile static unsigned int lowBatteryTime = 0;
 
 //e‹@‚Æ‚Ì’ÊMŠÖ˜A
 static bool readingFrame = false; //ƒtƒŒ[ƒ€“Ç’†‚©”Û‚©
@@ -157,7 +160,7 @@ int main(void)
 	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //Šî€“dˆ³‚ğVREFA(2.0V)‚Éİ’è
 
 	//“d’rc—ÊŠm”F
-	checkBattery();
+	if(isLowBattery()) showLowBattery();
 	
 	//ƒXƒCƒbƒ`Š„‚è‚İİ’è
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //“dˆ³ã¸E~‰ºŠ„
@@ -191,7 +194,8 @@ int main(void)
 		startTime = currentTime;
 	}
 	
-    while (1)
+	//10•bˆÈã“dˆ³•s‘«ŠÔ‚ªŒp‘±‚µ‚½‚çI—¹
+    while (lowBatteryTime <= 10)
     {		
 		//ƒ}ƒEƒ“ƒg‚Å‚«‚Ä‚¢‚È‚¯‚ê‚Î‚Æ‚É‚©‚­ƒ}ƒEƒ“ƒg
 		if(!initSD) 
@@ -207,6 +211,10 @@ int main(void)
 		//ƒ}ƒCƒRƒ“‚ğƒXƒŠ[ƒv‚³‚¹‚é
 		sleep_mode();
     }
+	
+	//“d’r‚ª•s‘«‚Ìˆ—
+	cli(); //Š„‚è‚İI—¹
+	showLowBattery(); //LED•\¦
 }
 
 static void initialize_port(void)
@@ -588,6 +596,10 @@ ISR(RTC_PIT_vect)
 	
 	currentTime++; //1•bi‚ß‚é
 	
+	//“dˆ³Šm”F
+	if(isLowBattery()) lowBatteryTime++;
+	else lowBatteryTime = 0;
+
 	//ƒŠƒZƒbƒgƒ{ƒ^ƒ“‰Ÿ‚µ‚İŠm”F********************************
 	if(!(PORTA.IN & PIN2_bm))
 	{
@@ -996,24 +1008,29 @@ static float readVoltage(unsigned int adNumber)
 	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64‰ñ•½‹Ï)
 }
 
-//“d’rc—Ê‚ğŠm”F‚·‚é
+//“d’rc—Ê‚ª¬‚³‚­‚È‚Á‚½‚©”Û‚©
 //“à•”“dŒ¹‚Í3.3V‚É¸ˆ³‚µ‚Ä‚¢‚é‚ªŠî€“dˆ³‚Ì2.0V‚ÍƒŒƒMƒ…ƒŒ[ƒ^‚Åì‚Á‚Ä‚¢‚é‚½‚ßA“dˆ³~‰º‚É‚ÍŒãÒ‚Ì‚İ‚ª•s‘«‚·‚é‚±‚Æ‚ğ—˜—p
-static void checkBattery(void)
+static bool isLowBattery(void)
 {
 	ADC0.MUXPOS = 0x44; //VDDDIV10: VDD divided by 10i0.33V’ö“xj
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //•ÏŠ·ŠJn
 	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //•ÏŠ·I—¹‘Ò‚¿
 	volatile float vdd = 10.0 * 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64‰ñ•½‹Ï)
-	if(3.3 / 0.8 < vdd) //Šî€“dˆ³‚ª80%‚ğ‰º‰ñ‚é‚æ‚¤‚Å‚ ‚ê‚Î1secŠÔŠu‚ÅLED“_–Å
+	
+	//Šî€“dˆ³‚ª’á‚­‚È‚é‚½‚ßA3.3V‚ª‘å‚«‚ß‚ÉŒv‘ª‚³‚ê‚éB1Š„‘‚Æ‚È‚Á‚½‚Æ‚«‚É“d—Í•s‘«‚Æ”»’è
+	return 3.3 * 1.1 < vdd;
+}
+
+//’á“dˆ³‚Ìê‡‚Ì•\¦
+static void showLowBattery(void)
+{	
+	while(true)
 	{
-		while(true)
-		{
-			turnOnLED(); //“_“”
-			_delay_ms(1000);
-			turnOffLED(); //Á“”
-			_delay_ms(1000);	
-		}	
+		turnOnLED(); //“_“”
+		_delay_ms(1000);
+		turnOffLED(); //Á“”
+		_delay_ms(1000);
 	}
 }
 
