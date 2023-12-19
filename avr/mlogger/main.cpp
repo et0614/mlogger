@@ -213,6 +213,7 @@ int main(void)
     }
 	
 	//電池が不足時の処理
+	if(initSD) f_mount(NULL, "", 1); //SDカードをアンマウント
 	cli(); //割り込み終了
 	showLowBattery(); //LED表示
 }
