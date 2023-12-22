@@ -7,6 +7,7 @@ using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using Mopups.Services;
 using System;
+using System.Xml.Linq;
 
 public partial class DeviceSetting : ContentPage
 {
@@ -47,6 +48,9 @@ public partial class DeviceSetting : ContentPage
 
     //測定設定更新
     loadMeasurementSetting();
+
+    //Zigbee LED状態を更新
+    loadZigbeeLEDStatus();
   }
 
   private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
@@ -126,9 +130,9 @@ public partial class DeviceSetting : ContentPage
         {
           //設定設定取得コマンドを送信
           MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadMeasuringSettingCommand()));
-          await Task.Delay(500);
         }
         catch { }
+        await Task.Delay(500);
       }
 
       //更新された情報を反映
@@ -163,9 +167,9 @@ public partial class DeviceSetting : ContentPage
         {
           //バージョン取得コマンドを送信
           MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
-          await Task.Delay(500);
         }
         catch { }
+        await Task.Delay(500);
       }
 
       //更新された情報を反映
@@ -191,9 +195,9 @@ public partial class DeviceSetting : ContentPage
         {
           //名称取得コマンドを送信
           MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand()));
-          await Task.Delay(500);
         }
         catch { }
+        await Task.Delay(500);
       }
 
       //更新された情報を反映
@@ -217,9 +221,9 @@ public partial class DeviceSetting : ContentPage
         {
           //名称取得コマンドを送信
           MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name)));
-          await Task.Delay(500);
         }
         catch { }
+        await Task.Delay(500);
       }
 
       //更新された情報を反映
@@ -257,9 +261,9 @@ public partial class DeviceSetting : ContentPage
         {
           //設定設定取得コマンドを送信
           MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
-          await Task.Delay(500);
         }
         catch { }
+        await Task.Delay(500);
       }
 
       //更新された情報を反映
@@ -278,6 +282,30 @@ public partial class DeviceSetting : ContentPage
         //編集要素の着色をもとに戻す
         resetTextColor();
       });
+    });
+  }
+
+  /// <summary>Zigbee通信LED表示状態を読み込む</summary>
+  private void loadZigbeeLEDStatus()
+  {
+    Task.Run(async () =>
+    {
+      //情報が更新されるまで命令を繰り返す
+      while (true)
+      {
+        try
+        {
+          byte[] rslt = MLUtility.LoggerSideXBee.GetParameter("D5");
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            btn_zigled.Text =
+            (rslt[0] == 1) ? MLSResource.DS_DisableZigLED : MLSResource.DS_EnableZigLED;
+          });
+          return;
+        }
+        catch{ }
+        await Task.Delay(500);
+      }
     });
   }
 
@@ -446,6 +474,39 @@ public partial class DeviceSetting : ContentPage
     Application.Current.Dispatcher.Dispatch(() =>
     {
       grayback.IsVisible = indicator.IsVisible = false;
+    });
+  }
+
+  #endregion
+
+  #region Zigbee通信LED表示の有効化・無効化処理
+
+  /// <summary>Zigbee通信LED表示の有効化・無効化を変更</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private void LEDButton_Clicked(object sender, EventArgs e)
+  {
+    //設定読み込み中は無視
+    if (btn_zigled.Text == MLSResource.DS_LoadingZigLED) return;
+    bool ledEnabled = (btn_zigled.Text == MLSResource.DS_DisableZigLED);
+
+    Task.Run(async () =>
+    {
+      //成功するまで3回は繰り返す
+      for (int i = 0; i < 3; i++)
+      {
+        try
+        {
+          MLUtility.LoggerSideXBee.SetParameter("D5", ledEnabled ? new byte[] { 4 } : new byte[] { 1 });
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            btn_zigled.Text = ledEnabled ? MLSResource.DS_EnableZigLED : MLSResource.DS_DisableZigLED;
+          });
+          return;
+        }
+        catch { }
+        await Task.Delay(500);
+      }
     });
   }
 

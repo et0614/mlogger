@@ -81,19 +81,19 @@
         <Setter Property="SeparatorColor" Value="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Dark_G}}" />
     </Style>
 
-    <!--MAUIのバグでSwitchの色反映が効かない。いずれ有効化する-->
-    <!--<Style TargetType="Switch">
-        <Setter Property="OnColor" Value="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Dark_G}}" />
-        <Setter Property="ThumbColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200}}" />
+    <!--MAUIのバグでSwitchの色反映が効かない-->
+    <Style TargetType="Switch">
+        <!--<Setter Property="OnColor" Value="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Dark_G}}" />-->
+        <!--<Setter Property="ThumbColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200}}" />-->
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                    <Setter Property="OnColor" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
-                    <Setter Property="ThumbColor" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
-                    </VisualState.Setters>
+                            <Setter Property="OnColor" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                            <Setter Property="ThumbColor" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                        </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="On">
                         <VisualState.Setters>
@@ -110,7 +110,7 @@
                 </VisualStateGroup>
             </VisualStateGroupList>
         </Setter>
-    </Style> -->
+    </Style>
 
     <Style TargetType="Entry">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource Black}}" />

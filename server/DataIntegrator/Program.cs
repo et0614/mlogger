@@ -185,7 +185,7 @@ namespace DataIntegrator
 
       //結果を保存
       Console.Write("Saving data...");
-      using (var xlsxFile = new FileStream("AllData.xlsx", FileMode.Create))
+      using (var xlsxFile = new FileStream("AllData_" + tStep.ToString() + "sec.xlsx", FileMode.Create))
       { book.Write(xlsxFile); }
 
       //終了通知

@@ -59,7 +59,6 @@
                             </Button.ImageSource>
                         </Button>
                     </HorizontalStackLayout>
-
                 </Grid>
 
                 <!--MLoggerとの通信-->
@@ -85,6 +84,17 @@
                             <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
                     </Button>                    
+                </StackLayout>
+
+                <!--Zigbee通信の設定-->
+                <Label Text="{x:Static res:MLSResource.DS_ZigbeeSetting}" FontSize="Subtitle"/>
+                <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
+                    <!--SDカード書き込み-->
+                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btn_zigled" Text="{x:Static res:MLSResource.DS_LoadingZigLED}" Clicked="LEDButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf0e7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                 </StackLayout>
 
                 <!--MLoggerの基本情報-->

@@ -164,7 +164,7 @@ namespace MLS_Mobile
       string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
         + Path.DirectorySeparatorChar + fileName;
 
-      //先頭の1000行を読み込む
+      //先頭のmaxLine行を読み込む
       int lines = 0;
       StringBuilder sBuilder = new StringBuilder();
       using (StreamReader sReader = new StreamReader(filePath, Encoding.UTF8))

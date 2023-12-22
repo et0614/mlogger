@@ -246,11 +246,20 @@
   <data name="DS_Communicate" xml:space="preserve">
     <value>MLoggerとの通信</value>
   </data>
+  <data name="DS_DisableZigLED" xml:space="preserve">
+    <value>通信状況LED表示の無効化</value>
+  </data>
+  <data name="DS_EnableZigLED" xml:space="preserve">
+    <value>通信状況LED表示の有効化</value>
+  </data>
   <data name="DS_Info" xml:space="preserve">
     <value>計測器情報</value>
   </data>
   <data name="DS_InvalidNumber" xml:space="preserve">
     <value>無効な数値です</value>
+  </data>
+  <data name="DS_LoadingZigLED" xml:space="preserve">
+    <value>通信状況LED表示の読込中・・・</value>
   </data>
   <data name="DS_LoadSetting" xml:space="preserve">
     <value>設定受信</value>
@@ -296,6 +305,9 @@
   </data>
   <data name="DS_VelocityVoltageSetting" xml:space="preserve">
     <value>電圧調整のための起動中</value>
+  </data>
+  <data name="DS_ZigbeeSetting" xml:space="preserve">
+    <value>Zigbee通信の設定</value>
   </data>
   <data name="EditMeasuredData" xml:space="preserve">
     <value>収集データを操作する</value>
