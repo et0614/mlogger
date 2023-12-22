@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.3\r";
+const char VERSION_NUMBER[] = "VER:3.2.4\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -376,7 +376,7 @@ static void solve_command(void)
 		gmtime_r(&ct, &lastSavedTime);
 		
 		//Bluetooth接続か否か(xはxbee,bはbluetooth)
-		outputToXBee = (command[13]=='t'); //XBeeで親機に書き出すか否か
+		outputToXBee = (command[13]=='t' || command[13]=='e'); //XBeeで親機に書き出すか否か
 		outputToBLE = (command[14]=='t'); //Bluetoothで書き出すか否か
 		outputToSDCard = (command[15]=='t'); //SDカードに書き出すか否か
 		
@@ -390,7 +390,7 @@ static void solve_command(void)
 		pass_ad3 = my_eeprom::interval_AD3;
 		
 		//ロギング設定をEEPROMに保存
-		//my_eeprom::startAuto = outputToXBee; //リセットスイッチを持つ基板が用意できたらコメントアウトする
+		my_eeprom::startAuto = command[13]=='e'; //Endlessロギング
 		my_eeprom::SetMeasurementSetting();
 		
 		//ロギング開始
@@ -607,6 +607,10 @@ ISR(RTC_PIT_vect)
 		resetTime++;
 		if(resetTime == 3)
 		{
+			//Endlessロギングを解除
+			my_eeprom::startAuto = false;
+			my_eeprom::SetMeasurementSetting();
+			
 			logging=false;	//ロギング停止
 			initSD = false;	//SDカード再マウント
 			sleep_anemo();	//風速センサを停止
