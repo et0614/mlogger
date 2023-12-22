@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.4\r";
+const char VERSION_NUMBER[] = "VER:3.3.0\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -224,26 +224,21 @@ static void initialize_port(void)
 	//***
 	
 	//出力ポート
-	PORTD.DIRSET = PIN6_bm; //LED出力
+	PORTA.DIRSET = PIN6_bm; //緑LED出力
+	PORTA.DIRSET = PIN7_bm; //赤LED出力
 	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
-	PORTA.DIRSET = PIN5_bm; //微風速計リレー
-	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧	
-	//PORTA.DIRSET = PIN2_bm; //PORTA PIN2:リセット用割り込み:2023.05.04コメントアウト（外部でプルアップしているため出力にする必要なし）
+	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧
+	PORTD.DIRSET = PIN6_bm; //UART RTS（Lowで受信可能）
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
 	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
 	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
-	PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
-	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
-	PORTA.DIRCLR = PIN6_bm; //汎用IO1
-	PORTA.DIRCLR = PIN7_bm; //汎用IO2
 	
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
-	PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
-	PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
+	PORTD.OUTCLR = PIN6_bm; //UART RTS（Lowで受信可能）：ダウン
 }
 
 //タイマ初期化
@@ -614,7 +609,7 @@ ISR(RTC_PIT_vect)
 			logging=false;	//ロギング停止
 			initSD = false;	//SDカード再マウント
 			sleep_anemo();	//風速センサを停止
-			blinkLED(3);	//LED点滅
+			blinkGreenLED(3);	//LED点滅
 			return;
 		}
 	}
@@ -649,7 +644,7 @@ ISR(RTC_PIT_vect)
 		
 		//明滅
 		if((PORTA.IN & PIN2_bm))  //Reset押し込み中は明滅停止
-			blinkLED(initSD ? 2 : 1);
+			blinkGreenLED(initSD ? 2 : 1);
 	}
 }
 
@@ -668,7 +663,7 @@ static void execLogging()
 			if(5 <= blinkCount)
 			{
 				blinkCount = 0;
-				blinkLED(1);
+				blinkGreenLED(1);
 			}
 		}
 	}
@@ -856,7 +851,7 @@ static void autoCalibrateVelocitySensor()
 	const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
 	
 	//LED点灯
-	blinkLED(3);
+	blinkGreenLED(3);
 	
 	vSensorInitTimer++;
 	
@@ -886,7 +881,7 @@ static void autoCalibrateTemperatureSensor()
 	const unsigned int TS_INIT_WAIT = 60; //温度校正開始までの待ち時間[sec]
 	
 	//LED点灯
-	blinkLED(3);
+	blinkGreenLED(3);
 	
 	tSensorInitTimer++;
 	
@@ -1032,9 +1027,9 @@ static void showLowBattery(void)
 {	
 	while(true)
 	{
-		turnOnLED(); //点灯
+		turnOnRedLED(); //点灯
 		_delay_ms(1000);
-		turnOffLED(); //消灯
+		turnOffRedLED(); //消灯
 		_delay_ms(1000);
 	}
 }
@@ -1043,13 +1038,11 @@ static void showLowBattery(void)
 
 inline static void sleep_anemo(void)
 {
-	PORTA.OUTCLR = PIN5_bm; //リレー遮断
 	PORTA.OUTCLR = PIN4_bm; //5V昇圧停止
 }
 
 inline static void wakeup_anemo(void)
 {
-	PORTA.OUTSET = PIN5_bm; //リレー通電
 	PORTA.OUTSET = PIN4_bm; //5V昇圧開始
 }
 
@@ -1063,34 +1056,65 @@ inline static void wakeup_xbee(void)
 	PORTF.OUTCLR = PIN5_bm;
 }
 
-inline static void turnOnLED(void)
+inline static void turnOnGreenLED(void)
 {
-	PORTD.OUTSET = PIN6_bm; //点灯
+	PORTA.OUTSET = PIN6_bm; //点灯
 }
 
-inline static void turnOffLED(void)
+inline static void turnOffGreenLED(void)
 {
-	PORTD.OUTCLR = PIN6_bm; //消灯
+	PORTA.OUTCLR = PIN6_bm; //消灯
 }
 
-inline static void toggleLED(void)
+inline static void toggleGreenLED(void)
 {
-	PORTD.OUTTGL = PIN6_bm; //反転
+	PORTA.OUTTGL = PIN6_bm; //反転
 }
 
-inline static void blinkLED(int iterNum)
+inline static void blinkGreenLED(int iterNum)
 {
 	if(iterNum < 1) return;
 
 	//初回
-	turnOffLED(); //一旦必ず消灯して
+	turnOffGreenLED(); //一旦必ず消灯して
 	//点滅
 	for(int i=0;i<iterNum;i++)
 	{
 		_delay_ms(100);
-		turnOnLED(); //点灯
+		turnOnGreenLED(); //点灯
 		_delay_ms(25);
-		turnOffLED(); //消灯
+		turnOffGreenLED(); //消灯
+	}
+}
+
+inline static void turnOnRedLED(void)
+{
+	PORTA.OUTSET = PIN7_bm; //点灯
+}
+
+inline static void turnOffRedLED(void)
+{
+	PORTA.OUTCLR = PIN7_bm; //消灯
+}
+
+inline static void toggleRedLED(void)
+{
+	PORTA.OUTTGL = PIN7_bm; //反転
+}
+
+inline static void blinkRedLED(int iterNum)
+{
+	if(iterNum < 1) return;
+
+	//初回
+	turnOffRedLED(); //一旦必ず消灯して
+	//点滅
+	for(int i=0;i<iterNum;i++)
+	{
+		_delay_ms(100);
+		turnOnRedLED(); //点灯
+		_delay_ms(25);
+		turnOffRedLED(); //消灯
 	}
 }
 

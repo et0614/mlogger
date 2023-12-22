@@ -23,7 +23,7 @@ void my_xbee::tx_chars(const char data[])
 	my_uart::send_char((char)(((cl + 14) >> 8) & 0xff));	//データ長の上位バイト
 	my_uart::send_char((char)((cl + 14) & 0xff));			//データ長の下位バイト
 	
-	//ここからチャックサム加算*************
+	//ここからチェックサム加算*************
 	my_uart::send_char(0x10); //コマンドID（データ送信は0x10）
 	chkSum = add_csum(chkSum, 0x10);
 	
@@ -76,7 +76,7 @@ void my_xbee::bl_chars(const char data[])
 	my_uart::send_char((char)(((cl + 3) >> 8) & 0xff));	//データ長の上位バイト
 	my_uart::send_char((char)((cl + 3) & 0xff));			//データ長の下位バイト
 	
-	//ここからチャックサム加算*************
+	//ここからチェックサム加算*************
 	my_uart::send_char(0x2D); //フレーム type（DataRelayは0x2D）
 	chkSum = add_csum(chkSum, 0x2D);
 	

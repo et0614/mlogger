@@ -36,7 +36,6 @@ bool my_uart::tx_done(void)
 {
 	//本来はここでCTS flowコントロール：
 	//D7-CTSがHighの場合にはXBeeのバッファが17byteしか残っていないのでちょっと待つという処理
-	
 	return (USART0.STATUS & USART_DREIF_bm);
 }
 

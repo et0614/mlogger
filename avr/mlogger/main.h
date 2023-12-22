@@ -51,13 +51,21 @@ inline static void sleep_xbee(void);
 
 inline static void wakeup_xbee(void);
 
-inline static void turnOnLED(void);
+inline static void turnOnGreenLED(void);
 
-inline static void turnOffLED(void);
+inline static void turnOffGreenLED(void);
 
-inline static void toggleLED(void);
+inline static void toggleGreenLED(void);
 
-inline static void blinkLED(int iterNum);
+inline static void blinkGreenLED(int iterNum);
+
+inline static void turnOnRedLED(void);
+
+inline static void turnOffRedLED(void);
+
+inline static void toggleRedLED(void);
+
+inline static void blinkRedLED(int iterNum);
 
 inline static float max(float x, float y);
 
