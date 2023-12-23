@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //’è”éŒ¾***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.5\r";
+const char VERSION_NUMBER[] = "VER:3.2.6\r";
 
 //”Mü®•—‘¬Œv‚Ì—§‚¿ã‚°‚É•K—v‚ÈŠÔ[sec]
 const uint8_t V_WAKEUP_TIME = 20;

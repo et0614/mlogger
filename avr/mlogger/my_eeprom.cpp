@@ -72,7 +72,7 @@ volatile float my_eeprom::Cf_luxA = 1.0;
 volatile float my_eeprom::Cf_luxB = 0.0;
 volatile float my_eeprom::Cf_velA = 1.0;
 volatile float my_eeprom::Cf_velB = 0.0;
-volatile float my_eeprom::Cf_vel0 = 1.50;
+volatile float my_eeprom::Cf_vel0 = 1.45;
 
 //計測真偽
 volatile bool my_eeprom::measure_th = true;
@@ -132,7 +132,7 @@ void initMemory()
 	eeprom_busy_wait();
 	eeprom_update_float(&EEP_VELCF_B, 0.000);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VEL0, 1.500);
+	eeprom_update_float(&EEP_VEL0, 1.450);
 	
 	//計測真偽
 	eeprom_busy_wait();
