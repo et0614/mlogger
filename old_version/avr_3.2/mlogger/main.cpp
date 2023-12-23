@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.6\r";
+const char VERSION_NUMBER[] = "VER:3.2.7\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -235,15 +235,15 @@ static void initialize_port(void)
 	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
 	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
-	PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
-	PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
-	PORTA.DIRCLR = PIN6_bm; //汎用IO1
-	PORTA.DIRCLR = PIN7_bm; //汎用IO2
+	//PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
+	//PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
+	//PORTA.DIRCLR = PIN6_bm; //汎用IO1
+	//PORTA.DIRCLR = PIN7_bm; //汎用IO2
 	
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
-	PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
-	PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
+	//PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
+	//PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
 }
 
 //タイマ初期化
