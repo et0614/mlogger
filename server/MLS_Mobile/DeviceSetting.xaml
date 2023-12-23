@@ -63,34 +63,44 @@
 
                 <!--MLoggerとの通信-->
                 <Label Text="{x:Static res:MLSResource.DS_Communicate}" FontSize="Subtitle"/>
-                <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
-                    <HorizontalStackLayout>
-                        <!--ロギング開始-->
-                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
-                            <Button.ImageSource>
-                                <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
-                            </Button.ImageSource>
-                        </Button>
-                        <!--補正係数の設定-->
-                        <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Calibrate}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
-                            <Button.ImageSource>
-                                <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                            </Button.ImageSource>
-                        </Button>
-                    </HorizontalStackLayout>
+                <StackLayout HorizontalOptions="Fill" Margin="50,5,0,20">
+                    <!--ロギング開始-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Start}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                     <!--SDカード書き込み-->
-                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btnSDLogging" Text="{x:Static res:MLSResource.DS_SDLogging}" Clicked="SDButton_Clicked" IsVisible="false" HorizontalOptions="FillAndExpand">
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SDLogging}" Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
                             <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
-                    </Button>                    
+                    </Button>
+                    <!--補正係数の設定-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Calibrate}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                 </StackLayout>
 
                 <!--Zigbee通信の設定-->
                 <Label Text="{x:Static res:MLSResource.DS_ZigbeeSetting}" FontSize="Subtitle"/>
-                <StackLayout HorizontalOptions="End" Margin="10,5,0,20">
-                    <!--SDカード書き込み-->
-                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btn_zigled" Text="{x:Static res:MLSResource.DS_LoadingZigLED}" Clicked="LEDButton_Clicked" HorizontalOptions="FillAndExpand">
+                <StackLayout HorizontalOptions="Fill" Margin="50,5,0,20">
+                    <!--PCと通信開始（電池が切れるまでの一時計測）-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ConnectToPC}" Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf7bb;" FontFamily="FAB" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                    <!--PCと通信開始（常設モード）-->
+                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btn_pmntMode" Text="{x:Static res:MLSResource.DS_SetToPermanentMode}" IsEnabled="False" Clicked="PermanentModeButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf1e6;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                    <!--LED表示機能の有効無効切り替え-->
+                    <Button Margin="5" ContentLayout="Left, 20" x:Name="btn_zigled" Text="{x:Static res:MLSResource.DS_LoadingZigLED}" IsEnabled="False" Clicked="LEDButton_Clicked" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>
                             <FontImageSource Glyph="&#xf0e7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>

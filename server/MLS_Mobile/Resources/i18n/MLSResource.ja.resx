@@ -246,6 +246,9 @@
   <data name="DS_Communicate" xml:space="preserve">
     <value>MLoggerとの通信</value>
   </data>
+  <data name="DS_ConnectToPC" xml:space="preserve">
+    <value>PCへ接続</value>
+  </data>
   <data name="DS_DisableZigLED" xml:space="preserve">
     <value>通信状況LED表示の無効化</value>
   </data>
@@ -272,6 +275,9 @@
   </data>
   <data name="DS_SetName" xml:space="preserve">
     <value>MLoggerの名称を設定</value>
+  </data>
+  <data name="DS_SetToPermanentMode" xml:space="preserve">
+    <value>常設モードに移行</value>
   </data>
   <data name="DS_SpecLocalName" xml:space="preserve">
     <value>XBee名称</value>

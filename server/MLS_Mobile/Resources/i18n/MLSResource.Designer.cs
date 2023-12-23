@@ -448,6 +448,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Connect to PC に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_ConnectToPC {
+            get {
+                return ResourceManager.GetString("DS_ConnectToPC", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Disable status LED に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_DisableZigLED {
@@ -534,6 +543,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_SetName {
             get {
                 return ResourceManager.GetString("DS_SetName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Set to permanent mode に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_SetToPermanentMode {
+            get {
+                return ResourceManager.GetString("DS_SetToPermanentMode", resourceCulture);
             }
         }
         

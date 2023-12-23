@@ -27,27 +27,6 @@ namespace MLS_Mobile
 
     #region staticプロパティ
 
-    /// <summary>MM/TFカードが有効か否か</summary>
-    public static bool MMCardEnabled { get { return true; } }
-    /*{
-      get
-      {
-        string sdFPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + SD_F_NAME;
-        using (StreamReader sReader = new StreamReader(sdFPath, Encoding.UTF8))
-        {
-          return sReader.ReadToEnd() == "1";
-        }
-      }
-      set
-      {
-        string sdFPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + SD_F_NAME;
-        using (StreamWriter sWriter = new StreamWriter(sdFPath, false))
-        {
-          sWriter.Write(value ? "1" : "0");
-        }
-      }
-    }*/
-
     /// <summary>ロガー付属のXBeeを取得する</summary>
     public static ZigBeeBLEDevice LoggerSideXBee { get; private set; }
 

@@ -654,12 +654,22 @@ namespace MLLib
     /// <returns>測定開始コマンド</returns>
     public static string MakeStartMeasuringCommand(bool useZigbee, bool useBluetooth, bool useSDCard)
     {
+      return MakeStartMeasuringCommand(useZigbee, useBluetooth, useSDCard, false);
+    }
+
+    /// <summary>測定開始コマンドをつくる</summary>
+    /// <param name="useZigbee">Zigbeeで出力するか</param>
+    /// <param name="useBluetooth">Bluetoothで出力するか</param>
+    /// <param name="useSDCard">SDカードに書き出すか否か</param>
+    /// <returns>測定開始コマンド</returns>
+    public static string MakeStartMeasuringCommand(bool useZigbee, bool useBluetooth, bool useSDCard, bool permanentMode)
+    {
       //tffはxbee-on,bluetooth-off,sdcard-off
-      return "\rSTL" + 
+      return "\rSTL" +
         String.Format("{0:D10}", GetUnixTime(DateTime.Now)) +
-        (useZigbee ? "t" : "f") +
-        (useBluetooth ? "t" : "f") +
-        (useSDCard ? "t\r" : "f\r");
+        (permanentMode ? "e" : (useZigbee ? "t" : "f")) +
+        ((useBluetooth && !permanentMode) ? "t" : "f") +
+        ((useSDCard && !permanentMode) ? "t\r" : "f\r");
     }
 
     /// <summary>計測設定コマンドをつくる</summary>

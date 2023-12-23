@@ -246,6 +246,9 @@
   <data name="DS_Communicate" xml:space="preserve">
     <value>Communicate with MLogger</value>
   </data>
+  <data name="DS_ConnectToPC" xml:space="preserve">
+    <value>Connect to PC</value>
+  </data>
   <data name="DS_DisableZigLED" xml:space="preserve">
     <value>Disable status LED</value>
   </data>
@@ -275,6 +278,9 @@
   </data>
   <data name="DS_SetName" xml:space="preserve">
     <value>Set MLogger name</value>
+  </data>
+  <data name="DS_SetToPermanentMode" xml:space="preserve">
+    <value>Set to permanent mode</value>
   </data>
   <data name="DS_SpecLocalName" xml:space="preserve">
     <value>XBee name</value>

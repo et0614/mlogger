@@ -18,6 +18,23 @@ public partial class DeviceSetting : ContentPage
 
   #endregion
 
+  #region 列挙型定義
+
+  /// <summary>接続方式</summary>
+  private enum loggingMode
+  {
+    /// <summary>Bluetoothで携帯などと接続</summary>
+    bluetooth = 0,
+    /// <summary>Microflash互換カードに記録</summary>
+    mfcard = 1,
+    /// <summary>ZigbeeでPCと接続</summary>
+    pc = 2, 
+    /// <summary>Zigbeeで常設</summary>
+    permanent = 3
+  }
+
+  #endregion
+
   #region インスタンス変数・プロパティ
 
   /// <summary>ロギングを停止させるか否か</summary>
@@ -74,9 +91,6 @@ public partial class DeviceSetting : ContentPage
 
     //基本は測定を停止させる
     isStopLogging = true;
-
-    //SDカード書き出しの可視状態更新
-    btnSDLogging.IsVisible = MLUtility.MMCardEnabled;
 
     MLUtility.Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
   }
@@ -179,6 +193,14 @@ public partial class DeviceSetting : ContentPage
           MLUtility.Logger.Version_Major + "." +
           MLUtility.Logger.Version_Minor + "." +
           MLUtility.Logger.Version_Revision;
+
+        //Zigbee LEDの有効無効ボタンの有効化
+        btn_zigled.IsEnabled = 3 <= MLUtility.Logger.Version_Minor;
+
+        //常設設置モードボタンの有効化
+        btn_pmntMode.IsEnabled =
+        (3 <= MLUtility.Logger.Version_Minor) ||
+        (2 == MLUtility.Logger.Version_Minor && 4 <= MLUtility.Logger.Version_Revision);
       });
     });
   }
@@ -347,7 +369,7 @@ public partial class DeviceSetting : ContentPage
 
   private void StartButton_Clicked(object sender, EventArgs e)
   {
-    startLogging(false);
+    startLogging(loggingMode.bluetooth);
   }
 
   private void SaveButton_Clicked(object sender, EventArgs e)
@@ -372,10 +394,10 @@ public partial class DeviceSetting : ContentPage
 
   private void SDButton_Clicked(object sender, EventArgs e)
   {
-    startLogging(true);
+    startLogging(loggingMode.mfcard);
   }
 
-  private void startLogging(bool writeToSDCard)
+  private void startLogging(loggingMode lMode)
   {
     //計測停止フラグを解除
     isStopLogging = false;
@@ -403,9 +425,25 @@ public partial class DeviceSetting : ContentPage
           }
           tryNum++;
 
+          string cmd = "";
+          switch (lMode)
+          {
+            case loggingMode.bluetooth:
+              cmd = MLogger.MakeStartMeasuringCommand(false, true, false);
+              break;
+            case loggingMode.mfcard:
+              cmd = MLogger.MakeStartMeasuringCommand(false, false, true);
+              break;
+            case loggingMode.pc:
+              cmd = MLogger.MakeStartMeasuringCommand(true, false, false);
+              break;
+            case loggingMode.permanent:
+              cmd = MLogger.MakeStartMeasuringCommand(true, false, false, true);
+              break;
+          }
+
           //開始コマンドを送信
-          MLUtility.LoggerSideXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeStartMeasuringCommand(false, !writeToSDCard, writeToSDCard)));
+          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd));
 
           await Task.Delay(500);
         }
@@ -413,8 +451,8 @@ public partial class DeviceSetting : ContentPage
         //開始に成功したらページ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          if(writeToSDCard) Shell.Current.GoToAsync("..");
-          else Shell.Current.GoToAsync(nameof(DataReceive));
+          if(lMode == loggingMode.bluetooth) Shell.Current.GoToAsync(nameof(DataReceive));
+          else Shell.Current.GoToAsync("..");
         });
       }
       catch { }
@@ -479,9 +517,25 @@ public partial class DeviceSetting : ContentPage
 
   #endregion
 
-  #region Zigbee通信LED表示の有効化・無効化処理
+  #region Zigbee通信関連の処理
 
-  /// <summary>Zigbee通信LED表示の有効化・無効化を変更</summary>
+  /// <summary>PCとの接続ボタンタップ時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private void CnctToPcButton_Clicked(object sender, EventArgs e)
+  {
+    startLogging(loggingMode.pc);
+  }
+
+  /// <summary>常設モードボタンタップ時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private void PermanentModeButton_Clicked(object sender, EventArgs e)
+  {
+    startLogging(loggingMode.permanent);
+  }
+
+  /// <summary>Zigbee通信LED表示の有効化・無効化を変更ボタンタップ時の処理</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
   private void LEDButton_Clicked(object sender, EventArgs e)
