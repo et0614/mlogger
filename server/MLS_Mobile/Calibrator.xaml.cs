@@ -80,6 +80,14 @@ public partial class Calibrator : ContentPage
   {
     base.OnDisappearing();
 
+    //無風電圧校正中ならば終了コマンドを送信
+    if (calibratingVoltage)
+      Task.Run(async () =>
+      {
+        MLUtility.LoggerSideXBee.SendSerialData
+        (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
+      });
+
     MLUtility.Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
     MLUtility.Logger.EndCalibratingVoltageMessageReceivedEvent -= Logger_EndCalibratingVoltageMessageReceivedEvent;
   }
@@ -96,6 +104,7 @@ public partial class Calibrator : ContentPage
       Application.Current.Dispatcher.Dispatch(() =>
       {
         cdownLabel.TextColor = Colors.Red;
+        velVLabel.IsVisible = true;
         velLabel.IsVisible = true;
         cdownLabel.IsVisible = true;
       });
@@ -104,7 +113,9 @@ public partial class Calibrator : ContentPage
     //電圧表示を更新
     Application.Current.Dispatcher.Dispatch(() =>
     {
-      velLabel.Text = MLUtility.Logger.VelocityVoltage.ToString("F3");
+      double velV = MLUtility.Logger.VelocityVoltage;
+      velVLabel.Text = velV.ToString("F3") + " V";
+      velLabel.Text = MLUtility.Logger.ConvertVelocityVoltage(velV).ToString("F2") + " m/s";
     });
   }
 
@@ -114,6 +125,7 @@ public partial class Calibrator : ContentPage
 
     Application.Current.Dispatcher.Dispatch(() =>
     {
+      velVLabel.IsVisible = false;
       velLabel.IsVisible = false;
       cdownLabel.IsVisible = false;
     });
@@ -315,7 +327,7 @@ public partial class Calibrator : ContentPage
             }
             tryNum++;
 
-            //開始コマンドを送信
+            //終了コマンドを送信
             MLUtility.LoggerSideXBee.SendSerialData
             (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
 
@@ -357,6 +369,7 @@ public partial class Calibrator : ContentPage
           hideIndicator();
 
           //コントロールの表示を更新
+          cdownLabel.Text = "30";
           voltageBtn.Text = calibratingVoltage ? MLSResource.CR_EndCalibration : MLSResource.CR_CalibrateVelocityVoltage;
           velPicker.IsEnabled = tmpPicker.IsEnabled = autoTmpBtn.IsEnabled = autoVelBtn.IsEnabled = corBtn.IsEnabled = !calibratingVoltage;
         });

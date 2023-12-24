@@ -335,6 +335,15 @@ namespace MLLib
       return Math.Pow(Math.Max(0, Math.Pow(glbK, 4) + Math.Max(hc1, hc2) / ES * (glb - tmp)), 0.25) - 273.15;
     }
 
+    /// <summary>風速電圧[V]を風速[m/s]に換算する</summary>
+    /// <param name="velVoltage">風速電圧[V]</param>
+    /// <returns>風速[m/s]</returns>
+    public double ConvertVelocityVoltage(double velVoltage)
+    {
+      double bff = Math.Max(0, velVoltage / VelocityMinVoltage - 1.0);
+      return bff * (2.3595 + bff * (-12.029 + bff * 79.744)); //電圧-風速換算式
+    }
+
     #endregion
 
     #region 受信データの処理

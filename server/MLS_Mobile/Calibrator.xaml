@@ -45,9 +45,13 @@
             <Label x:Name="cdownLabel" Text="30" 
                    HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" 
                    FontSize="40" TextColor="Red" Margin="0,30,0,0" IsVisible="false"/>
-            <Label x:Name="velLabel" Text="1.545" 
+            <Label x:Name="velVLabel" Text="-" 
                    HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
-                   FontSize="80" TextColor="{StaticResource Dark_G}"
+                   FontSize="70" TextColor="{StaticResource Dark_G}"
+                   HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" IsVisible="false"/>
+            <Label x:Name="velLabel" Text="-" 
+                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                   FontSize="70" TextColor="{StaticResource Dark_G}"
                    HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" IsVisible="false"/>
             
         </StackLayout>

@@ -56,23 +56,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.19</ApplicationDisplayVersion>
-	  <ApplicationVersion>22</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
+	  <ApplicationVersion>23</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.19</ApplicationDisplayVersion>
-	  <ApplicationVersion>22</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
+	  <ApplicationVersion>23</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.19</ApplicationDisplayVersion>
-	  <ApplicationVersion>22</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
+	  <ApplicationVersion>23</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.19</ApplicationDisplayVersion>
-	  <ApplicationVersion>22</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
+	  <ApplicationVersion>23</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
