@@ -10,7 +10,7 @@
 	<PropertyGroup>
 		<!-- <TargetFrameworks>net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks> -->
 		<!-- <TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks> -->
-		<TargetFrameworks>net7.0-android</TargetFrameworks>
+		<TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -56,23 +56,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
-	  <ApplicationVersion>23</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
+	  <ApplicationVersion>24</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
-	  <ApplicationVersion>23</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
+	  <ApplicationVersion>24</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
-	  <ApplicationVersion>23</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
+	  <ApplicationVersion>24</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.20</ApplicationDisplayVersion>
-	  <ApplicationVersion>23</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
+	  <ApplicationVersion>24</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -289,8 +289,8 @@
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="5.2.0" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.0" />
-	  <PackageReference Include="Mopups" Version="1.2.0" />
-	  <PackageReference Include="Plugin.BLE" Version="3.1.0-beta.1" />
+	  <PackageReference Include="Mopups" Version="1.1.1" />
+	  <PackageReference Include="Plugin.BLE" Version="3.0.0" />
 	  <PackageReference Include="Popolo" Version="2.3.1.65" />
 	</ItemGroup>
 
