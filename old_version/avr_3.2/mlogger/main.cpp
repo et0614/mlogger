@@ -72,8 +72,8 @@ const char OPT_ADDRESS = 0x88; //OPT3001は0x88, OPT3007は0x8A, を使用。
 //グローブ温度計測用モジュールのタイプ
 const bool IS_MCP9700 = false; //MCP9701ならばfalse
 
-//AM2320かAHT20か
-const bool IS_AM2320 = false;
+//P3T1750DPを使うか否か
+const bool USE_P3T1750DP = false;
 
 //何行分のデータを一時保存するか
 const int N_LINE_BUFF = 30;
@@ -165,11 +165,12 @@ int main(void)
 	//スイッチ割り込み設定
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
 	
-	//通信を初期化
-	my_i2c::InitializeI2C(); //I2C
-	//my_i2c::InitializeOPT(OPT_ADDRESS);  //照度センサとしてOPTxxxxを使う場合
+	//初期化処理
+	my_i2c::InitializeI2C(); //I2C通信
+	my_i2c::InitializeAHT20(); //温湿度計
+	my_i2c::InitializeI2C(); //照度計
+	if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
 	my_xbee::Initialize();  //XBee（UART）
-	my_i2c::InitializeAHT20();
 	
 	//タイマ初期化
 	initialize_timer();
@@ -705,7 +706,7 @@ static void execLogging()
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if((IS_AM2320 && my_i2c::ReadAM2320(&tmp_f, &hmd_f)) || (!IS_AM2320  &&  my_i2c::ReadAHT20(&tmp_f, &hmd_f)))
+		if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
 		{
 			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
 			hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
@@ -720,12 +721,19 @@ static void execLogging()
 	pass_glb++;
 	if(my_eeprom::measure_glb && my_eeprom::interval_glb <= pass_glb)
 	{
-		float glbV = readGlbVoltage(); //AD変換
-		dtostrf(glbV,6,4,glbVS);
-		
-		float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
-		glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
-		dtostrf(glbT,6,2,glbTS);
+		if(USE_P3T1750DP){
+			float glbT = my_i2c::ReadP3T1750DP();
+			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+			dtostrf(glbT,6,2,glbTS);
+		}
+		else{			
+			float glbV = readGlbVoltage(); //AD変換
+			dtostrf(glbV,6,4,glbVS);
+			
+			float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
+			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+			dtostrf(glbT,6,2,glbTS);			
+		}
 		
 		pass_glb = 0;
 		hasNewData = true;
@@ -894,13 +902,19 @@ static void autoCalibrateTemperatureSensor()
 		//温湿度測定
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if((IS_AM2320 && my_i2c::ReadAM2320(&tmp_f, &hmd_f)) || (!IS_AM2320  &&  my_i2c::ReadAHT20(&tmp_f, &hmd_f)))
+		if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
 			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
 		else return;
 		
 		//グローブ温度
-		float glbV = readGlbVoltage(); //AD変換
-		float glb_f = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
+		float glb_f;
+		if(USE_P3T1750DP){
+			glb_f = my_i2c::ReadP3T1750DP();
+		}
+		else{
+			float glbV = readGlbVoltage(); //AD変換
+			glb_f = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);	
+		}
 		
 		//極端に誤差が大きくなければ回帰係数を更新
 		if(abs(tmp_f - glb_f) < 3)

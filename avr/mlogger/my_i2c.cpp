@@ -17,6 +17,9 @@ const uint8_t VCNL_ADD = 0x60 << 1;
 //AHT20のアドレス（0x38=0b00111000）(0x70=0b01110000)
 const uint8_t AHT20_ADD = 0x38 << 1;
 
+//P3T1750DPのアドレス（0x48=0b01001000; A0=A1=A2=GND）
+const uint8_t P3T1750DP_ADD = 0x48;
+
 enum 
 {
 	I2C_INIT = 0,
@@ -118,26 +121,7 @@ static uint8_t _bus_read(bool sendAck, bool withStopCondition, uint8_t* data)
 	else return rslt;
 }
  
-//巡回冗長検査値を生成1
-static uint16_t crc16(uint8_t *ptr, uint8_t len)
-{
-	uint16_t crc =0xFFFF;
-	uint8_t i;
-	while(len--) {
-		crc ^=*ptr++;
-		for(i=0;i<8;i++) {
-			if (crc & 0x01) {
-				crc>>=1;
-				crc^=0xA001;
-			} else {
-				crc>>=1;
-			}
-		}
-	}
-	return crc;
-}
-
-//巡回冗長検査値を生成2
+//巡回冗長検査値を生成
 static uint8_t crc8(uint8_t *ptr, uint8_t len) 
 {
 	uint8_t crc = 0xFF;
@@ -190,7 +174,9 @@ void my_i2c::InitializeI2C(void)
 	TWI1.MSTATUS |= TWI_WIF_bm | TWI_CLKHOLD_bm; //フラグクリア
 
 	TWI1.MCTRLB |= TWI_FLUSH_bm; //通信状態を初期化
-	
+}
+
+void my_i2c::InitializeVCNL4030(void){
 	//照度計測設定//設定は変えないので初期化時のみ呼び出し
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
 	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; } //照度計測設定コマンド
@@ -208,171 +194,7 @@ void my_i2c::InitializeI2C(void)
 	if(_bus_write(0x04) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド2(PS_CONF3, PS_MS)
 	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 0 0 1: Normal current, Reserved, PS_SMART_PERS=Disable, Active force mode disable, No PS active force mode, PS_MS disabled, turn on sunlight cancel
 	if(_bus_write(0b00000111) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 111: Reserved, 1xtypical sunlight cancel current, typical sunlight capability, 00h sunlight protect mode, LED current=200mA
-	_bus_stop();
-	
-}
-
-void my_i2c::InitializeOPT(uint8_t add)
-{
-	//Configuration
-	_start_writing(add); //OPTxxxxのアドレス
-	_bus_write(0x01); //Configuration要求
-	_bus_write(0b11001110); //0b 1100 1 11 0 //automatic full-scale, 800ms, continuous conversions, read only field
-	_bus_write(0b00000000); //0b 0 0 0 0 0 00//read only field * 3, hysteresis-style,
-	_bus_stop();
-	_delay_ms(1); //必要な待機時間は技術資料から読み取れず
-	
-	//OPTxxxxのResister Address をResultに設定
-	//再設定するまで維持されるため、初期化時に設定してしまう
-	_start_writing(add); //OPTxxxxのアドレス
-	_bus_write(0x00); //Result要求
-	_bus_stop();
-	_delay_ms(1); //必要な待機時間は技術資料から読み取れず
-}
-
-uint8_t my_i2c::ReadAM2320(float* tempValue, float* humiValue)
-{
-	const uint8_t AM_ADD = 0xB8; //AM2320のアドレス（0xB8=0b10111000）
-	uint8_t buffer[8];
-	
-	//スリープ状態から起こす。ACKは取得できない
-	_start_writing(AM_ADD);
-	_delay_ms(1);
-	_bus_stop();
-	
-	//コマンド送信前処理// SLA + address (0xB8) + starting address(0x00) + register length(0x04)	
-	_start_writing(AM_ADD);
-	_bus_write(0x03);
-	_bus_write(0x00);
-	_bus_write(0x04);
-	_bus_stop();
-	_delay_ms(1); //1.5ms以上の待機！！！
-
-	_start_reading(AM_ADD);
-	_delay_us(50); //30us以上の待機
-	for (uint8_t i = 0; i<7; i++) {		
-		_bus_read(1, 0, &buffer[i]); //読んでACK
-	}
-	_bus_read(0, 1, &buffer[7]); //読んでNACK
-	//_bus_stop();
-	
-	//CRC16をチェック
-	uint16_t Rcrc = ((uint16_t)buffer[7] << 8)+buffer[6];
-	if (Rcrc == crc16(buffer, 6)) {
-		//温湿度データを復元
-		int sigT = -1;
-		if((buffer[2] & 0b10000000) == 0) sigT = 1;
-		else buffer[2] = buffer[2] & 0b01111111;
-		int sigH = -1;
-		if((buffer[4] & 0b10000000) == 0) sigH = 1;
-		else buffer[4] = buffer[4] & 0b01111111;
-
-		*humiValue = 0.1 * (sigH * ((buffer[2] << 8) + buffer[3]));
-		*tempValue = 0.1 * (sigT * ((buffer[4] << 8) + buffer[5]));
-		return 1;
-	}
-	else{
-		//CRC不整合の場合
-		*humiValue = -99.0;
-		*tempValue = -99.0;
-		return 0;
-	}
-}
-
-uint8_t my_i2c::ReadAHT20(float* tempValue, float* humiValue)
-{
-	*humiValue = -99;
-	*tempValue = -99;
-	
-	uint8_t buffer[7];
-	
-	if((ReadAHT20Status()&0x18)!=0x18) //Statusが0x18以外の場合にはリセット
-	{
-		//レジスタ初期化
-		ResetAHT20(0x1b);
-		ResetAHT20(0x1c);
-		ResetAHT20(0x1e);
-		_delay_ms(10);
-	}
-	
-	//測定命令(計測終了まで80ms必要)
-	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0xAC) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0x33) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
-	_bus_stop();
-	_delay_ms(80);
-	
-	uint16_t cnt = 0;
-	while(((ReadAHT20Status()&0x80)==0x80)) //bit[7]=1の間はbusy
-	{
-		_delay_ms(2);
-		if(cnt++>=100) break;
-	}
-			
-	//測定値を受信
-	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:状態
-	//Busyの場合
-	if((buffer[0] & (1<<7))) { _bus_stop(); return 0; }
-	else
-	{
-		if(_bus_read(1, 0, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度1
-		if(_bus_read(1, 0, &buffer[2]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度2
-		if(_bus_read(1, 0, &buffer[3]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度3,乾球温度1
-		if(_bus_read(1, 0, &buffer[4]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度2
-		if(_bus_read(1, 0, &buffer[5]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度3
-		if(_bus_read(0, 1, &buffer[6]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK:CRC
-		
-		//CRC8をチェック
-		volatile uint8_t rcrc = crc8((uint8_t*)buffer, 6);
-		if (buffer[6] == rcrc) 
-		{
-			float hum = 0;
-			hum += buffer[1];
-			hum *= 256;
-			hum += buffer[2];
-			hum *= 16;
-			hum += (buffer[3]>>4);
-			hum *= 100;
-			hum /= 1024;
-			hum /= 1024;
-			*humiValue = hum;
-			
-			float tmp = 0;
-			tmp += (buffer[3] & 0x0F);
-			tmp *= 256;
-			tmp += buffer[4];
-			tmp *= 256;
-			tmp += buffer[5];
-			tmp *= 200;
-			tmp /= 1024;
-			tmp /= 1024;
-			tmp -= 50;
-			*tempValue = tmp;
-
-			return 1;
-		}
-		else return 0;
-	}	
-}
-
-float my_i2c::ReadOPT(uint8_t add)
-{
-	uint8_t buffer[2];
-	
-	_start_reading(add); //OPTxxxxのアドレス
-	_delay_us(50); //待機すべき時間は不明//AutoScaleで10ms×レンジ変更回数の時間が必要の模様。レンジは12段階なので最大で110ms+αか？
-	_bus_read(1, 0, &buffer[0]); //ACK
-	_bus_read(0, 1, &buffer[1]); //NACK
-	
-	//Luxに変換
-	int expnt = (0b11110000 & buffer[0]) >> 4; //上位4bitがレンジを表す
-	int val = ((0b00001111 & buffer[0]) << 8) + buffer[1]; //下位12bitは値を表す
-	float lux = 0.01 * pow(2, expnt) * val;
-	
-	if(83865.60 < lux) return 0; //エラー時は0とする
-	else return lux;
+	_bus_stop();	
 }
 
 float my_i2c::ReadVCNL4030_ALS(void)
@@ -427,7 +249,7 @@ void my_i2c::ScanAddress(uint8_t minAddress, uint8_t maxAddress)
 	}
 }
 
-void my_i2c::InitializeAHT20()
+void my_i2c::InitializeAHT20(void)
 {
 	//Statusが0x18以外の場合にはリセット
 	if((ReadAHT20Status()&0x18)!=0x18)
@@ -455,7 +277,85 @@ void my_i2c::InitializeAHT20()
 	_delay_ms(10);
 }
 
-uint8_t my_i2c::ReadAHT20Status()
+uint8_t my_i2c::ReadAHT20(float* tempValue, float* humiValue)
+{
+	*humiValue = -99;
+	*tempValue = -99;
+	
+	uint8_t buffer[7];
+	
+	if((ReadAHT20Status()&0x18)!=0x18) //Statusが0x18以外の場合にはリセット
+	{
+		//レジスタ初期化
+		ResetAHT20(0x1b);
+		ResetAHT20(0x1c);
+		ResetAHT20(0x1e);
+		_delay_ms(10);
+	}
+	
+	//測定命令(計測終了まで80ms必要)
+	if(_start_writing(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0xAC) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x33) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; }
+	_bus_stop();
+	_delay_ms(80);
+	
+	uint16_t cnt = 0;
+	while(((ReadAHT20Status()&0x80)==0x80)) //bit[7]=1の間はbusy
+	{
+		_delay_ms(2);
+		if(cnt++>=100) break;
+	}
+	
+	//測定値を受信
+	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:状態
+	//Busyの場合
+	if((buffer[0] & (1<<7))) { _bus_stop(); return 0; }
+	else
+	{
+		if(_bus_read(1, 0, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度1
+		if(_bus_read(1, 0, &buffer[2]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度2
+		if(_bus_read(1, 0, &buffer[3]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度3,乾球温度1
+		if(_bus_read(1, 0, &buffer[4]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度2
+		if(_bus_read(1, 0, &buffer[5]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度3
+		if(_bus_read(0, 1, &buffer[6]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK:CRC
+		
+		//CRC8をチェック
+		volatile uint8_t rcrc = crc8((uint8_t*)buffer, 6);
+		if (buffer[6] == rcrc)
+		{
+			float hum = 0;
+			hum += buffer[1];
+			hum *= 256;
+			hum += buffer[2];
+			hum *= 16;
+			hum += (buffer[3]>>4);
+			hum *= 100;
+			hum /= 1024;
+			hum /= 1024;
+			*humiValue = hum;
+			
+			float tmp = 0;
+			tmp += (buffer[3] & 0x0F);
+			tmp *= 256;
+			tmp += buffer[4];
+			tmp *= 256;
+			tmp += buffer[5];
+			tmp *= 200;
+			tmp /= 1024;
+			tmp /= 1024;
+			tmp -= 50;
+			*tempValue = tmp;
+
+			return 1;
+		}
+		else return 0;
+	}
+}
+
+uint8_t my_i2c::ReadAHT20Status(void)
 {
 	uint8_t buff;
 	if(_start_reading(AHT20_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
@@ -490,3 +390,42 @@ void my_i2c::ResetAHT20(uint8_t code)
 	Byte_third =0x00;
 }
 	
+void my_i2c::InitializeP3T1750DP(void)
+{
+	if(_start_writing(P3T1750DP_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return; } //Configuration registerを操作するためのポインタレジスタ（01）を書き込む
+	if(_bus_write(0b00101001) != I2C_ACKED) { _bus_stop(); return; } //Shutdownモードとする。その他のビットはデフォルト（55msで計測）
+	_bus_stop();
+}
+
+float my_i2c::ReadP3T1750DP(void)
+{
+	//Shutdownモードから起こして1回のみ計測させる
+	if(_start_writing(P3T1750DP_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return 0; } //Configuration registerを操作するためのポインタレジスタ（01）を書き込む
+	if(_bus_write(0b10101001) != I2C_ACKED) { _bus_stop(); return 0; } //One-Shot計測
+	_bus_stop();
+	
+	_delay_ms(55); //計測のために55msのお休み
+	
+	//温度を読み取る
+	uint8_t buffer[2];
+	if(_start_writing(P3T1750DP_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0b00000000) != I2C_ACKED) { _bus_stop(); return 0; } //Temperature registerを操作するためのポインタレジスタ（00）を書き込む
+	if(_start_reading(P3T1750DP_ADD) != I2C_ACKED) { _bus_stop(); return 0; } //Restart
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACKで継続
+	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACKで終了
+	
+	//MSBの最上位が1の場合（マイナス）
+	if(buffer[0] | 0b10000000)
+	{
+		uint16_t data = ~((buffer[0] << 4) + (buffer[1] >> 4)) + 0b0000001;
+		return -0.0625 * data;
+	}
+	//その他（プラス）
+	else
+	{
+		uint16_t data = (buffer[0] << 4) + (buffer[1] >> 4);
+		return 0.0625 * data;
+	}	
+}

@@ -15,18 +15,13 @@ class my_i2c
 {	
 	public:
 		static void InitializeI2C(void);
-		
-		static void InitializeOPT(uint8_t add);
-		
+
 		/**
 		 * @fn
-		 * AM2320から乾球温度と相対湿度を読み取る
-		 * @param (tempValue) 乾球温度
-		 * @param (humiValue) 相対湿度
-		 * @return 読取成功で1、失敗で0
+		 * AHT20を初期化する
 		 */
-		static uint8_t ReadAM2320(float * tempValue, float * humiValue);
-		
+		static void InitializeAHT20();
+				
 		/**
 		 * @fn
 		 * AHT20から乾球温度と相対湿度を読み取る
@@ -52,17 +47,9 @@ class my_i2c
 		
 		/**
 		 * @fn
-		 * AHT20を初期化する
+		 * VCNL4030を初期化する
 		 */
-		static void InitializeAHT20();
-		
-		/**
-		 * @fn
-		 * OPTxxxから照度を読み取る
-		 * @param (add) アドレス
-		 * @return 照度[lx]
-		 */
-		static float ReadOPT(uint8_t add);
+		static void InitializeVCNL4030();
 		
 		/**
 		 * @fn
@@ -79,6 +66,19 @@ class my_i2c
 		static float ReadVCNL4030_PS(void);
 		
 		static void ScanAddress(uint8_t minAddress, uint8_t maxAddress);
+		
+		/**
+		 * @fn
+		 * P3T1750DPを初期化する
+		 */
+		static void InitializeP3T1750DP();
+		
+		/**
+		 * @fn
+		 * P3T1750DPから温度を読み取る
+		 * @return 温度[C]
+		 */
+		static float ReadP3T1750DP(void);
 };
   
 #endif /* MY_I2C_H_ */
