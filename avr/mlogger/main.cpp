@@ -61,13 +61,10 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.2\r";
+const char VERSION_NUMBER[] = "VER:3.3.3\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
-
-//照度センサ（OPTxxxx）のアドレス
-const char OPT_ADDRESS = 0x88; //OPT3001は0x88, OPT3007は0x8A, を使用。
 
 //グローブ温度計測用モジュールのタイプ
 const bool IS_MCP9700 = false; //MCP9701ならばfalse
@@ -651,6 +648,9 @@ ISR(RTC_PIT_vect)
 
 static void execLogging()
 {
+	//SD書き出しでマウント前の場合には赤LEDでアラート
+	if(!(outputToSDCard && !initSD)) blinkRedLED(1);
+	
 	//計測開始時刻の前ならば終了
 	if(currentTime < startTime) return;
 	
@@ -912,7 +912,7 @@ static void autoCalibrateTemperatureSensor()
 		}
 		
 		//極端に誤差が大きくなければ回帰係数を更新
-		if(abs(tmp_f - glb_f) < 3)
+		if(abs(tmp_f - glb_f) < 5)
 		{
 			if(RecursiveLeastSquares::Initialized) 
 				RecursiveLeastSquares::UpdateCoefficients(glb_f, tmp_f);			
@@ -932,7 +932,7 @@ static void autoCalibrateTemperatureSensor()
 		{
 			//あまり酷い補正は採用しない
 			if(0.7 < RecursiveLeastSquares::coefA && RecursiveLeastSquares::coefA < 1.3 
-			&& -3 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 3)
+			&& -5 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 5)
 			{
 				my_eeprom::Cf_glbA = RecursiveLeastSquares::coefA;
 				my_eeprom::Cf_glbB = RecursiveLeastSquares::coefB;
