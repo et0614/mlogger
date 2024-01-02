@@ -72,13 +72,30 @@ public partial class DeviceSetting : ContentPage
 
   private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
   {
-    if (!(e.Page is SettingNamePopup)) return;
+    if (!(e.Page is SettingPopup)) return;
 
-    SettingNamePopup snPop = (SettingNamePopup)e.Page;
+    SettingPopup snPop = (SettingPopup)e.Page;
 
-    //名称更新
+    //状態値を更新
     if (snPop.HasChanged)
-      updateName(snPop.Name);
+    {
+      if (snPop.PopID == 0)
+        updateName(snPop.ChangedValue);
+      else if (snPop.PopID == 1)
+      {
+        try
+        {
+          int panID = Convert.ToInt32(snPop.ChangedValue, 16);
+          byte[] ar = BitConverter.GetBytes(panID);
+          Array.Reverse(ar);
+          Task.Run(() =>
+          {
+            MLUtility.LoggerSideXBee.SetParameter("ID", ar);
+          });
+        }
+        catch { }
+      }
+    }
   }
 
   #endregion
@@ -389,12 +406,48 @@ public partial class DeviceSetting : ContentPage
 
   private void SetNameButton_Clicked(object sender, EventArgs e)
   {
-    MopupService.Instance.PushAsync(new SettingNamePopup(MLUtility.Logger.Name));
+    MopupService.Instance.PushAsync(new SettingPopup(
+      0,
+      MLSResource.DS_SetName, 
+      MLUtility.Logger.Name,
+      Keyboard.Text
+      ));
   }
 
   private void SDButton_Clicked(object sender, EventArgs e)
   {
     startLogging(loggingMode.mfcard);
+  }
+
+  private void PANButton_Clicked(object sender, EventArgs e)
+  {
+    //インジケータ表示
+    showIndicator(MLSResource.DR_StartLogging);
+
+    Task.Run(async () =>
+    {
+      try
+      {
+        byte[] id = MLUtility.LoggerSideXBee.GetParameter("ID");
+        string panID = BitConverter.ToString(id).Replace("-","").TrimStart('0');
+
+        await MopupService.Instance.PushAsync(new SettingPopup(
+          1,
+          MLSResource.DS_ChangePANID,
+          panID,
+          Keyboard.Numeric
+          ));
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
   }
 
   private void startLogging(loggingMode lMode)

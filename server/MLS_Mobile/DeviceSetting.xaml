@@ -99,6 +99,12 @@
                             <FontImageSource Glyph="&#xf1e6;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                         </Button.ImageSource>
                     </Button>
+                    <!--PANIDの変更-->
+                    <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ChangePANID}" Clicked="PANButton_Clicked" HorizontalOptions="FillAndExpand">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf6ff;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
                     <!--LED表示機能の有効無効切り替え-->
                     <Button Margin="5" ContentLayout="Left, 20" x:Name="btn_zigled" Text="{x:Static res:MLSResource.DS_LoadingZigLED}" IsEnabled="False" Clicked="LEDButton_Clicked" HorizontalOptions="FillAndExpand">
                         <Button.ImageSource>

@@ -243,6 +243,9 @@
   <data name="DS_Calibrate" xml:space="preserve">
     <value>校正</value>
   </data>
+  <data name="DS_ChangePANID" xml:space="preserve">
+    <value>PAN IDを変更</value>
+  </data>
   <data name="DS_Communicate" xml:space="preserve">
     <value>MLoggerとの通信</value>
   </data>

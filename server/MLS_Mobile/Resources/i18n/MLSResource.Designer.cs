@@ -439,6 +439,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Change PAN ID に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_ChangePANID {
+            get {
+                return ResourceManager.GetString("DS_ChangePANID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Communicate with MLogger に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_Communicate {

@@ -243,6 +243,9 @@
   <data name="DS_Calibrate" xml:space="preserve">
     <value>Calibration</value>
   </data>
+  <data name="DS_ChangePANID" xml:space="preserve">
+    <value>Change PAN ID</value>
+  </data>
   <data name="DS_Communicate" xml:space="preserve">
     <value>Communicate with MLogger</value>
   </data>

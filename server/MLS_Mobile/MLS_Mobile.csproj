@@ -50,29 +50,29 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net7.0-ios'">
-	  <CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
-	  <CodesignProvision>mls_dist</CodesignProvision>
+	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
-	  <ApplicationVersion>24</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
+	  <ApplicationVersion>25</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
-	  <ApplicationVersion>24</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
+	  <ApplicationVersion>25</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
-	  <ApplicationVersion>24</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
+	  <ApplicationVersion>25</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.21</ApplicationDisplayVersion>
-	  <ApplicationVersion>24</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
+	  <ApplicationVersion>25</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -317,6 +317,9 @@
 	    <AutoGen>True</AutoGen>
 	    <DependentUpon>TCResource.resx</DependentUpon>
 	  </Compile>
+	  <Compile Update="SettingPopup.xaml.cs">
+	    <DependentUpon>SettingPopup.xaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -364,7 +367,7 @@
 	  <MauiXaml Update="MoistAirCalculator.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="SettingNamePopup.xaml">
+	  <MauiXaml Update="SettingPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">
