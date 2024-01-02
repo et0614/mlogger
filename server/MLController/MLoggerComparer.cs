@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Windows.Forms;
 
-namespace MLServer
+namespace MLController
 {
   public class MLoggerComparer : IComparer
   {

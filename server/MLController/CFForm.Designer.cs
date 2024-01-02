@@ -1,4 +1,4 @@
-﻿namespace MLServer
+﻿namespace MLController
 {
   partial class CFForm
   {

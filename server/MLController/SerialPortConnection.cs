@@ -5,7 +5,7 @@ using System.Threading;
 using System.IO.Ports;
 using XBeeLibrary.Core.Connection;
 
-namespace MLServer
+namespace MLController
 {
   public class SerialPortConnection : IConnectionInterface
   {

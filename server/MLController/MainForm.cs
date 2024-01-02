@@ -13,7 +13,7 @@ using XBeeLibrary.Core.Models;
 
 using MLLib;
 
-namespace MLServer
+namespace MLController
 {
   public partial class MainForm : Form
   {
@@ -74,9 +74,6 @@ namespace MLServer
 
     /// <summary>補正係数設定ボタンを表示するか否か</summary>
     private readonly bool showCFButton = false;
-
-    /// <summary>SDカード書き出しを有効化するか否か</summary>
-    private readonly bool enableSDOutput = false;
 
     #endregion
 
@@ -171,9 +168,6 @@ namespace MLServer
               case "show_cfactor":
                 showCFButton = bool.Parse(st[1]);
                 break;
-              case "enable_sd":
-                enableSDOutput = bool.Parse(st[1]);
-                break;
             }
           }
         }
@@ -200,8 +194,8 @@ namespace MLServer
       initControlLang();
 
       //コントローラ表示の初期化
-      btn_outputSD.Enabled = enableSDOutput;
-      cbx_saveToSDCard.Enabled = enableSDOutput;
+      btn_outputSD.Enabled = true;
+      cbx_saveToSDCard.Enabled = true;
       btn_setCFactor.Visible = showCFButton;
 
       //データ格納用のディレクトリを作成

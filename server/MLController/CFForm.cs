@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 using MLLib;
 
-namespace MLServer
+namespace MLController
 {
   public partial class CFForm : Form
   {

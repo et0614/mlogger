@@ -1,122 +1,142 @@
 body {
-  font-family: "Open Sans", sans-serif;
-  line-height: 1.25;
-  background-color: #ffffff;
+    font-family: "Open Sans", sans-serif;
+    line-height: 1.25;
+    background-color: #ffffff;
 }
 
 table {
-  border-collapse: collapse;
-  margin: 0 auto;
-  padding: 0;
-  width: 1900px;
-  table-layout: fixed;
+    border-collapse: collapse;
+    margin: 0 auto;
+    padding: 0;
+    width: 2100px;
+    table-layout: fixed;
 }
 
-table tr {
-  background-color: #e6f2f5;
-  padding: .35em;
-  border-bottom: 2px solid #fff;
-}
-table th,
-table td {
-  padding: 1em 10px 1em 1em;
-  border-right: 2px solid #fff;
-  text-align: center;
-}
-table th {
-  font-size: 1.0em;
-}
-table thead tr{
-  background-color: #167F92;
-  color:#fff;
-}
-table tbody th {
-    background: #78bbc7;
-    color: #fff;
+    table tr {
+        background-color: #e6f2f5;
+        padding: .35em;
+        border-bottom: 2px solid #fff;
+    }
+
+    table th,
+    table td {
+        padding: 1em 10px 1em 1em;
+        border-right: 2px solid #fff;
+        text-align: center;
+    }
+
+    table th {
+        font-size: 1.0em;
+    }
+
+    table thead tr {
+        background-color: #167F92;
+        color: #fff;
+    }
+
+    table tbody th {
+        background: #78bbc7;
+        color: #fff;
+    }
+
+.general_h {
+    background: #3261AB;
 }
 
-.general_h{
-  background: #3261AB;
+.thlog_h {
+    background: #007FB1;
 }
-.thlog_h{
-  background: #007FB1;
+
+.glblog_h {
+    background: #A4C520;
 }
-.glblog_h{
-  background: #A4C520;
+
+.vellog_h {
+    background: #EDAD0B;
 }
-.vellog_h{
-  background: #EDAD0B;
-}
+
 .illlog_h {
-  background: #ff6a00;
-}
-.cmftlog_h {
-  background: #cc528b;
+    background: #ff6a00;
 }
 
-.general{
-  background: #D5E0F1;
+.cmftlog_h {
+    background: #cc528b;
 }
-.thlog{
-  background: #CAE7F2;
+
+.general {
+    background: #D5E0F1;
 }
-.glblog{
-  background: #D1F1CC;
+
+.thlog {
+    background: #CAE7F2;
 }
-.vellog{
-  background: #FCF1D3;
+
+.glblog {
+    background: #D1F1CC;
 }
+
+.vellog {
+    background: #FCF1D3;
+}
+
 .illlog {
-  background: #ffe3cf;
+    background: #ffe3cf;
 }
+
 .cmftlog {
-  background: #f4c9dd;
+    background: #f4c9dd;
 }
 
 @media screen and (max-width: 600px) {
-  table {
-    border: 0;
-    width:100%
-  }
-  table th{
-    display: block;
-    border-right: none;
-  }
-  table thead {
-    border: none;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
-  }
-  table tr {
-    display: block;
-    margin-bottom: .625em;
-  }
-  table td {
-    border-bottom: 1px solid #bbb;
-    display: block;
-    font-size: .8em;
-    text-align: right;
-    position: relative;
-    padding: .625em .625em .625em 4em;
-    border-right: none;
-  }
-  
-  table td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    position: absolute;
-    left: 10px;
-    color: #167F92;
-  }
-  table td:last-child {
-    border-bottom: 0;
-  }
-  table tbody th {
-    color: #fff;
-  }
+    table {
+        border: 0;
+        width: 100%
+    }
+
+        table th {
+            display: block;
+            border-right: none;
+        }
+
+        table thead {
+            border: none;
+            clip: rect(0 0 0 0);
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            padding: 0;
+            position: absolute;
+            width: 1px;
+        }
+
+        table tr {
+            display: block;
+            margin-bottom: .625em;
+        }
+
+        table td {
+            border-bottom: 1px solid #bbb;
+            display: block;
+            font-size: .8em;
+            text-align: right;
+            position: relative;
+            padding: .625em .625em .625em 4em;
+            border-right: none;
+        }
+
+            table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                position: absolute;
+                left: 10px;
+                color: #167F92;
+            }
+
+            table td:last-child {
+                border-bottom: 0;
+            }
+
+        table tbody th {
+            color: #fff;
+        }
 }
