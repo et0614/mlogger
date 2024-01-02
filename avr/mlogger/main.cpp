@@ -717,9 +717,12 @@ static void execLogging()
 	if(my_eeprom::measure_glb && my_eeprom::interval_glb <= pass_glb)
 	{
 		if(USE_P3T1750DP){
-			float glbT = my_i2c::ReadP3T1750DP();
-			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
-			dtostrf(glbT,6,2,glbTS);
+			float glbT = 0;
+			if(my_i2c::ReadP3T1750DP(&glbT))
+			{
+				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+				dtostrf(glbT,6,2,glbTS);
+			}
 		}
 		else{
 			float glbV = readGlbVoltage(); //AD変換
@@ -902,9 +905,9 @@ static void autoCalibrateTemperatureSensor()
 		else return;
 		
 		//グローブ温度
-		float glb_f;
+		float glb_f = 0;
 		if(USE_P3T1750DP){
-			glb_f = my_i2c::ReadP3T1750DP();
+			my_i2c::ReadP3T1750DP(&glb_f);
 		}
 		else{
 			float glbV = readGlbVoltage(); //AD変換

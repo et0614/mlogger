@@ -398,8 +398,10 @@ void my_i2c::InitializeP3T1750DP(void)
 	_bus_stop();
 }
 
-float my_i2c::ReadP3T1750DP(void)
+uint8_t my_i2c::ReadP3T1750DP(float *tempValue)
 {
+	*tempValue = -99;
+	
 	//Shutdownモードから起こして1回のみ計測させる
 	if(_start_writing(P3T1750DP_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return 0; } //Configuration registerを操作するためのポインタレジスタ（01）を書き込む
@@ -420,12 +422,13 @@ float my_i2c::ReadP3T1750DP(void)
 	if(buffer[0] | 0b10000000)
 	{
 		uint16_t data = ~((buffer[0] << 4) + (buffer[1] >> 4)) + 0b0000001;
-		return -0.0625 * data;
+		*tempValue = -0.0625 * data;
 	}
 	//その他（プラス）
 	else
 	{
 		uint16_t data = (buffer[0] << 4) + (buffer[1] >> 4);
-		return 0.0625 * data;
-	}	
+		*tempValue = 0.0625 * data;
+	}
+	return 1; //成功
 }

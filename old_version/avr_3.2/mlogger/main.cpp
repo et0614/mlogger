@@ -66,9 +66,6 @@ const char VERSION_NUMBER[] = "VER:3.2.7\r";
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
 
-//照度センサ（OPTxxxx）のアドレス
-const char OPT_ADDRESS = 0x88; //OPT3001は0x88, OPT3007は0x8A, を使用。
-
 //グローブ温度計測用モジュールのタイプ
 const bool IS_MCP9700 = false; //MCP9701ならばfalse
 
@@ -722,9 +719,12 @@ static void execLogging()
 	if(my_eeprom::measure_glb && my_eeprom::interval_glb <= pass_glb)
 	{
 		if(USE_P3T1750DP){
-			float glbT = my_i2c::ReadP3T1750DP();
-			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
-			dtostrf(glbT,6,2,glbTS);
+			float glbT = 0;
+			if(my_i2c::ReadP3T1750DP(&glbT))
+			{
+				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+				dtostrf(glbT,6,2,glbTS);
+			}
 		}
 		else{			
 			float glbV = readGlbVoltage(); //AD変換
@@ -907,9 +907,9 @@ static void autoCalibrateTemperatureSensor()
 		else return;
 		
 		//グローブ温度
-		float glb_f;
+		float glb_f = 0;
 		if(USE_P3T1750DP){
-			glb_f = my_i2c::ReadP3T1750DP();
+			my_i2c::ReadP3T1750DP(&glb_f);
 		}
 		else{
 			float glbV = readGlbVoltage(); //AD変換

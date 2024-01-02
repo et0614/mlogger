@@ -72,13 +72,14 @@ class my_i2c
 		 * P3T1750DPを初期化する
 		 */
 		static void InitializeP3T1750DP();
-		
+
 		/**
 		 * @fn
 		 * P3T1750DPから温度を読み取る
-		 * @return 温度[C]
+		 * @param (tempValue) 乾球温度
+		 * @return 読取成功で1、失敗で0
 		 */
-		static float ReadP3T1750DP(void);
+		static uint8_t ReadP3T1750DP(float * tempValue);
 };
   
 #endif /* MY_I2C_H_ */
