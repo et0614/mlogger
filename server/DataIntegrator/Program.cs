@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
@@ -9,10 +8,18 @@ namespace DataIntegrator
 {
   internal class Program
   {
+
+    #region 定数宣言
+
+    /// <summary>日時の型（一体）</summary>
+    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
+
+    #endregion
+
     static void Main(string[] args)
     {
       //DEBUG
-      //args = new string[] { "3600" };
+      //args = new string[] { "5" };
 
       //引数確認
       int tStep;
@@ -27,7 +34,7 @@ namespace DataIntegrator
       List<string> files = new List<string>();
       string[] fs = Directory.GetFiles("data");
       for (int i = 0; i < fs.Length; i++)
-        if (fs[i].EndsWith(".csv")) files.Add(fs[i]);
+        if (fs[i].EndsWith(".csv", StringComparison.OrdinalIgnoreCase)) files.Add(fs[i]);
 
       //データ名称リスト
       string[] dNames = new string[files.Count];
@@ -40,14 +47,13 @@ namespace DataIntegrator
         using (StreamReader sr = new StreamReader(file))
         {
           string[] bf = sr.ReadLine().Split(',');
-          //DateTime dt = DateTime.ParseExact(bf[0], "yyyy/MM/dd HH:mm:ss", null);
-          DateTime dt = DateTime.ParseExact(bf[0] + "/" + bf[1] + " " + bf[2], "yyyy/MM/dd HH:mm:ss", null);
+          DateTime dt = DateTime.ParseExact(bf[0], DT_FORMAT, null);
           if (dt < startDT)
           {
             startDT = dt;
             if (startDT < new DateTime(2020, 1, 1, 0, 0, 0))
             {
-              Console.WriteLine("Alert: Data of the \"" + file + "\" start at " + startDT.ToString("yyyy/MM/dd HH:mm:ss"));
+              Console.WriteLine("Alert: Data of the \"" + file + "\" start at " + startDT.ToString(DT_FORMAT));
               Console.WriteLine("Continue calculation ? (yes / no)");
               string arg = Console.ReadLine();
               if (arg != "yes" || arg != "y") return;
@@ -99,24 +105,10 @@ namespace DataIntegrator
               line = line.TrimStart('\0');
               string[] buff = line.Split(',');
               DateTime lastDT = dt;
-              //dt = DateTime.ParseExact(buff[0], "yyyy/MM/dd HH:mm:ss", null);
-              dt = DateTime.ParseExact(buff[0] + "/" + buff[1] + " " + buff[2], "yyyy/MM/dd HH:mm:ss", null);
+              dt = DateTime.ParseExact(buff[0], DT_FORMAT, null);
               //データが遡るエラーを回避,異常な計測年となるエラーを回避
               if (lastDT < dt && dt.Year < now.Year + 2)
               {
-                //データが現在日時を超えていない場合、または次のタイムステップを超えている場合にはデータなし（NA）として行を進ませる
-                /*while (dt < now)
-                {
-                  writeCellValue(dbtSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  writeCellValue(hmdSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  writeCellValue(glbSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  writeCellValue(velSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-                  writeCellValue(illSht, i + 1, rowNum, (byte)FormulaErrorEnum.NA);
-
-                  now = now.AddSeconds(tStep);
-                  rowNum++;
-                }*/
-
                 //現在のデータの日時が次の書き出し日時を超えた場合、一時保存データがあれば書き出す。なければデータなし（NA）として行を進ませる
                 while (now.AddSeconds(tStep) <= dt)
                 {
@@ -146,16 +138,11 @@ namespace DataIntegrator
                 if (now <= dt && dt < now.AddSeconds(tStep))
                 {
                   double bf;
-                  /*if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) dbt = bf;
-                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) hmd = bf;
-                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) glb = bf;
-                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) vel = bf;
-                  if (buff[8] != "NaN" && double.TryParse(buff[8], out bf)) ill = bf;*/
-                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) { dbt = double.IsNaN(dbt) ? bf : dbt + bf; dbtNum++; }
-                  if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) { hmd = double.IsNaN(hmd) ? bf : hmd + bf; hmdNum++; }
-                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) { glb = double.IsNaN(glb) ? bf : glb + bf; glbNum++; }
-                  if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) { vel = double.IsNaN(vel) ? bf : vel + bf; velNum++; }
-                  if (buff[7] != "NaN" && double.TryParse(buff[7], out bf)) { ill = double.IsNaN(ill) ? bf : ill + bf; illNum++; }
+                  if (buff[2] != "NaN" && double.TryParse(buff[2], out bf)) { dbt = double.IsNaN(dbt) ? bf : dbt + bf; dbtNum++; }
+                  if (buff[3] != "NaN" && double.TryParse(buff[3], out bf)) { hmd = double.IsNaN(hmd) ? bf : hmd + bf; hmdNum++; }
+                  if (buff[4] != "NaN" && double.TryParse(buff[4], out bf)) { glb = double.IsNaN(glb) ? bf : glb + bf; glbNum++; }
+                  if (buff[5] != "NaN" && double.TryParse(buff[5], out bf)) { vel = double.IsNaN(vel) ? bf : vel + bf; velNum++; }
+                  if (buff[6] != "NaN" && double.TryParse(buff[6], out bf)) { ill = double.IsNaN(ill) ? bf : ill + bf; illNum++; }
                 }
               }
             }
@@ -170,7 +157,7 @@ namespace DataIntegrator
 
       //日時を書き込み
       var style = book.CreateCellStyle();
-      style.DataFormat = book.CreateDataFormat().GetFormat("yyyy/MM/dd HH:mm:ss");
+      style.DataFormat = book.CreateDataFormat().GetFormat(DT_FORMAT);
       int rn = 1;
       while (startDT <= endDT)
       {
