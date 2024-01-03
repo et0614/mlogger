@@ -174,6 +174,9 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ff\diskio.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="ff\diskio.h">
       <SubType>compile</SubType>
     </Compile>
@@ -186,10 +189,10 @@
     <Compile Include="ff\ffconf.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="ff\integer.h">
+    <Compile Include="ff\mmc.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="ff\mmc.c">
+    <Compile Include="ff\mmc.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="ff\rtc.c">

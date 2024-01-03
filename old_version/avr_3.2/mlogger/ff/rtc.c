@@ -4,7 +4,7 @@
 #include <avr/io.h>
 #include <string.h>
 #include "rtc.h"
-#include "integer.h"
+#include "ff.h"
 
 //12.09.10 RTC‚ÍŒÅ’è
 

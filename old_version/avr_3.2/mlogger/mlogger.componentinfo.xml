@@ -26,13 +26,13 @@
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
 				<d4p1:anyType i:type="FileInfo">
-					<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\AVR-Dx_DFP\2.0.141\include\avr\ioavr64db32.h</AbsolutePath>
+					<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\AVR-Dx_DFP\2.0.141\include\avr\ioavr128db32.h</AbsolutePath>
 					<Attribute></Attribute>
 					<Category>header</Category>
 					<Condition>C</Condition>
-					<FileContentHash>vpFP3g0GFz/iR/QmLwEm6g==</FileContentHash>
+					<FileContentHash>wkJ9GElbLqPzu/Z3wDNTHQ==</FileContentHash>
 					<FileVersion></FileVersion>
-					<Name>include/avr/ioavr64db32.h</Name>
+					<Name>include/avr/ioavr128db32.h</Name>
 					<SelectString></SelectString>
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
@@ -59,13 +59,13 @@
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
 				<d4p1:anyType i:type="FileInfo">
-					<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr64db32</AbsolutePath>
+					<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\AVR-Dx_DFP\2.0.141\gcc\dev\avr128db32</AbsolutePath>
 					<Attribute></Attribute>
 					<Category>libraryPrefix</Category>
 					<Condition>GCC</Condition>
 					<FileContentHash i:nil="true" />
 					<FileVersion></FileVersion>
-					<Name>gcc/dev/avr64db32</Name>
+					<Name>gcc/dev/avr128db32</Name>
 					<SelectString></SelectString>
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
@@ -74,7 +74,7 @@
 			<PackPath>C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/AVR-Dx_DFP/2.0.141/Atmel.AVR-Dx_DFP.pdsc</PackPath>
 			<PackVersion>2.0.141</PackVersion>
 			<PresentInProject>true</PresentInProject>
-			<ReferenceConditionId>AVR64DB32</ReferenceConditionId>
+			<ReferenceConditionId>AVR128DB32</ReferenceConditionId>
 			<RteComponents xmlns:d4p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
 				<d4p1:string></d4p1:string>
 			</RteComponents>
