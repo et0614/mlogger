@@ -41,6 +41,8 @@ static void showLowBattery(void);
 
 static bool isLowBattery(void);
 
+static void alignLeft(char *str);
+
 //à»â∫ÇÕinlineä÷êî************************************
 
 inline static void sleep_anemo(void);

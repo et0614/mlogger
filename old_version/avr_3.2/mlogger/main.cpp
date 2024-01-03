@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.7\r";
+const char VERSION_NUMBER[] = "VER:3.2.8\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -104,8 +104,6 @@ volatile static unsigned int pass_glb = 0;
 volatile static unsigned int pass_vel = 0;
 volatile static unsigned int pass_ill = 0;
 volatile static unsigned int pass_ad1 = 0;
-volatile static unsigned int pass_ad2 = 0;
-volatile static unsigned int pass_ad3 = 0;
 
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
@@ -165,7 +163,7 @@ int main(void)
 	//初期化処理
 	my_i2c::InitializeI2C(); //I2C通信
 	my_i2c::InitializeAHT20(); //温湿度計
-	my_i2c::InitializeI2C(); //照度計
+	my_i2c::InitializeVCNL4030(); //照度計
 	if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
 	my_xbee::Initialize();  //XBee（UART）
 	
@@ -233,15 +231,9 @@ static void initialize_port(void)
 	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
 	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
-	//PORTD.DIRCLR = PIN5_bm; //汎用AD変換2
-	//PORTD.DIRCLR = PIN3_bm; //汎用AD変換3
-	//PORTA.DIRCLR = PIN6_bm; //汎用IO1
-	//PORTA.DIRCLR = PIN7_bm; //汎用IO2
 	
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
-	//PORTA.OUTSET = PIN6_bm; //汎用IO1：アップ
-	//PORTA.OUTSET = PIN7_bm; //汎用IO2：アップ
 }
 
 //タイマ初期化
@@ -384,8 +376,6 @@ static void solve_command(void)
 		pass_vel = my_eeprom::interval_vel;
 		pass_ill = my_eeprom::interval_ill;
 		pass_ad1 = my_eeprom::interval_AD1;
-		pass_ad2 = my_eeprom::interval_AD2;
-		pass_ad3 = my_eeprom::interval_AD3;
 		
 		//ロギング設定をEEPROMに保存
 		my_eeprom::startAuto = command[13]=='e'; //Endlessロギング
@@ -677,8 +667,6 @@ static void execLogging()
 	char velVS[7] = "n/a";
 	char illS[9] = "n/a"; //0.01~83865.60
 	char adV1S[7] = "n/a";
-	char adV2S[7] = "n/a";
-	char adV3S[7] = "n/a";
 	
 	//微風速測定************
 	pass_vel++;
@@ -769,26 +757,6 @@ static void execLogging()
 		hasNewData = true;
 	}
 	
-	//汎用AD変換測定2
-	pass_ad2++;
-	if(my_eeprom::measure_AD2 && my_eeprom::interval_AD2 <= pass_ad2)
-	{
-		float adV = readVoltage(2); //AD変換
-		dtostrf(adV,6,4,adV2S);
-		pass_ad2 = 0;
-		hasNewData = true;
-	}
-	
-	//汎用AD変換測定3
-	pass_ad3++;
-	if(my_eeprom::measure_AD3 && my_eeprom::interval_AD3 <= pass_ad3)
-	{
-		float adV = readVoltage(3); //AD変換
-		dtostrf(adV,6,4,adV3S);
-		pass_ad3 = 0;
-		hasNewData = true;
-	}
-	
 	//新規データがある場合は送信
 	if(hasNewData)
 	{
@@ -798,15 +766,25 @@ static void execLogging()
 			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
 		}
 		
+		//空白削除して左詰め
+		alignLeft(tmpS);
+		alignLeft(hmdS);
+		alignLeft(glbTS);
+		alignLeft(glbVS);
+		alignLeft(velS);
+		alignLeft(velVS);
+		alignLeft(illS);
+		alignLeft(adV1S);		
+		
 		//日時を作成
 		time_t ct = currentTime - UNIX_OFFSET;
 		tm dtNow;
 		gmtime_r(&ct, &dtNow);
 		
 		//書き出し文字列を作成
-		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,n/a,n/a\r",
 		dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S);
 		
 		//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
@@ -826,9 +804,11 @@ static void execLogging()
 			}
 			
 			//SDカード書き出し時は冒頭のDTTが不要。もう少しキレイなプログラムにできそうだが。。。
-			snprintf(charBuff, sizeof(charBuff), "%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
+			snprintf(charBuff, sizeof(charBuff),
+			"%04d/%02d/%02d %02d:%02d:%02d,%04d/%02d/%02d %02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s\r",
 			dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, adV2S, adV3S);
+			dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
+			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S);
 			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
 			charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
@@ -954,7 +934,7 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	if(!initSD) return;
 	
 	char fileName[13]={}; //yyyymmdd.csv
-	snprintf(fileName, sizeof(fileName), "%04d%02d%02d.txt", dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday);
+	snprintf(fileName, sizeof(fileName), "%04d%02d%02d.csv", dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday);
 	
 	//SDカード記録用日付更新
 	myRTC.year=dtNow.tm_year+1900;
@@ -1012,8 +992,7 @@ static float readVelVoltage(void)
 static float readVoltage(unsigned int adNumber)
 {
 	if(adNumber == 1) ADC0.MUXPOS = ADC_MUXPOS_AIN20_gc; //AD1
-	else if(adNumber == 2) ADC0.MUXPOS = ADC_MUXPOS_AIN5_gc; //AD2
-	else ADC0.MUXPOS = ADC_MUXPOS_AIN3_gc; //AD3
+	else return 0.0; //AD2, AD3廃止
 
 	_delay_ms(5);
 	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
@@ -1044,6 +1023,22 @@ static void showLowBattery(void)
 		_delay_ms(1000);
 		turnOffLED(); //消灯
 		_delay_ms(1000);
+	}
+}
+
+static void alignLeft(char *str) {
+	// 文字列がNULL・空でない
+	if (str != NULL && *str != '\0')
+	{
+		int len = strlen(str);
+
+		//空白をカウント
+		int i;
+		for (i = 0; i < len && str[i] == ' '; i++);
+
+		// 文字列を左詰めに移動する
+		if (i > 0)
+		memmove(str, str + i, len - i + 1);
 	}
 }
 
