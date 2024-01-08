@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.10\r";
+const char VERSION_NUMBER[] = "VER:3.2.11\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -77,7 +77,7 @@ const int N_LINE_BUFF = 30;
 
 //広域変数定義********************************************************
 //日時関連
-volatile static time_t currentTime = 0; //現在時刻（UNIX時間）
+volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
 volatile static time_t startTime = 1609459200;   //計測開始時刻（UNIX時間,UTC時差0で2021/1/1 00:00:00）
 
 //計測中か否か

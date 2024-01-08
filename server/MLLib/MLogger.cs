@@ -890,23 +890,25 @@ namespace MLLib
       for (int i = 0; i < mLoggers.Length; i++)
       {
         MLogger ml = mLoggers[i];
+        bool isInterrupted = ml.DrybulbTemperature.LastMeasureTime.Year == 2000;
+
         contents.AppendLine("<tr>");
         //一般情報
         contents.AppendLine("<td class=\"dt_last general\">" + ml.LastCommunicated.ToString("M/d HH:mm:ss") + "</td>");
         contents.AppendLine("<td class=\"name general\">" + ml.LocalName + "</td>");
         contents.AppendLine("<td class=\"id general\">" + ml.LowAddress + "</td>");
         //温湿度
-        contents.AppendLine("<td class=\"dt_th thlog\">" + ml.DrybulbTemperature.LastMeasureTime.ToString("M/d HH:mm:ss") + "</td>");
+        contents.AppendLine("<td class=\"dt_th thlog\">" + (isInterrupted ? "***" : ml.DrybulbTemperature.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
         contents.AppendLine("<td class=\"tmp thlog\">" + ml.DrybulbTemperature.LastValue.ToString("F1") + "</td>");
         contents.AppendLine("<td class=\"hmd thlog\">" + ml.RelativeHumdity.LastValue.ToString("F1") + "</td>");
         //グローブ温度
-        contents.AppendLine("<td class=\"dt_glb glblog\">" + ml.GlobeTemperature.LastMeasureTime.ToString("M/d HH:mm:ss") + "</td>");
+        contents.AppendLine("<td class=\"dt_glb glblog\">" + (isInterrupted ? "***" : ml.GlobeTemperature.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
         contents.AppendLine("<td class=\"glb glblog\">" + ml.GlobeTemperature.LastValue.ToString("F2") + "</td>");
         //微風速
-        contents.AppendLine("<td class=\"dt_vel vellog\">" + ml.Velocity.LastMeasureTime.ToString("M/d HH:mm:ss") + "</td>");
+        contents.AppendLine("<td class=\"dt_vel vellog\">" + (isInterrupted ? "***" : ml.Velocity.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
         contents.AppendLine("<td class=\"vel vellog\">" + (ml.Velocity.LastValue * 100).ToString("F1") + "</td>");
         //照度
-        contents.AppendLine("<td class=\"dt_ill illlog\">" + ml.Illuminance.LastMeasureTime.ToString("M/d HH:mm:ss") + "</td>");
+        contents.AppendLine("<td class=\"dt_ill illlog\">" + (isInterrupted ? "***" : ml.Illuminance.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
         contents.AppendLine("<td class=\"ill illlog\">" + ml.Illuminance.LastValue.ToString("F2") + "</td>");
         //熱的快適性指標の計算
         ml.updateThermalIndices();

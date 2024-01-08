@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.7\r";
+const char VERSION_NUMBER[] = "VER:3.3.8\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -77,7 +77,7 @@ const int N_LINE_BUFF = 30;
 
 //広域変数定義********************************************************
 //日時関連
-volatile static time_t currentTime = 0; //現在時刻（UNIX時間）
+volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
 volatile static time_t startTime = 1609459200;   //計測開始時刻（UNIX時間,UTC時差0で2021/1/1 00:00:00）
 
 //計測中か否か
@@ -962,7 +962,7 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 	free(fl);
 }
 
-//PORTA PIN2割り込み
+//PORTA PIN2割り込み（リセットスイッチ押し込み）
 ISR(PORTA_PORT_vect)
 {
 	// 割り込みフラグ解除
