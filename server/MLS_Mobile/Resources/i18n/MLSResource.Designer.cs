@@ -232,7 +232,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Connect to MLogger に類似しているローカライズされた文字列を検索します。
+        ///   Connect to M-Logger に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string ConnectMLogger {
             get {
@@ -448,16 +448,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Communicate with MLogger に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_Communicate {
-            get {
-                return ResourceManager.GetString("DS_Communicate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Connect to PC に類似しているローカライズされた文字列を検索します。
+        ///   Start logging to PC に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_ConnectToPC {
             get {
@@ -480,15 +471,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_EnableZigLED {
             get {
                 return ResourceManager.GetString("DS_EnableZigLED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Device information に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_Info {
-            get {
-                return ResourceManager.GetString("DS_Info", resourceCulture);
             }
         }
         
@@ -520,11 +502,38 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Logging to TF/MM card に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_LoggingToMF {
+            get {
+                return ResourceManager.GetString("DS_LoggingToMF", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Logging to Smartphone に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_LoggingToSmartPhone {
+            get {
+                return ResourceManager.GetString("DS_LoggingToSmartPhone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The name must be one-byte characters に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_OnebyteAlert {
             get {
                 return ResourceManager.GetString("DS_OnebyteAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Other settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_OtherSetting {
+            get {
+                return ResourceManager.GetString("DS_OtherSetting", resourceCulture);
             }
         }
         
@@ -538,16 +547,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Start logging to TF/MM card に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_SDLogging {
-            get {
-                return ResourceManager.GetString("DS_SDLogging", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Set MLogger name に類似しているローカライズされた文字列を検索します。
+        ///   Set M-Logger name に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_SetName {
             get {
@@ -592,7 +592,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   MLogger version に類似しているローカライズされた文字列を検索します。
+        ///   M-Logger version に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_SpecVersion {
             get {
@@ -610,20 +610,20 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Start logging に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_Start {
-            get {
-                return ResourceManager.GetString("DS_Start", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Starting date and time に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_StartDTime {
             get {
                 return ResourceManager.GetString("DS_StartDTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Start logging に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_StartLogging {
+            get {
+                return ResourceManager.GetString("DS_StartLogging", resourceCulture);
             }
         }
         
@@ -664,7 +664,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Zigbee setting に類似しているローカライズされた文字列を検索します。
+        ///   PC connection settings に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_ZigbeeSetting {
             get {
@@ -1033,7 +1033,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Connecting MLogger... に類似しているローカライズされた文字列を検索します。
+        ///   Connecting to M-Logger... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Connecting {
             get {
@@ -1051,7 +1051,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   MLogger not found に類似しているローカライズされた文字列を検索します。
+        ///   M-Logger not found に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Notfound {
             get {
@@ -1069,7 +1069,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   MLogger scanner に類似しているローカライズされた文字列を検索します。
+        ///   M-Logger scanner に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Title {
             get {

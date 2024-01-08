@@ -86,7 +86,6 @@ public partial class LoggingData : ContentPage
 
   /// <summary>ファイルからクリップボード用データを作る</summary>
   /// <param name="fileName">ファイル名称</param>
-  /// <param name="maxLines">コピーする最大行数</param>
   /// <returns>クリップボード用データ</returns>
   public static string MakeClipData(string fileName)
   {

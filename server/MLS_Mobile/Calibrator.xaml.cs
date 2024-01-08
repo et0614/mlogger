@@ -82,7 +82,7 @@ public partial class Calibrator : ContentPage
 
     //無風電圧校正中ならば終了コマンドを送信
     if (calibratingVoltage)
-      Task.Run(async () =>
+      Task.Run(() =>
       {
         MLUtility.LoggerSideXBee.SendSerialData
         (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));

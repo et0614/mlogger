@@ -7,7 +7,6 @@ using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using Mopups.Services;
 using System;
-using System.Xml.Linq;
 
 public partial class DeviceSetting : ContentPage
 {
@@ -424,19 +423,22 @@ public partial class DeviceSetting : ContentPage
     //インジケータ表示
     showIndicator(MLSResource.DR_StartLogging);
 
-    Task.Run(async () =>
+    Task.Run(() =>
     {
       try
       {
         byte[] id = MLUtility.LoggerSideXBee.GetParameter("ID");
-        string panID = BitConverter.ToString(id).Replace("-","").TrimStart('0');
+        string panID = BitConverter.ToString(id).Replace("-", "").TrimStart('0');
 
-        await MopupService.Instance.PushAsync(new SettingPopup(
-          1,
-          MLSResource.DS_ChangePANID,
-          panID,
-          Keyboard.Numeric
-          ));
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          MopupService.Instance.PushAsync(new SettingPopup(
+            1,
+            MLSResource.DS_ChangePANID,
+            panID,
+            Keyboard.Numeric
+            ));
+        });
       }
       catch { }
       finally

@@ -160,7 +160,6 @@ namespace MLS_Mobile
 
     /// <summary>データファイルの内容を取得する</summary>
     /// <param name="fileName">データファイル名称</param>
-    /// <param name="maxLine">読み込む最大行数</param>
     /// <returns>データファイルの内容</returns>
     public static string LoadDataFile(string fileName)
     {

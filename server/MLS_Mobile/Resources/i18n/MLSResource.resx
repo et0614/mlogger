@@ -175,7 +175,7 @@
     <value>Clothing unit</value>
   </data>
   <data name="ConnectMLogger" xml:space="preserve">
-    <value>Connect to MLogger</value>
+    <value>Connect to M-Logger</value>
   </data>
   <data name="CR_AutoCalTemp" xml:space="preserve">
     <value>Automatic temperature calibration</value>
@@ -246,20 +246,14 @@
   <data name="DS_ChangePANID" xml:space="preserve">
     <value>Change PAN ID</value>
   </data>
-  <data name="DS_Communicate" xml:space="preserve">
-    <value>Communicate with MLogger</value>
-  </data>
   <data name="DS_ConnectToPC" xml:space="preserve">
-    <value>Connect to PC</value>
+    <value>Start logging to PC</value>
   </data>
   <data name="DS_DisableZigLED" xml:space="preserve">
     <value>Disable status LED</value>
   </data>
   <data name="DS_EnableZigLED" xml:space="preserve">
     <value>Enable status LED</value>
-  </data>
-  <data name="DS_Info" xml:space="preserve">
-    <value>Device information</value>
   </data>
   <data name="DS_InvalidNumber" xml:space="preserve">
     <value>Invalid number</value>
@@ -270,17 +264,23 @@
   <data name="DS_LoadSetting" xml:space="preserve">
     <value>Load</value>
   </data>
+  <data name="DS_LoggingToMF" xml:space="preserve">
+    <value>Logging to TF/MM card</value>
+  </data>
+  <data name="DS_LoggingToSmartPhone" xml:space="preserve">
+    <value>Logging to Smartphone</value>
+  </data>
   <data name="DS_OnebyteAlert" xml:space="preserve">
     <value>The name must be one-byte characters</value>
+  </data>
+  <data name="DS_OtherSetting" xml:space="preserve">
+    <value>Other settings</value>
   </data>
   <data name="DS_SaveSetting" xml:space="preserve">
     <value>Save</value>
   </data>
-  <data name="DS_SDLogging" xml:space="preserve">
-    <value>Start logging to TF/MM card</value>
-  </data>
   <data name="DS_SetName" xml:space="preserve">
-    <value>Set MLogger name</value>
+    <value>Set M-Logger name</value>
   </data>
   <data name="DS_SetToPermanentMode" xml:space="preserve">
     <value>Set to permanent mode</value>
@@ -295,16 +295,16 @@
     <value>Name</value>
   </data>
   <data name="DS_SpecVersion" xml:space="preserve">
-    <value>MLogger version</value>
+    <value>M-Logger version</value>
   </data>
   <data name="DS_SpecXBAdd" xml:space="preserve">
     <value>XBee address</value>
   </data>
-  <data name="DS_Start" xml:space="preserve">
-    <value>Start logging</value>
-  </data>
   <data name="DS_StartDTime" xml:space="preserve">
     <value>Starting date and time</value>
+  </data>
+  <data name="DS_StartLogging" xml:space="preserve">
+    <value>Start logging</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
     <value>Target and time interval</value>
@@ -319,7 +319,7 @@
     <value>Starting up for voltage adjustment</value>
   </data>
   <data name="DS_ZigbeeSetting" xml:space="preserve">
-    <value>Zigbee setting</value>
+    <value>PC connection settings</value>
   </data>
   <data name="EditMeasuredData" xml:space="preserve">
     <value>Edit measured data</value>
@@ -442,19 +442,19 @@
     <value>Please enable Bluetooth</value>
   </data>
   <data name="SC_Connecting" xml:space="preserve">
-    <value>Connecting MLogger...</value>
+    <value>Connecting to M-Logger...</value>
   </data>
   <data name="SC_Empty" xml:space="preserve">
     <value>Empty</value>
   </data>
   <data name="SC_Notfound" xml:space="preserve">
-    <value>MLogger not found</value>
+    <value>M-Logger not found</value>
   </data>
   <data name="SC_Scannning" xml:space="preserve">
     <value>Scanning MLogger...</value>
   </data>
   <data name="SC_Title" xml:space="preserve">
-    <value>MLogger scanner</value>
+    <value>M-Logger scanner</value>
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>Thermal comfort calculator</value>
