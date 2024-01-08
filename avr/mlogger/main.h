@@ -53,6 +53,12 @@ inline static void sleep_xbee(void);
 
 inline static void wakeup_xbee(void);
 
+inline static void turnOnGreenAndRedLED(void);
+
+inline static void turnOffGreenAndRedLED(void);
+
+inline static void blinkGreenAndRedLED(int iterNum);
+
 inline static void turnOnGreenLED(void);
 
 inline static void turnOffGreenLED(void);

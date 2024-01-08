@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.5\r";
+const char VERSION_NUMBER[] = "VER:3.3.6\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -603,7 +603,7 @@ ISR(RTC_PIT_vect)
 			logging=false;	//ロギング停止
 			initSD = false;	//SDカード再マウント
 			sleep_anemo();	//風速センサを停止
-			blinkGreenLED(3);	//LED点滅
+			blinkRedLED(3);	//赤LED点滅
 			return;
 		}
 	}
@@ -645,7 +645,7 @@ ISR(RTC_PIT_vect)
 static void execLogging()
 {
 	//SD書き出しでマウント前の場合には赤LEDでアラート
-	if(!(outputToSDCard && !initSD)) blinkRedLED(1);
+	if(outputToSDCard && !initSD) blinkRedLED(1);
 	
 	//計測開始時刻の前ならば終了
 	if(currentTime < startTime) return;
@@ -830,7 +830,10 @@ static void execLogging()
 
 static void calibrateVelocityVoltage()
 {
-	char velVS[7] = "n/a";	
+	//LED点灯
+	blinkGreenAndRedLED(1);
+	
+	char velVS[7] = "n/a";
 	double velV = readVelVoltage(); //AD変換
 	dtostrf(velV,6,4,velVS);	
 	snprintf(charBuff, sizeof(charBuff), "SCV:%s\r", velVS);
@@ -842,7 +845,7 @@ static void autoCalibrateVelocitySensor()
 	const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
 	
 	//LED点灯
-	blinkGreenLED(3);
+	blinkGreenAndRedLED(1);
 	
 	vSensorInitTimer++;
 	
@@ -872,7 +875,7 @@ static void autoCalibrateTemperatureSensor()
 	const unsigned int TS_INIT_WAIT = 60; //温度校正開始までの待ち時間[sec]
 	
 	//LED点灯
-	blinkGreenLED(3);
+	blinkGreenAndRedLED(1);
 	
 	tSensorInitTimer++;
 	
@@ -966,8 +969,8 @@ ISR(PORTA_PORT_vect)
 	PORTA.INTFLAGS = PIN2_bm;
 	
 	//Push:LED点灯, None:LED消灯
-	if(PORTA.IN & PIN2_bm) PORTD.OUTCLR = PIN6_bm;
-	else PORTD.OUTSET = PIN6_bm;
+	if(PORTA.IN & PIN2_bm) turnOffRedLED();
+	else turnOnRedLED();
 }
 
 //グローブ温度の電圧を読み取る
@@ -1066,6 +1069,34 @@ inline static void sleep_xbee(void)
 inline static void wakeup_xbee(void)
 {
 	PORTF.OUTCLR = PIN5_bm;
+}
+
+inline static void turnOnGreenAndRedLED(void)
+{
+	turnOnGreenLED();
+	turnOnRedLED();
+}
+
+inline static void turnOffGreenAndRedLED(void)
+{
+	turnOffGreenLED();
+	turnOffRedLED();
+}
+
+inline static void blinkGreenAndRedLED(int iterNum)
+{
+	if(iterNum < 1) return;
+
+	//初回
+	turnOffGreenAndRedLED(); //一旦必ず消灯して
+	//点滅
+	for(int i=0;i<iterNum;i++)
+	{
+		_delay_ms(100);
+		turnOnGreenAndRedLED(); //点灯
+		_delay_ms(25);
+		turnOffGreenAndRedLED(); //消灯
+	}
 }
 
 inline static void turnOnGreenLED(void)
