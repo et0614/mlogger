@@ -129,18 +129,16 @@
             </Grid>
 
             <!--設定ボタン-->
-            <HorizontalStackLayout HorizontalOptions="End">
-                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="Load_Clicked">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
-                <Button Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="Save_Clicked">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>
-            </HorizontalStackLayout>
+            <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="Load_Clicked">
+                <Button.ImageSource>
+                    <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                </Button.ImageSource>
+            </Button>
+            <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="Save_Clicked">
+                <Button.ImageSource>
+                    <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                </Button.ImageSource>
+            </Button>
 
         </StackLayout>
 
