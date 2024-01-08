@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.DeviceSetting"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
-             Title="{x:Static res:MLSResource.DS_Title}">
+             Title="{x:Static res:MLSResource.DS_Title}"
+             HideSoftInputOnTapped="True">
     <Grid>
         <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{StaticResource Lightest_G}">
             <StackLayout Padding="15">

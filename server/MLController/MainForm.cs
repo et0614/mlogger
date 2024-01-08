@@ -38,11 +38,8 @@ namespace MLController
     /// <summary>エンドデバイス探索時間間隔[msec]</summary>
     private const int SCAN_ENDDEVICE_TSPAN = 5 * 1000;
 
-    /// <summary>日時の型（コンマ切り）</summary>
-    private const string DT_FORMAT_CSV = "yyyy,MM/dd,HH:mm:ss";
-
     /// <summary>日時の型（一体）</summary>
-    private const string DT_FORMAT_LINE = "yyyy/MM/dd HH:mm:ss";
+    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
 
     /// <summary>UART通信のボーレート</summary>
     private const int BAUD_RATE = 9600;
@@ -404,7 +401,7 @@ namespace MLController
             //ml.GeneralVoltage2.Measure ? "true" : "false", ml.GeneralVoltage2.Interval.ToString(),
             //ml.GeneralVoltage3.Measure ? "true" : "false", ml.GeneralVoltage3.Interval.ToString(),
             ml.MeasureProximity ? "true" : "false",
-            ml.StartMeasuringDateTime.ToString(DT_FORMAT_LINE) });
+            ml.StartMeasuringDateTime.ToString(DT_FORMAT) });
           lviSets.Add(ml, lvm);
           lv_setting.Items.Add(lvm);
         }
@@ -441,7 +438,7 @@ namespace MLController
         item.SubItems[8].Text = ml.Velocity.Interval.ToString();
         item.SubItems[9].Text = ml.Illuminance.Measure ? "true" : "false";
         item.SubItems[10].Text = ml.Illuminance.Interval.ToString();
-        item.SubItems[11].Text = ml.StartMeasuringDateTime.ToString(DT_FORMAT_LINE);
+        item.SubItems[11].Text = ml.StartMeasuringDateTime.ToString(DT_FORMAT);
         item.SubItems[12].Text = ml.GeneralVoltage1.Measure ? "true" : "false";
         item.SubItems[13].Text = ml.GeneralVoltage1.Interval.ToString();
         /*item.SubItems[14].Text = ml.GeneralVoltage2.Measure ? "true" : "false";
@@ -485,7 +482,7 @@ namespace MLController
             ml.PMV.ToString("F2"),
             ml.PPD.ToString("F1"),
             ml.SETStar.ToString("F1"),
-            ml.LastCommunicated.ToString(DT_FORMAT_LINE)
+            ml.LastCommunicated.ToString(DT_FORMAT)
           }); 
           lviVals.Add(ml, lvm);
           lv_measure.Items.Add(lvm);
@@ -503,7 +500,7 @@ namespace MLController
       item.SubItems[7].Text = ml.PMV.ToString("F2");
       item.SubItems[8].Text = ml.PPD.ToString("F1");
       item.SubItems[9].Text = ml.SETStar.ToString("F1");
-      item.SubItems[10].Text = ml.LastCommunicated.ToString(DT_FORMAT_LINE);
+      item.SubItems[10].Text = ml.LastCommunicated.ToString(DT_FORMAT);
     }
 
     #endregion
@@ -751,7 +748,7 @@ namespace MLController
       {
         using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
         {
-          sWriter.WriteLine(
+          /*sWriter.WriteLine(
             ml.LastMeasured.ToString(DT_FORMAT_CSV) + "," + //子機の計測日時
             ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
             ml.RelativeHumdity.LastValue.ToString("F2") + "," +
@@ -761,7 +758,21 @@ namespace MLController
             ml.GlobeTemperatureVoltage.ToString("F3") + "," +
             ml.VelocityVoltage.ToString("F3") + "," + 
             ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
-            DateTime.Now.ToString(DT_FORMAT_LINE)); //親機の現在日時
+            DateTime.Now.ToString(DT_FORMAT_LINE)); //親機の現在日時*/
+          sWriter.WriteLine(
+            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
+            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
+            ml.RelativeHumdity.LastValue.ToString("F2") + "," +
+            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
+            ml.Velocity.LastValue.ToString("F4") + "," +
+            ml.Illuminance.LastValue.ToString("F2") + "," +
+            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
+            ml.VelocityVoltage.ToString("F3") + "," +
+            ml.GeneralVoltage1.LastValue.ToString("F3"));
+          //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+          //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
+          //ml.GeneralVoltage3.LastValue.ToString("F3"));
         }
       }
       catch
@@ -1112,7 +1123,7 @@ namespace MLController
       //rbtn_prox.Checked = (item.SubItems[18].Text == "true");
       rbtn_ill.Checked = (item.SubItems[14].Text != "true");
       rbtn_prox.Checked = (item.SubItems[14].Text == "true");
-      dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, DT_FORMAT_LINE, null);
+      dtp_timer.Value = DateTime.ParseExact(item.SubItems[11].Text, DT_FORMAT, null);
 
       reflectCheckBoxState();
     }
@@ -1280,7 +1291,7 @@ namespace MLController
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
-      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers);
+      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers, cloValue, metValue);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
       { sWriter.Write(html); }
@@ -1302,7 +1313,7 @@ namespace MLController
       lock (logString)
       {
         log = log.Replace("\r", "").Replace("\n", ""); //改行コードは除く
-        logString.AppendLine(DateTime.Now.ToString(DT_FORMAT_LINE + " : ") + log);
+        logString.AppendLine(DateTime.Now.ToString(DT_FORMAT + " : ") + log);
 
         if (MAX_LOG_LENGTH < logString.Length) logString.Remove(0, Math.Max(logString.Length - MAX_LOG_LENGTH, 0));
         hasNewLog = true;

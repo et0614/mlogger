@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.CFSetting"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
-             Title="{x:Static res:MLSResource.CF_Title}">
+             Title="{x:Static res:MLSResource.CF_Title}"
+             HideSoftInputOnTapped="True">
     <Grid BackgroundColor="{StaticResource Lightest_G}">
         <StackLayout Margin="10">
 

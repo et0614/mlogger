@@ -35,6 +35,9 @@ namespace MLServer
     /// <summary>UART通信のボーレート</summary>
     private const int BAUD_RATE = 9600;
 
+    /// <summary>日時の型（一体）</summary>
+    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
+
     #endregion
 
     #region クラス変数
@@ -122,7 +125,16 @@ namespace MLServer
 
     private static void showTitle()
     {
-      Console.WriteLine("MLResumer Version " + VERSION);
+      Console.WriteLine("\r\n");
+      Console.WriteLine("#########################################################################");
+      Console.WriteLine("#                                                                       #");
+      Console.WriteLine("#                       MLServer  verstion " + VERSION + "                        #");
+      Console.WriteLine("#                                                                       #");
+      Console.WriteLine("#                Software for logging data sent from M-Logger           #");
+      Console.WriteLine("#                         (https://www.mlogger.jp)                      #");
+      Console.WriteLine("#                                                                       #");
+      Console.WriteLine("#########################################################################");
+      Console.WriteLine("\r\n");
     }
 
     private static void loadInitFile
@@ -421,15 +433,15 @@ namespace MLServer
         using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
         {
           sWriter.WriteLine(
-            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
-            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
+            DateTime.Now.ToString(DT_FORMAT) + "," + //親機の現在日時
+            ml.LastMeasured.ToString(DT_FORMAT) + "," + //子機の計測日時
             ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
             ml.RelativeHumdity.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
             ml.GlobeTemperature.LastValue.ToString("F2") + "," +
-            ml.VelocityVoltage.ToString("F3") + "," +
             ml.Velocity.LastValue.ToString("F4") + "," +
             ml.Illuminance.LastValue.ToString("F2") + "," +
+            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
+            ml.VelocityVoltage.ToString("F3") + "," +
             ml.GeneralVoltage1.LastValue.ToString("F3"));
           //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
           //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
@@ -452,7 +464,7 @@ namespace MLServer
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
-      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers);
+      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers, cloValue, metValue);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
       { sWriter.Write(html); }

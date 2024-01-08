@@ -14,6 +14,9 @@ namespace MLLib
     /// <summary>UNIX時間起点</summary>
     private static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 
+    /// <summary>日時の型（一体）</summary>
+    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
+
     #endregion
 
     #region 列挙型定義
@@ -919,6 +922,21 @@ namespace MLLib
       return baseHTML;
     }
 
+    /// <summary>HTMLでMLoggerの一覧表を作成する</summary>
+    /// <param name="baseHTML">基礎となるHTML</param>
+    /// <param name="mLoggers">MLogger</param>
+    /// <param name="cloValue">着衣量[clo]</param>
+    /// <param name="metValue">代謝量[met]</param>
+    /// <returns>HTMLでMLoggerの一覧表</returns>
+    public static string MakeHTMLTable(string baseHTML, MLogger[] mLoggers, double cloValue, double metValue)
+    {
+      baseHTML = MakeHTMLTable(baseHTML, mLoggers);
+      baseHTML = baseHTML.Replace("<!--ML_PMV_ASM-->", 
+        "Clo value = " + cloValue.ToString("F2") + " clo; Metabolic rate = " + metValue.ToString("F2") + " met");
+
+      return baseHTML;
+    }
+
     public static string MakeLatestData(MLogger[] mLoggers)
     {
       StringBuilder sBuilder = new StringBuilder();
@@ -927,14 +945,14 @@ namespace MLLib
         MLogger ml = mLoggers[i];
         sBuilder.Append(ml.LocalName);
         //温湿度
-        sBuilder.Append("," + ml.DrybulbTemperature.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.DrybulbTemperature.LastValue.ToString("F1"));
-        sBuilder.Append("," + ml.RelativeHumdity.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.RelativeHumdity.LastValue.ToString("F1"));
+        sBuilder.Append("," + ml.DrybulbTemperature.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.DrybulbTemperature.LastValue.ToString("F1"));
+        sBuilder.Append("," + ml.RelativeHumdity.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.RelativeHumdity.LastValue.ToString("F1"));
         //グローブ温度
-        sBuilder.Append("," + ml.GlobeTemperature.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.GlobeTemperature.LastValue.ToString("F2"));
+        sBuilder.Append("," + ml.GlobeTemperature.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.GlobeTemperature.LastValue.ToString("F1"));
         //微風速
-        sBuilder.Append("," + ml.Velocity.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + (ml.Velocity.LastValue * 100).ToString("F1"));
+        sBuilder.Append("," + ml.Velocity.LastMeasureTime.ToString(DT_FORMAT) + "," + (ml.Velocity.LastValue * 100).ToString("F1"));
         //照度
-        sBuilder.Append("," + ml.Illuminance.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss") + "," + ml.Illuminance.LastValue.ToString("F2"));
+        sBuilder.Append("," + ml.Illuminance.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.Illuminance.LastValue.ToString("F2"));
         //熱的快適性指標の更新
         ml.updateThermalIndices();
         sBuilder.Append("," + ml.SETStar.ToString("F2"));
