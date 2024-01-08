@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.9\r";
+const char VERSION_NUMBER[] = "VER:3.2.10\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -202,7 +202,7 @@ int main(void)
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
 
 		//Bluetooth通信を除き、ロギング中はXBeeをスリープさせる（XBeeの仕様上、Bluetoothモードのスリープは不可）
-		if(logging && !outputToBLE) sleep_xbee();
+		if(logging && !outputToBLE && !my_eeprom::startAuto) sleep_xbee();
 		
 		//マイコンをスリープさせる
 		sleep_mode();
