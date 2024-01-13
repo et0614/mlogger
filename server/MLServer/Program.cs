@@ -7,9 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using XBeeLibrary.Core;
-using XBeeLibrary.Core.Models;
 
 using MLLib;
+using System.Text.Json;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 
 namespace MLServer
 {
@@ -18,7 +20,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.0";
+    private const string VERSION = "1.1.1";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -35,7 +37,7 @@ namespace MLServer
     /// <summary>UART通信のボーレート</summary>
     private const int BAUD_RATE = 9600;
 
-    /// <summary>日時の型（一体）</summary>
+    /// <summary>日時の型</summary>
     private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
 
     #endregion
@@ -434,7 +436,7 @@ namespace MLServer
         {
           sWriter.WriteLine(
             DateTime.Now.ToString(DT_FORMAT) + "," + //親機の現在日時
-            ml.LastMeasured.ToString(DT_FORMAT) + "," + //子機の計測日時
+            ((ml.LastMeasured.Year == 2000 || 2100 < ml.LastMeasured.Year) ? "n/a" : ml.LastMeasured.ToString(DT_FORMAT)) + "," + //子機の計測日時
             ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
             ml.RelativeHumdity.LastValue.ToString("F2") + "," +
             ml.GlobeTemperature.LastValue.ToString("F2") + "," +
@@ -464,6 +466,7 @@ namespace MLServer
       MLogger[] loggers = new MLogger[mLoggers.Values.Count];
       mLoggers.Values.CopyTo(loggers, 0);
 
+      //HTMLデータの作成
       string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers, cloValue, metValue);
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
@@ -473,6 +476,24 @@ namespace MLServer
       using (StreamWriter sWriter = new StreamWriter
         (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
       { sWriter.Write(latestData); }
+
+      //JSONデータの作成
+      try
+      {
+        var options = new JsonSerializerOptions
+        {
+          Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+          WriteIndented = true,
+        };
+        var json = JsonSerializer.Serialize(mLoggers, options);
+        using (StreamWriter sWriter = new StreamWriter
+          (dataDirectory + Path.DirectorySeparatorChar + "latest.json", false, Encoding.UTF8))
+        { sWriter.Write(json); }
+      }
+      catch (JsonException e)
+      {
+        Console.WriteLine(e.Message);
+      }
     }
 
     #endregion

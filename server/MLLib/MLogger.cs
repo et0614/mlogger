@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
+using System.Text.Json.Serialization;
+
 namespace MLLib
 {
 
@@ -78,36 +80,47 @@ namespace MLLib
 
     #region イベント用プロパティ
 
+    [JsonIgnore]
     /// <summary>測定値を受信したか否かを設定・取得する</summary>
     public bool HasMeasuredValueReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>測定設定を受信したか否かを設定・取得する</summary>
     public bool HasMeasurementSettingReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>バージョンを受信したか否かを設定・取得する</summary>
     public bool HasVersionReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>補正係数を受信したか否かを設定・取得する</summary>
     public bool HasCorrectionFactorsReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>測定開始通知を受信したか否かを設定・取得する</summary>
     public bool HasStartMeasuringMessageReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>測定終了通知を受信したか否かを設定・取得する</summary>
     public bool HasEndMeasuringMessageReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>ロガー名称を受信したか否かを設定・取得する</summary>
     public bool HasLoggerNameReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>風速校正開始イベントを受信したか否かを設定・取得する</summary>
     public bool HasStartCalibratingVoltageMessageReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>風速校正終了イベントを受信したか否かを設定・取得する</summary>
     public bool HasEndCalibratingVoltageMessageReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>風速自動校正イベントを受信したか否かを設定・取得する</summary>
     public bool HasVelocityAutoCalibrationReceived { get; set; } = false;
 
+    [JsonIgnore]
     /// <summary>温度自動校正イベントを受信したか否かを設定・取得する</summary>
     public bool HasTemperatureAutoCalibrationReceived { get; set; } = false;
 
@@ -118,58 +131,76 @@ namespace MLLib
     /// <summary>受信データ</summary>
     private string receivedData = "";
 
+    [JsonIgnore]
     /// <summary>未処理のコマンドがあるか</summary>
     public bool HasCommand { get { return NextCommand != ""; } }
 
+    [JsonIgnore]
     /// <summary>次のコマンドを取得する</summary>
     public string NextCommand { get; private set; } = "";
 
+    [JsonPropertyName("name")]
     /// <summary>MLogger名称を取得する</summary>
     /// <remarks>書き換えるためにはコマンドでMLogger内部にデータ送信が必要</remarks>
     public string Name { get; private set; } = "Anonymous";
 
+    [JsonPropertyName("localName")]
     /// <summary>汎用の名称を設定・取得する</summary>
     public string LocalName { get; set; }
 
+    [JsonIgnore]
     /// <summary>初回の保存か否か</summary>
     public bool IsFirstSave { get; set; } = true;
 
+    [JsonIgnore]
     /// <summary>LongAddress（16進数）を設定・取得する</summary>
     public string LongAddress { get; set; }
 
+    [JsonPropertyName("lowAddress")]
     /// <summary>LongAddressの下位アドレス（16進数）を取得する</summary>
     public string LowAddress { get { return LongAddress.Substring(8); } }
 
+    [JsonIgnore]
     /// <summary>最後の通信日時を取得する</summary>
     public DateTime LastCommunicated { get; private set; }
 
+    [JsonIgnore]
     /// <summary>最後の計測日時を取得する</summary>
     public DateTime LastMeasured { get; private set; }
 
+    [JsonIgnore]
     /// <summary>バージョン（メジャー）を取得する</summary>
     public int Version_Major { get; private set; } = 0;
 
+    [JsonIgnore]
     /// <summary>バージョン（マイナー）を取得する</summary>
     public int Version_Minor { get; private set; } = 0;
 
+    [JsonIgnore]
     /// <summary>バージョン（リビジョン）を取得する</summary>
     public int Version_Revision { get; private set; } = 0;
 
+    [JsonIgnore]
     /// <summary>現在の状態を取得する</summary>
     public Status CurrentStatus { get; private set; } = Status.Initializing;
 
+    [JsonIgnore]
     /// <summary>計測開始日時を取得する</summary>
     public DateTime StartMeasuringDateTime { get; private set; } = new DateTime(2000, 1, 1, 0, 0, 0);
 
+    [JsonIgnore]
     /// <summary>計測設定値が読み込み済か否か</summary>
     public bool MeasuringSettingLoaded { get; private set; } = false;
 
+    [JsonIgnore]
     /// <summary>バージョンが読み込み済か否か</summary>
     public bool VersionLoaded { get; private set; } = false;
 
+    [JsonIgnore]
     /// <summary>風速校正残り時間[sec]を取得する</summary>
     public int VelocityCalibrationTime { get; private set; } = 0;
 
+    [JsonIgnore]
     /// <summary>温度校正残り時間[sec]を取得する</summary>
     public int TemperatureCalibrationTime { get; private set; } = 0;
 
@@ -177,39 +208,51 @@ namespace MLLib
 
     #region 計測値関連のプロパティ
 
+    [JsonPropertyName("drybulbTemperature")]
     /// <summary>乾球温度計測情報を取得する</summary>
     public MeasurementInfo DrybulbTemperature { get; } = new MeasurementInfo();
 
+    [JsonPropertyName("relativeHumdity")]
     /// <summary>相対湿度計測情報を取得する</summary>
     public MeasurementInfo RelativeHumdity { get; } = new MeasurementInfo();
 
+    [JsonPropertyName("globeTemperature")]
     /// <summary>グローブ温度計測情報を取得する</summary>
     public MeasurementInfo GlobeTemperature { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>グローブ温度の電圧[V]を取得する</summary>
     public double GlobeTemperatureVoltage { get; private set; }
 
+    [JsonPropertyName("velocity")]
     /// <summary>風速計測情報を取得する</summary>
     public MeasurementInfo Velocity { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>風速の電圧[V]を取得する</summary>
     public double VelocityVoltage { get; private set; }
 
+    [JsonPropertyName("illuminance")]
     /// <summary>照度計測情報を取得する</summary>
     public MeasurementInfo Illuminance { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>汎用電圧1計測情報を取得する</summary>
     public MeasurementInfo GeneralVoltage1 { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>汎用電圧2計測情報を取得する</summary>
     public MeasurementInfo GeneralVoltage2 { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>汎用電圧3計測情報を取得する</summary>
     public MeasurementInfo GeneralVoltage3 { get; } = new MeasurementInfo();
 
+    [JsonIgnore]
     /// <summary>近接センサ計測の真偽を取得する</summary>
     public bool MeasureProximity { get; private set; } = false;
 
+    [JsonIgnore]
     /// <summary>微風速の無風時の電圧[V]を取得する</summary>
     public double VelocityMinVoltage { get; private set; } = 1.45;
 
@@ -217,36 +260,47 @@ namespace MLLib
 
     #region 熱的快適性関連のプロパティ
 
+    [JsonIgnore]
     /// <summary>熱的快適性指標を計算するか否か</summary>
     public bool CalcThermalIndices { get; set; } = true;
 
+    [JsonIgnore]
     /// <summary>代謝量[met]を設定・取得する</summary>
     public double MetValue { get; set; } = 1.1;
 
+    [JsonIgnore]
     /// <summary>クロ値[clo]を設定・取得する</summary>
     public double CloValue { get; set; } = 1.0;
 
+    [JsonIgnore]
     /// <summary>計測値がない場合の乾球温度[C]を設定・取得する</summary>
     public double DefaultTemperature { get; set; } = 25;
 
+    [JsonIgnore]
     /// <summary>計測値がない場合の相対湿度[%]を設定・取得する</summary>
     public double DefaultRelativeHumidity { get; set; } = 50;
 
+    [JsonIgnore]
     /// <summary>計測値がない場合の風速[m/s]を設定・取得する</summary>
     public double DefaultVelocity { get; set; } = 0.1;
 
+    [JsonIgnore]
     /// <summary>計測値がない場合のグローブ温度[C]を設定・取得する</summary>
     public double DefaultGlobeTemperature { get; set; } = 25;
 
+    [JsonPropertyName("meanRadiantTemperature")]
     /// <summary>平均放射温度[C]を取得する</summary>
     public double MeanRadiantTemperature { get; private set; }
 
+    [JsonPropertyName("pmv")]
     /// <summary>PMV[-]を取得する</summary>
     public double PMV { get; private set; }
 
+    [JsonPropertyName("ppd")]
     /// <summary>PPD[-]を取得する</summary>
     public double PPD { get; private set; }
 
+    [JsonPropertyName("setStar")]
     /// <summary>SET*[-]を取得する</summary>
     public double SETStar { get; private set; }
 
@@ -890,7 +944,7 @@ namespace MLLib
       for (int i = 0; i < mLoggers.Length; i++)
       {
         MLogger ml = mLoggers[i];
-        bool isInterrupted = ml.DrybulbTemperature.LastMeasureTime.Year == 2000;
+        bool isInterrupted = (ml.LastMeasured.Year == 2000 || 2100 < ml.LastMeasured.Year);
 
         contents.AppendLine("<tr>");
         //一般情報
@@ -972,21 +1026,27 @@ namespace MLLib
     /// <summary>計測情報</summary>
     public class MeasurementInfo
     {
+      [JsonPropertyName("measure")]
       /// <summary>計測するか否かを取得する</summary>
       public bool Measure { get; internal set; } = true;
 
+      [JsonIgnore]
       /// <summary>計測時間間隔[sec]を取得する</summary>
       public int Interval { get; internal set; } = 60;
 
+      [JsonPropertyName("lastMeasureTime")]
       /// <summary>最終の計測日時を取得する</summary>
       public DateTime LastMeasureTime { get; internal set; } = UNIX_EPOCH;
 
+      [JsonPropertyName("lastValue")]
       /// <summary>最終の計測値を取得する</summary>
       public double LastValue { get; internal set; }
 
+      [JsonIgnore]
       /// <summary>補正式Ax+Bの補正係数Aを取得する</summary>
       public double CorrectionFactorA { get; internal set; } = 1.0;
 
+      [JsonIgnore]
       /// <summary>補正式Ax+Bの補正係数Bを取得する</summary>
       public double CorrectionFactorB { get; internal set; } = 0.0;
     }

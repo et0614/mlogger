@@ -44,7 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="MLResumer.sh">
+    <None Update="html\draw.js">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="MLServer.sh">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="mlnames.txt">
