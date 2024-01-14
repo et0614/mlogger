@@ -50,7 +50,7 @@
     <None Update="data\p5.min.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="data\plan.html">
+    <None Update="data\map.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="data\sketch.js">
