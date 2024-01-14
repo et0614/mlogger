@@ -12,6 +12,9 @@ using XBeeLibrary.Core;
 using XBeeLibrary.Core.Models;
 
 using MLLib;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 
 namespace MLController
 {
@@ -26,8 +29,8 @@ namespace MLController
     /// <summary>ログの最大表示文字数</summary>
     private const int MAX_LOG_LENGTH = 5000;
 
-    /// <summary>HTMLデータを更新する時間間隔[msec]</summary>
-    private const int REFRESH_HTML_TSPAN = 10 * 1000;
+    /// <summary>JSONデータを更新する時間間隔[msec]</summary>
+    private const int REFRESH_JSON_TSPAN = 10 * 1000;
 
     /// <summary>ログ表示を更新する時間間隔[msec]</summary>
     private const int REFRESH_LOG_TSPAN = 1 * 1000;
@@ -207,7 +210,7 @@ namespace MLController
       disconnectXBee();
 
       //定期的にHTMLファイルを更新する
-      htmlRefreshTask();
+      jsonRefreshTask();
 
       //定期的にログ表示を更新する
       loopLogRefresh();
@@ -282,8 +285,8 @@ namespace MLController
       lvhd2_dtime.Text = i18n.Resources.DateTime;
     }
 
-    /// <summary>定期的にHTMLを更新する</summary>
-    private void htmlRefreshTask()
+    /// <summary>定期的にJSONデータを更新する</summary>
+    private void jsonRefreshTask()
     {
       Task.Run(() =>
       {
@@ -292,9 +295,9 @@ namespace MLController
           if (hasNewData)
           {
             hasNewData = false;
-            makeWebData();
+            makeJSONData();
           }
-          Thread.Sleep(REFRESH_HTML_TSPAN);
+          Thread.Sleep(REFRESH_JSON_TSPAN);
         }
       });
     }
@@ -1284,22 +1287,26 @@ namespace MLController
 
     #endregion
 
-    #region WEBサーバーデータの生成処理
+    #region JSONデータの生成処理
 
-    private void makeWebData()
+    private void makeJSONData()
     {
-      MLogger[] loggers = new MLogger[mLoggers.Values.Count];
-      mLoggers.Values.CopyTo(loggers, 0);
-
-      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers, cloValue, metValue);
-      using (StreamWriter sWriter = new StreamWriter
-        (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
-      { sWriter.Write(html); }
-
-      string latestData = MLogger.MakeLatestData(loggers);
-      using (StreamWriter sWriter = new StreamWriter
-        (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
-      { sWriter.Write(latestData); }
+      try
+      {
+        var options = new JsonSerializerOptions
+        {
+          Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+          WriteIndented = true,
+        };
+        var json = JsonSerializer.Serialize(mLoggers, options);
+        using (StreamWriter sWriter = new StreamWriter
+          (dataDirectory + Path.DirectorySeparatorChar + "latest.json", false, Encoding.UTF8))
+        { sWriter.Write(json); }
+      }
+      catch (JsonException e)
+      {
+        Console.WriteLine(e.Message);
+      }
     }
 
     #endregion

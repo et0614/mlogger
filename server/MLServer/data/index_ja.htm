@@ -1,0 +1,56 @@
+﻿<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="refresh" content="60; URL=">
+    <title>測定状況</title>
+    <link rel="stylesheet" href="style.css">
+
+    <script src="dataTable.js"></script>
+</head>
+<body>
+    <h2>計測状況</h2>
+
+    <b>接続台数：</b><span id="mlNum"/></span> 台<br><br>
+    <b>測定器一覧：</b><br><br>
+    <div id="loggers">
+        <table align="left" id="mlTable">
+            <thead>
+                <tr>
+                    <th class="general_h" onclick="sortTable(0)">最終接続</th>
+                    <th class="general_h" onclick="sortTable(1)">測定器名</th>
+                    <th class="general_h" onclick="sortTable(2)">アドレス</th>
+                    <th class="thlog_h" onclick="sortTable(3)">計測日時</th>
+                    <th class="thlog_h" onclick="sortTable(4)">乾球温度[C]</th>
+                    <th class="thlog_h" onclick="sortTable(5)">相対湿度[%]</th>
+                    <th class="glblog_h" onclick="sortTable(6)">計測日時</th>
+                    <th class="glblog_h" onclick="sortTable(7)">グローブ温度[C]</th>
+                    <th class="vellog_h" onclick="sortTable(8)">計測日時</th>
+                    <th class="vellog_h" onclick="sortTable(9)">風速[cm/s]</th>
+                    <th class="illlog_h" onclick="sortTable(10)">計測日時</th>
+                    <th class="illlog_h" onclick="sortTable(11)">照度[lx]</th>
+                    <th class="cmftlog_h" onclick="sortTable(12)">SET</th>
+                    <th class="cmftlog_h" onclick="sortTable(13)">PMV</th>
+                    <th class="cmftlog_h"onclick="sortTable(14)">PPD[%]</th>
+                    <th class="general_h">DL</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <br clear="all">
+    <div id="clomet"/></div>
+    <hr>
+    Web site: <a href="https://www.mlogger.jp">https://www.mlogger.jp</a>
+
+    <script>
+        //一般情報をロード
+        loadMLoggerInfo();
+
+        //計測情報をロード
+        loadMLoggerTable();
+    </script>
+
+</body>
+</html>

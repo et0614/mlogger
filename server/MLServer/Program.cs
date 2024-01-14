@@ -20,13 +20,13 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.1";
+    private const string VERSION = "1.1.2";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
 
-    /// <summary>HTMLデータを更新する時間間隔[msec]</summary>
-    private const int HTML_REFRESH_SPAN = 10 * 1000;
+    /// <summary>JSONデータを更新する時間間隔[msec]</summary>
+    private const int JSON_REFRESH_SPAN = 10 * 1000;
 
     /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
     private const int XBEE_SCAN_SPAN = 5 * 1000;
@@ -102,17 +102,17 @@ namespace MLServer
         }
       }
 
-      //定期的にHTMLファイルを更新する
-      Task htmlRefreshTask = Task.Run(() =>
+      //定期的にJSONファイルを更新する
+      Task jsonRefreshTask = Task.Run(() =>
       {
         while (true)
         {
           if (hasNewData)
           {
             hasNewData = false;
-            makeWebData();
+            makeJSONData();
           }
-          Thread.Sleep(HTML_REFRESH_SPAN);
+          Thread.Sleep(JSON_REFRESH_SPAN);
         }
       });
 
@@ -459,25 +459,10 @@ namespace MLServer
 
     #endregion
 
-    #region WEBサーバーデータの生成処理
+    #region JSONデータの生成処理
 
-    private static void makeWebData()
+    private static void makeJSONData()
     {
-      MLogger[] loggers = new MLogger[mLoggers.Values.Count];
-      mLoggers.Values.CopyTo(loggers, 0);
-
-      //HTMLデータの作成
-      string html = MLogger.MakeHTMLTable(i18n.Resources.topPage_html, loggers, cloValue, metValue);
-      using (StreamWriter sWriter = new StreamWriter
-        (dataDirectory + Path.DirectorySeparatorChar + "index.htm", false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
-      { sWriter.Write(html); }
-
-      string latestData = MLogger.MakeLatestData(loggers);
-      using (StreamWriter sWriter = new StreamWriter
-        (dataDirectory + Path.DirectorySeparatorChar + "latest.txt", false, Encoding.UTF8))
-      { sWriter.Write(latestData); }
-
-      //JSONデータの作成
       try
       {
         var options = new JsonSerializerOptions

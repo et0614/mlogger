@@ -457,32 +457,6 @@ namespace MLController.i18n {
         }
         
         /// <summary>
-        ///   &lt;html lang=&quot;ja&quot;&gt;
-        ///&lt;head&gt;
-        ///    &lt;meta charset=&quot;utf-8&quot;&gt;
-        ///    &lt;meta name=&quot;robots&quot; content=&quot;noindex,nofollow&quot;&gt;
-        ///    &lt;meta http-equiv=&quot;refresh&quot; content=&quot;60; URL=&quot;&gt;
-        ///    &lt;title&gt;Measurement status&lt;/title&gt;
-        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;
-        ///&lt;/head&gt;
-        ///&lt;body&gt;
-        ///
-        ///    &lt;h2&gt;Measurement status&lt;/h2&gt;
-        ///
-        ///    &lt;b&gt;No. of MLoggers connected:&lt;/b&gt;&lt;!--ML_NUMBER--&gt; unit(s)&lt;br&gt;&lt;br&gt;
-        ///    &lt;b&gt;List of MLoggers:&lt;/b&gt;&lt;br&gt;
-        ///    &lt;div id=&quot;loggers&quot;&gt;
-        ///        Filtering &lt;input class=&quot;search&quot;&gt;&lt;br&gt;&lt;br&gt;
-        ///        &lt;table align=&quot;left&quot;&gt;
-        ///      [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string topPage_html {
-            get {
-                return ResourceManager.GetString("topPage_html", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Velocity に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Velocity {

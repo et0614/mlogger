@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan</title>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #FFFFFF;
+    }
+  </style>
+  <script src="p5.min.js"></script>
+  <script src="draw.js"></script>
+  <script src="sketch.js"></script>
+</head>
+
+<body>
+  <div style="margin : 20px 0px 0px 50px">
+    <form>
+      <input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked="true">Drybulb temperature<br>
+      <input type="radio" name="mode" value="hmd" onchange="handleModeChange()">Relative humidity<br>
+      <input type="radio" name="mode" value="glb" onchange="handleModeChange()">Globe temperature<br>
+      <input type="radio" name="mode" value="vel" onchange="handleModeChange()">Velocity
+    </form>
+  </div>
+
+  <script>
+    function handleModeChange() {
+      // ラジオボタンが変更された時に呼び出される関数
+      var selectedMode = document.querySelector('input[name="mode"]:checked').value;
+      switch(selectedMode){
+        case "dbt":
+          changeMode(MODE.DBT);
+          break;
+        case "hmd":
+          changeMode(MODE.HMD);
+          break;
+        case "glb":
+          changeMode(MODE.GLB);
+          break;
+        case "vel":
+          changeMode(MODE.VEL);
+          break;
+        default:
+          break;
+      }
+
+      console.log("選択された色: " + selectedMode);
+    }
+  </script>
+
+  <main>
+  </main>
+</body>
+
+</html>

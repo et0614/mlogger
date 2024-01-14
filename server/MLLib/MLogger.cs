@@ -160,7 +160,7 @@ namespace MLLib
     /// <summary>LongAddressの下位アドレス（16進数）を取得する</summary>
     public string LowAddress { get { return LongAddress.Substring(8); } }
 
-    [JsonIgnore]
+    [JsonPropertyName("lastCommunicated")]
     /// <summary>最後の通信日時を取得する</summary>
     public DateTime LastCommunicated { get; private set; }
 
@@ -264,11 +264,11 @@ namespace MLLib
     /// <summary>熱的快適性指標を計算するか否か</summary>
     public bool CalcThermalIndices { get; set; } = true;
 
-    [JsonIgnore]
+    [JsonPropertyName("metValue")]
     /// <summary>代謝量[met]を設定・取得する</summary>
     public double MetValue { get; set; } = 1.1;
 
-    [JsonIgnore]
+    [JsonPropertyName("cloValue")]
     /// <summary>クロ値[clo]を設定・取得する</summary>
     public double CloValue { get; set; } = 1.0;
 
