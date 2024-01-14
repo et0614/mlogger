@@ -3,6 +3,7 @@ const MODE = {
   HMD:1,
   GLB:2,
   VEL:3,
+  PMV:4,
 }
 
 const MARGIN = 50;
@@ -12,16 +13,27 @@ const HIGH_ADD = "0013A200";
 let MIN_TMP, MAX_TMP;
 let MIN_VEL, MAX_VEL;
 let MIN_HMD, MAX_HMD;
+let MIN_PMV, MAX_PMV;
 let MIN_TMP_COLOR, MAX_TMP_COLOR;
 let MIN_VEL_COLOR, MAX_VEL_COLOR;
 let MIN_HMD_COLOR, MAX_HMD_COLOR;
+let MIN_PMV_COLOR, MAX_PMV_COLOR;
 
 let bgimg;
 let mode = MODE.DBT;
+let noImage = false;
 
 function preload() {
   // 画像を読み込む
-  bgimg = loadImage('background.png');
+  loadImage('background.png', success, failure);
+}
+
+function success(img) {
+  bgimg = img;
+}
+
+function failure(event) {
+  noImage = true;
 }
 
 function changeMode(md){
@@ -34,7 +46,8 @@ function setup() {
   noLoop(); // 再描画を停止
 
   //横幅を基準に縦を調整
-  height = bgimg.height * (WIDTH / bgimg.width);
+  height = noImage ? WIDTH : bgimg.height * (WIDTH / bgimg.width);
+  //height = bgimg.height * (WIDTH / bgimg.width);
   createCanvas(MARGIN + WIDTH, MARGIN + height);
 
   //配色の設定
@@ -44,12 +57,16 @@ function setup() {
   MIN_VEL_COLOR = color(51,153,0,50);
   MAX_HMD_COLOR = color(204,102,0,50);
   MIN_HMD_COLOR = color(0,0,255,50);
+  MAX_PMV_COLOR = color(204,102,0,50);
+  MIN_PMV_COLOR = color(0,0,255,50);
   MAX_TMP = 30;
   MIN_TMP = 20;
   MAX_VEL = 0.4;
   MIN_VEL = 0;
   MAX_HMD = 60;
   MIN_HMD = 20;
+  MAX_PMV = 2.0;
+  MIN_PMV = -2.0;
 }
 
 function draw() {
@@ -57,8 +74,10 @@ function draw() {
   background(255);
 
   // 画像を表示
-  height = bgimg.height * (WIDTH / bgimg.width);
-  image(bgimg, MARGIN, MARGIN, WIDTH, height);
+  if(!noImage){
+    height = bgimg.height * (WIDTH / bgimg.width);
+    image(bgimg, MARGIN, MARGIN, WIDTH, height);
+  }
 
   //オフセット
   translate(MARGIN, MARGIN);
@@ -100,6 +119,8 @@ function getLastValue(mlogger){
       return (100 * mlogger["velocity"]["lastValue"]).toFixed(0) + " cm/s";
     case MODE.HMD:
       return mlogger["relativeHumdity"]["lastValue"].toFixed(0) + " %";
+    case MODE.PMV:
+      return mlogger["pmv"].toFixed(2);
     default:
       break;
   }
@@ -134,6 +155,13 @@ function setColor(mlogger){
       maxCol = MAX_HMD_COLOR;
       minCol = MIN_HMD_COLOR;
       lastVal = mlogger["relativeHumdity"]["lastValue"];
+      break;
+    case MODE.PMV:
+      maxVal = MAX_PMV;
+      minVal = MIN_PMV;
+      maxCol = MAX_PMV_COLOR;
+      minCol = MIN_PMV_COLOR;
+      lastVal = mlogger["pmv"];
       break;
     default:
       break;

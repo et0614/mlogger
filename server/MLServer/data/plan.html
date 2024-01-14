@@ -1,31 +1,32 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan</title>
-  <style>
-    body {
-      padding: 0;
-      margin: 0;
-      background-color: #FFFFFF;
-    }
-  </style>
+  <link rel="stylesheet" href="plan.css">
   <script src="p5.min.js"></script>
   <script src="draw.js"></script>
-  <script src="sketch.js"></script>
 </head>
 
 <body>
-  <div style="margin : 20px 0px 0px 50px">
-    <form>
-      <input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked="true">Drybulb temperature<br>
-      <input type="radio" name="mode" value="hmd" onchange="handleModeChange()">Relative humidity<br>
-      <input type="radio" name="mode" value="glb" onchange="handleModeChange()">Globe temperature<br>
-      <input type="radio" name="mode" value="vel" onchange="handleModeChange()">Velocity
-    </form>
-  </div>
+
+  <form>
+    <group class="inline-radio">
+      <div><input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked="true">
+      <label>Drybulb temperature</label></div>
+      <div><input type="radio" name="mode" value="hmd" onchange="handleModeChange()">
+      <label>Relative humidity</label></div>
+      <div><input type="radio" name="mode" value="glb" onchange="handleModeChange()">
+      <label>Globe temperature</label></div>
+      <div><input type="radio" name="mode" value="vel" onchange="handleModeChange()">
+      <label>Velocity</label></div>
+      <div><input type="radio" name="mode" value="pmv" onchange="handleModeChange()">
+      <label>PMV</label></div>
+    </group>
+  </form>
+  <br>
 
   <script>
     function handleModeChange() {
@@ -44,16 +45,16 @@
         case "vel":
           changeMode(MODE.VEL);
           break;
+        case "pmv":
+          changeMode(MODE.PMV);
+          break;
         default:
           break;
       }
-
-      console.log("選択された色: " + selectedMode);
     }
   </script>
 
-  <main>
-  </main>
+  <script src="sketch.js"></script>
 </body>
 
 </html>
