@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.8\r";
+const char VERSION_NUMBER[] = "VER:3.3.9\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -70,7 +70,7 @@ const uint8_t V_WAKEUP_TIME = 20;
 const bool IS_MCP9700 = false; //MCP9701ならばfalse
 
 //P3T1750DPを使うか否か
-const bool USE_P3T1750DP = false;
+const bool USE_P3T1750DP = true;
 
 //何行分のデータを一時保存するか
 const int N_LINE_BUFF = 30;
