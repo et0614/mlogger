@@ -10,7 +10,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLController", "MLControlle
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLServer", "MLServer\MLServer.csproj", "{85AC61F2-64EB-49D9-A765-E41997C10074}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLWebServer", "MLWebServer\MLWebServer.csproj", "{94B7A9B5-44C2-4F09-B409-294AB1703F32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleWebServer", "SimpleWebServer\SimpleWebServer.csproj", "{94B7A9B5-44C2-4F09-B409-294AB1703F32}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DDNSUpdater", "DDNSUpdater\DDNSUpdater.csproj", "{115D6232-4D2B-485D-8F08-09EAA25BE215}"
 EndProject

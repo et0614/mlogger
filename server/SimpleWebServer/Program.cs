@@ -53,13 +53,7 @@ namespace MLWebServer
     /// <summary>HTTPサーバーを起動する</summary>
     private static async void startHttpServer(string dataDirectory, string user, string pwd)
     {
-      Console.WriteLine("Starting web server...");
-
-      //Web表示に必要なファイルを準備
-      string fName = dataDirectory + Path.DirectorySeparatorChar + "style.css";
-      File.WriteAllText(fName, Resources.style_css, Encoding.UTF8);
-      fName = dataDirectory + Path.DirectorySeparatorChar + "list.js";
-      File.WriteAllText(fName, Resources.list_js, Encoding.UTF8);
+      Console.WriteLine("Starting simple web server...");
 
       HttpListener listener = new HttpListener();
       listener.Prefixes.Add("http://*:80/");
