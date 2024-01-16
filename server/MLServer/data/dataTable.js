@@ -97,10 +97,10 @@ function loadMLoggerTable(){
             cell.innerHTML = data[key]["setStar"].toFixed(1);
             cell = newRow.insertCell(row++);
             cell.classList.add('cmftlog');
-            cell.innerHTML = data[key]["pmv"].toFixed(1);
+            cell.innerHTML = data[key]["pmv"].toFixed(2);
             cell = newRow.insertCell(row++);
             cell.classList.add('cmftlog');
-            cell.innerHTML = data[key]["ppd"].toFixed(2);
+            cell.innerHTML = data[key]["ppd"].toFixed(1);
             
             //CSVデータ
             cell = newRow.insertCell(row++);
