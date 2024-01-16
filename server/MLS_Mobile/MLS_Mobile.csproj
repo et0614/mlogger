@@ -77,14 +77,14 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
-	  <CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
-	  <CodesignProvision>mls_dist</CodesignProvision>
+	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.25</ApplicationDisplayVersion>
-	  <ApplicationVersion>28</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.26</ApplicationDisplayVersion>
+	  <ApplicationVersion>29</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
@@ -93,8 +93,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.25</ApplicationDisplayVersion>
-	  <ApplicationVersion>28</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.26</ApplicationDisplayVersion>
+	  <ApplicationVersion>29</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">

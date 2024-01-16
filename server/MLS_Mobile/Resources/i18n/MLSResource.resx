@@ -184,7 +184,7 @@
     <value>Automatic velocity calibration</value>
   </data>
   <data name="CR_CalibrateVelocityVoltage" xml:space="preserve">
-    <value>Calibrate 0 m/s velocity voltage</value>
+    <value>Calibrate velocity</value>
   </data>
   <data name="CR_CalibratingTime" xml:space="preserve">
     <value>Calibrating time:</value>

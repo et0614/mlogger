@@ -9,6 +9,9 @@ public partial class Calibrator : ContentPage
 
   #region 定数・インスタンス変数・プロパティ定義
 
+  /// <summary>平均化する時間[sec]</summary>
+  private const int AVE_TIME = 10;
+
   /// <summary>風速自動校正時間[分間]</summary>
   private readonly int[] VEL_CAL_TIMES = new int[] { 3, 5, 10, 30, 60, 180 };
 
@@ -22,7 +25,10 @@ public partial class Calibrator : ContentPage
   private bool isFirstVoltageMessage = true;
 
   /// <summary>風速電圧校正用カウントダウン</summary>
-  private int countDownTime = 30;
+  private int countDownTime = 0;
+
+  /// <summary>風速電圧リスト[V]</summary>
+  private double[] velVols = new double[AVE_TIME];
 
   #endregion
 
@@ -50,13 +56,13 @@ public partial class Calibrator : ContentPage
     {
       while (true)
       {
-        if (calibratingVoltage && 0 < countDownTime)
+        if (calibratingVoltage)
         {
-          countDownTime--;
+          countDownTime++;
           Application.Current.Dispatcher.Dispatch(() =>
           {
             cdownLabel.Text = countDownTime.ToString();
-            cdownLabel.TextColor = countDownTime == 0 ? Colors.ForestGreen : Colors.Red;
+            cdownLabel.TextColor = countDownTime < 30 ? Colors.Red : Colors.ForestGreen;
           });          
         }        
         await Task.Delay(1000);
@@ -99,23 +105,42 @@ public partial class Calibrator : ContentPage
     {
       calibratingVoltage = true;
       isFirstVoltageMessage = false;
-      countDownTime = 30;
+      countDownTime = 0;
+
+      //風速リスト初期化
+      for(int i=0;i<AVE_TIME;i++)
+        velVols[i] = MLUtility.Logger.VelocityVoltage;
 
       Application.Current.Dispatcher.Dispatch(() =>
       {
         cdownLabel.TextColor = Colors.Red;
         velVLabel.IsVisible = true;
         velLabel.IsVisible = true;
+        aveVelVLabel.IsVisible = true;
+        aveVelLabel.IsVisible = true;
         cdownLabel.IsVisible = true;
       });
     }
+
+    //平均風速の計算[
+    double aveVol = 0;
+    for (int i = 0; i < AVE_TIME - 1; i++)
+    {
+      aveVol += velVols[i];
+      velVols[i] = velVols[i + 1];
+    }
+    aveVol += MLUtility.Logger.VelocityVoltage;
+    velVols[AVE_TIME - 1] = MLUtility.Logger.VelocityVoltage;
+    aveVol /= AVE_TIME;
 
     //電圧表示を更新
     Application.Current.Dispatcher.Dispatch(() =>
     {
       double velV = MLUtility.Logger.VelocityVoltage;
-      velVLabel.Text = velV.ToString("F3") + " V";
       velLabel.Text = MLUtility.Logger.ConvertVelocityVoltage(velV).ToString("F2") + " m/s";
+      velVLabel.Text = "(" + velV.ToString("F3") + " V)";
+      aveVelLabel.Text = MLUtility.Logger.ConvertVelocityVoltage(aveVol).ToString("F2") + " m/s";
+      aveVelVLabel.Text = "(" + aveVol.ToString("F3") + " V)";
     });
   }
 
@@ -127,6 +152,8 @@ public partial class Calibrator : ContentPage
     {
       velVLabel.IsVisible = false;
       velLabel.IsVisible = false;
+      aveVelVLabel.IsVisible = false;
+      aveVelLabel.IsVisible = false;
       cdownLabel.IsVisible = false;
     });
   }
@@ -369,7 +396,7 @@ public partial class Calibrator : ContentPage
           hideIndicator();
 
           //コントロールの表示を更新
-          cdownLabel.Text = "30";
+          cdownLabel.Text = "0";
           voltageBtn.Text = calibratingVoltage ? MLSResource.CR_EndCalibration : MLSResource.CR_CalibrateVelocityVoltage;
           velPicker.IsEnabled = tmpPicker.IsEnabled = autoTmpBtn.IsEnabled = autoVelBtn.IsEnabled = corBtn.IsEnabled = !calibratingVoltage;
         });

@@ -6,55 +6,65 @@
              Title="{x:Static res:MLSResource.CR_Title}">
 
     <Grid>
-        <StackLayout Margin="10" BackgroundColor="{StaticResource Lightest_G}">
-            <!--補正係数の設定-->
-            <Button x:Name="corBtn" Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_CFactor}" Clicked="SetCF_Clicked">
-                <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                </Button.ImageSource>
-            </Button>
+        <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{StaticResource Lightest_G}">
+            <StackLayout Margin="10" BackgroundColor="{StaticResource Lightest_G}">
+                <!--補正係数の設定-->
+                <Button x:Name="corBtn" Margin="5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_CFactor}" Clicked="SetCF_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
 
-            <!--温度自動校正-->
-            <Button x:Name="autoTmpBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_AutoCalTemp}" Clicked="AutoCBT_Clicked">
-                <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf769;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                </Button.ImageSource>
-            </Button>
-            <HorizontalStackLayout>
-                <Label Text="{x:Static res:MLSResource.CR_CalibratingTime}" Margin="30,0,10,0" VerticalTextAlignment="Center"/>
-                <Picker x:Name="tmpPicker" WidthRequest="100"/>
-            </HorizontalStackLayout>
+                <!--温度自動校正-->
+                <Button x:Name="autoTmpBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_AutoCalTemp}" Clicked="AutoCBT_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf769;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+                <HorizontalStackLayout>
+                    <Label Text="{x:Static res:MLSResource.CR_CalibratingTime}" Margin="30,0,10,0" VerticalTextAlignment="Center"/>
+                    <Picker x:Name="tmpPicker" WidthRequest="100"/>
+                </HorizontalStackLayout>
 
-            <!--風速自動校正-->
-            <Button x:Name="autoVelBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_AutoCalVel}" Clicked="AutoCBV_Clicked">
-                <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf72e;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                </Button.ImageSource>
-            </Button>
-            <HorizontalStackLayout>
-                <Label Text="{x:Static res:MLSResource.CR_CalibratingTime}" Margin="30,0,10,0" VerticalTextAlignment="Center"/>
-                <Picker x:Name="velPicker" WidthRequest="100"/>
-            </HorizontalStackLayout>
+                <!--風速自動校正-->
+                <Button x:Name="autoVelBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_AutoCalVel}" Clicked="AutoCBV_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf72e;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+                <HorizontalStackLayout>
+                    <Label Text="{x:Static res:MLSResource.CR_CalibratingTime}" Margin="30,0,10,0" VerticalTextAlignment="Center"/>
+                    <Picker x:Name="velPicker" WidthRequest="100"/>
+                </HorizontalStackLayout>
 
-            <!--風速電圧の手動校正-->
-            <Button x:Name="voltageBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_CalibrateVelocityVoltage}" Clicked="CBV_Clicked">
-                <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf54a;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                </Button.ImageSource>
-            </Button>
-            <Label x:Name="cdownLabel" Text="30" 
+                <!--風速電圧の手動校正-->
+                <Button x:Name="voltageBtn" Margin="5,20,5,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.CR_CalibrateVelocityVoltage}" Clicked="CBV_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf54a;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+                <Label x:Name="cdownLabel" Text="0" 
                    HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" 
-                   FontSize="40" TextColor="Red" Margin="0,30,0,0" IsVisible="false"/>
-            <Label x:Name="velVLabel" Text="-" 
-                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
-                   FontSize="70" TextColor="{StaticResource Dark_G}"
-                   HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" IsVisible="false"/>
-            <Label x:Name="velLabel" Text="-" 
-                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
-                   FontSize="70" TextColor="{StaticResource Dark_G}"
-                   HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand" IsVisible="false"/>
-            
-        </StackLayout>
+                   FontSize="35" TextColor="Red" Margin="0,20,0,0" IsVisible="false"/>
+                <Label x:Name="velLabel" Text="-" 
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                       FontSize="60" TextColor="{StaticResource Dark_G}"
+                       HorizontalOptions="CenterAndExpand" IsVisible="false"/>
+                <Label x:Name="velVLabel" Text="-" 
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                       FontSize="35" TextColor="{StaticResource Dark_G}"
+                       HorizontalOptions="CenterAndExpand" IsVisible="false" Margin="0,0,0,20"/>
+                <Label x:Name="aveVelLabel" Text="-" 
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                       FontSize="60" TextColor="{StaticResource Dark_G}"
+                       HorizontalOptions="CenterAndExpand" IsVisible="false"/>
+                <Label x:Name="aveVelVLabel" Text="-" 
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" 
+                       FontSize="35" TextColor="{StaticResource Dark_G}"
+                       HorizontalOptions="CenterAndExpand" IsVisible="false"/>
+
+            </StackLayout>
+        </ScrollView>
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>

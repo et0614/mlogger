@@ -259,7 +259,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Calibrate 0 m/s velocity voltage に類似しているローカライズされた文字列を検索します。
+        ///   Calibrate velocity に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CR_CalibrateVelocityVoltage {
             get {

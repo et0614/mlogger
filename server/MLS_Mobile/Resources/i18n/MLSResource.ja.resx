@@ -184,7 +184,7 @@
     <value>風速の自動校正</value>
   </data>
   <data name="CR_CalibrateVelocityVoltage" xml:space="preserve">
-    <value>無風電圧の校正</value>
+    <value>風速の校正</value>
   </data>
   <data name="CR_CalibratingTime" xml:space="preserve">
     <value>校正時間:</value>
