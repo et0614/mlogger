@@ -47,6 +47,9 @@
     <None Update="data\index_ja.htm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\map.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\p5.min.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -11,10 +11,9 @@
 </head>
 
 <body>
-
   <form>
     <group class="inline-radio">
-      <div><input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked="true">
+      <div><input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked>
       <label>Drybulb temperature</label></div>
       <div><input type="radio" name="mode" value="hmd" onchange="handleModeChange()">
       <label>Relative humidity</label></div>
@@ -22,9 +21,19 @@
       <label>Globe temperature</label></div>
       <div><input type="radio" name="mode" value="vel" onchange="handleModeChange()">
       <label>Velocity</label></div>
-      <div><input type="radio" name="mode" value="pmv" onchange="handleModeChange()">
-      <label>PMV</label></div>
     </group>
+
+    <form>
+      <group class="inline-radio">        
+        <div><input type="radio" name="mode" value="ill" onchange="handleModeChange()">
+        <label>illuminance</label></div>
+        <div><input type="radio" name="mode" value="pmv" onchange="handleModeChange()">
+        <label>PMV</label></div>
+        <div><input type="radio" name="mode" value="ppd" onchange="handleModeChange()">
+        <label>PPD</label></div>
+        <div><input type="radio" name="mode" value="clear" onchange="handleModeChange()">
+        <label>Clear</label></div>
+      </group>
   </form>
   <br>
 
@@ -45,8 +54,17 @@
         case "vel":
           changeMode(MODE.VEL);
           break;
+        case "ill":
+          changeMode(MODE.ILL);
+          break;
         case "pmv":
           changeMode(MODE.PMV);
+          break;
+        case "ppd":
+          changeMode(MODE.PPD);
+          break;
+        case "clear":
+          changeMode(MODE.CLEAR);
           break;
         default:
           break;

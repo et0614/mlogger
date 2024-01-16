@@ -4,20 +4,27 @@ const MODE = {
   GLB:2,
   VEL:3,
   PMV:4,
+  ILL:5,
+  PPD:6,
+  CLEAR:7
 }
 
-const MARGIN = 50;
+const MARGIN = 0;
 const WIDTH = 1000;
 const HIGH_ADD = "0013A200";
 
 let MIN_TMP, MAX_TMP;
 let MIN_VEL, MAX_VEL;
 let MIN_HMD, MAX_HMD;
+let MIN_ILL, MAX_ILL;
 let MIN_PMV, MAX_PMV;
+let MIN_PPD, MAX_PPD;
 let MIN_TMP_COLOR, MAX_TMP_COLOR;
 let MIN_VEL_COLOR, MAX_VEL_COLOR;
 let MIN_HMD_COLOR, MAX_HMD_COLOR;
+let MIN_ILL_COLOR, MAX_ILL_COLOR;
 let MIN_PMV_COLOR, MAX_PMV_COLOR;
+let MIN_PPD_COLOR, MAX_PPD_COLOR;
 
 let bgimg;
 let mode = MODE.DBT;
@@ -47,7 +54,6 @@ function setup() {
 
   //横幅を基準に縦を調整
   height = noImage ? WIDTH : bgimg.height * (WIDTH / bgimg.width);
-  //height = bgimg.height * (WIDTH / bgimg.width);
   createCanvas(MARGIN + WIDTH, MARGIN + height);
 
   //配色の設定
@@ -59,6 +65,10 @@ function setup() {
   MIN_HMD_COLOR = color(0,0,255,50);
   MAX_PMV_COLOR = color(204,102,0,50);
   MIN_PMV_COLOR = color(0,0,255,50);
+  MAX_PPD_COLOR = color(255,0,0,50);
+  MIN_PPD_COLOR = color(51,153,0,50);
+  MAX_ILL_COLOR = color(255,241,0,50);
+  MIN_ILL_COLOR = color(0,0,0,50);
   MAX_TMP = 30;
   MIN_TMP = 20;
   MAX_VEL = 0.4;
@@ -67,6 +77,10 @@ function setup() {
   MIN_HMD = 20;
   MAX_PMV = 2.0;
   MIN_PMV = -2.0;
+  MAX_PPD = 60;
+  MIN_PPD = 0;
+  MAX_ILL = 1000;
+  MIN_ILL = 0;
 }
 
 function draw() {
@@ -78,6 +92,9 @@ function draw() {
     height = bgimg.height * (WIDTH / bgimg.width);
     image(bgimg, MARGIN, MARGIN, WIDTH, height);
   }
+
+  //Clearの場合には画像描画のみ
+  if(mode == MODE.CLEAR) return;
 
   //オフセット
   translate(MARGIN, MARGIN);
@@ -121,6 +138,10 @@ function getLastValue(mlogger){
       return mlogger["relativeHumdity"]["lastValue"].toFixed(0) + " %";
     case MODE.PMV:
       return mlogger["pmv"].toFixed(2);
+    case MODE.PPD:
+      return mlogger["ppd"].toFixed(1);
+    case MODE.ILL:
+      return mlogger["illuminance"]["lastValue"].toFixed(0) + " lx";
     default:
       break;
   }
@@ -163,12 +184,28 @@ function setColor(mlogger){
       minCol = MIN_PMV_COLOR;
       lastVal = mlogger["pmv"];
       break;
+    case MODE.ILL:
+      maxVal = MAX_ILL;
+      minVal = MIN_ILL;
+      maxCol = MAX_ILL_COLOR;
+      minCol = MIN_ILL_COLOR;
+      lastVal = mlogger["illuminance"]["lastValue"];
+      break;
+    case MODE.PPD:
+      maxVal = MAX_PPD;
+      minVal = MIN_PPD;
+      maxCol = MAX_PPD_COLOR;
+      minCol = MIN_PPD_COLOR;
+      lastVal = mlogger["ppd"];
+      break;
     default:
       break;
   }
   if(lastVal <= minVal) amt = 0.0;
   else if(maxVal <= lastVal) amt = 1.0;
   else amt = (lastVal - minVal) / (maxVal - minVal);
-  fill(lerpColor(minCol,maxCol,amt));
+  cl = lerpColor(minCol,maxCol,amt);
+  stroke(cl);
+  fill(cl);
 }
 

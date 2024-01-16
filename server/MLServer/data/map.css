@@ -9,6 +9,11 @@ body {
   max-width: 1200px;
 }
 
+form{
+  margin:auto;
+  max-width: 1000px;
+}
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
