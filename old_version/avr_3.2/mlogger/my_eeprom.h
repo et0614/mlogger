@@ -23,6 +23,9 @@ class my_eeprom
 		//計測間隔  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
 		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3;
 		
+		//計測開始日時
+		volatile static uint32_t start_dt;
+		
 		//名称
 		static char mlName[20];
 

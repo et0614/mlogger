@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.11\r";
+const char VERSION_NUMBER[] = "VER:3.2.12\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -78,7 +78,6 @@ const int N_LINE_BUFF = 30;
 //広域変数定義********************************************************
 //日時関連
 volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
-volatile static time_t startTime = 1609459200;   //計測開始時刻（UNIX時間,UTC時差0で2021/1/1 00:00:00）
 
 //計測中か否か
 volatile static bool logging = false;
@@ -187,7 +186,6 @@ int main(void)
 		logging = true;
 		outputToXBee = true;
 		outputToBLE = outputToSDCard = false;
-		startTime = currentTime;
 	}
 	
 	//10秒以上電圧不足時間が継続したら終了
@@ -448,7 +446,7 @@ static void solve_command(void)
 		char num2[11];
 		num2[10] = '\0';
 		strncpy(num2, command + 27, 10);
-		startTime = atol(num2);
+		my_eeprom::start_dt = atol(num2);
 		
 		//ロギング設定をEEPROMに保存
 		my_eeprom::SetMeasurementSetting();
@@ -459,7 +457,7 @@ static void solve_command(void)
 			my_eeprom::measure_glb, my_eeprom::interval_glb, 
 			my_eeprom::measure_vel, my_eeprom::interval_vel, 
 			my_eeprom::measure_ill, my_eeprom::interval_ill, 
-			startTime,
+			my_eeprom::start_dt,
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1, 
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2, 
 			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
@@ -474,7 +472,7 @@ static void solve_command(void)
 			my_eeprom::measure_glb, my_eeprom::interval_glb,
 			my_eeprom::measure_vel, my_eeprom::interval_vel,
 			my_eeprom::measure_ill, my_eeprom::interval_ill, 
-			startTime,
+			my_eeprom::start_dt,
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1,
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2,
 			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
@@ -643,8 +641,8 @@ ISR(RTC_PIT_vect)
 
 static void execLogging()
 {
-	//計測開始時刻の前ならば終了
-	if(currentTime < startTime) return;
+	//自動開始設定ではなく、計測開始時刻の前ならば終了
+	if(!my_eeprom::startAuto && currentTime < my_eeprom::start_dt) return;
 	
 	//ロギング中は5秒ごとに点灯
 	blinkCount++;

@@ -1,6 +1,6 @@
 /**
  * @file my_eeprom.h
- * @brief AVR(ATMega328)のEEPROMを処理する
+ * @brief AVR(AVRxxDB32)のEEPROMを処理する
  * @author E.Togashi
  * @date 2021/12/19
  */
@@ -55,6 +55,9 @@ static unsigned int EEMEM EEP_STP_AD1;
 static unsigned int EEMEM EEP_STP_AD2;
 static unsigned int EEMEM EEP_STP_AD3;
 
+//計測開始日時
+static uint32_t EEMEM EEP_START_DT;
+
 //自動通信開始設定
 static uint8_t EEMEM EEP_START_AUTO;
 
@@ -92,6 +95,9 @@ volatile unsigned int my_eeprom::interval_ill = 1;
 volatile unsigned int my_eeprom::interval_AD1 = 1;
 volatile unsigned int my_eeprom::interval_AD2 = 1;
 volatile unsigned int my_eeprom::interval_AD3 = 1;
+
+//計測開始日時
+volatile uint32_t my_eeprom::start_dt = 1609459200;
 
 //自動通信開始設定
 volatile bool my_eeprom::startAuto = false;
@@ -167,6 +173,10 @@ void initMemory()
 	eeprom_update_word(&EEP_STP_AD2, 1);
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_AD3, 1);
+	
+	//計測開始日時
+	eeprom_busy_wait();
+	eeprom_update_dword(&EEP_START_DT, 1609459200); //UNIX時間,UTC時差0で2021/1/1 00:00:00
 	
 	//自動通信開始設定
 	eeprom_busy_wait();
@@ -361,6 +371,9 @@ void my_eeprom::SetMeasurementSetting()
 	
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_PRX,my_eeprom::measure_Prox ? 'T' : 'F');
+
+	eeprom_busy_wait();
+	eeprom_update_dword(&EEP_START_DT,my_eeprom::start_dt); //uint32_t
 }
 
 //名称を書き込む
@@ -441,6 +454,9 @@ void LoadMeasurementSetting()
 	
 	eeprom_busy_wait();
 	my_eeprom::measure_Prox = (eeprom_read_byte(&EEP_MES_PRX) == 'T');
+	
+	eeprom_busy_wait();
+	my_eeprom::start_dt = eeprom_read_dword(&EEP_START_DT); //uint32_t用
 }
 
 //名称を読み込む
