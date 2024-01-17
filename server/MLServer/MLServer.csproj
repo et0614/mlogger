@@ -35,6 +35,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="data\background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\dataTable.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
