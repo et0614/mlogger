@@ -177,6 +177,8 @@ public partial class DeviceSetting : ContentPage
         ent_vel.Text = MLUtility.Logger.Velocity.Interval.ToString();
         cbx_lux.IsToggled = MLUtility.Logger.Illuminance.Measure;
         ent_lux.Text = MLUtility.Logger.Illuminance.Interval.ToString();
+        dpck_start.Date = MLUtility.Logger.StartMeasuringDateTime;
+        tpck_start.Time = MLUtility.Logger.StartMeasuringDateTime.TimeOfDay;
 
         //編集要素の着色をもとに戻す
         resetTextColor();
@@ -281,7 +283,7 @@ public partial class DeviceSetting : ContentPage
 
     //設定コマンドを作成
     string sData = MLogger.MakeChangeMeasuringSettingCommand(
-      ST_DTIME,
+      dpck_start.Date.Add(tpck_start.Time),
       cbx_th.IsToggled, thSpan,
       cbx_glb.IsToggled, glbSpan,
       cbx_vel.IsToggled, velSpan,
@@ -542,9 +544,30 @@ public partial class DeviceSetting : ContentPage
     else if (sender.Equals(ent_lux)) lbl_lux.TextColor = Colors.Red;
   }
 
+  private void dpck_start_DateSelected(object sender, DateChangedEventArgs e)
+  {
+    //日付変更がなければ終了
+    if (dpck_start.Date == MLUtility.Logger.StartMeasuringDateTime) return;
+
+    lbl_stdtime.TextColor = Colors.Red;
+  }
+
+  private void tpck_start_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+  {
+    //時刻変更がなければ終了
+    if (tpck_start == null  || MLUtility.Logger == null || tpck_start.Time == MLUtility.Logger.StartMeasuringDateTime.TimeOfDay) return;
+
+    lbl_stdtime.TextColor = Colors.Red;
+  }
+
   private void resetTextColor()
   {
-    lbl_th.TextColor = lbl_glb.TextColor = lbl_vel.TextColor = lbl_lux.TextColor = Colors.DarkGreen;
+    lbl_th.TextColor = 
+      lbl_glb.TextColor = 
+      lbl_vel.TextColor = 
+      lbl_lux.TextColor = 
+      lbl_stdtime.TextColor = 
+      Colors.DarkGreen;
   }
 
   #endregion

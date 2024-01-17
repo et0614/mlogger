@@ -11,7 +11,7 @@
 
                 <!--測定設定-->
                 <Label Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
-                <Grid Margin="10,5,0,20"
+                <Grid Margin="10,5,0,0"
                   RowDefinitions="40,40,40,Auto"
                   ColumnDefinitions="60,*,80,30">
 
@@ -46,8 +46,20 @@
                         <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="3" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
-
+                    
                 </Grid>
+
+                <!--測定開始日時-->
+                <HorizontalStackLayout Margin="20,5,0,20" HorizontalOptions="End">
+                    <Label x:Name="lbl_stdtime" Text="{x:Static res:MLSResource.DS_StartDTime}" VerticalOptions="Center" Margin="0,0,20,0"/>
+                    <Border Margin="0,0,10,0">
+                        <DatePicker x:Name="dpck_start" Date="1999/01/01" MinimumDate="1980/01/01" MaximumDate="2030/12/31" Format="yyyy/MM/dd" HorizontalOptions="Fill" DateSelected="dpck_start_DateSelected"/>
+                    </Border>
+                    <Border Margin="0,0,0,0">
+                        <TimePicker x:Name="tpck_start" Time="00:00" Format="HH:mm" HorizontalOptions="Fill" PropertyChanged="tpck_start_PropertyChanged"/>
+                    </Border>
+                </HorizontalStackLayout>
+                
                 <!--設定ボタン-->
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="LoadButton_Clicked">
                     <Button.ImageSource>
