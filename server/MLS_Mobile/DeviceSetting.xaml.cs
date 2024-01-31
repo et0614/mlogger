@@ -90,6 +90,7 @@ public partial class DeviceSetting : ContentPage
           Task.Run(() =>
           {
             MLUtility.LoggerSideXBee.SetParameter("ID", ar);
+            MLUtility.LoggerSideXBee.WriteChanges();
           });
         }
         catch { }
@@ -630,6 +631,7 @@ public partial class DeviceSetting : ContentPage
         try
         {
           MLUtility.LoggerSideXBee.SetParameter("D5", ledEnabled ? new byte[] { 4 } : new byte[] { 1 });
+          MLUtility.LoggerSideXBee.WriteChanges(); //Ý’è‚ð”½‰f
           Application.Current.Dispatcher.Dispatch(() =>
           {
             btn_zigled.Text = ledEnabled ? MLSResource.DS_EnableZigLED : MLSResource.DS_DisableZigLED;
