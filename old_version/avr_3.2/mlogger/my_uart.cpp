@@ -36,19 +36,18 @@ bool my_uart::tx_done(void)
 {
 	//本来はここでCTS flowコントロール：
 	//D7-CTSがHighの場合にはXBeeのバッファが17byteしか残っていないのでちょっと待つという処理
-	
 	return (USART0.STATUS & USART_DREIF_bm);
 }
 
 //1文字送信
-void my_uart::send_char(const unsigned char data)
+void my_uart::send_char(const char data)
 {
 	while (!tx_done());
 	USART0.TXDATAL = data;
 }
 
 //文字配列を送信
-void my_uart::send_chars(const unsigned char data[])
+void my_uart::send_chars(const char data[])
 {
 	for(int i = 0; data[i] != '\0'; i++)
 		send_char(data[i]);

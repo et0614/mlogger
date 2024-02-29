@@ -14,6 +14,8 @@ class my_xbee
 
 	//コマンドの最大文字数
 	static const int MAX_CMD_CHAR = 150;
+	
+	static bool IsAPMode;
 
 	/**
 	 * @fn
@@ -46,6 +48,21 @@ class my_xbee
 	 * @return 無し
 	 */
 	static void bltx_chars(const char data[]);
+
+	/**
+	 * @fn
+	 * UART接続先のXBeeにATコマンドを送る
+	 * @param (data) ATコマンド
+	 * @return 無し
+	 */
+	static void send_atcmd(const char data[]);
+	
+	/**
+	 * @fn
+	 * XBeeの設定を初期化する
+	 * @return 初期化済または初期化成功の場合に1
+	 */
+	static bool xbee_setting_initialized();
 	
 	private:
 	
@@ -65,6 +82,8 @@ class my_xbee
 	 * @return 更新後のチェックサム
 	 */
 	static int add_csum(int csum, char nbyte);
+	
+	static void receive_message(char message[]);
 };
 
 #endif /* MY_XBEE_H_ */

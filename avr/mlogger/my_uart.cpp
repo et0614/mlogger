@@ -40,14 +40,14 @@ bool my_uart::tx_done(void)
 }
 
 //1•¶š‘—M
-void my_uart::send_char(const unsigned char data)
+void my_uart::send_char(const char data)
 {
 	while (!tx_done());
 	USART0.TXDATAL = data;
 }
 
 //•¶š”z—ñ‚ğ‘—M
-void my_uart::send_chars(const unsigned char data[])
+void my_uart::send_chars(const char data[])
 {
 	for(int i = 0; data[i] != '\0'; i++)
 		send_char(data[i]);

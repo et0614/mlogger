@@ -35,7 +35,7 @@ class my_uart
 		* @param (data) •¶Žš
 		* @return –³‚µ
 		*/
-		static void send_char(const unsigned char data);
+		static void send_char(const char data);
 
 		/**
 		* @fn
@@ -43,7 +43,7 @@ class my_uart
 		* @param (data) •¶Žš—ñ
 		* @return –³‚µ
 		*/
-		static void send_chars(const unsigned char data[]);
+		static void send_chars(const char data[]);
 };
 
 #endif /* MY_UART_H_ */

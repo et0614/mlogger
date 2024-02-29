@@ -37,11 +37,13 @@ static void autoCalibrateVelocitySensor(void);
 
 static void autoCalibrateTemperatureSensor(void);
 
-static void showLowBattery(void);
+static void showError(short int errNum);
 
 static bool isLowBattery(void);
 
 static void alignLeft(char *str);
+
+static int getNormTime(tm time, unsigned int interval);
 
 //à»â∫ÇÕinlineä÷êî************************************
 

@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.12\r";
+const char VERSION_NUMBER[] = "VER:3.2.14\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -154,7 +154,7 @@ int main(void)
 	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 
 	//電池残量確認
-	if(isLowBattery()) showLowBattery();
+	if(isLowBattery()) showError(1);
 	
 	//スイッチ割り込み設定
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
@@ -176,6 +176,9 @@ int main(void)
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
+	
+	//XBee設定確認
+	if(!my_xbee::xbee_setting_initialized()) showError(2);
 
 	//割り込み再開
 	sei();
@@ -209,7 +212,7 @@ int main(void)
 	//電池が不足時の処理
 	if(initSD) f_mount(NULL, "", 1); //SDカードをアンマウント
 	cli(); //割り込み終了
-	showLowBattery(); //LED表示
+	showError(1); //LED表示
 }
 
 static void initialize_port(void)
@@ -368,12 +371,12 @@ static void solve_command(void)
 		outputToBLE = (command[14]=='t'); //Bluetoothで書き出すか否か
 		outputToSDCard = (command[15]=='t'); //SDカードに書き出すか否か
 		
-		//0秒時点で直ちに一回は計測する。微風速はおかしな値になるが。。。
-		pass_th	= my_eeprom::interval_th;
-		pass_glb = my_eeprom::interval_glb;
-		pass_vel = my_eeprom::interval_vel;
-		pass_ill = my_eeprom::interval_ill;
-		pass_ad1 = my_eeprom::interval_AD1;
+		//きりのよい秒で計測開始
+		pass_th	= getNormTime(lastSavedTime, my_eeprom::interval_th);
+		pass_glb = getNormTime(lastSavedTime, my_eeprom::interval_glb);
+		pass_vel = getNormTime(lastSavedTime, my_eeprom::interval_vel);
+		pass_ill = getNormTime(lastSavedTime, my_eeprom::interval_ill);
+		pass_ad1 = getNormTime(lastSavedTime, my_eeprom::interval_AD1);
 		
 		//ロギング設定をEEPROMに保存
 		my_eeprom::startAuto = command[13]=='e'; //Endlessロギング
@@ -561,6 +564,15 @@ static void solve_command(void)
 		sleep_anemo();
 		calibratingVelocityVoltage = false;
 		my_xbee::bltx_chars("ECV\r");
+	}
+	//現在時刻の更新
+	else if (strncmp(command, "UCT", 3) == 0)
+	{
+		//現在時刻を設定
+		char num[11];
+		num[10] = '\0';
+		strncpy(num, command + 3, 10);
+		currentTime = atol(num);
 	}
 	
 	//コマンドを削除
@@ -1012,15 +1024,27 @@ static bool isLowBattery(void)
 	return 3.3 * 1.1 < vdd;
 }
 
-//低電圧の場合の表示
-static void showLowBattery(void)
-{	
-	while(true)
-	{
-		turnOnLED(); //点灯
-		_delay_ms(1000);
-		turnOffLED(); //消灯
-		_delay_ms(1000);
+//エラー表示
+static void showError(short int errNum)
+{
+	switch(errNum){
+		case 1: //電池不足
+		while(true)
+		{
+			turnOnLED(); //点灯
+			_delay_ms(1000);
+			turnOffLED(); //消灯
+			_delay_ms(1000);
+		}
+		case 2: //XBee設定エラー
+		while(true)
+		{
+			blinkLED(2);
+			turnOnLED(); //点灯
+			_delay_ms(1000);
+			turnOffLED(); //消灯
+			_delay_ms(1000);
+		}
 	}
 }
 
@@ -1038,6 +1062,15 @@ static void alignLeft(char *str) {
 		if (i > 0)
 		memmove(str, str + i, len - i + 1);
 	}
+}
+
+//きりの良い時刻になるように最初の計測時間間隔を調整する
+static int getNormTime(tm time, unsigned int interval)
+{
+	if(interval <= 5) return interval - (5 - time.tm_sec % 5);
+	else if(interval <= 10) return interval - (10 - time.tm_sec % 10);
+	else if(interval <= 30) return interval - (30 - time.tm_sec % 30);
+	else return interval - (60 - time.tm_sec % 60);
 }
 
 //以下はinline関数************************************
