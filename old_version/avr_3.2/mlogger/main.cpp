@@ -199,11 +199,22 @@ int main(void)
 			initSD = (f_mount(fSystem, "", 1) == FR_OK);
 		
 		//スリープモード設定
-		if(logging && !outputToBLE) set_sleep_mode(SLEEP_MODE_PWR_DOWN); //ATmega328PではPWR_SAVE
+		if(logging)
+		{
+			//XBee通信時または電源接続常設モード時はIDLEスリープ
+			if(outputToBLE || my_eeprom::startAuto)
+			{
+				set_sleep_mode(SLEEP_MODE_IDLE);
+				wakeup_xbee();
+			}
+			//電池によるZigbee通信時は省エネ重視でパワーダウン
+			else
+			{
+				set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+				sleep_xbee();
+			}
+		}
 		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
-
-		//Bluetooth通信を除き、ロギング中はXBeeをスリープさせる（XBeeの仕様上、Bluetoothモードのスリープは不可）
-		if(logging && !outputToBLE && !my_eeprom::startAuto) sleep_xbee();
 		
 		//マイコンをスリープさせる
 		sleep_mode();
@@ -573,6 +584,7 @@ static void solve_command(void)
 		num[10] = '\0';
 		strncpy(num, command + 3, 10);
 		currentTime = atol(num);
+		my_xbee::bltx_chars("UCT\r");
 	}
 	
 	//コマンドを削除
