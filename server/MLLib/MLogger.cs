@@ -772,7 +772,7 @@ namespace MLLib
         + (measureGlb ? "t" : "f") + string.Format("{0,5}", intervalGlb)
         + (measureVel ? "t" : "f") + string.Format("{0,5}", intervalVel)
         + (measureIll ? "t" : "f") + string.Format("{0,5}", intervalIll)
-        + String.Format("{0, 10}", MLogger.GetUnixTime(startDTime).ToString("F0")) //UNIX時間を10桁（空白埋め）で送信
+        + String.Format("{0, 10}", GetUnixTime(startDTime).ToString("F0")) //UNIX時間を10桁（空白埋め）で送信
         + (measureGPV1 ? "t" : "f") + string.Format("{0,5}", intervalGPV1)
         + (measureGPV2 ? "t" : "f") + string.Format("{0,5}", intervalGPV2)
         + (measureGPV3 ? "t" : "f") + string.Format("{0,5}", intervalGPV3)
@@ -863,20 +863,6 @@ namespace MLLib
       return "\rLLN\r";
     }
 
-    /// <summary>風速校正開始コマンドをつくる</summary>
-    /// <returns>風速校正開始コマンド</returns>
-    public static string MakeStartCalibratingVoltageCommand()
-    {
-      return "\rSCV\r";
-    }
-
-    /// <summary>風速校正終了コマンドをつくる</summary>
-    /// <returns>風速校正終了コマンド</returns>
-    public static string MakeEndCalibratingVoltageCommand()
-    {
-      return "\rECV\r";
-    }
-
     /// <summary>自動風速校正コマンドをつくる</summary>
     /// <param name="sec">校正時間[sec]</param>
     /// <returns>自動風速校正コマンド</returns>
@@ -891,6 +877,36 @@ namespace MLLib
     public static string MakeAutoTemperatureCalibrationCommand(int sec)
     {
       return "\rCBT" + Math.Max(1, Math.Min(99999, sec)) + "\r";
+    }
+
+    /// <summary>風速校正開始コマンドをつくる</summary>
+    /// <returns>風速校正開始コマンド</returns>
+    public static string MakeStartCalibratingVoltageCommand()
+    {
+      return "\rSCV\r";
+    }
+
+    /// <summary>風速校正終了コマンドをつくる</summary>
+    /// <returns>風速校正終了コマンド</returns>
+    public static string MakeEndCalibratingVoltageCommand()
+    {
+      return "\rECV\r";
+    }
+
+    /// <summary>現在日時更新コマンドをつくる</summary>
+    /// <returns>現在日時更新コマンド</returns>
+    public static string MakeUpdateCurrentTimeCommand()
+    {
+      return MakeUpdateCurrentTimeCommand(DateTime.Now);
+    }
+
+    /// <summary>現在日時更新コマンドをつくる</summary>
+    /// <param name="cTime">現在日時</param>
+    /// <returns>現在日時更新コマンド</returns>
+    public static string MakeUpdateCurrentTimeCommand(DateTime cTime)
+    {
+      return "\rUCT" +
+        String.Format("{0:D10}", GetUnixTime(cTime)) + "\r";
     }
 
     #endregion

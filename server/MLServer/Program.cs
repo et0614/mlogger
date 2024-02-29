@@ -12,6 +12,7 @@ using MLLib;
 using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using XBeeLibrary.Core.Models;
 
 namespace MLServer
 {
@@ -20,7 +21,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.2";
+    private const string VERSION = "1.1.3";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -122,7 +123,22 @@ namespace MLServer
       //子機を探す
       //scanEndDevice();
 
-      while (true) ;
+      //メインループ
+      DateTime prevTime = DateTime.Now;
+      while (true)
+      {
+        //日付変更時に現在時刻を再設定:いまいち有効に機能しない・・・2024.02.29
+        if (prevTime.Day != DateTime.Now.Day)
+        //if (DateTime.Now.Second % 1 == 0)
+        {
+          foreach (string key in mLoggers.Keys)
+            sendCommand(
+              mLoggers[key].LongAddress,
+              MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now));
+        }
+        prevTime = DateTime.Now;
+        Thread.Sleep(1000); //1秒お休みあれ
+      }
     }
 
     private static void showTitle()
@@ -455,6 +471,37 @@ namespace MLServer
         Console.WriteLine(ml.LocalName + ": Can't access to file.");
         return;
       }
+    }
+
+    #endregion
+
+    #region コマンド送信関連の処理
+
+    private static void sendCommand(string longAddress, string command)
+    {
+      ZigBeeDevice xbee = getXBee(longAddress);
+      if (xbee == null) return;
+
+      //メッセージ送信
+      Task.Run(() =>
+      {
+        RemoteXBeeDevice rmdv = xbee.GetNetwork().GetDevice(new XBee64BitAddress(longAddress));
+        try
+        {
+          xbee.SendData(rmdv, Encoding.ASCII.GetBytes(command));
+        }
+        catch { }
+      });
+    }
+
+    /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>
+    /// <param name="address">子機のLongAddress</param>
+    /// <returns>通信用XBee端末</returns>
+    private static ZigBeeDevice getXBee(string address)
+    {
+      foreach (ZigBeeDevice key in coordinators.Keys)
+        if (coordinators[key].longAddress.Contains(address)) return key;
+      return null;
     }
 
     #endregion
