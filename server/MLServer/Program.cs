@@ -123,22 +123,11 @@ namespace MLServer
       //子機を探す
       //scanEndDevice();
 
+      //現在日時更新タスク
+      updateCurrentDateTime();
+
       //メインループ
-      DateTime prevTime = DateTime.Now;
-      while (true)
-      {
-        //日付変更時に現在時刻を再設定:いまいち有効に機能しない・・・2024.02.29
-        if (prevTime.Day != DateTime.Now.Day)
-        //if (DateTime.Now.Second % 1 == 0)
-        {
-          foreach (string key in mLoggers.Keys)
-            sendCommand(
-              mLoggers[key].LongAddress,
-              MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now));
-        }
-        prevTime = DateTime.Now;
-        Thread.Sleep(1000); //1秒お休みあれ
-      }
+      while (true) ;
     }
 
     private static void showTitle()
@@ -475,23 +464,52 @@ namespace MLServer
 
     #endregion
 
-    #region コマンド送信関連の処理
+    #region 現在日時更新関連の処理
+
+    /// <summary>現在時刻を更新するタスク</summary>
+    private static void updateCurrentDateTime()
+    {
+      Task dtUpdateTask = Task.Run(() =>
+      {
+        DateTime prevTime = DateTime.Now;
+        while (true)
+        {
+          //日付変更時に現在時刻を再設定
+          if (prevTime.Day != DateTime.Now.Day)
+          {
+            foreach (string key in mLoggers.Keys)
+            {
+              MLogger ml = mLoggers[key];
+              ml.HasUpdateCurrentTimeReceived = false;
+              int num = 0;
+              //情報が更新されるまで命令を繰り返す
+              while (!ml.HasUpdateCurrentTimeReceived)
+              {
+                try
+                {
+                  sendCommand(ml.LongAddress, MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now));
+                }
+                catch { }
+                Task.Delay(500);
+
+                //3回失敗したら諦める
+                num++;
+                if (3 < num) break;
+              }
+            }
+          }
+          prevTime = DateTime.Now;
+          Thread.Sleep(1000); //1秒お休みあれ
+        }
+      });
+    }
 
     private static void sendCommand(string longAddress, string command)
     {
       ZigBeeDevice xbee = getXBee(longAddress);
       if (xbee == null) return;
-
-      //メッセージ送信
-      Task.Run(() =>
-      {
-        RemoteXBeeDevice rmdv = xbee.GetNetwork().GetDevice(new XBee64BitAddress(longAddress));
-        try
-        {
-          xbee.SendData(rmdv, Encoding.ASCII.GetBytes(command));
-        }
-        catch { }
-      });
+      RemoteXBeeDevice rmdv = xbee.GetNetwork().GetDevice(new XBee64BitAddress(longAddress));
+      xbee.SendData(rmdv, Encoding.ASCII.GetBytes(command));
     }
 
     /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>

@@ -359,7 +359,7 @@ static void append_command(void)
 static void solve_command(void)
 {
 	char* command = (char*)cmdBuff;
-	
+		
 	//チューニング中は指令を受け取らない
 	if(autCalibratingVSensor || autCalibratingTSensor) return;
 	
@@ -1050,13 +1050,13 @@ static void showError(short int errNum)
 		case 1: //電池不足
 			while(true)
 			{
-				blinkRedLED(1)
+				blinkRedLED(1);
 				_delay_ms(2000);
 			}
 		case 2: //XBee設定エラー
 			while(true)
 			{
-				blinkRedLED(2)
+				blinkRedLED(2);
 				_delay_ms(2000);
 			}
 	}

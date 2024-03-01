@@ -124,6 +124,10 @@ namespace MLLib
     /// <summary>温度自動校正イベントを受信したか否かを設定・取得する</summary>
     public bool HasTemperatureAutoCalibrationReceived { get; set; } = false;
 
+    [JsonIgnore]
+    /// <summary>現在日時変更イベントを受信したか否かを設定・取得する</summary>
+    public bool HasUpdateCurrentTimeReceived { get; set; } = false;
+
     #endregion
 
     #region インスタンス変数・プロパティ
@@ -412,118 +416,128 @@ namespace MLLib
       //処理すべきコマンドがなければ終了
       if (!HasCommand) return;
 
-      string cmd = NextCommand.Substring(0, 3);
-      switch (cmd)
+      try
       {
-        //計測値受信
-        case "DTT":
-          CurrentStatus = Status.Measuring;
-          solveDTT();
-          break;
+        string cmd = NextCommand.Substring(0, 3);
+        switch (cmd)
+        {
+          //計測値受信
+          case "DTT":
+            CurrentStatus = Status.Measuring;
+            solveDTT();
+            break;
 
-        //設定値変更
-        case "CMS":
-          solveMS();
-          break;
+          //設定値変更
+          case "CMS":
+            solveMS();
+            break;
 
-        //設定値受信
-        case "LMS":
-          solveMS();
-          break;
+          //設定値受信
+          case "LMS":
+            solveMS();
+            break;
 
-        //Dummy
-        case "DMY":
-          //未実装
-          break;
+          //Dummy
+          case "DMY":
+            //未実装
+            break;
 
-        //コマンド待ち
-        case "WFC":
-          //初期化済の場合
-          if (CurrentStatus == Status.Initializing && VersionLoaded && MeasuringSettingLoaded)
-            CurrentStatus = Status.WaitingForCommand;
-          //計測中が解除された場合
-          else if (CurrentStatus == Status.Measuring || CurrentStatus == Status.StartMeasuring)
-            CurrentStatus = Status.WaitingForCommand;
+          //コマンド待ち
+          case "WFC":
+            //初期化済の場合
+            if (CurrentStatus == Status.Initializing && VersionLoaded && MeasuringSettingLoaded)
+              CurrentStatus = Status.WaitingForCommand;
+            //計測中が解除された場合
+            else if (CurrentStatus == Status.Measuring || CurrentStatus == Status.StartMeasuring)
+              CurrentStatus = Status.WaitingForCommand;
 
-          //校正完了とみなす
-          VelocityCalibrationTime = TemperatureCalibrationTime = 0;
+            //校正完了とみなす
+            VelocityCalibrationTime = TemperatureCalibrationTime = 0;
 
-          //イベント通知
-          WaitingForCommandMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-          break;
+            //イベント通知
+            WaitingForCommandMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+            break;
 
-        //計測開始
-        case "STL":
-          CurrentStatus = Status.StartMeasuring;
+          //計測開始
+          case "STL":
+            CurrentStatus = Status.StartMeasuring;
 
-          //イベント通知
-          StartMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-          HasStartMeasuringMessageReceived = true;
-          break;
+            //イベント通知
+            StartMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+            HasStartMeasuringMessageReceived = true;
+            break;
 
-        //バージョン受信
-        case "VER":
-          solveVER();
-          break;
+          //バージョン受信
+          case "VER":
+            solveVER();
+            break;
 
-        //補正係数設定
-        case "SCF":
-          solveCF();
-          break;
+          //補正係数設定
+          case "SCF":
+            solveCF();
+            break;
 
-        //補正係数受信
-        case "LCF":
-          solveCF();
-          break;
+          //補正係数受信
+          case "LCF":
+            solveCF();
+            break;
 
-        //ロギング終了命令
-        case "ENL":
-          //イベント通知
-          EndMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-          HasEndMeasuringMessageReceived = true;
-          break;
+          //ロギング終了命令
+          case "ENL":
+            //イベント通知
+            EndMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+            HasEndMeasuringMessageReceived = true;
+            break;
 
-        //名称受信
-        case "LLN":
-          solveLN();
-          break;
+          //名称受信
+          case "LLN":
+            solveLN();
+            break;
 
-        //名称変更
-        case "CLN":
-          solveLN();
-          break;
+          //名称変更
+          case "CLN":
+            solveLN();
+            break;
 
-        //風速電圧校正開始
-        case "SCV":
-          Velocity.LastMeasureTime = DateTime.Now;
-          VelocityVoltage = double.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
-          HasStartCalibratingVoltageMessageReceived = true;
-          CalibratingVoltageReceivedEvent?.Invoke(this, EventArgs.Empty);
-          break;
+          //風速電圧校正開始
+          case "SCV":
+            Velocity.LastMeasureTime = DateTime.Now;
+            VelocityVoltage = double.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+            HasStartCalibratingVoltageMessageReceived = true;
+            CalibratingVoltageReceivedEvent?.Invoke(this, EventArgs.Empty);
+            break;
 
-        //風速電圧校正終了
-        case "ECV":
-          HasEndCalibratingVoltageMessageReceived = true;
-          EndCalibratingVoltageMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-          break;
+          //風速電圧校正終了
+          case "ECV":
+            HasEndCalibratingVoltageMessageReceived = true;
+            EndCalibratingVoltageMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
+            break;
 
-        //風速自動校正
-        case "CBV":
-          VelocityCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
-          VelocityAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
-          HasVelocityAutoCalibrationReceived = true;
-          break;
+          //風速自動校正
+          case "CBV":
+            VelocityCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+            VelocityAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
+            HasVelocityAutoCalibrationReceived = true;
+            break;
 
-        //温度自動校正
-        case "CBT":
-          TemperatureCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
-          TemperatureAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
-          HasTemperatureAutoCalibrationReceived = true;
-          break;
+          //温度自動校正
+          case "CBT":
+            TemperatureCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+            TemperatureAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
+            HasTemperatureAutoCalibrationReceived = true;
+            break;
+
+          case "UCT":
+            HasUpdateCurrentTimeReceived = true;
+            break;
+        }
       }
-
-      //次のコマンドへ移行
-      SkipCommand();
+      catch { }
+      finally
+      {
+        //エラーが置きてもとにかく次のコマンドへ移行
+        SkipCommand();
+      }
     }
 
     /// <summary>測定値受信コマンド（DTT）を処理する</summary>
