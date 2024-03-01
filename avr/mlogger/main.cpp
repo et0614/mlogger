@@ -1050,19 +1050,14 @@ static void showError(short int errNum)
 		case 1: //電池不足
 			while(true)
 			{
-				turnOnRedLED(); //点灯
-				_delay_ms(1000);
-				turnOffRedLED(); //消灯
-				_delay_ms(1000);
+				blinkRedLED(1)
+				_delay_ms(2000);
 			}
 		case 2: //XBee設定エラー
 			while(true)
 			{
-				blinkRedLED(2);
-				turnOnRedLED(); //点灯
-				_delay_ms(1000);
-				turnOffRedLED(); //消灯
-				_delay_ms(1000);
+				blinkRedLED(2)
+				_delay_ms(2000);
 			}
 	}
 }
