@@ -176,11 +176,11 @@ bool my_xbee::xbee_setting_initialized(){
 		hasChanged = true;
 	}
 	
-	//d5はZigbee通信状況のLED表示フラグOff(0)
+	//d5はZigbee通信状況のLED表示をOff（Out low:4)に設定。
 	my_uart::send_chars("atd5\r");
 	my_xbee::receive_message(message);
 	if(strcmp(message, "0") != 0) {
-		my_uart::send_chars("atd50\r");
+		my_uart::send_chars("atd54\r");
 		my_xbee::receive_message(message);
 		if(strcmp(message, "OK") != 0) return 0;
 		hasChanged = true;
