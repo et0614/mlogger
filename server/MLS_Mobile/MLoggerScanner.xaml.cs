@@ -94,8 +94,7 @@ public partial class MLoggerScanner : ContentPage
             break;
           }
         }
-        if (newItem)
-          MLXBees.Add(ev.Device);
+        if (newItem) MLXBees.Add(ev.Device);
       }
     };
 

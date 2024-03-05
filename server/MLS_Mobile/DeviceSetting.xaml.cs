@@ -164,6 +164,7 @@ public partial class DeviceSetting : ContentPage
         }
         catch { }
         await Task.Delay(500);
+        if (MLUtility.Logger == null) return; //接続解除時には終了
       }
 
       //更新された情報を反映
@@ -203,6 +204,7 @@ public partial class DeviceSetting : ContentPage
         }
         catch { }
         await Task.Delay(500);
+        if (MLUtility.Logger == null) return; //接続解除時には終了
       }
 
       //更新された情報を反映
@@ -239,6 +241,7 @@ public partial class DeviceSetting : ContentPage
         }
         catch { }
         await Task.Delay(500);
+        if (MLUtility.Logger == null) return; //接続解除時には終了
       }
 
       //更新された情報を反映
@@ -256,6 +259,7 @@ public partial class DeviceSetting : ContentPage
     MLUtility.Logger.HasLoggerNameReceived = false;
     Task.Run(async () =>
     {
+      if (MLUtility.Logger == null) return; //接続解除時には終了
       while (!MLUtility.Logger.HasLoggerNameReceived)
       {
         try

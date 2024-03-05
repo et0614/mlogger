@@ -315,9 +315,9 @@
 
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="5.2.0" />
+	  <PackageReference Include="DigiIoT.Maui" Version="1.0.0" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.0" />
 	  <PackageReference Include="Mopups" Version="1.1.1" />
-	  <PackageReference Include="Plugin.BLE" Version="3.0.0" />
 	  <PackageReference Include="Popolo" Version="2.3.1.65" />
 	  <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
@@ -325,8 +325,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
-	  <ProjectReference Include="..\XBeeLibrary.Core\XBeeLibrary.Core.csproj" />
-	  <ProjectReference Include="..\xbeelibrary.xamarin\XBeeLibrary.Xamarin.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

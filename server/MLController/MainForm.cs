@@ -200,11 +200,7 @@ namespace MLController
 
       //データ格納用のディレクトリを作成
       dataDirectory = AppDomain.CurrentDomain.BaseDirectory + "data";
-      string s_cs = dataDirectory + Path.DirectorySeparatorChar + "style.css";
-      string l_js = dataDirectory + Path.DirectorySeparatorChar + "list.js";
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
-      if (!File.Exists(s_cs)) File.WriteAllText(s_cs, Properties.Resources.style_css);
-      if (!File.Exists(l_js)) File.WriteAllText(l_js, Properties.Resources.list_js);
 
       //XBee端末切断状態から開始
       disconnectXBee();

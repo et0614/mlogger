@@ -1,10 +1,12 @@
 ﻿using Plugin.BLE.Abstractions.Contracts;
 using System.Text;
 
-using XBeeLibrary.Xamarin;
+//using XBeeLibrary.Xamarin;
 using XBeeLibrary.Core.Events.Relay;
 
 using MLLib;
+using DigiIoT.Maui.Devices.XBee;
+using DigiIoT.Maui.Devices;
 
 namespace MLS_Mobile
 {
@@ -28,7 +30,7 @@ namespace MLS_Mobile
     #region staticプロパティ
 
     /// <summary>ロガー付属のXBeeを取得する</summary>
-    public static ZigBeeBLEDevice LoggerSideXBee { get; private set; }
+    public static XBeeBLEDevice LoggerSideXBee { get; private set; }
 
     /// <summary>ロガーを取得する</summary>
     public static MLogger Logger { get; private set; }
@@ -45,11 +47,11 @@ namespace MLS_Mobile
       EndXBeeCommunication();
 
       if (DeviceInfo.Current.Platform == DevicePlatform.Android)
-        LoggerSideXBee = new ZigBeeBLEDevice(device.Id.ToString(), ML_PASS);
-      else LoggerSideXBee = new ZigBeeBLEDevice(device, ML_PASS);
+        LoggerSideXBee = new XBeeBLEDevice(device.Id.ToString(), ML_PASS);
+      else LoggerSideXBee = new XBeeBLEDevice(device, ML_PASS);
 
       //XBeeをOpen
-      LoggerSideXBee.Open();
+      LoggerSideXBee.Connect();
 
       //イベント処理用ロガーを用意
       Logger = new MLogger(LoggerSideXBee.GetAddressString());
@@ -69,14 +71,14 @@ namespace MLS_Mobile
         LoggerSideXBee.SerialDataReceived -= LoggerSideXBee_SerialDataReceived;
 
         //開いていれば別スレッドで閉じる
-        if (LoggerSideXBee.IsOpen)
+        if (LoggerSideXBee.IsConnected)
         {
-          ZigBeeBLEDevice clsBee = LoggerSideXBee;
+          XBeeBLEDevice clsBee = LoggerSideXBee;
           Task.Run(() =>
           {
             try
             {
-              clsBee.Close();
+              clsBee.Disconnect();
             }
             catch { }
           });
