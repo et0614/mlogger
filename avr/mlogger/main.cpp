@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.12\r";
+const char VERSION_NUMBER[] = "VER:3.3.13\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -302,10 +302,10 @@ ISR(USART0_RXC_vect)
 		if(framePosition == 1); //データ長上位バイト（パケットの制限から必ず0）
 		else if(framePosition == 2) //データ長下位バイト
 			frameSize = (int)dat + 3;
-		else if(framePosition == 3 && dat != 0x90) //0x90以外のコマンドの場合には無視//この処理、問題あり
+		else if(framePosition == 3) //コマンドID
 		{
 			if(dat == 0x90) xbeeOffset = 14; //ZigBee Recieve Packetの場合のオフセット
-			else if(dat == 0xAD) xbeeOffset = 4; //User Data Relayの場合のオフセット
+			else if(dat == 0xAD) xbeeOffset = 4; //User Data Relay (Bluetooth)の場合のオフセット
 		}
 		else if(framePosition <= xbeeOffset); //受信オプションなどは無視
 		else
@@ -1081,6 +1081,7 @@ static void alignLeft(char *str) {
 //きりの良い時刻になるように最初の計測時間間隔を調整する
 static int getNormTime(tm time, unsigned int interval)
 {	
+	if(interval == 1) return interval; //1secの場合には直ちに計測
 	if(interval <= 5) return interval - (5 - time.tm_sec % 5);
 	else if(interval <= 10) return interval - (10 - time.tm_sec % 10);
 	else if(interval <= 30) return interval - (30 - time.tm_sec % 30);

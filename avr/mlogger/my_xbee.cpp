@@ -84,7 +84,7 @@ void my_xbee::bl_chars(const char data[])
 	my_uart::send_char((char)((cl + 3) & 0xff));			//データ長の下位バイト
 	
 	//ここからチェックサム加算*************
-	my_uart::send_char(0x2D); //フレーム type（DataRelayは0x2D）
+	my_uart::send_char(0x2D); //コマンドID（DataRelayは0x2D）
 	chkSum = add_csum(chkSum, 0x2D);
 	
 	my_uart::send_char(0x00); //フレームID
