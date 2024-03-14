@@ -1,12 +1,31 @@
-using XBeeLibrary.Core.IO;
+using Microsoft.Extensions.Logging;
+using MLLib;
 
 namespace MLS_Mobile;
 
+[QueryProperty(nameof(Logger), "mLogger")]
 public partial class VelocityTuner : ContentPage
 {
   private bool countDownStarted = false;
 
   private int countDownTime { get; set; } = 30;
+
+  //データを受信するMLogger
+  private MLogger _mLogger;
+
+  /// <summary>データを受信するMLoggerを設定・取得する</summary>
+  public MLogger Logger
+  {
+    get
+    {
+      return _mLogger;
+    }
+    set
+    {
+      _mLogger = value;
+      //initInfo();
+    }
+  }
 
   public VelocityTuner()
 	{
@@ -50,7 +69,7 @@ public partial class VelocityTuner : ContentPage
     DeviceDisplay.Current.KeepScreenOn = true;
 
     //MLoggerイベント登録
-    MLUtility.Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+    Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
   }
 
   protected override void OnDisappearing()
@@ -61,7 +80,7 @@ public partial class VelocityTuner : ContentPage
     DeviceDisplay.Current.KeepScreenOn = false;
 
     //MLoggerイベント解除
-    MLUtility.Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+    Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   #endregion
@@ -74,7 +93,7 @@ public partial class VelocityTuner : ContentPage
 
     Application.Current.Dispatcher.Dispatch(() =>
     {
-      velLabel.Text = MLUtility.Logger.VelocityVoltage.ToString("F3");
+      velLabel.Text = Logger.VelocityVoltage.ToString("F3");
     });
   }
 

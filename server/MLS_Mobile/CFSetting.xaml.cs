@@ -3,16 +3,40 @@ namespace MLS_Mobile;
 using System.Text;
 using System.Threading.Tasks;
 
+using DigiIoT.Maui.Devices.XBee;
+
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 
+[QueryProperty(nameof(Logger), "mLogger")]
+[QueryProperty(nameof(ConnectedXBee), "xbee")]
 public partial class CFSetting : ContentPage
 {
 
   #region インスタンス変数・プロパティ
 
   private bool isEdited = false;
+
+  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
+  public XBeeBLEDevice ConnectedXBee { get; set; }
+
+  //データを受信するMLogger
+  private MLogger _mLogger;
+
+  /// <summary>データを受信するMLoggerを設定・取得する</summary>
+  public MLogger Logger
+  {
+    get
+    {
+      return _mLogger;
+    }
+    set
+    {
+      _mLogger = value;
+      //initInfo();
+    }
+  }
 
   #endregion
 
@@ -33,6 +57,11 @@ public partial class CFSetting : ContentPage
     lbl_lux.Text = MLSResource.Illuminance;
 
     vel_voltage.Text = MLSResource.CF_VelocityVoltage;
+  }
+
+  protected override void OnAppearing()
+  {
+    base.OnAppearing();
 
     applyCorrectionFactors();
   }
@@ -161,7 +190,7 @@ public partial class CFSetting : ContentPage
 
   private void saveCorrectionFactors(string command)
   {
-    MLUtility.Logger.HasCorrectionFactorsReceived = false;
+    Logger.HasCorrectionFactorsReceived = false;
 
     //インジケータ表示
     showIndicator(MLSResource.CF_Setting);
@@ -171,7 +200,7 @@ public partial class CFSetting : ContentPage
       try
       {
         int tryNum = 0;
-        while (!MLUtility.Logger.HasCorrectionFactorsReceived)
+        while (!Logger.HasCorrectionFactorsReceived)
         {
           //5回失敗したらエラー表示
           if (5 <= tryNum)
@@ -185,7 +214,7 @@ public partial class CFSetting : ContentPage
           tryNum++;
 
           //開始コマンドを送信
-          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
+          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
 
           await Task.Delay(500);
         }
@@ -210,7 +239,7 @@ public partial class CFSetting : ContentPage
 
   private void loadCorrectionFactors()
   {
-    MLUtility.Logger.HasCorrectionFactorsReceived = false;
+    Logger.HasCorrectionFactorsReceived = false;
 
     //インジケータ表示
     showIndicator(MLSResource.CF_Setting);
@@ -220,7 +249,7 @@ public partial class CFSetting : ContentPage
       try
       {
         int tryNum = 0;
-        while (!MLUtility.Logger.HasCorrectionFactorsReceived)
+        while (!Logger.HasCorrectionFactorsReceived)
         {
           //5回失敗したらエラー表示
           if (5 <= tryNum)
@@ -234,7 +263,7 @@ public partial class CFSetting : ContentPage
           tryNum++;
 
           //開始コマンドを送信
-          MLUtility.LoggerSideXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
+          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
 
           await Task.Delay(500);
         }
@@ -259,21 +288,21 @@ public partial class CFSetting : ContentPage
 
   private void applyCorrectionFactors()
   {
-    cA_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
-    cB_dbt.Text = MLUtility.Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
+    cA_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
+    cB_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
 
-    cA_hmd.Text = MLUtility.Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
-    cB_hmd.Text = MLUtility.Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
+    cA_hmd.Text = Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
+    cB_hmd.Text = Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
 
-    cA_glb.Text = MLUtility.Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
-    cB_glb.Text = MLUtility.Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
+    cA_glb.Text = Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
+    cB_glb.Text = Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
 
-    cA_vel.Text = MLUtility.Logger.Velocity.CorrectionFactorA.ToString("F3");
-    cB_vel.Text = MLUtility.Logger.Velocity.CorrectionFactorB.ToString("F3");
-    vel_0V.Text = MLUtility.Logger.VelocityMinVoltage.ToString("F3");
+    cA_vel.Text = Logger.Velocity.CorrectionFactorA.ToString("F3");
+    cB_vel.Text = Logger.Velocity.CorrectionFactorB.ToString("F3");
+    vel_0V.Text = Logger.VelocityMinVoltage.ToString("F3");
 
-    cA_lux.Text = MLUtility.Logger.Illuminance.CorrectionFactorA.ToString("F3");
-    cB_lux.Text = MLUtility.Logger.Illuminance.CorrectionFactorB.ToString("F0");
+    cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
+    cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");
 
     resetLabelColor();
 

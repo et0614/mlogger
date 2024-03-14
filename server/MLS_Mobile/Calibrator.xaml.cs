@@ -1,9 +1,12 @@
+using DigiIoT.Maui.Devices.XBee;
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using System.Text;
 
 namespace MLS_Mobile;
 
+[QueryProperty(nameof(Logger), "mLogger")]
+[QueryProperty(nameof(ConnectedXBee), "xbee")]
 public partial class Calibrator : ContentPage
 {
 
@@ -29,6 +32,25 @@ public partial class Calibrator : ContentPage
 
   /// <summary>風速電圧リスト[V]</summary>
   private double[] velVols = new double[AVE_TIME];
+
+  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
+  public XBeeBLEDevice ConnectedXBee { get; set; }
+
+  //データを受信するMLogger
+  private MLogger _mLogger;
+
+  /// <summary>データを受信するMLoggerを設定・取得する</summary>
+  public MLogger Logger
+  {
+    get
+    {
+      return _mLogger;
+    }
+    set
+    {
+      _mLogger = value;
+    }
+  }
 
   #endregion
 
@@ -78,8 +100,8 @@ public partial class Calibrator : ContentPage
   {
     base.OnAppearing();
 
-    MLUtility.Logger.CalibratingVoltageReceivedEvent += Logger_CalibratingVoltageReceivedEvent;
-    MLUtility.Logger.EndCalibratingVoltageMessageReceivedEvent += Logger_EndCalibratingVoltageMessageReceivedEvent;
+    Logger.CalibratingVoltageReceivedEvent += Logger_CalibratingVoltageReceivedEvent;
+    Logger.EndCalibratingVoltageMessageReceivedEvent += Logger_EndCalibratingVoltageMessageReceivedEvent;
   }
 
   protected override void OnDisappearing()
@@ -90,12 +112,12 @@ public partial class Calibrator : ContentPage
     if (calibratingVoltage)
       Task.Run(() =>
       {
-        MLUtility.LoggerSideXBee.SendSerialData
+        ConnectedXBee.SendSerialData
         (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
       });
 
-    MLUtility.Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
-    MLUtility.Logger.EndCalibratingVoltageMessageReceivedEvent -= Logger_EndCalibratingVoltageMessageReceivedEvent;
+    Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
+    Logger.EndCalibratingVoltageMessageReceivedEvent -= Logger_EndCalibratingVoltageMessageReceivedEvent;
   }
 
   private void Logger_CalibratingVoltageReceivedEvent(object sender, EventArgs e)
@@ -109,7 +131,7 @@ public partial class Calibrator : ContentPage
 
       //風速リスト初期化
       for(int i=0;i<AVE_TIME;i++)
-        velVols[i] = MLUtility.Logger.VelocityVoltage;
+        velVols[i] = Logger.VelocityVoltage;
 
       Application.Current.Dispatcher.Dispatch(() =>
       {
@@ -129,17 +151,17 @@ public partial class Calibrator : ContentPage
       aveVol += velVols[i];
       velVols[i] = velVols[i + 1];
     }
-    aveVol += MLUtility.Logger.VelocityVoltage;
-    velVols[AVE_TIME - 1] = MLUtility.Logger.VelocityVoltage;
+    aveVol += Logger.VelocityVoltage;
+    velVols[AVE_TIME - 1] = Logger.VelocityVoltage;
     aveVol /= AVE_TIME;
 
     //電圧表示を更新
     Application.Current.Dispatcher.Dispatch(() =>
     {
-      double velV = MLUtility.Logger.VelocityVoltage;
-      velLabel.Text = MLUtility.Logger.ConvertVelocityVoltage(velV).ToString("F2") + " m/s";
+      double velV = Logger.VelocityVoltage;
+      velLabel.Text = Logger.ConvertVelocityVoltage(velV).ToString("F2") + " m/s";
       velVLabel.Text = "(" + velV.ToString("F3") + " V)";
-      aveVelLabel.Text = MLUtility.Logger.ConvertVelocityVoltage(aveVol).ToString("F2") + " m/s";
+      aveVelLabel.Text = Logger.ConvertVelocityVoltage(aveVol).ToString("F2") + " m/s";
       aveVelVLabel.Text = "(" + aveVol.ToString("F3") + " V)";
     });
   }
@@ -175,8 +197,8 @@ public partial class Calibrator : ContentPage
       try
       {
         int tryNum = 0;
-        MLUtility.Logger.HasCorrectionFactorsReceived = false;
-        while (!MLUtility.Logger.HasCorrectionFactorsReceived)
+        Logger.HasCorrectionFactorsReceived = false;
+        while (!Logger.HasCorrectionFactorsReceived)
         {
           //5回失敗したらエラー表示
           if (5 <= tryNum)
@@ -190,7 +212,7 @@ public partial class Calibrator : ContentPage
           tryNum++;
 
           //開始コマンドを送信
-          MLUtility.LoggerSideXBee.SendSerialData
+          ConnectedXBee.SendSerialData
           (Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
 
           await Task.Delay(500);
@@ -199,7 +221,9 @@ public partial class Calibrator : ContentPage
         //開始に成功したらページ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          Shell.Current.GoToAsync(nameof(CFSetting));
+          Shell.Current.GoToAsync(nameof(CFSetting),
+            new Dictionary<string, object> { { "mLogger", Logger }, { "xbee", ConnectedXBee } }
+            );
         });
       }
       catch { }
@@ -227,8 +251,8 @@ public partial class Calibrator : ContentPage
       try
       {
         int tryNum = 0;
-        MLUtility.Logger.HasTemperatureAutoCalibrationReceived = false;
-        while (!MLUtility.Logger.HasTemperatureAutoCalibrationReceived)
+        Logger.HasTemperatureAutoCalibrationReceived = false;
+        while (!Logger.HasTemperatureAutoCalibrationReceived)
         {
           //5回失敗したらエラー表示
           if (5 <= tryNum)
@@ -243,7 +267,7 @@ public partial class Calibrator : ContentPage
 
           //開始コマンドを送信
           int sec = TMP_CAL_TIMES[tmpPicker.SelectedIndex] * 3600;
-          MLUtility.LoggerSideXBee.SendSerialData
+          ConnectedXBee.SendSerialData
           (Encoding.ASCII.GetBytes(MLogger.MakeAutoTemperatureCalibrationCommand(sec)));
 
           await Task.Delay(500);
@@ -281,8 +305,8 @@ public partial class Calibrator : ContentPage
       try
       {
         int tryNum = 0;
-        MLUtility.Logger.HasVelocityAutoCalibrationReceived = false;
-        while (!MLUtility.Logger.HasVelocityAutoCalibrationReceived)
+        Logger.HasVelocityAutoCalibrationReceived = false;
+        while (!Logger.HasVelocityAutoCalibrationReceived)
         {
           //5回失敗したらエラー表示
           if (5 <= tryNum)
@@ -297,7 +321,7 @@ public partial class Calibrator : ContentPage
 
           //開始コマンドを送信
           int sec = VEL_CAL_TIMES[velPicker.SelectedIndex] * 60;
-          MLUtility.LoggerSideXBee.SendSerialData
+          ConnectedXBee.SendSerialData
           (Encoding.ASCII.GetBytes(MLogger.MakeAutoVelocityCalibrationCommand(sec)));
 
           await Task.Delay(500);
@@ -339,8 +363,8 @@ public partial class Calibrator : ContentPage
         //校正中ならば停止
         if (calibratingVoltage)
         {
-          MLUtility.Logger.HasEndCalibratingVoltageMessageReceived = false;
-          while (!MLUtility.Logger.HasEndCalibratingVoltageMessageReceived)
+          Logger.HasEndCalibratingVoltageMessageReceived = false;
+          while (!Logger.HasEndCalibratingVoltageMessageReceived)
           {
             //5回失敗したらエラー表示
             int tryNum = 0;
@@ -355,7 +379,7 @@ public partial class Calibrator : ContentPage
             tryNum++;
 
             //終了コマンドを送信
-            MLUtility.LoggerSideXBee.SendSerialData
+            ConnectedXBee.SendSerialData
             (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
 
             await Task.Delay(500);
@@ -364,8 +388,8 @@ public partial class Calibrator : ContentPage
         //非校正中ならば開始
         else 
         {
-          MLUtility.Logger.HasStartCalibratingVoltageMessageReceived = false;
-          while (!MLUtility.Logger.HasStartCalibratingVoltageMessageReceived)
+          Logger.HasStartCalibratingVoltageMessageReceived = false;
+          while (!Logger.HasStartCalibratingVoltageMessageReceived)
           {
             //5回失敗したらエラー表示
             int tryNum = 0;
@@ -380,7 +404,7 @@ public partial class Calibrator : ContentPage
             tryNum++;
 
             //開始コマンドを送信
-            MLUtility.LoggerSideXBee.SendSerialData
+            ConnectedXBee.SendSerialData
             (Encoding.ASCII.GetBytes(MLogger.MakeStartCalibratingVoltageCommand()));
 
             await Task.Delay(500);

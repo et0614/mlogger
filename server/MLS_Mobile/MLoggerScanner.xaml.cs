@@ -9,16 +9,26 @@ using Plugin.BLE.Abstractions.Contracts;
 
 using MLS_Mobile.Resources.i18n;
 using System.Windows.Input;
+using DigiIoT.Maui.Devices.XBee;
+using MLLib;
+using System.Text;
 
 public partial class MLoggerScanner : ContentPage
 {
 
   #region インスタンス変数・プロパティ・定数宣言
 
+  /// <summary>MLogger付属のXBeeのパスワード</summary>
+  private const string ML_PASS = "ml_pass";
+
   private bool bleChecked = false;
 
   /// <summary>XBeeを探索する時間[msec]</summary>
   private const int SCAN_TIME = 1000;
+
+  private XBeeBLEDevice connectedXBee;
+
+  private MLogger mLogger;
 
   /// <summary>MLogger搭載のXBeeのリスト</summary>
   public ObservableCollection<IDevice> MLXBees { get; private set; } = new ObservableCollection<IDevice>();
@@ -64,7 +74,7 @@ public partial class MLoggerScanner : ContentPage
   private void scanXBees()
   {
     //接続済みのXBeeがある場合には解除
-    MLUtility.EndXBeeCommunication();
+    endXBeeCommunication();
 
     //Bluetoothを用意
     IBluetoothLE bluetoothLE = CrossBluetoothLE.Current;
@@ -120,12 +130,14 @@ public partial class MLoggerScanner : ContentPage
     {
       try
       {
-        MLUtility.StartXBeeCommunication(selectedXBee);
+        startXBeeCommunication(selectedXBee);
 
         //Openに成功したら設定ページへ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          Shell.Current.GoToAsync(nameof(DeviceSetting));
+          Shell.Current.GoToAsync(nameof(DeviceSetting),
+              new Dictionary<string, object> { { "mLogger", mLogger }, { "xbee", connectedXBee } }
+              );
         });
       }
       catch (Exception bex)
@@ -148,6 +160,77 @@ public partial class MLoggerScanner : ContentPage
   }
 
   #endregion
+
+  #region XBee通信関連の処理
+
+  /// <summary>MLoggerのXBeeと接続する</summary>
+  /// <param name="device"></param>
+  private void startXBeeCommunication(IDevice device)
+  {
+    //通信中のXBeeがある場合は接続を閉じる
+    endXBeeCommunication();
+
+    if (DeviceInfo.Current.Platform == DevicePlatform.Android)
+      connectedXBee = new XBeeBLEDevice(device.Id.ToString(), ML_PASS);
+    else connectedXBee = new XBeeBLEDevice(device, ML_PASS);
+
+    //XBeeをOpen
+    connectedXBee.Connect();
+
+    //イベント処理用ロガーを用意
+
+    mLogger = new MLogger(connectedXBee.GetAddressString());
+    mLogger.LocalName = device.Name;
+
+    //イベント登録      
+    connectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
+  }
+
+  private void ConnectedXBee_SerialDataReceived
+    (object sender, XBeeLibrary.Core.Events.Relay.SerialDataReceivedEventArgs e)
+  {
+    mLogger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
+
+    //コマンド処理
+    while (mLogger.HasCommand)
+    {
+      try
+      {
+        mLogger.SolveCommand();
+      }
+      catch { }
+    }
+  }
+
+  /// <summary>MLoggerのXbeeとの接続を解除する</summary>
+  private void endXBeeCommunication()
+  {
+    //通信中のXBeeがある場合は接続を閉じる
+    if (connectedXBee != null)
+    {
+      //イベントを解除する
+      connectedXBee.SerialDataReceived -= ConnectedXBee_SerialDataReceived;
+
+      //開いていれば別スレッドで閉じる
+      if (connectedXBee.IsConnected)
+      {
+        XBeeBLEDevice clsBee = connectedXBee;
+        Task.Run(() =>
+        {
+          try
+          {
+            clsBee.Disconnect();
+          }
+          catch { }
+        });
+      }
+    }
+
+    mLogger = null;
+  }
+
+  #endregion
+
 
   private async Task checkBLEPermission()
   {

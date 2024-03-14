@@ -2,13 +2,44 @@ namespace MLS_Mobile;
 
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
+using MLLib;
 
+[QueryProperty(nameof(Logger), "mLogger")]
 [QueryProperty(nameof(CloValue), "CloValue")]
 [QueryProperty(nameof(MetValue), "MetValue")]
 public partial class DataReceive : ContentPage
 {
 
   #region インスタンス変数・プロパティ
+
+  //データを受信するMLogger
+  private MLogger _mLogger;
+
+  /// <summary>データを受信するMLoggerを設定・取得する</summary>
+  public MLogger Logger
+  {
+    get
+    {
+      return _mLogger;
+    }
+    set
+    {
+      //登録済みのイベントは解除
+      if(_mLogger != null)
+        Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+
+      _mLogger = value;
+
+      this.Title = _mLogger.LocalName;
+
+      //Clo値,代謝量初期化
+      CloValue = _mLogger.CloValue;
+      MetValue = _mLogger.MetValue;
+
+      //MLoggerイベント登録
+      _mLogger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+    }
+  }
 
   /// <summary>Clo値を設定・取得する</summary>
   public double CloValue
@@ -29,23 +60,14 @@ public partial class DataReceive : ContentPage
     BindingContext = this;
 
     cloTitle.Text = MLSResource.ClothingUnit + " [clo]";
-    metTitle.Text = MLSResource.MetabolicUnit + " [met]";
-
-    this.Title = MLUtility.Logger.LocalName;
-
-    //Clo値,代謝量初期化
-    CloValue = MLUtility.Logger.CloValue;
-    MetValue = MLUtility.Logger.MetValue;
-
-    //MLoggerイベント登録
-    MLUtility.Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+    metTitle.Text = MLSResource.MetabolicUnit + " [met]";  
   }
 
-  /// <summary>デストラクタ</summary>
+  /// <summary>でコンストラクタ</summary>
   ~DataReceive()
   {
-    //MLoggerイベント解除
-    MLUtility.Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+    if (Logger != null)
+      Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   #endregion
@@ -60,8 +82,11 @@ public partial class DataReceive : ContentPage
 
   private void slider_ValueChanged(object sender, ValueChangedEventArgs e)
   {
-    MLUtility.Logger.MetValue = metSlider.Value;
-    MLUtility.Logger.CloValue = cloSlider.Value;
+    if (Logger != null)
+    {
+      Logger.MetValue = metSlider.Value;
+      Logger.CloValue = cloSlider.Value;
+    }    
   }
 
   //活動量設定ボタンクリック時の処理
@@ -101,35 +126,35 @@ public partial class DataReceive : ContentPage
   {
     Application.Current.Dispatcher.Dispatch(() =>
     {
-      val_tmp.Text = MLUtility.Logger.DrybulbTemperature.LastValue.ToString("F1");
-      val_hmd.Text = MLUtility.Logger.RelativeHumdity.LastValue.ToString("F1");
-      val_glb.Text = MLUtility.Logger.GlobeTemperature.LastValue.ToString("F1");
-      val_vel.Text = MLUtility.Logger.Velocity.LastValue.ToString("F2");
-      val_lux.Text = MLUtility.Logger.Illuminance.LastValue.ToString("F1");
-      val_mrt.Text = MLUtility.Logger.MeanRadiantTemperature.ToString("F1");
-      val_pmv.Text = MLUtility.Logger.PMV.ToString("F2");
-      val_ppd.Text = MLUtility.Logger.PPD.ToString("F1");
-      val_set.Text = MLUtility.Logger.SETStar.ToString("F1");
+      val_tmp.Text = Logger.DrybulbTemperature.LastValue.ToString("F1");
+      val_hmd.Text = Logger.RelativeHumdity.LastValue.ToString("F1");
+      val_glb.Text = Logger.GlobeTemperature.LastValue.ToString("F1");
+      val_vel.Text = Logger.Velocity.LastValue.ToString("F2");
+      val_lux.Text = Logger.Illuminance.LastValue.ToString("F1");
+      val_mrt.Text = Logger.MeanRadiantTemperature.ToString("F1");
+      val_pmv.Text = Logger.PMV.ToString("F2");
+      val_ppd.Text = Logger.PPD.ToString("F1");
+      val_set.Text = Logger.SETStar.ToString("F1");
 
-      dtm_tmp.Text = MLUtility.Logger.DrybulbTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_hmd.Text = MLUtility.Logger.RelativeHumdity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_glb.Text = MLUtility.Logger.GlobeTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_vel.Text = MLUtility.Logger.Velocity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_lux.Text = MLUtility.Logger.Illuminance.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
+      dtm_tmp.Text = Logger.DrybulbTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
+      dtm_hmd.Text = Logger.RelativeHumdity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
+      dtm_glb.Text = Logger.GlobeTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
+      dtm_vel.Text = Logger.Velocity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
+      dtm_lux.Text = Logger.Illuminance.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
     });
 
     //データを保存
     string line =
-      MLUtility.Logger.LastMeasured.ToString("yyyy/M/d,HH:mm:ss") + "," +
-      MLUtility.Logger.DrybulbTemperature.LastValue.ToString("F1") + "," +
-      MLUtility.Logger.RelativeHumdity.LastValue.ToString("F1") + "," +
-      MLUtility.Logger.GlobeTemperature.LastValue.ToString("F2") + "," +
-      MLUtility.Logger.Velocity.LastValue.ToString("F3") + "," +
-      MLUtility.Logger.Illuminance.LastValue.ToString("F2") + "," +
-      MLUtility.Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
-      MLUtility.Logger.VelocityVoltage.ToString("F3") + Environment.NewLine;
+      Logger.LastMeasured.ToString("yyyy/M/d,HH:mm:ss") + "," +
+      Logger.DrybulbTemperature.LastValue.ToString("F1") + "," +
+      Logger.RelativeHumdity.LastValue.ToString("F1") + "," +
+      Logger.GlobeTemperature.LastValue.ToString("F2") + "," +
+      Logger.Velocity.LastValue.ToString("F3") + "," +
+      Logger.Illuminance.LastValue.ToString("F2") + "," +
+      Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
+      Logger.VelocityVoltage.ToString("F3") + Environment.NewLine;
 
-    string fileName = MLUtility.Logger.LocalName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+    string fileName = Logger.LocalName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
     MLUtility.AppendData(fileName, line);
   }
 
