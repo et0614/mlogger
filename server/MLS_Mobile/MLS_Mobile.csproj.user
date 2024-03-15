@@ -72,6 +72,9 @@
     <MauiXaml Update="MoistAirCalculator.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="RelayedDataViewer.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="SettingPopup.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

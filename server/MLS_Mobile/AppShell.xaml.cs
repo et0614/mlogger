@@ -25,6 +25,7 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(CFSetting), typeof(CFSetting));
     Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
     Routing.RegisterRoute(nameof(Calibrator), typeof(Calibrator));
+    Routing.RegisterRoute(nameof(RelayedDataViewer), typeof(RelayedDataViewer));
 
     makeDummyFile();
   }

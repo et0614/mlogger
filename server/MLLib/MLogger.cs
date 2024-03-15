@@ -3,12 +3,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using System.Text.Json.Serialization;
+using static MLLib.MLogger;
 
 namespace MLLib
 {
 
   /// <summary>MLoggerを管理する</summary>
-  public class MLogger
+  public class MLogger: ImmutableMLogger
   {
 
     #region 定数宣言
@@ -75,6 +76,9 @@ namespace MLLib
 
     /// <summary>温度自動校正受信イベント</summary>
     public event EventHandler? TemperatureAutoCalibrationReceivedEvent;
+
+    /// <summary>日時更新受信イベント</summary>
+    public event EventHandler? UpdateCurrentTimeReceivedEvent;
 
     #endregion
 
@@ -527,7 +531,9 @@ namespace MLLib
             HasTemperatureAutoCalibrationReceived = true;
             break;
 
+          //日時更新
           case "UCT":
+            UpdateCurrentTimeReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasUpdateCurrentTimeReceived = true;
             break;
         }
@@ -1080,6 +1086,230 @@ namespace MLLib
       /// <summary>補正式Ax+Bの補正係数Bを取得する</summary>
       public double CorrectionFactorB { get; internal set; } = 0.0;
     }
+
+    #endregion
+
+  }
+
+  /// <summary>読み取り専用のMLogger管理インターフェース</summary>
+  public interface ImmutableMLogger
+  {
+
+    #region イベント
+
+    /// <summary>コマンド待ち通知受信イベント</summary>
+    event EventHandler? WaitingForCommandMessageReceivedEvent;
+
+    /// <summary>測定値受信イベント</summary>
+    event EventHandler? MeasuredValueReceivedEvent;
+
+    /// <summary>測定設定受信イベント</summary>
+    event EventHandler? MeasurementSettingReceivedEvent;
+
+    /// <summary>バージョン受信イベント</summary>
+    event EventHandler? VersionReceivedEvent;
+
+    /// <summary>補正係数受信イベント</summary>
+    event EventHandler? CorrectionFactorsReceivedEvent;
+
+    /// <summary>測定開始通知受信イベント</summary>
+    event EventHandler? StartMeasuringMessageReceivedEvent;
+
+    /// <summary>測定終了通知受信イベント</summary>
+    event EventHandler? EndMeasuringMessageReceivedEvent;
+
+    /// <summary>ロガー名称受信イベント</summary>
+    event EventHandler? LoggerNameReceivedEvent;
+
+    /// <summary>風速電圧校正受信イベント</summary>
+    event EventHandler? CalibratingVoltageReceivedEvent;
+
+    /// <summary>風速電圧校正終了イベント</summary>
+    event EventHandler? EndCalibratingVoltageMessageReceivedEvent;
+
+    /// <summary>風速自動校正受信イベント</summary>
+    event EventHandler? VelocityAutoCalibrationReceivedEvent;
+
+    /// <summary>温度自動校正受信イベント</summary>
+    event EventHandler? TemperatureAutoCalibrationReceivedEvent;
+
+    /// <summary>日時更新受信イベント</summary>
+    event EventHandler? UpdateCurrentTimeReceivedEvent;
+
+    #endregion
+
+    #region イベント用プロパティ
+
+    /// <summary>測定値を受信したか否かを取得する</summary>
+    bool HasMeasuredValueReceived { get; }
+
+    /// <summary>測定設定を受信したか否かを取得する</summary>
+    bool HasMeasurementSettingReceived { get; }
+
+    /// <summary>バージョンを受信したか否かを取得する</summary>
+    bool HasVersionReceived { get; }
+
+    /// <summary>補正係数を受信したか否かを取得する</summary>
+    bool HasCorrectionFactorsReceived { get; }
+
+    /// <summary>測定開始通知を受信したか否かを取得する</summary>
+    bool HasStartMeasuringMessageReceived { get; }
+
+    /// <summary>測定終了通知を受信したか否かを取得する</summary>
+    bool HasEndMeasuringMessageReceived { get; }
+
+    /// <summary>ロガー名称を受信したか否かを取得する</summary>
+    bool HasLoggerNameReceived { get; }
+
+    /// <summary>風速校正開始イベントを受信したか否かを取得する</summary>
+    bool HasStartCalibratingVoltageMessageReceived { get; }
+
+    /// <summary>風速校正終了イベントを受信したか否かを取得する</summary>
+    bool HasEndCalibratingVoltageMessageReceived { get; }
+
+    /// <summary>風速自動校正イベントを受信したか否かを取得する</summary>
+    bool HasVelocityAutoCalibrationReceived { get; }
+
+    /// <summary>温度自動校正イベントを受信したか否かを取得する</summary>
+    bool HasTemperatureAutoCalibrationReceived { get; }
+
+    /// <summary>現在日時変更イベントを受信したか否かを取得する</summary>
+    bool HasUpdateCurrentTimeReceived { get; }
+
+    #endregion
+
+    #region インスタンス変数・プロパティ
+
+    /// <summary>未処理のコマンドがあるか</summary>
+    public bool HasCommand { get; }
+
+    /// <summary>次のコマンドを取得する</summary>
+    string NextCommand { get; }
+
+    /// <summary>MLogger名称を取得する</summary>
+    string Name { get; }
+
+    /// <summary>汎用の名称を取得する</summary>
+    string LocalName { get; }
+
+    /// <summary>初回の保存か否か</summary>
+    bool IsFirstSave { get; }
+
+    /// <summary>LongAddress（16進数）を取得する</summary>
+    string LongAddress { get; }
+
+    /// <summary>LongAddressの下位アドレス（16進数）を取得する</summary>
+    string LowAddress { get; }
+
+    /// <summary>最後の通信日時を取得する</summary>
+    DateTime LastCommunicated { get; }
+
+    /// <summary>最後の計測日時を取得する</summary>
+    DateTime LastMeasured { get; }
+
+    /// <summary>バージョン（メジャー）を取得する</summary>
+    int Version_Major { get; }
+
+    /// <summary>バージョン（マイナー）を取得する</summary>
+    int Version_Minor { get; }
+
+    /// <summary>バージョン（リビジョン）を取得する</summary>
+    int Version_Revision { get; }
+
+    /// <summary>現在の状態を取得する</summary>
+    Status CurrentStatus { get; }
+
+    /// <summary>計測開始日時を取得する</summary>
+    DateTime StartMeasuringDateTime { get; }
+
+    /// <summary>計測設定値が読み込み済か否か</summary>
+    bool MeasuringSettingLoaded { get; }
+
+    /// <summary>バージョンが読み込み済か否か</summary>
+    bool VersionLoaded { get; }
+
+    /// <summary>風速校正残り時間[sec]を取得する</summary>
+    int VelocityCalibrationTime { get; }
+
+    /// <summary>温度校正残り時間[sec]を取得する</summary>
+    int TemperatureCalibrationTime { get; }
+
+    #endregion
+
+    #region 計測値関連のプロパティ
+
+    /// <summary>乾球温度計測情報を取得する</summary>
+    MeasurementInfo DrybulbTemperature { get; }
+
+    /// <summary>相対湿度計測情報を取得する</summary>
+    MeasurementInfo RelativeHumdity { get; }
+
+    /// <summary>グローブ温度計測情報を取得する</summary>
+    MeasurementInfo GlobeTemperature { get; }
+
+    /// <summary>グローブ温度の電圧[V]を取得する</summary>
+    double GlobeTemperatureVoltage { get; }
+
+    /// <summary>風速計測情報を取得する</summary>
+    MeasurementInfo Velocity { get; }
+
+    /// <summary>風速の電圧[V]を取得する</summary>
+    double VelocityVoltage { get; }
+
+    /// <summary>照度計測情報を取得する</summary>
+    MeasurementInfo Illuminance { get; }
+
+    /// <summary>汎用電圧1計測情報を取得する</summary>
+    MeasurementInfo GeneralVoltage1 { get; }
+
+    /// <summary>汎用電圧2計測情報を取得する</summary>
+    MeasurementInfo GeneralVoltage2 { get; }
+
+    /// <summary>汎用電圧3計測情報を取得する</summary>
+    MeasurementInfo GeneralVoltage3 { get; }
+
+    /// <summary>近接センサ計測の真偽を取得する</summary>
+    bool MeasureProximity { get; }
+
+    /// <summary>微風速の無風時の電圧[V]を取得する</summary>
+    double VelocityMinVoltage { get; }
+
+    #endregion
+
+    #region 熱的快適性関連のプロパティ
+
+    /// <summary>熱的快適性指標を計算するか否か</summary>
+    bool CalcThermalIndices { get; }
+
+    /// <summary>代謝量[met]を取得する</summary>
+    double MetValue { get; }
+
+    /// <summary>クロ値[clo]を取得する</summary>
+    double CloValue { get; }
+
+    /// <summary>計測値がない場合の乾球温度[C]を取得する</summary>
+    double DefaultTemperature { get; }
+
+    /// <summary>計測値がない場合の相対湿度[%]を取得する</summary>
+    double DefaultRelativeHumidity { get; }
+
+    /// <summary>計測値がない場合の風速[m/s]を取得する</summary>
+    double DefaultVelocity { get; }
+
+    /// <summary>計測値がない場合のグローブ温度[C]を取得する</summary>
+    double DefaultGlobeTemperature { get; }
+
+    /// <summary>平均放射温度[C]を取得する</summary>
+    double MeanRadiantTemperature { get; }
+
+    /// <summary>PMV[-]を取得する</summary>
+    double PMV { get; }
+
+    /// <summary>PPD[-]を取得する</summary>
+    double PPD { get; }
+
+    /// <summary>SET*[-]を取得する</summary>
+    double SETStar { get; }
 
     #endregion
 

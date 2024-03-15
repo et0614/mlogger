@@ -36,21 +36,8 @@ public partial class Calibrator : ContentPage
   /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
   public XBeeBLEDevice ConnectedXBee { get; set; }
 
-  //データを受信するMLogger
-  private MLogger _mLogger;
-
   /// <summary>データを受信するMLoggerを設定・取得する</summary>
-  public MLogger Logger
-  {
-    get
-    {
-      return _mLogger;
-    }
-    set
-    {
-      _mLogger = value;
-    }
-  }
+  public MLogger Logger { get; set; }
 
   #endregion
 

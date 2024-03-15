@@ -16,10 +16,28 @@ using System.Text;
 public partial class MLoggerScanner : ContentPage
 {
 
+  #region 列挙型定義
+
+  /// <summary>接続先のデバイス</summary>
+  private enum ConnectedDevice
+  {
+    /// <summary>接続なし</summary>
+    None,
+    /// <summary>MLogger</summary>
+    MLogger,
+    /// <summary>MLTransciever</summary>
+    MLTransciever
+  }
+
+  #endregion
+
   #region インスタンス変数・プロパティ・定数宣言
 
   /// <summary>MLogger付属のXBeeのパスワード</summary>
   private const string ML_PASS = "ml_pass";
+
+  /// <summary>接続先のデバイス</summary>
+  private ConnectedDevice cnctDevice = ConnectedDevice.None;
 
   private bool bleChecked = false;
 
@@ -29,6 +47,8 @@ public partial class MLoggerScanner : ContentPage
   private XBeeBLEDevice connectedXBee;
 
   private MLogger mLogger;
+
+  private MLTransceiver mlTransceiver;
 
   /// <summary>MLogger搭載のXBeeのリスト</summary>
   public ObservableCollection<IDevice> MLXBees { get; private set; } = new ObservableCollection<IDevice>();
@@ -93,7 +113,7 @@ public partial class MLoggerScanner : ContentPage
     adapter.DeviceDiscovered += (s, ev) =>
     {
       string dvName = ev.Device.Name;
-      if (dvName != null && dvName != "" && dvName.StartsWith("MLogger_"))
+      if (dvName != null && dvName != "" && (dvName.StartsWith("MLogger_") || dvName.StartsWith("MLTransceiver")))
       {
         bool newItem = true;
         for (int i = 0; i < MLXBees.Count; i++)
@@ -132,13 +152,51 @@ public partial class MLoggerScanner : ContentPage
       {
         startXBeeCommunication(selectedXBee);
 
-        //Openに成功したら設定ページへ移動
-        Application.Current.Dispatcher.Dispatch(() =>
+        //MLoggerの場合：Openに成功したら設定ページへ移動
+        if (cnctDevice == ConnectedDevice.MLogger)
         {
-          Shell.Current.GoToAsync(nameof(DeviceSetting),
-              new Dictionary<string, object> { { "mLogger", mLogger }, { "xbee", connectedXBee } }
-              );
-        });
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            Shell.Current.GoToAsync(nameof(DeviceSetting),
+                new Dictionary<string, object> { { "mLogger", mLogger }, { "xbee", connectedXBee } }
+                );
+          });
+        }
+        //Transcieverの場合
+        else if (cnctDevice == ConnectedDevice.MLTransciever)
+        {
+          //Bluetooth転送モードを有効にする
+          mlTransceiver.HasRelayedToBluetoothReceived = false;
+          int tryNum = 0;
+          while ((!mlTransceiver.HasRelayedToBluetoothReceived) && tryNum < 4 )
+          {
+            try
+            {
+              //Bluetooth転送コマンドを送信
+              connectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeRelayToBluetoothCommand()));
+              Task.Delay(500);
+            }
+            catch { }
+            tryNum++;
+          }
+
+          //Bluetooth転送モードを有効にできた場合
+          if (mlTransceiver.HasRelayedToBluetoothReceived)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              Shell.Current.GoToAsync(nameof(RelayedDataViewer),
+                  new Dictionary<string, object> { { "mlTransceiver", mlTransceiver } }
+                  );
+            });
+          }
+          else
+          {
+            endXBeeCommunication();
+            Application.Current.Dispatcher.Dispatch(() =>
+            { DisplayAlert("Alert", "Connection failed.", "OK"); });
+          }
+        }
       }
       catch (Exception bex)
       {
@@ -177,10 +235,19 @@ public partial class MLoggerScanner : ContentPage
     //XBeeをOpen
     connectedXBee.Connect();
 
-    //イベント処理用ロガーを用意
-
-    mLogger = new MLogger(connectedXBee.GetAddressString());
-    mLogger.LocalName = device.Name;
+    //接続先:MLogger
+    if (device.Name.StartsWith("MLogger_"))
+    {
+      cnctDevice = ConnectedDevice.MLogger;
+      mLogger = new MLogger(connectedXBee.GetAddressString());
+      mLogger.LocalName = device.Name;
+    }
+    //接続先:MLTransceiver
+    else if (device.Name.StartsWith("MLTransceiver"))
+    {
+      cnctDevice = ConnectedDevice.MLTransciever;
+      mlTransceiver = new MLTransceiver(connectedXBee.GetAddressString());
+    }
 
     //イベント登録      
     connectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
@@ -189,20 +256,37 @@ public partial class MLoggerScanner : ContentPage
   private void ConnectedXBee_SerialDataReceived
     (object sender, XBeeLibrary.Core.Events.Relay.SerialDataReceivedEventArgs e)
   {
-    mLogger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
-
-    //コマンド処理
-    while (mLogger.HasCommand)
+    if (cnctDevice == ConnectedDevice.MLogger)
     {
-      try
+      mLogger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
+
+      //コマンド処理
+      while (mLogger.HasCommand)
       {
-        mLogger.SolveCommand();
+        try
+        {
+          mLogger.SolveCommand();
+        }
+        catch { }
       }
-      catch { }
+    }
+    else if (cnctDevice == ConnectedDevice.MLTransciever)
+    {
+      mlTransceiver.AddReceivedData(Encoding.ASCII.GetString(e.Data));
+
+      //コマンド処理
+      while (mlTransceiver.HasCommand)
+      {
+        try
+        {
+          mlTransceiver.SolveCommand();
+        }
+        catch { }
+      }
     }
   }
 
-  /// <summary>MLoggerのXbeeとの接続を解除する</summary>
+  /// <summary>MLDeviceのXbeeとの接続を解除する</summary>
   private void endXBeeCommunication()
   {
     //通信中のXBeeがある場合は接続を閉じる
@@ -227,6 +311,8 @@ public partial class MLoggerScanner : ContentPage
     }
 
     mLogger = null;
+    mlTransceiver = null;
+    cnctDevice = ConnectedDevice.None;
   }
 
   #endregion
