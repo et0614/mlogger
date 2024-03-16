@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="this"
+             x:Class="MLS_Mobile.MLoggerView"
+             xmlns:local="clr-namespace:MLS_Mobile">
+    <ContentView.BindingContext>
+        <local:MLoggerViewModel/>
+    </ContentView.BindingContext>
+
+    <Frame BorderColor="ForestGreen" CornerRadius="10" Padding="10">
+        <VerticalStackLayout>
+
+            <!--通信日時-->
+            <HorizontalStackLayout>
+                <Label FontSize="Small"
+                       Text="{Binding LastConnected, FallbackValue='-', StringFormat='{0}'}"
+                       VerticalOptions="Center" HorizontalOptions="End" />
+            </HorizontalStackLayout>
+            
+            <!--ID/名称-->
+            <HorizontalStackLayout>
+                <Label FontSize="Large"
+                    Text="{Binding MLoggerName, FallbackValue='-'}"
+                    VerticalOptions="Center" HorizontalOptions="Start" />
+
+                <Label FontSize="Body" Margin="20,0,0,0"
+                    Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}"
+                    VerticalOptions="Center" HorizontalOptions="Start" />
+            </HorizontalStackLayout>
+
+            <!--計測値-->
+            <Grid Margin="20,0,0,0" RowDefinitions="*,*" ColumnDefinitions="*,*,*">
+                <Label Grid.Row="0" Grid.Column="0" FontSize="Body"
+                       Text="{Binding DrybulbTemperature, FallbackValue='-', StringFormat='{0} °CDB'}"
+                       VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="0" Grid.Column="1" FontSize="Body"
+                       Text="{Binding RelativeHumdity, FallbackValue='-', StringFormat='{0} %'}"
+                       VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="0" Grid.Column="2" FontSize="Body"
+                       Text="{Binding GlobeTemperature, FallbackValue='-', StringFormat='{0} °C'}"
+                       VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="1" Grid.Column="0" FontSize="Body"
+                       Text="{Binding Velocity, FallbackValue='-', StringFormat='{0} m/s'}"
+                       VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="1" Grid.Column="1" FontSize="Body"
+                       Text="{Binding Illuminance, FallbackValue='-', StringFormat='{0} lux'}"
+                       VerticalOptions="Center" HorizontalOptions="End" />
+            </Grid>
+        </VerticalStackLayout>
+    </Frame>   
+</ContentView>

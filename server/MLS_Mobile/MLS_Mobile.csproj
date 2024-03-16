@@ -10,7 +10,7 @@
 	<PropertyGroup>
 		<!-- <TargetFrameworks>net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks> -->
 		<!-- <TargetFrameworks>net7.0-ios;net7.0-android</TargetFrameworks> -->
-		<TargetFrameworks>net8.0-ios</TargetFrameworks>
+		<TargetFrameworks>net8.0-ios;net8.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -389,6 +389,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="MLoggerScanner.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="MLoggerView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="MoistAirCalculator.xaml">

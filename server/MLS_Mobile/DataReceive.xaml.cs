@@ -84,7 +84,7 @@ public partial class DataReceive : ContentPage
   {
     if (Logger != null)
     {
-      Logger.MetValue = metSlider.Value;
+      Logger.MetValue = metSlider.Value; //‚ ‚Ü‚è—Ç‚­‚È‚¢ƒLƒƒƒXƒg
       Logger.CloValue = cloSlider.Value;
     }    
   }

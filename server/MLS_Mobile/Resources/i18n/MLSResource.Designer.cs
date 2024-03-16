@@ -1069,7 +1069,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   M-Logger scanner に類似しているローカライズされた文字列を検索します。
+        ///   MLDevice scanner に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Title {
             get {

@@ -454,7 +454,7 @@
     <value>Scanning MLogger...</value>
   </data>
   <data name="SC_Title" xml:space="preserve">
-    <value>M-Logger scanner</value>
+    <value>MLDevice scanner</value>
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>Thermal comfort calculator</value>

@@ -68,6 +68,9 @@ namespace MLLib
     /// <summary>USBへの転送イベント</summary>
     public event EventHandler? RelayToUSBReceivedEvent;
 
+    /// <summary>コマンドリレーイベント</summary>
+    public event EventHandler? CommandRelayEvent;
+
     /// <summary>日時更新受信イベント</summary>
     public event EventHandler? UpdateCurrentTimeReceivedEvent;
 
@@ -203,14 +206,14 @@ namespace MLLib
     private void solveCRY()
     {
       string lowAddress = NextCommand.Substring(3, 8);
-      string command = NextCommand.Remove(0, 3);
+      string command = NextCommand.Substring(11);
 
       //新規のMLoggerの場合には検出イベントを通知
       if (!mLoggers.ContainsKey(lowAddress))
       {
         MLogger ml = new MLogger(HIGH_ADD + lowAddress);
         mLoggers.Add(ml.LowAddress, ml);
-        NewMLoggerDetectedEvent?.Invoke(this, new NewMLoggerDetectedEventArgs(ml));
+        NewMLoggerDetectedEvent?.Invoke(this, new MLTransceiverEventArgs(ml));
       }
 
       //コマンド転送・処理
@@ -223,6 +226,8 @@ namespace MLLib
         }
         catch { }
       }
+
+      CommandRelayEvent?.Invoke(this, new MLTransceiverEventArgs(mLoggers[lowAddress]));
     }
 
     #endregion
@@ -291,9 +296,9 @@ namespace MLLib
   }
 
 
-  public class NewMLoggerDetectedEventArgs : EventArgs
+  public class MLTransceiverEventArgs : EventArgs
   {
-    public NewMLoggerDetectedEventArgs(ImmutableMLogger mLogger)
+    public MLTransceiverEventArgs(ImmutableMLogger mLogger)
     {
       Logger = mLogger;
     }

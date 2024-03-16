@@ -1,30 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MLS_Mobile"
              x:Class="MLS_Mobile.RelayedDataViewer"
-             xmlns:model="clr-namespace:MLLib;assembly=MLLib"
              Title="RelayedDataViewer">
-    <CollectionView ItemsSource="{Binding MLoggers}">
+    <CollectionView x:Name="mlvList" ItemsSource="{ Binding MLoggerViewModelList }" SelectionMode="Single" SelectionChanged="mlvList_SelectionChanged">
         <CollectionView.ItemTemplate>
-            <DataTemplate x:DataType="model:ImmutableMLogger">
-                <VerticalStackLayout Margin="10">
-                    <HorizontalStackLayout>
-                        <Label VerticalOptions="Center">
-                            <Label.Text>
-                                <MultiBinding StringFormat="{}}{0} ({1})">
-                                    <Binding Path="LowAddress"/>
-                                    <Binding Path="Name"/>
-                                </MultiBinding>
-                            </Label.Text>
-                        </Label>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label VerticalOptions="Center" Text="{Binding DrybulbTemperature.LastValue}" Padding="10"/>
-                        <Label VerticalOptions="Center" Text="{Binding RelativeHumdity.LastValue}" Padding="10" />
-                        <Label VerticalOptions="Center" Text="{Binding GlobeTemperature.LastValue}"  Padding="10"/>
-                        <Label VerticalOptions="Center" Text="{Binding Velocity.LastValue}"  Padding="10"/>
-                    </HorizontalStackLayout>
-                </VerticalStackLayout>
+            <DataTemplate>
+                <local:MLoggerView Padding="10"/>
             </DataTemplate>
         </CollectionView.ItemTemplate>
     </CollectionView>

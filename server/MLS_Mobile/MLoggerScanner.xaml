@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MLS_Mobile.MLoggerScanner"
+             xmlns:local="clr-namespace:MLS_Mobile"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             x:Class="MLS_Mobile.MLoggerScanner"
              Title="{x:Static res:MLSResource.SC_Title}">
+
     <RefreshView x:Name="refView">
         <Grid>
-            <CollectionView x:Name="mlList"
-                            ItemsSource="{Binding MLXBees}" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
+            <CollectionView x:Name="mlList" ItemsSource="{ Binding MLXBees }" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Grid

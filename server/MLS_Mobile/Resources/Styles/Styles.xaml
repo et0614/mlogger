@@ -42,6 +42,11 @@
         </Setter>
     </Style>
 
+    <Style TargetType="Frame">
+        <Setter Property="BackgroundColor"  Value="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource Lightest_G}}" />
+        <Setter Property="HasShadow" Value="False" />
+    </Style>
+
     <Style TargetType="Button">
         <Setter Property="BorderWidth" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>

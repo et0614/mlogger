@@ -146,7 +146,7 @@ public partial class MLoggerScanner : ContentPage
 
     //インジケータを表示して制御不可にしてから接続処理
     showIndicator(MLSResource.SC_Connecting);
-    Task.Run(() =>
+    Task.Run(async () =>
     {
       try
       {
@@ -174,7 +174,7 @@ public partial class MLoggerScanner : ContentPage
             {
               //Bluetooth転送コマンドを送信
               connectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeRelayToBluetoothCommand()));
-              Task.Delay(500);
+              await Task.Delay(1000);
             }
             catch { }
             tryNum++;
