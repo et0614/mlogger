@@ -8,45 +8,44 @@
         <local:MLoggerViewModel/>
     </ContentView.BindingContext>
 
-    <Frame BorderColor="ForestGreen" CornerRadius="10" Padding="10">
+    <Frame BorderColor="{Binding FrameColor}" CornerRadius="10" Padding="0">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="CommonStates">
+                <VisualState x:Name="Normal">
+                    <VisualState.Setters>
+                        <Setter Property="BorderColor" Value="{StaticResource Dark_G}" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Disabled">
+                    <VisualState.Setters>
+                        <Setter Property="BorderColor" Value="{StaticResource Gray}" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <VerticalStackLayout>
 
-            <!--通信日時-->
-            <HorizontalStackLayout>
-                <Label FontSize="Small"
-                       Text="{Binding LastConnected, FallbackValue='-', StringFormat='{0}'}"
-                       VerticalOptions="Center" HorizontalOptions="End" />
-            </HorizontalStackLayout>
-            
             <!--ID/名称-->
-            <HorizontalStackLayout>
-                <Label FontSize="Large"
-                    Text="{Binding MLoggerName, FallbackValue='-'}"
-                    VerticalOptions="Center" HorizontalOptions="Start" />
-
-                <Label FontSize="Body" Margin="20,0,0,0"
-                    Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}"
-                    VerticalOptions="Center" HorizontalOptions="Start" />
+            <HorizontalStackLayout BackgroundColor="{StaticResource Light_G}" Padding="10,0,10,0">
+                <Label FontSize="Large" Text="{Binding MLoggerName, FallbackValue='-'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label FontSize="Body" Margin="20,0,0,0" Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}" VerticalOptions="Center" HorizontalOptions="Start" />
             </HorizontalStackLayout>
 
             <!--計測値-->
-            <Grid Margin="20,0,0,0" RowDefinitions="*,*" ColumnDefinitions="*,*,*">
-                <Label Grid.Row="0" Grid.Column="0" FontSize="Body"
-                       Text="{Binding DrybulbTemperature, FallbackValue='-', StringFormat='{0} °CDB'}"
-                       VerticalOptions="Center" HorizontalOptions="Start" />
-                <Label Grid.Row="0" Grid.Column="1" FontSize="Body"
-                       Text="{Binding RelativeHumdity, FallbackValue='-', StringFormat='{0} %'}"
-                       VerticalOptions="Center" HorizontalOptions="Start" />
-                <Label Grid.Row="0" Grid.Column="2" FontSize="Body"
-                       Text="{Binding GlobeTemperature, FallbackValue='-', StringFormat='{0} °C'}"
-                       VerticalOptions="Center" HorizontalOptions="Start" />
-                <Label Grid.Row="1" Grid.Column="0" FontSize="Body"
-                       Text="{Binding Velocity, FallbackValue='-', StringFormat='{0} m/s'}"
-                       VerticalOptions="Center" HorizontalOptions="Start" />
-                <Label Grid.Row="1" Grid.Column="1" FontSize="Body"
-                       Text="{Binding Illuminance, FallbackValue='-', StringFormat='{0} lux'}"
-                       VerticalOptions="Center" HorizontalOptions="End" />
+            <Grid Margin="20,5,0,0" RowDefinitions="*,*" ColumnDefinitions="*,*,*">
+                <Label Grid.Row="0" Grid.Column="0" FontSize="Body" Text="{Binding DrybulbTemperature, FallbackValue='-', StringFormat='{0} °CDB'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="0" Grid.Column="1" FontSize="Body" Text="{Binding RelativeHumdity, FallbackValue='-', StringFormat='{0} %'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="0" Grid.Column="2" FontSize="Body" Text="{Binding GlobeTemperature, FallbackValue='-', StringFormat='{0} °C'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="1" Grid.Column="0" FontSize="Body" Text="{Binding Velocity, FallbackValue='-', StringFormat='{0} m/s'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="1" Grid.Column="1" FontSize="Body" Text="{Binding Illuminance, FallbackValue='-', StringFormat='{0} lux'}" VerticalOptions="Center" HorizontalOptions="Start" />
             </Grid>
+
+            <!--通信日時-->
+            <HorizontalStackLayout HorizontalOptions="End" Padding="0,0,10,0">
+                <Label FontSize="Small" Text="{Binding LastCommunicated, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
         </VerticalStackLayout>
-    </Frame>   
+    </Frame>
 </ContentView>

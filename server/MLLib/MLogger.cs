@@ -41,6 +41,9 @@ namespace MLLib
 
     #region イベント定義
 
+    /// <summary>データ受信イベント</summary>
+    public event EventHandler? DataReceivedEvent;
+
     /// <summary>コマンド待ち通知受信イベント</summary>
     public event EventHandler? WaitingForCommandMessageReceivedEvent;
 
@@ -83,6 +86,10 @@ namespace MLLib
     #endregion
 
     #region イベント用プロパティ
+
+    [JsonIgnore]
+    /// <summary>データを受信したか否かを設定・取得する</summary>
+    public bool DataReceived { get; set; } = false;
 
     [JsonIgnore]
     /// <summary>測定値を受信したか否かを設定・取得する</summary>
@@ -340,6 +347,9 @@ namespace MLLib
 
       //データを追加
       receivedData += data;
+
+      //データ受信イベントを通知
+      DataReceivedEvent?.Invoke(this, EventArgs.Empty);
 
       //次のコマンドが無い場合には、移行を試みる
       if (!HasCommand) SkipCommand();
@@ -1096,6 +1106,9 @@ namespace MLLib
   {
 
     #region イベント
+
+    /// <summary>データ受信イベント</summary>
+    event EventHandler? DataReceivedEvent;
 
     /// <summary>コマンド待ち通知受信イベント</summary>
     event EventHandler? WaitingForCommandMessageReceivedEvent;

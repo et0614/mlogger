@@ -1,9 +1,13 @@
+using DigiIoT.Maui.Devices.XBee;
 using MLLib;
 using System.Collections.ObjectModel;
+using System.Text;
+using XBeeLibrary.Core.IO;
 
 namespace MLS_Mobile;
 
 [QueryProperty(nameof(Transciever), "mlTransceiver")]
+[QueryProperty(nameof(ConnectedXBee), "xbee")]
 public partial class RelayedDataViewer : ContentPage
 {
 
@@ -38,12 +42,10 @@ public partial class RelayedDataViewer : ContentPage
     }
   }
 
+  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
+  public XBeeBLEDevice ConnectedXBee { get; set; }
 
   #endregion
-
-  /// <summary>MLogger搭載のXBeeのリスト</summary>
-  public ObservableCollection<ImmutableMLogger> MLoggers { get; private set; } = 
-    new ObservableCollection<ImmutableMLogger>();
 
 	public RelayedDataViewer()
 	{
@@ -52,10 +54,43 @@ public partial class RelayedDataViewer : ContentPage
     this.BindingContext = this;
   }
 
+  #region ロード・アンロードイベント
+  protected override void OnAppearing()
+  {
+    base.OnAppearing();
+
+    //スリープ禁止
+    DeviceDisplay.Current.KeepScreenOn = true;
+  }
+
+  protected override void OnDisappearing()
+  {
+    base.OnDisappearing();
+
+    //スリープ解除
+    DeviceDisplay.Current.KeepScreenOn = false;
+  }
+
+  #endregion
+
   private void initInfo()
   {
     Transciever.NewMLoggerDetectedEvent += Transciever_NewMLoggerDetectedEvent;
     Transciever.CommandRelayEvent += Transciever_CommandRelayEvent;
+
+    //接続したTranscieverの日時を更新
+    Task.Run(async () =>
+    {
+      while (!Transciever.HasUpdateCurrentTimeReceived)
+      {
+        try
+        {
+          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
+          await Task.Delay(500);
+        }
+        catch { }
+      }
+    });
   }
 
   private void Transciever_CommandRelayEvent(object sender, EventArgs e)
@@ -73,9 +108,25 @@ public partial class RelayedDataViewer : ContentPage
     if (mLoggers.Contains(logger)) return;
 
     mLoggers.Add(logger);
-    MLoggerViewModel mvm = new MLoggerViewModel();
-    mvm.Logger = logger;
+    MLoggerViewModel mvm = new() { Logger = logger };
     MLoggerViewModelList.Add(mvm);
+
+    //名称を読み込む
+    Task.Run(async () =>
+    {
+      while (!logger.HasLoggerNameReceived)
+      {
+        try
+        {
+          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
+            MLTransceiver.MakeRelayCommand(logger.LowAddress, MLogger.MakeLoadLoggerNameCommand())
+            ));
+          
+          await Task.Delay(500);
+        }
+        catch { }
+      }
+    });
   }
 
   private void mlvList_SelectionChanged(object sender, SelectionChangedEventArgs e)

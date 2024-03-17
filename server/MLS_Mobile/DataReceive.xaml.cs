@@ -25,8 +25,11 @@ public partial class DataReceive : ContentPage
     set
     {
       //登録済みのイベントは解除
-      if(_mLogger != null)
+      if (_mLogger != null)
+      {
+        MLVModel.Logger = null;
         Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+      }
 
       _mLogger = value;
 
@@ -38,8 +41,13 @@ public partial class DataReceive : ContentPage
 
       //MLoggerイベント登録
       _mLogger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+
+      //Bind
+      MLVModel.Logger = _mLogger;
     }
   }
+
+  public MLoggerViewModel MLVModel { get; set; } = new MLoggerViewModel();
 
   /// <summary>Clo値を設定・取得する</summary>
   public double CloValue
@@ -57,13 +65,13 @@ public partial class DataReceive : ContentPage
   {
     InitializeComponent();
 
-    BindingContext = this;
+    BindingContext = MLVModel;
 
     cloTitle.Text = MLSResource.ClothingUnit + " [clo]";
     metTitle.Text = MLSResource.MetabolicUnit + " [met]";  
   }
 
-  /// <summary>でコンストラクタ</summary>
+  /// <summary>デコンストラクタ</summary>
   ~DataReceive()
   {
     if (Logger != null)
@@ -84,7 +92,7 @@ public partial class DataReceive : ContentPage
   {
     if (Logger != null)
     {
-      Logger.MetValue = metSlider.Value; //あまり良くないキャスト
+      Logger.MetValue = metSlider.Value;
       Logger.CloValue = cloSlider.Value;
     }    
   }
@@ -124,25 +132,6 @@ public partial class DataReceive : ContentPage
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
   {
-    Application.Current.Dispatcher.Dispatch(() =>
-    {
-      val_tmp.Text = Logger.DrybulbTemperature.LastValue.ToString("F1");
-      val_hmd.Text = Logger.RelativeHumdity.LastValue.ToString("F1");
-      val_glb.Text = Logger.GlobeTemperature.LastValue.ToString("F1");
-      val_vel.Text = Logger.Velocity.LastValue.ToString("F2");
-      val_lux.Text = Logger.Illuminance.LastValue.ToString("F1");
-      val_mrt.Text = Logger.MeanRadiantTemperature.ToString("F1");
-      val_pmv.Text = Logger.PMV.ToString("F2");
-      val_ppd.Text = Logger.PPD.ToString("F1");
-      val_set.Text = Logger.SETStar.ToString("F1");
-
-      dtm_tmp.Text = Logger.DrybulbTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_hmd.Text = Logger.RelativeHumdity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_glb.Text = Logger.GlobeTemperature.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_vel.Text = Logger.Velocity.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-      dtm_lux.Text = Logger.Illuminance.LastMeasureTime.ToString("yyyy/M/d HH:mm:ss");
-    });
-
     //データを保存
     string line =
       Logger.LastMeasured.ToString("yyyy/M/d,HH:mm:ss") + "," +

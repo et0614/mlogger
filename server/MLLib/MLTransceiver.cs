@@ -262,7 +262,7 @@ namespace MLLib
     public static string MakeRelayCommand
       (string lowAddress, string relayedCommand)
     {
-      return "\rCRY" + lowAddress + relayedCommand + "\r";
+      return "\rCRY" + lowAddress + relayedCommand.TrimStart().TrimEnd() + "\r";
     }
 
     /// <summary>現在日時更新コマンドをつくる</summary>

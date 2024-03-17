@@ -186,7 +186,7 @@ public partial class MLoggerScanner : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               Shell.Current.GoToAsync(nameof(RelayedDataViewer),
-                  new Dictionary<string, object> { { "mlTransceiver", mlTransceiver } }
+                  new Dictionary<string, object> { { "mlTransceiver", mlTransceiver }, { "xbee", connectedXBee } }
                   );
             });
           }
