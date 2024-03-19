@@ -149,21 +149,21 @@ namespace MLLib
         string cmd = NextCommand.Substring(0, 3);
         switch (cmd)
         {
-          //バージョン受信
+          //VERsion
           case "VER":
             solveVER();
             break;
 
-          //Relay to bluetooth
+          //Relay To bluetooth
           case "RTB":
-            RelayToBluetoothReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasRelayedToBluetoothReceived = true;
+            RelayToBluetoothReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
-          //Relay to USB
+          //Relay To USB
           case "RTU":
-            RelayToUSBReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasRelayedToUSBReceived = true;
+            RelayToUSBReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
           //Command Relay
@@ -171,9 +171,10 @@ namespace MLLib
             solveCRY();
             break;
 
+          //Update Current Time
           case "UCT":
-            UpdateCurrentTimeReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasUpdateCurrentTimeReceived = true;
+            UpdateCurrentTimeReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
         }
       }

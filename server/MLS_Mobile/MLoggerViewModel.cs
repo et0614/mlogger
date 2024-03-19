@@ -300,7 +300,26 @@ namespace MLS_Mobile
 
     #region 描画に関わるインスタンス変数・プロパティ
 
+    private bool _isEnabled = false;
+
     private Color _frameColor;// = Application.Current.Resources["Gray400"] as Color;
+
+    /// <summary>有効か否かを設定・取得する</summary>
+    public bool IsEnabled
+    {
+      get
+      {
+        return _isEnabled;
+      }
+      set
+      {
+        if (_isEnabled != value)
+        {
+          _isEnabled = value;
+          OnPropertyChanged();
+        }
+      }
+    }
 
     /// <summary>枠の色を設定・取得する</summary>
     public Color FrameColor
@@ -332,6 +351,9 @@ namespace MLS_Mobile
 
     private void MLogger_MeasuredValueReceivedEvent(object sender, EventArgs e)
     {
+      //コントロール有効化
+      IsEnabled = true;
+
       //計測値
       DrybulbTemperature = _mLogger.DrybulbTemperature.LastValue.ToString("F1");
       RelativeHumdity = _mLogger.RelativeHumdity.LastValue.ToString("F1");

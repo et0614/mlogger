@@ -8,8 +8,9 @@
         <local:MLoggerViewModel/>
     </ContentView.BindingContext>
 
+    <!--<Frame BorderColor="{Binding FrameColor}" CornerRadius="10" Padding="0" IsEnabled="{ Binding IsEnabled }">-->
     <Frame BorderColor="{Binding FrameColor}" CornerRadius="10" Padding="0">
-        <VisualStateManager.VisualStateGroups>
+            <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="CommonStates">
                 <VisualState x:Name="Normal">
                     <VisualState.Setters>

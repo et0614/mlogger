@@ -2,7 +2,6 @@ using DigiIoT.Maui.Devices.XBee;
 using MLLib;
 using System.Collections.ObjectModel;
 using System.Text;
-using XBeeLibrary.Core.IO;
 
 namespace MLS_Mobile;
 
@@ -85,7 +84,7 @@ public partial class RelayedDataViewer : ContentPage
       {
         try
         {
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
+          ConnectedXBee?.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
           await Task.Delay(500);
         }
         catch { }
@@ -109,6 +108,7 @@ public partial class RelayedDataViewer : ContentPage
 
     mLoggers.Add(logger);
     MLoggerViewModel mvm = new() { Logger = logger };
+    mvm.IsEnabled = false;
     MLoggerViewModelList.Add(mvm);
 
     //ñºèÃÇì«Ç›çûÇﬁ
@@ -118,7 +118,7 @@ public partial class RelayedDataViewer : ContentPage
       {
         try
         {
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
+          ConnectedXBee?.SendSerialData(Encoding.ASCII.GetBytes(
             MLTransceiver.MakeRelayCommand(logger.LowAddress, MLogger.MakeLoadLoggerNameCommand())
             ));
           
