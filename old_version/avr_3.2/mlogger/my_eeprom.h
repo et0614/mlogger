@@ -27,7 +27,7 @@ class my_eeprom
 		volatile static uint32_t start_dt;
 		
 		//–¼Ì
-		static char mlName[20];
+		static char mlName[21];
 
 		//•â³ŒW”‚ğ‘‚«‚Ş
 		static void SetCorrectionFactor(const char * data);

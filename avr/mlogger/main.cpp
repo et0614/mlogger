@@ -516,18 +516,18 @@ static void solve_command(void)
 	//Change Logger Name
 	else if(strncmp(command, "CLN", 3) == 0)
 	{
-		strncpy(my_eeprom::mlName, command + 3, 20);
+		strncpy(my_eeprom::mlName, command + 3, 21);
 		my_eeprom::SaveName();
 		
 		//ACK
-		char ack[21 + 4];
+		char ack[22 + 4];
 		sprintf(ack, "CLN:%s\r", my_eeprom::mlName);		
 		my_xbee::bltx_chars(ack);
 	}
 	//Load Logger Name
 	else if(strncmp(command, "LLN", 3) == 0)
 	{
-		char name[21 + 4];
+		char name[22 + 4];
 		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
 		my_xbee::bltx_chars(name);
 	}

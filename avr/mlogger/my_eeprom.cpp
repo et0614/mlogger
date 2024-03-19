@@ -103,7 +103,7 @@ volatile uint32_t my_eeprom::start_dt = 1609459200;
 volatile bool my_eeprom::startAuto = false;
 
 //ロガー名称
-char my_eeprom::mlName[20];
+char my_eeprom::mlName[21];
 
 //メモリを初期化する
 void initMemory()
@@ -184,7 +184,7 @@ void initMemory()
 	
 	//名前
 	eeprom_busy_wait();
-	eeprom_update_block("Anonymous", EEP_NAME, 20);
+	eeprom_update_block((const void *)"Anonymous", (void *)EEP_NAME, sizeof(my_eeprom::mlName));
 	
 	//初期化フラグ
 	eeprom_busy_wait();
@@ -380,7 +380,7 @@ void my_eeprom::SetMeasurementSetting()
 void my_eeprom::SaveName()
 {
 	eeprom_busy_wait();	
-	eeprom_update_block(mlName, EEP_NAME, 20);
+	eeprom_update_block((const void *)mlName, (void *)EEP_NAME, sizeof(my_eeprom::mlName));
 }
 
 //補正係数を読み込む
@@ -463,7 +463,7 @@ void LoadMeasurementSetting()
 void LoadName()
 {
 	eeprom_busy_wait();
-	eeprom_read_block(my_eeprom::mlName, EEP_NAME, sizeof(my_eeprom::mlName));
+	eeprom_read_block((void *)my_eeprom::mlName, (const void *)EEP_NAME, sizeof(my_eeprom::mlName));
 }
 
 //設定を読み込む
