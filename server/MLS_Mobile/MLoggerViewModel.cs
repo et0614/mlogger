@@ -375,7 +375,7 @@ namespace MLS_Mobile
       SETStar = _mLogger.SETStar.ToString("F1");
 
       //着色
-      FrameColor = Application.Current.Resources["Dark_G"] as Color;
+      //FrameColor = Application.Current.Resources["Dark_G"] as Color;
     }
 
 

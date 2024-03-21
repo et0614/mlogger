@@ -548,7 +548,10 @@ namespace MLLib
             break;
         }
       }
-      catch { }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+      }
       finally
       {
         //エラーが置きてもとにかく次のコマンドへ移行
@@ -628,7 +631,10 @@ namespace MLLib
         HasStartMeasuringMessageReceived = true; //データ受信されたということは開始しているということだからこちらもtrueにする
       }
       //通信の問題で不正な文字が送信されるような場合に備える
-      catch { }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+      }
     }
 
     /// <summary>測定設定コマンド（CMS, LMS）を処理する</summary>

@@ -7,10 +7,8 @@ using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using Mopups.Services;
 using System;
-using DigiIoT.Maui.Devices.XBee;
 
-[QueryProperty(nameof(Logger), "mLogger")]
-[QueryProperty(nameof(ConnectedXBee), "xbee")]
+[QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 public partial class DeviceSetting : ContentPage
 {
 
@@ -30,7 +28,7 @@ public partial class DeviceSetting : ContentPage
     /// <summary>Microflash互換カードに記録</summary>
     mfcard = 1,
     /// <summary>ZigbeeでPCと接続</summary>
-    pc = 2, 
+    pc = 2,
     /// <summary>Zigbeeで常設</summary>
     permanent = 3
   }
@@ -42,23 +40,38 @@ public partial class DeviceSetting : ContentPage
   /// <summary>ロギングを停止させるか否か</summary>
   private bool isStopLogging = true;
 
-  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
-  public XBeeBLEDevice ConnectedXBee { get; set; }
+  /// <summary>低位アドレス</summary>
+  private string _mlLowAddress = "";
 
-  //データを受信するMLogger
-  private MLogger _mLogger;
+  /// <summary>低位アドレスを設定・取得する</summary>
+  public string MLoggerLowAddress
+  {
+    get
+    {
+      return _mlLowAddress;
+    }
+    set
+    {
+      //登録済の場合にはイベントを解除
+      MLogger ml = MLUtility.GetLogger(_mlLowAddress);
+      if (ml != null)
+        ml.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+
+      _mlLowAddress = value;
+      ml = MLUtility.GetLogger(_mlLowAddress);
+      if (ml != null)
+        ml.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+
+      initInfo();
+    }
+  }
 
   /// <summary>データを受信するMLoggerを設定・取得する</summary>
   public MLogger Logger
   {
     get
     {
-      return _mLogger;
-    }
-    set
-    {
-      _mLogger = value;
-      initInfo();
+      return MLUtility.GetLogger(_mlLowAddress);
     }
   }
 
@@ -95,8 +108,8 @@ public partial class DeviceSetting : ContentPage
           Array.Reverse(ar);
           Task.Run(() =>
           {
-            ConnectedXBee.SetParameter("ID", ar);
-            ConnectedXBee.WriteChanges();
+            MLUtility.ConnectedXBee.SetParameter("ID", ar);
+            MLUtility.ConnectedXBee.WriteChanges();
           });
         }
         catch { }
@@ -115,14 +128,14 @@ public partial class DeviceSetting : ContentPage
     //基本は測定を停止させる
     isStopLogging = true;
 
-    Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+    //Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
   }
 
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
 
-    Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+    //Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
@@ -140,7 +153,7 @@ public partial class DeviceSetting : ContentPage
           try
           {
             //停止コマンドを送信
-            ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand()));
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand()));
             await Task.Delay(500);
           }
           catch { }
@@ -156,8 +169,8 @@ public partial class DeviceSetting : ContentPage
   private void initInfo()
   {
     spc_name.Text = MLSResource.DS_SpecName + ": -";
-    spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + _mLogger.LocalName;
-    spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + _mLogger.LowAddress;
+    spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
+    spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + Logger.LowAddress;
     spc_vers.Text = MLSResource.DS_SpecVersion + ": -";
 
     //バージョン更新
@@ -190,7 +203,7 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //設定設定取得コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadMeasuringSettingCommand()));
+          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadMeasuringSettingCommand()));
         }
         catch { }
         await Task.Delay(500);
@@ -230,7 +243,8 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //バージョン取得コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
+          if(MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
         }
         catch { }
         await Task.Delay(500);
@@ -267,7 +281,8 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //名称取得コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand()));
+          if (MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand()));
         }
         catch { }
         await Task.Delay(500);
@@ -295,7 +310,8 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //名称取得コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name)));
+          if (MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name)));
         }
         catch { }
         await Task.Delay(500);
@@ -335,7 +351,7 @@ public partial class DeviceSetting : ContentPage
         try
         {
           //設定設定取得コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
+          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
         }
         catch { }
         await Task.Delay(500);
@@ -370,7 +386,7 @@ public partial class DeviceSetting : ContentPage
       {
         try
         {
-          byte[] rslt = ConnectedXBee.GetParameter("D5");
+          byte[] rslt = MLUtility.ConnectedXBee.GetParameter("D5");
           Application.Current.Dispatcher.Dispatch(() =>
           {
             btn_zigled.Text =
@@ -438,7 +454,7 @@ public partial class DeviceSetting : ContentPage
   private void CFButton_Clicked(object sender, EventArgs e)
   {
     Shell.Current.GoToAsync(nameof(Calibrator),
-      new Dictionary<string, object> { { "mLogger", Logger }, { "xbee", ConnectedXBee } }
+      new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
       );
   }
 
@@ -466,7 +482,7 @@ public partial class DeviceSetting : ContentPage
     {
       try
       {
-        byte[] id = ConnectedXBee.GetParameter("ID");
+        byte[] id = MLUtility.ConnectedXBee.GetParameter("ID");
         string panID = BitConverter.ToString(id).Replace("-", "").TrimStart('0');
 
         Application.Current.Dispatcher.Dispatch(() =>
@@ -514,8 +530,8 @@ public partial class DeviceSetting : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               DisplayAlert("Alert", MLSResource.DR_FailStarting, "OK");
-              return;
             });
+            return;
           }
           tryNum++;
 
@@ -537,7 +553,7 @@ public partial class DeviceSetting : ContentPage
           }
 
           //開始コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd));
+          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd));
 
           await Task.Delay(500);
         }
@@ -548,7 +564,7 @@ public partial class DeviceSetting : ContentPage
           if (lMode == loggingMode.bluetooth) 
           {
             Shell.Current.GoToAsync(nameof(DataReceive),
-              new Dictionary<string, object> { { "mLogger", _mLogger } }
+              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
               );
           }
           else Shell.Current.GoToAsync("..");
@@ -671,8 +687,8 @@ public partial class DeviceSetting : ContentPage
       {
         try
         {
-          ConnectedXBee.SetParameter("D5", ledEnabled ? new byte[] { 4 } : new byte[] { 1 });
-          ConnectedXBee.WriteChanges(); //設定を反映
+          MLUtility.ConnectedXBee.SetParameter("D5", ledEnabled ? new byte[] { 4 } : new byte[] { 1 });
+          MLUtility.ConnectedXBee.WriteChanges(); //設定を反映
           Application.Current.Dispatcher.Dispatch(() =>
           {
             btn_zigled.Text = ledEnabled ? MLSResource.DS_EnableZigLED : MLSResource.DS_DisableZigLED;

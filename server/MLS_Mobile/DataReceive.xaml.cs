@@ -4,7 +4,7 @@ using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using MLLib;
 
-[QueryProperty(nameof(Logger), "mLogger")]
+[QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 [QueryProperty(nameof(CloValue), "CloValue")]
 [QueryProperty(nameof(MetValue), "MetValue")]
 public partial class DataReceive : ContentPage
@@ -12,38 +12,49 @@ public partial class DataReceive : ContentPage
 
   #region インスタンス変数・プロパティ
 
-  //データを受信するMLogger
-  private MLogger _mLogger;
+  /// <summary>低位アドレス</summary>
+  private string _mlLowAddress = "";
+
+  /// <summary>低位アドレスを設定・取得する</summary>
+  public string MLoggerLowAddress
+  {
+    get
+    {
+      return _mlLowAddress;
+    }
+    set
+    {
+      //登録済の場合にはイベントを解除
+      MLogger ml = MLUtility.GetLogger(_mlLowAddress);
+      if (ml != null)
+      {
+        MLVModel.Logger = null;
+        ml.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
+      }
+
+      _mlLowAddress = value;
+      ml = MLUtility.GetLogger(_mlLowAddress);
+
+      this.Title = ml.LocalName;
+
+      //Clo値,代謝量初期化
+      CloValue = ml.CloValue;
+      MetValue = ml.MetValue;
+
+      //MLoggerイベント登録
+      ml.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
+
+      //Bind
+      MLVModel.Logger = ml;
+    }
+  }
 
   /// <summary>データを受信するMLoggerを設定・取得する</summary>
   public MLogger Logger
   {
     get
     {
-      return _mLogger;
-    }
-    set
-    {
-      //登録済みのイベントは解除
-      if (_mLogger != null)
-      {
-        MLVModel.Logger = null;
-        Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
-      }
-
-      _mLogger = value;
-
-      this.Title = _mLogger.LocalName;
-
-      //Clo値,代謝量初期化
-      CloValue = _mLogger.CloValue;
-      MetValue = _mLogger.MetValue;
-
-      //MLoggerイベント登録
-      _mLogger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
-
-      //Bind
-      MLVModel.Logger = _mLogger;
+      return MLUtility.GetLogger(_mlLowAddress);
     }
   }
 

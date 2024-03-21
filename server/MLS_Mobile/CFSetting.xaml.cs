@@ -3,14 +3,11 @@ namespace MLS_Mobile;
 using System.Text;
 using System.Threading.Tasks;
 
-using DigiIoT.Maui.Devices.XBee;
-
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 
-[QueryProperty(nameof(Logger), "mLogger")]
-[QueryProperty(nameof(ConnectedXBee), "xbee")]
+[QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 public partial class CFSetting : ContentPage
 {
 
@@ -18,11 +15,24 @@ public partial class CFSetting : ContentPage
 
   private bool isEdited = false;
 
-  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
-  public XBeeBLEDevice ConnectedXBee { get; set; }
+  /// <summary>通信するMLoggerを取得する</summary>
+  public MLogger Logger { get { return MLUtility.GetLogger(_mlLowAddress); } }
 
-  /// <summary>データを受信するMLoggerを設定・取得する</summary>
-  public MLogger Logger { get; set; }
+  /// <summary>低位アドレス</summary>
+  private string _mlLowAddress = "";
+
+  /// <summary>低位アドレスを設定・取得する</summary>
+  public string MLoggerLowAddress
+  {
+    get
+    {
+      return _mlLowAddress;
+    }
+    set
+    {
+      _mlLowAddress = value;
+    }
+  }
 
   #endregion
 
@@ -194,13 +204,13 @@ public partial class CFSetting : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
-              return;
             });
+            return;
           }
           tryNum++;
 
           //開始コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
+          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
 
           await Task.Delay(500);
         }
@@ -243,13 +253,13 @@ public partial class CFSetting : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
-              return;
             });
+            return;
           }
           tryNum++;
 
           //開始コマンドを送信
-          ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
+          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
 
           await Task.Delay(500);
         }

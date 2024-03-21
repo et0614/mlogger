@@ -1,12 +1,9 @@
-using DigiIoT.Maui.Devices.XBee;
 using MLLib;
 using System.Collections.ObjectModel;
 using System.Text;
 
 namespace MLS_Mobile;
 
-[QueryProperty(nameof(Transciever), "mlTransceiver")]
-[QueryProperty(nameof(ConnectedXBee), "xbee")]
 public partial class RelayedDataViewer : ContentPage
 {
 
@@ -15,34 +12,7 @@ public partial class RelayedDataViewer : ContentPage
   public ObservableCollection<MLoggerViewModel> MLoggerViewModelList
   { get; private set; } = new ObservableCollection<MLoggerViewModel>();
 
-  private MLTransceiver _transciever;
-
   private List<ImmutableMLogger> mLoggers = new List<ImmutableMLogger>();
-
-  /// <summary>データを受信するMLTranscieverを設定・取得する</summary>
-  public MLTransceiver Transciever
-  {
-    get
-    {
-      return _transciever;
-    }
-    set
-    {
-      if (_transciever != null)
-      {
-        _transciever.NewMLoggerDetectedEvent -= Transciever_NewMLoggerDetectedEvent;
-        _transciever.CommandRelayEvent -= Transciever_CommandRelayEvent;
-        mLoggers.Clear();
-        MLoggerViewModelList.Clear();
-      }
-
-      _transciever = value;
-      initInfo();
-    }
-  }
-
-  /// <summary>コマンド送信用のXBeeを設定・取得する</summary>
-  public XBeeBLEDevice ConnectedXBee { get; set; }
 
   #endregion
 
@@ -51,6 +21,21 @@ public partial class RelayedDataViewer : ContentPage
 		InitializeComponent();
 
     this.BindingContext = this;
+
+    //Transcieverの日時を更新
+    Task.Run(async () =>
+    {
+      while (!MLUtility.Transceiver.HasUpdateCurrentTimeReceived)
+      {
+        try
+        {
+          if (MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
+          await Task.Delay(500);
+        }
+        catch { }
+      }
+    });
   }
 
   #region ロード・アンロードイベント
@@ -60,6 +45,15 @@ public partial class RelayedDataViewer : ContentPage
 
     //スリープ禁止
     DeviceDisplay.Current.KeepScreenOn = true;
+
+    //イベント登録
+    if (MLUtility.Transceiver != null)
+    {
+      mLoggers.Clear();
+      MLoggerViewModelList.Clear();
+      MLUtility.Transceiver.NewMLoggerDetectedEvent += Transciever_NewMLoggerDetectedEvent;
+      MLUtility.Transceiver.CommandRelayEvent += Transciever_CommandRelayEvent;
+    }
   }
 
   protected override void OnDisappearing()
@@ -68,29 +62,18 @@ public partial class RelayedDataViewer : ContentPage
 
     //スリープ解除
     DeviceDisplay.Current.KeepScreenOn = false;
+
+    //イベント解除
+    if (MLUtility.Transceiver != null)
+    {
+      MLUtility.Transceiver.NewMLoggerDetectedEvent -= Transciever_NewMLoggerDetectedEvent;
+      MLUtility.Transceiver.CommandRelayEvent -= Transciever_CommandRelayEvent;
+      mLoggers.Clear();
+      MLoggerViewModelList.Clear();
+    }
   }
 
   #endregion
-
-  private void initInfo()
-  {
-    Transciever.NewMLoggerDetectedEvent += Transciever_NewMLoggerDetectedEvent;
-    Transciever.CommandRelayEvent += Transciever_CommandRelayEvent;
-
-    //接続したTranscieverの日時を更新
-    Task.Run(async () =>
-    {
-      while (!Transciever.HasUpdateCurrentTimeReceived)
-      {
-        try
-        {
-          ConnectedXBee?.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
-          await Task.Delay(500);
-        }
-        catch { }
-      }
-    });
-  }
 
   private void Transciever_CommandRelayEvent(object sender, EventArgs e)
   {
@@ -111,22 +94,23 @@ public partial class RelayedDataViewer : ContentPage
     mvm.IsEnabled = false;
     MLoggerViewModelList.Add(mvm);
 
-    //名称を読み込む
+    /*//名称を読み込む
     Task.Run(async () =>
     {
       while (!logger.HasLoggerNameReceived)
       {
         try
         {
-          ConnectedXBee?.SendSerialData(Encoding.ASCII.GetBytes(
-            MLTransceiver.MakeRelayCommand(logger.LowAddress, MLogger.MakeLoadLoggerNameCommand())
-            ));
+          if (MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
+              MLTransceiver.MakeRelayCommand(logger.LowAddress, MLogger.MakeLoadLoggerNameCommand())
+              ));
           
           await Task.Delay(500);
         }
         catch { }
       }
-    });
+    });*/
   }
 
   private void mlvList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -139,7 +123,7 @@ public partial class RelayedDataViewer : ContentPage
     Application.Current.Dispatcher.Dispatch(() =>
     {
       Shell.Current.GoToAsync(nameof(DataReceive),
-        new Dictionary<string, object> { { "mLogger", selectedMLoggerViewModel.Logger } }
+        new Dictionary<string, object> { { "mlLowAddress", selectedMLoggerViewModel.Logger.LowAddress } }
         );
     });
   }

@@ -3,27 +3,29 @@ using MLLib;
 
 namespace MLS_Mobile;
 
-[QueryProperty(nameof(Logger), "mLogger")]
+[QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 public partial class VelocityTuner : ContentPage
 {
   private bool countDownStarted = false;
 
   private int countDownTime { get; set; } = 30;
 
-  //データを受信するMLogger
-  private MLogger _mLogger;
+  /// <summary>データを受信するMLoggerを取得する</summary>
+  public MLogger Logger { get { return MLUtility.GetLogger(_mlLowAddress); } }
 
-  /// <summary>データを受信するMLoggerを設定・取得する</summary>
-  public MLogger Logger
+  /// <summary>低位アドレス</summary>
+  private string _mlLowAddress = "";
+
+  /// <summary>低位アドレスを設定・取得する</summary>
+  public string MLoggerLowAddress
   {
     get
     {
-      return _mLogger;
+      return _mlLowAddress;
     }
     set
     {
-      _mLogger = value;
-      //initInfo();
+      _mlLowAddress = value;
     }
   }
 

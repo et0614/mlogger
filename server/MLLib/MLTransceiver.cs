@@ -207,7 +207,7 @@ namespace MLLib
     private void solveCRY()
     {
       string lowAddress = NextCommand.Substring(3, 8);
-      string command = NextCommand.Substring(11);
+      string command = NextCommand.Substring(10);
 
       //新規のMLoggerの場合には検出イベントを通知
       if (!mLoggers.ContainsKey(lowAddress))
@@ -292,6 +292,15 @@ namespace MLLib
     public ImmutableMLogger[] GetMLoggers()
     {
       return mLoggers.Values.ToArray();
+    }
+
+    /// <summary>MLoggerを取得する</summary>
+    /// <param name="lowAddress">下位アドレス</param>
+    /// <returns>MLogger</returns>
+    public MLogger GetLogger(string lowAddress)
+    {
+      if (mLoggers.ContainsKey(lowAddress)) return mLoggers[lowAddress];
+      else return null;
     }
 
   }
