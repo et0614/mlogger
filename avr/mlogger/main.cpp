@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.13\r";
+const char VERSION_NUMBER[] = "VER:3.3.14\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -74,6 +74,9 @@ const bool USE_P3T1750DP = true;
 
 //何行分のデータを一時保存するか
 const int N_LINE_BUFF = 30;
+
+//照度計カバーアクリル板の透過率
+const double TRANSMITTANCE = 0.60;
 
 //広域変数定義********************************************************
 //日時関連
@@ -94,7 +97,7 @@ volatile static char cmdBuff[my_xbee::MAX_CMD_CHAR]; //コマンドバッファ
 static uint8_t xbeeOffset=14; //受信frame typeに応じたオフセット
 volatile static bool outputToBLE=false; //Bluetooth接続に書き出すか否か
 volatile static bool outputToXBee=true; //XBee接続に書き出すか否か
-volatile static bool outputToSDCard=false; //SDカードに書き出すか否か
+volatile static bool outputToFM=false; //Flash Memoryに書き出すか否か
 
 //計測の是非と計測時間間隔
 //th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
@@ -107,13 +110,13 @@ volatile static int pass_ad1 = 0;
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
 
-//SDカード関連
-volatile bool initSD = false; //SDカード初期化フラグ
+//Flashメモリ関連
+volatile bool initFM = false; //Flash Memory初期化フラグ
 static FATFS* fSystem;
 static char lineBuff[my_xbee::MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
 static uint8_t buffNumber = 0; //一時保存回数
 static tm lastSavedTime; //最後に保存した日時（UNIX時間）
-static uint8_t blinkCount = 0; //SD書き出し時のLED点滅時間間隔保持変数
+static uint8_t blinkCount = 0; //FM書き出し時のLED点滅時間間隔保持変数
 
 //リセット処理用
 volatile static unsigned int resetTime = 0;
@@ -188,15 +191,15 @@ int main(void)
 	{
 		logging = true;
 		outputToXBee = true;
-		outputToBLE = outputToSDCard = false;
+		outputToBLE = outputToFM = false;
 	}
 	
 	//10秒以上電圧不足時間が継続したら終了
     while (lowBatteryTime <= 10)
     {		
 		//マウントできていなければとにかくマウント
-		if(!initSD) 
-			initSD = (f_mount(fSystem, "", 1) == FR_OK);
+		if(!initFM) 
+			initFM = (f_mount(fSystem, "", 1) == FR_OK);
 		
 		//スリープモード設定
 		if(logging)
@@ -221,7 +224,7 @@ int main(void)
     }
 	
 	//電池が不足時の処理
-	if(initSD) f_mount(NULL, "", 1); //SDカードをアンマウント
+	if(initFM) f_mount(NULL, "", 1); //FMをアンマウント
 	cli(); //割り込み終了
 	showError(1); //LED表示
 }
@@ -330,17 +333,17 @@ ISR(USART0_RXC_vect)
 
 static void append_command(void)
 {
-	//nullまで進む
+	//以前のパケットで途中までコマンドが届いていた場合に備えてNULLまで進む（現状はこのケースは無いか？）
 	unsigned int pos1 = 0;
-	unsigned int cbLength = ARRAY_LENGTH(cmdBuff);
-	while(cmdBuff[pos1] != '\0' && pos1 < cbLength) pos1++;
-	if(pos1 == cbLength - 1) pos1 = 0; //バッファの最後まで進んでもNULLがなければ最初に戻る
+	while(cmdBuff[pos1] != '\0' && pos1 < my_xbee::MAX_CMD_CHAR) pos1++;
+	if(my_xbee::MAX_CMD_CHAR <= pos1) pos1 = 0; //最後までNULLがなければ新規コマンド
 	
+	//改行コードを区切りにして1つずつコマンドを実行していく
 	unsigned int pos2 = 0;
-	unsigned int fbLength =  ARRAY_LENGTH(frameBuff);
-	while (frameBuff[pos2] != '\0' && pos2 < fbLength)
+	while (frameBuff[pos2] != '\0' && pos2 < my_xbee::MAX_CMD_CHAR)
 	{
-		if(pos2 == fbLength - 1) break;
+		//終端までたどり着いたら終了
+		if(pos2 == my_xbee::MAX_CMD_CHAR - 1) break;
 		
 		char nxtC = frameBuff[pos2];
 		cmdBuff[pos1] = nxtC;
@@ -350,16 +353,15 @@ static void append_command(void)
 		if(nxtC == '\r')
 		{
 			cmdBuff[pos1] = '\0';
-			solve_command();
+			solve_command((char*)cmdBuff); //コマンドを処理
+			cmdBuff[0] = '\0'; //コマンドを削除
 			pos1 = 0;
 		}		
 	}	
 }
 
-static void solve_command(void)
-{
-	char* command = (char*)cmdBuff;
-		
+static void solve_command(const char *command)
+{		
 	//チューニング中は指令を受け取らない
 	if(autCalibratingVSensor || autCalibratingTSensor) return;
 	
@@ -381,7 +383,7 @@ static void solve_command(void)
 		//Bluetooth接続か否か(xはxbee,bはbluetooth)
 		outputToXBee = (command[13]=='t' || command[13]=='e'); //XBeeで親機に書き出すか否か
 		outputToBLE = (command[14]=='t'); //Bluetoothで書き出すか否か
-		outputToSDCard = (command[15]=='t'); //SDカードに書き出すか否か
+		outputToFM = (command[15]=='t'); //FMに書き出すか否か
 		
 		//きりのよい秒で計測開始
 		pass_th	= getNormTime(lastSavedTime, my_eeprom::interval_th);
@@ -587,12 +589,9 @@ static void solve_command(void)
 		currentTime = atol(num);
 		my_xbee::bltx_chars("UCT\r");
 	}
-	
-	//コマンドを削除
-	cmdBuff[0] = '\0';
 }
 
-// Timer1割り込み//FatFs（SDカード入出力通信）用
+// Timer1割り込み//FatFs（FM入出力通信）用
 ISR(TCA0_OVF_vect)
 {
 	disk_timerproc();	/* Drive timer procedure of low level disk I/O module */
@@ -623,7 +622,7 @@ ISR(RTC_PIT_vect)
 			my_eeprom::SetMeasurementSetting();
 			
 			logging=false;	//ロギング停止
-			initSD = false;	//SDカード再マウント
+			initFM = false;	//FMを再マウント
 			sleep_anemo();	//風速センサを停止
 			blinkRedLED(3);	//赤LED点滅
 			return;
@@ -660,14 +659,14 @@ ISR(RTC_PIT_vect)
 		
 		//明滅
 		if((PORTA.IN & PIN2_bm))  //Reset押し込み中は明滅停止
-			blinkGreenLED(initSD ? 2 : 1);
+			blinkGreenLED(initFM ? 2 : 1);
 	}
 }
 
 static void execLogging()
 {
-	//SD書き出しでマウント前の場合には赤LEDでアラート
-	if(outputToSDCard && !initSD) blinkRedLED(1);
+	//FM書き出しでマウント前の場合には赤LEDでアラート
+	if(outputToFM && !initFM) blinkRedLED(1);
 	
 	//自動計測開始がOffで計測開始時刻の前ならば終了
 	if(!my_eeprom::startAuto && currentTime < my_eeprom::start_dt) return;
@@ -676,8 +675,8 @@ static void execLogging()
 	blinkCount++;
 	if(5 <= blinkCount)
 	{
-		//SDカード書き出しでマウントできていない場合には点灯しない
-		if(!(outputToSDCard && !initSD)) blinkGreenLED(1);
+		//FM書き出しでマウントできていない場合には点灯しない
+		if(!(outputToFM && !initFM)) blinkGreenLED(1);
 		blinkCount = 0;
 	}
 	
@@ -765,7 +764,7 @@ static void execLogging()
 		}
 		else
 		{
-			float ill_d = my_i2c::ReadVCNL4030_ALS();
+			float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
 			ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
 			dtostrf(ill_d,8,2,illS);
 		}
@@ -818,28 +817,20 @@ static void execLogging()
 
 		if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
 		if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
-		if(outputToSDCard)  //SD card出力
+		if(outputToFM)  //FM出力
 		{
-			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。分を比べるので日付が変わった場合にも確実に書き出される
+			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。minを比べるので日付が変わった場合にも確実に書き出される
 			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_min != dtNow.tm_min)
 			{
-				writeSDcard(lastSavedTime, lineBuff); //SD card出力
+				writeFlashMemory(lastSavedTime, lineBuff); //FM出力
 				buffNumber = 0;
 				lineBuff[0] = '\0';
 				lastSavedTime = dtNow;
 			}
 			
-			//SDカード書き出し時は冒頭のDTTが不要。もう少しキレイなプログラムにできそうだが。。。
-			snprintf(charBuff, sizeof(charBuff), 
-			"%04d/%02d/%02d %02d:%02d:%02d,%04d/%02d/%02d %02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s\r",
-			dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-			dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-			tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S);
-			//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
-			charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-			charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
-			//一時保存文字列の末尾に足す
-			strncat(lineBuff, charBuff, sizeof(charBuff));
+			//FM書き出し時は冒頭のDTTが不要。
+			char *trmChar = charBuff + 4;
+			strcat(lineBuff, trmChar);
 			buffNumber++;
 		}
 	}
@@ -957,15 +948,15 @@ static void autoCalibrateTemperatureSensor()
 	}
 }
 
-static void writeSDcard(const tm dtNow, const char write_chars[])
+static void writeFlashMemory(const tm dtNow, const char write_chars[])
 {
 	//マウント未完了ならば終了
-	if(!initSD) return;
+	if(!initFM) return;
 	
 	char fileName[13]={}; //yyyymmdd.csv
 	snprintf(fileName, sizeof(fileName), "%04d%02d%02d.csv", dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday);
 	
-	//SDカード記録用日付更新
+	//FM記録用日付更新
 	myRTC.year=dtNow.tm_year+1900;
 	myRTC.month=dtNow.tm_mon+1;
 	myRTC.mday=dtNow.tm_mday;
@@ -979,7 +970,7 @@ static void writeSDcard(const tm dtNow, const char write_chars[])
 		f_puts(write_chars, fl);
 		f_close(fl);
 	}
-	else initSD = false; //エラー時は再マウントを試みる
+	else initFM = false; //エラー時は再マウントを試みる
 	
 	free(fl);
 }

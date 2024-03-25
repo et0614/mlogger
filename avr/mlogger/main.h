@@ -19,7 +19,7 @@ static void append_command(void);
 * @fn
 * 受信したコマンドを処理する
 */
-static void solve_command(void);
+static void solve_command(const char *command);
 
 static float readGlbVoltage(void);
 
@@ -27,7 +27,7 @@ static float readVelVoltage(void);
 
 static float readVoltage(unsigned int adNumber);
 
-static void writeSDcard(const tm dtNow, const char write_chars[]);
+static void writeFlashMemory(const tm dtNow, const char write_chars[]);
 
 static void execLogging(void);
 
