@@ -127,15 +127,6 @@ public partial class DeviceSetting : ContentPage
 
     //基本は測定を停止させる
     isStopLogging = true;
-
-    //Logger.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
-  }
-
-  protected override void OnDisappearing()
-  {
-    base.OnDisappearing();
-
-    //Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
@@ -171,10 +162,18 @@ public partial class DeviceSetting : ContentPage
     spc_name.Text = MLSResource.DS_SpecName + ": -";
     spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
     spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + Logger.LowAddress;
-    spc_vers.Text = MLSResource.DS_SpecVersion + ": -";
+    spc_vers.Text = MLSResource.DS_SpecVersion + ": " +
+      Logger.Version_Major + "." + Logger.Version_Minor + "." + Logger.Version_Revision;
 
-    //バージョン更新
-    loadVersion();
+    //バージョンに応じた処理
+    //Zigbee LEDの有効無効ボタンの有効化
+    btn_zigled.IsEnabled = 3 <= Logger.Version_Minor;
+
+    //常設設置モードボタンの有効化
+    btn_pmntMode.IsEnabled =
+      (3 <= Logger.Version_Minor) ||
+      (2 == Logger.Version_Minor && 4 <= Logger.Version_Revision);
+    //loadVersion();
 
     //名称更新
     loadName();
@@ -227,45 +226,6 @@ public partial class DeviceSetting : ContentPage
 
         //編集要素の着色をもとに戻す
         resetTextColor();
-      });
-    });
-  }
-
-  /// <summary>バージョン情報を読み込む</summary>
-  private void loadVersion()
-  {
-    Logger.HasVersionReceived = false;
-    Task.Run(async () =>
-    {
-      //情報が更新されるまで命令を繰り返す
-      while (!Logger.HasVersionReceived)
-      {
-        try
-        {
-          //バージョン取得コマンドを送信
-          if(MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
-        }
-        catch { }
-        await Task.Delay(500);
-        if (Logger == null) return; //接続解除時には終了
-      }
-
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
-      {
-        spc_vers.Text = MLSResource.DS_SpecVersion + ": " +
-          Logger.Version_Major + "." +
-          Logger.Version_Minor + "." +
-          Logger.Version_Revision;
-
-        //Zigbee LEDの有効無効ボタンの有効化
-        btn_zigled.IsEnabled = 3 <= Logger.Version_Minor;
-
-        //常設設置モードボタンの有効化
-        btn_pmntMode.IsEnabled =
-        (3 <= Logger.Version_Minor) ||
-        (2 == Logger.Version_Minor && 4 <= Logger.Version_Revision);
       });
     });
   }

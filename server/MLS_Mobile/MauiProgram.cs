@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Maui;
-using Microsoft.Extensions.Localization;
 using Mopups.Hosting;
 
 namespace MLS_Mobile;

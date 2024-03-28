@@ -127,12 +127,37 @@ public partial class MLoggerScanner : ContentPage
         //MLoggerの場合：Openに成功したら設定ページへ移動
         if (MLUtility.ConnectedDevice == MLUtility.MLDevice.MLogger)
         {
-          Application.Current.Dispatcher.Dispatch(() =>
+          //バージョンを取得する
+          MLUtility.Logger.HasVersionReceived = false;
+          int tryNum = 0;
+          while ((!MLUtility.Logger.HasVersionReceived) && tryNum < 4)
           {
-            Shell.Current.GoToAsync(nameof(DeviceSetting),
+            try
+            {
+              //Bluetooth転送コマンドを送信
+              MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
+              await Task.Delay(200);
+            }
+            catch { }
+            tryNum++;
+          }
+
+          //バージョンを取得できた場合
+          if (MLUtility.Logger.HasVersionReceived)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              Shell.Current.GoToAsync(nameof(DeviceSetting),
                 new Dictionary<string, object> { { "mlLowAddress", lowAddress } }
                 );
-          });
+            });
+          }
+          else
+          {
+            MLUtility.CloseXbee();
+            Application.Current.Dispatcher.Dispatch(() =>
+            { DisplayAlert("Alert", "Connection failed.", "OK"); });
+          }
         }
         //Transcieverの場合
         else if (MLUtility.ConnectedDevice == MLUtility.MLDevice.MLTransciever)
@@ -146,7 +171,7 @@ public partial class MLoggerScanner : ContentPage
             {
               //Bluetooth転送コマンドを送信
               MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeRelayToBluetoothCommand()));
-              await Task.Delay(500);
+              await Task.Delay(200);
             }
             catch { }
             tryNum++;
