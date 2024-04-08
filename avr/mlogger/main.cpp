@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.14\r";
+const char VERSION_NUMBER[] = "VER:3.3.15\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -135,9 +135,6 @@ static float vSensorInitVoltage;
 static bool autCalibratingTSensor= false;
 static unsigned int tSensorInitTimer = 0;
 static unsigned long tSensorTuningTime = 86400; //1日
-
-//マクロ定義********************************************************
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array[0]))
 
 int main(void)
 {
@@ -223,7 +220,7 @@ int main(void)
 		sleep_mode();
     }
 	
-	//電池が不足時の処理
+	//電池が不足した場合のみ、ここまでたどり着く
 	if(initFM) f_mount(NULL, "", 1); //FMをアンマウント
 	cli(); //割り込み終了
 	showError(1); //LED表示
@@ -571,6 +568,7 @@ static void solve_command(const char *command)
 	{
 		wakeup_anemo();
 		calibratingVelocityVoltage = true;
+		//以降、毎秒"SCV:電圧"が送信される
 	}
 	//風速の手動校正終了
 	else if(strncmp(command, "ECV", 3) == 0)
@@ -756,12 +754,13 @@ static void execLogging()
 	pass_ill++;
 	if(my_eeprom::measure_ill && (int)my_eeprom::interval_ill <= pass_ill)
 	{
-		
+		//近接計
 		if(my_eeprom::measure_Prox)
 		{
 			float ill_d = my_i2c::ReadVCNL4030_PS();
 			dtostrf(ill_d,8,2,illS);
 		}
+		//照度計
 		else
 		{
 			float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
@@ -784,7 +783,7 @@ static void execLogging()
 		
 	//新規データがある場合は送信
 	if(hasNewData)
-	{		
+	{
 		if(outputToXBee || outputToBLE)
 		{
 			wakeup_xbee(); //XBeeスリープ解除
@@ -815,12 +814,16 @@ static void execLogging()
 		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
 		charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
 
-		if(outputToXBee) my_xbee::tx_chars(charBuff); //XBee Zigbee出力
-		if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
+		if(outputToXBee) 
+			my_xbee::tx_chars(charBuff); //XBee Zigbee出力
+		if(outputToBLE) 
+			my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
 		if(outputToFM)  //FM出力
 		{
-			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。minを比べるので日付が変わった場合にも確実に書き出される
-			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_min != dtNow.tm_min)
+			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。1h間隔の書き出しのために3行目も必要
+			if(N_LINE_BUFF <= buffNumber 
+				|| lastSavedTime.tm_min != dtNow.tm_min 
+				|| lastSavedTime.tm_hour != dtNow.tm_hour)
 			{
 				writeFlashMemory(lastSavedTime, lineBuff); //FM出力
 				buffNumber = 0;
@@ -1042,13 +1045,13 @@ static void showError(short int errNum)
 			while(true)
 			{
 				blinkRedLED(1);
-				_delay_ms(2000);
+				_delay_ms(3000);
 			}
 		case 2: //XBee設定エラー
 			while(true)
 			{
 				blinkRedLED(2);
-				_delay_ms(2000);
+				_delay_ms(3000);
 			}
 	}
 }

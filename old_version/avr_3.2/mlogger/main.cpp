@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.15\r";
+const char VERSION_NUMBER[] = "VER:3.2.16\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -816,8 +816,10 @@ static void execLogging()
 		if(outputToBLE) my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
 		if(outputToSDCard)  //SD card出力
 		{
-			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。分を比べるので日付が変わった場合にも確実に書き出される
-			if(N_LINE_BUFF <= buffNumber || lastSavedTime.tm_min != dtNow.tm_min)
+			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。1h間隔の書き出しのために3行目も必要
+			if(N_LINE_BUFF <= buffNumber
+				|| lastSavedTime.tm_min != dtNow.tm_min
+				|| lastSavedTime.tm_hour != dtNow.tm_hour)
 			{
 				writeSDcard(lastSavedTime, lineBuff); //SD card出力
 				buffNumber = 0;
