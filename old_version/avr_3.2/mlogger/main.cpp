@@ -107,6 +107,9 @@ volatile static unsigned int pass_ad1 = 0;
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
 
+//接続維持用空パケット時間[sec]
+static uint8_t slp_time = 0;
+
 //SDカード関連
 volatile bool initSD = false; //SDカード初期化フラグ
 static FATFS* fSystem;
@@ -784,6 +787,7 @@ static void execLogging()
 	{
 		if(outputToXBee || outputToBLE)
 		{
+			slp_time=0; //空パケットまでの時間を初期化
 			wakeup_xbee(); //XBeeスリープ解除
 			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
 		}
@@ -840,6 +844,13 @@ static void execLogging()
 			strncat(lineBuff, charBuff, sizeof(charBuff));
 			buffNumber++;
 		}
+	}
+	slp_time++;
+	if(60 <= slp_time){
+		wakeup_xbee(); //XBeeスリープ解除
+		_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
+		my_xbee::tx_chars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
+		slp_time = 0;
 	}
 	
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)

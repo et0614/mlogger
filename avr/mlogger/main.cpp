@@ -9,7 +9,8 @@
  * ・親機子機共通
  *   1) Firmwareは、Product family:「XB3-24」,Function set:「Digi XBee3 Zigbee 3.0」,Firmware version:「1010」
  *   2) PAN IDを同じ値にする
- *   3) SP:Cyclic Sleep Period = 0x64（=1000 msec）,SN:Number of Cyclic Sleep Periods = 3600
+ *   3) SP:Cyclic Sleep Period = 0x64（=1000 msec）
+ *      SN:Number of Cyclic Sleep Periods = 3600
  *      これで3600×3=3hourはネットワークから外れない
  *   4) AP:API Mode Without Escapes[1]
  * ・親機のみ
@@ -109,6 +110,9 @@ volatile static int pass_ad1 = 0;
 
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
+
+//接続維持用空パケット時間[sec]
+static uint8_t slp_time = 0;
 
 //Flashメモリ関連
 volatile bool initFM = false; //Flash Memory初期化フラグ
@@ -780,14 +784,15 @@ static void execLogging()
 		pass_ad1 = 0;
 		hasNewData = true;
 	}
-		
+	
 	//新規データがある場合は送信
 	if(hasNewData)
-	{
+	{		
 		if(outputToXBee || outputToBLE)
 		{
+			slp_time=0; //空パケットまでの時間を初期化
 			wakeup_xbee(); //XBeeスリープ解除
-			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
+			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。短すぎるとコンデンサの影響か十分に立ち上がらない。。。
 		}
 		
 		//空白削除して左詰め
@@ -836,6 +841,13 @@ static void execLogging()
 			strcat(lineBuff, trmChar);
 			buffNumber++;
 		}
+	}
+	slp_time++;
+	if(60 <= slp_time){
+		wakeup_xbee(); //XBeeスリープ解除
+		_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
+		my_xbee::tx_chars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
+		slp_time = 0;
 	}
 	
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
