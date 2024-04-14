@@ -17,8 +17,8 @@ const uint8_t VCNL_ADD = 0x60 << 1;
 //AHT20のアドレス（0x38=0b00111000）(0x70=0b01110000)
 const uint8_t AHT20_ADD = 0x38 << 1;
 
-//P3T1750DPのアドレス（0x48=0b01001000; A0=A1=A2=GND）
-const uint8_t P3T1750DP_ADD = 0x48;
+//P3T1750DPのアドレス（0x24=0b10010000; 0x48=0b01001000, A0=A1=A2=GND）
+const uint8_t P3T1750DP_ADD = 0x48 << 1;
 
 enum 
 {
@@ -419,7 +419,7 @@ uint8_t my_i2c::ReadP3T1750DP(float *tempValue)
 	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACKで終了
 	
 	//MSBの最上位が1の場合（マイナス）
-	if(buffer[0] | 0b10000000)
+	if(buffer[0] & 0b10000000)
 	{
 		uint16_t data = ~((buffer[0] << 4) + (buffer[1] >> 4)) + 0b0000001;
 		*tempValue = -0.0625 * data;
