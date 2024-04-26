@@ -126,7 +126,7 @@ bool my_xbee::xbee_setting_initialized(){
 	//ATモードへ行けない場合にはすでにAPI Enabledになっているということで正常と判断。あまり良くない処理。
 	if(strcmp(message, "OK") != 0) return 1;
 	
-	//PAN IDは19800614
+	/*//PAN IDは19800614//ユーザーが変える可能性があるからコメントアウト
 	my_uart::send_chars("atid\r");
 	my_xbee::receive_message(message);
 	if(strcmp(message, "19800614") != 0) {
@@ -134,7 +134,7 @@ bool my_xbee::xbee_setting_initialized(){
 		my_xbee::receive_message(message);
 		if(strcmp(message, "OK") != 0) return 0;
 		hasChanged = true;
-	}
+	}*/
 	
 	//SPは1000msec=0x64
 	my_uart::send_chars("atsp\r");

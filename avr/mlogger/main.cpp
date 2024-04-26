@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.15\r";
+const char VERSION_NUMBER[] = "VER:3.3.16\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -197,9 +197,9 @@ int main(void)
 	
 	//10秒以上電圧不足時間が継続したら終了
     while (lowBatteryTime <= 10)
-    {		
+    {
 		//マウントできていなければとにかくマウント
-		if(!initFM) 
+		if(!initFM)
 			initFM = (f_mount(fSystem, "", 1) == FR_OK);
 		
 		//スリープモード設定
@@ -251,6 +251,11 @@ static void initialize_port(void)
 	//プルアップ/ダウン
 	PORTA.OUTSET = PIN2_bm; //PORTA PIN2(Interrupt)：アップ
 	PORTD.OUTCLR = PIN6_bm; //UART RTS（Lowで受信可能）：ダウン
+	
+	//未使用ポート
+	PORTA.PIN5CTRL = PORT_ISC_INPUT_DISABLE_gc; // PA5
+	PORTD.PIN1CTRL = PORT_ISC_INPUT_DISABLE_gc; // PD1
+	PORTD.PIN3CTRL = PORT_ISC_INPUT_DISABLE_gc; // PD3
 }
 
 //タイマ初期化

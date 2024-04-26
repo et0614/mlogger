@@ -61,7 +61,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.2.16\r";
+const char VERSION_NUMBER[] = "VER:3.2.17\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -196,7 +196,7 @@ int main(void)
 	
 	//10秒以上電圧不足時間が継続したら終了
     while (lowBatteryTime <= 10)
-    {		
+    {
 		//マウントできていなければとにかくマウント
 		if(!initSD) 
 			initSD = (f_mount(fSystem, "", 1) == FR_OK);
