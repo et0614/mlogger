@@ -149,6 +149,23 @@ public partial class LoggingData : ContentPage
         Margin = new Thickness(1)
       }, i, 1);
     }
+
+    //データが500を超える場合には続きがあることを表示
+    if (lines.Length - 1 == 500)
+    {
+      IView iv = new Label
+      {
+        Text = MLSResource.LD_Exceed,
+        BackgroundColor = Colors.White,
+        HorizontalTextAlignment = TextAlignment.Start,
+        VerticalTextAlignment = TextAlignment.Center,
+        HorizontalOptions = LayoutOptions.Fill,
+        VerticalOptions = LayoutOptions.Fill,
+        Margin = new Thickness(1)
+      };
+      tableGrid.Add(iv, 0, 2);
+      tableGrid.SetColumnSpan(iv, 8);
+    }
   }
 
   #endregion

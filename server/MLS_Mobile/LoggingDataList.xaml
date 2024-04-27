@@ -4,7 +4,7 @@
              x:Class="MLS_Mobile.LoggingDataList"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.LD_List}">
-    <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}"
+    <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}" Margin="0,0,0,80"
                         SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
         <CollectionView.ItemTemplate>
             <DataTemplate>

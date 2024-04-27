@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using MLS_Mobile.Resources.i18n;
+using System.Text;
 
 namespace MLS_Mobile;
 
@@ -28,6 +29,24 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(RelayedDataViewer), typeof(RelayedDataViewer));
 
     makeDummyFile();
+  }
+
+  protected override async void OnNavigating(ShellNavigatingEventArgs args)
+  {
+    base.OnNavigating(args);
+
+    //DataReceiveからpopするときのみ、計測を中止するか警告を発する
+    if (args.Current != null && args.Current.Location.OriginalString.Contains(nameof(DataReceive)))
+    {
+      var currentpage = (App.Current.MainPage as AppShell).CurrentPage as DataReceive;
+      if (currentpage is DataReceive && args.Source == ShellNavigationSource.Pop)
+      {
+        ShellNavigatingDeferral token = args.GetDeferral();
+        var result = await DisplayActionSheet(MLSResource.DR_FinishAlert, MLSResource.Cancel, MLSResource.Yes);
+        if (result == MLSResource.Yes) token.Complete();
+        else args.Cancel();
+      }
+    }
   }
 
 

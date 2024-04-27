@@ -126,6 +126,9 @@
   <data name="AtmosphericPressure" xml:space="preserve">
     <value>Atmospheric pressure</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="CC_Title" xml:space="preserve">
     <value>Clothing coordinator</value>
   </data>
@@ -223,7 +226,7 @@
     <value>Fail to stop logging.</value>
   </data>
   <data name="DR_FinishAlert" xml:space="preserve">
-    <value>Are you sure you want to finish the measurement?</value>
+    <value>End measurement?</value>
   </data>
   <data name="DR_FinishMeasurement" xml:space="preserve">
     <value>Finish measurement</value>
@@ -347,6 +350,9 @@
   </data>
   <data name="LD_DeleteAlert" xml:space="preserve">
     <value>Are you sure you want to delete the file?</value>
+  </data>
+  <data name="LD_Exceed" xml:space="preserve">
+    <value>The maximum number of items displayed has been exceeded. Please copy them on the clipboard.</value>
   </data>
   <data name="LD_Format" xml:space="preserve">
     <value>Format</value>

@@ -126,6 +126,9 @@
   <data name="AtmosphericPressure" xml:space="preserve">
     <value>大気圧</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
   <data name="CC_Title" xml:space="preserve">
     <value>着衣量計算機</value>
   </data>
@@ -223,7 +226,7 @@
     <value>計測終了に失敗しました</value>
   </data>
   <data name="DR_FinishAlert" xml:space="preserve">
-    <value>本当に計測を終了しますか？</value>
+    <value>計測を終了しますか？</value>
   </data>
   <data name="DR_FinishMeasurement" xml:space="preserve">
     <value>測定終了</value>
@@ -344,6 +347,9 @@
   </data>
   <data name="LD_DeleteAlert" xml:space="preserve">
     <value>データを削除して良いですか？</value>
+  </data>
+  <data name="LD_Exceed" xml:space="preserve">
+    <value>最大表示件数を超えています。クリップボードでコピーしてください。</value>
   </data>
   <data name="LD_Format" xml:space="preserve">
     <value>整形</value>

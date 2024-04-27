@@ -87,31 +87,31 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.29</ApplicationDisplayVersion>
-	  <ApplicationVersion>32</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
+	  <ApplicationVersion>33</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.29</ApplicationDisplayVersion>
-	  <ApplicationVersion>32</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
+	  <ApplicationVersion>33</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.29</ApplicationDisplayVersion>
-	  <ApplicationVersion>32</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
+	  <ApplicationVersion>33</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.29</ApplicationDisplayVersion>
-	  <ApplicationVersion>32</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
+	  <ApplicationVersion>33</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
 		<!-- App icon for android （小さい）-->
-		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" ForegroundScale="0.6" Color="White" />
+		<!-- <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" ForegroundScale="0.6" Color="White" />-->
 
 		<!-- App icon for all other platforms （スケールなし）-->
-		<!-- <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />-->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="ForestGreen" BaseSize="128,128" />

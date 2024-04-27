@@ -88,6 +88,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Cancel に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Clothing coordinator に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CC_Title {
@@ -367,7 +376,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Are you sure you want to finish the measurement? に類似しているローカライズされた文字列を検索します。
+        ///   End measurement? に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DR_FinishAlert {
             get {
@@ -750,6 +759,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string LD_DeleteAlert {
             get {
                 return ResourceManager.GetString("LD_DeleteAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The maximum number of items displayed has been exceeded. Please copy them on the clipboard. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_Exceed {
+            get {
+                return ResourceManager.GetString("LD_Exceed", resourceCulture);
             }
         }
         

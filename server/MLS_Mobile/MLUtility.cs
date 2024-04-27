@@ -198,17 +198,17 @@ namespace MLS_Mobile
         + Path.DirectorySeparatorChar + fileName;
 
       //先頭のmaxLine行を読み込む
-      int lines = 0;
+      int lines = 1;
       StringBuilder sBuilder = new StringBuilder();
       using (StreamReader sReader = new StreamReader(filePath, Encoding.UTF8))
       {
         string buff;
-        while ((buff = sReader.ReadLine()) != null && lines < maxLine)
+        while ((buff = sReader.ReadLine()) != null && lines <= maxLine)
         {
           sBuilder.AppendLine(buff);
           lines++;
         }
-        return sBuilder.ToString();
+        return sBuilder.ToString().TrimEnd('\r', '\n');
       }
     }
 
