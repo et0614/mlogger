@@ -23,7 +23,17 @@ namespace MLS_Mobile
 
     private string _mloggerName = "00000000";
 
-    private string _drybulbTemperature, _relativeHumidity, _globeTemperature, _velocity, _illuminance, _mrt, _pmv, _ppd, _set;
+    //private string _drybulbTemperature, _relativeHumidity, _globeTemperature, _velocity, _illuminance, _mrt, _pmv, _ppd, _set;
+
+    private string _drybulbTemperature = "";
+    private string _relativeHumidity = "";
+    private string _globeTemperature = "";
+    private string _velocity = "";
+    private string _illuminance = "";
+    private string _mrt = "";
+    private string _pmv = "";
+    private string _ppd = "";
+    private string _set = "";
 
     private DateTime _lastCom, _lastComDBT, _lastComHMD, _lastComGLB, _lastComVEL, _lastComILL;
 
@@ -373,7 +383,7 @@ namespace MLS_Mobile
       PMV = _mLogger.PMV.ToString("F2");
       PPD = _mLogger.PPD.ToString("F1");
       SETStar = _mLogger.SETStar.ToString("F1");
-
+      
       //着色
       //FrameColor = Application.Current.Resources["Dark_G"] as Color;
     }

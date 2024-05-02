@@ -173,7 +173,6 @@ public partial class DeviceSetting : ContentPage
     btn_pmntMode.IsEnabled =
       (3 <= Logger.Version_Minor) ||
       (2 == Logger.Version_Minor && 4 <= Logger.Version_Revision);
-    //loadVersion();
 
     //–¼ÌXV
     loadName();

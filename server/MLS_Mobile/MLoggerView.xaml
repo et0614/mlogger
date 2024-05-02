@@ -10,7 +10,7 @@
 
     <!--<Frame BorderColor="{Binding FrameColor}" CornerRadius="10" Padding="0" IsEnabled="{ Binding IsEnabled }">-->
     <Frame BorderColor="{Binding FrameColor}" CornerRadius="10" Padding="0">
-            <VisualStateManager.VisualStateGroups>
+        <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="CommonStates">
                 <VisualState x:Name="Normal">
                     <VisualState.Setters>
@@ -34,10 +34,10 @@
             </HorizontalStackLayout>
 
             <!--計測値-->
-            <Grid Margin="20,5,0,0" RowDefinitions="*,*" ColumnDefinitions="*,*,*">
+            <Grid Margin="20,5,5,0" RowDefinitions="*,*" ColumnDefinitions="*,*,*">
                 <Label Grid.Row="0" Grid.Column="0" FontSize="Body" Text="{Binding DrybulbTemperature, FallbackValue='-', StringFormat='{0} °CDB'}" VerticalOptions="Center" HorizontalOptions="Start" />
                 <Label Grid.Row="0" Grid.Column="1" FontSize="Body" Text="{Binding RelativeHumdity, FallbackValue='-', StringFormat='{0} %'}" VerticalOptions="Center" HorizontalOptions="Start" />
-                <Label Grid.Row="0" Grid.Column="2" FontSize="Body" Text="{Binding GlobeTemperature, FallbackValue='-', StringFormat='{0} °C'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label Grid.Row="0" Grid.Column="2" FontSize="Body" Text="{Binding GlobeTemperature, FallbackValue='-', StringFormat='{0} °C(glb)'}" VerticalOptions="Center" HorizontalOptions="Start" />
                 <Label Grid.Row="1" Grid.Column="0" FontSize="Body" Text="{Binding Velocity, FallbackValue='-', StringFormat='{0} m/s'}" VerticalOptions="Center" HorizontalOptions="Start" />
                 <Label Grid.Row="1" Grid.Column="1" FontSize="Body" Text="{Binding Illuminance, FallbackValue='-', StringFormat='{0} lux'}" VerticalOptions="Center" HorizontalOptions="Start" />
             </Grid>

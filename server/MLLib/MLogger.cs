@@ -364,12 +364,20 @@ namespace MLLib
     /// <summary>コマンドをスキップする</summary>
     public void SkipCommand()
     {
-      if (receivedData.Contains('\r'))
+      while (true)
       {
-        NextCommand = receivedData.Substring(0, receivedData.IndexOf('\r'));
-        receivedData = receivedData.Remove(0, receivedData.IndexOf('\r') + 1);
+        if (!receivedData.Contains('\r'))
+        {
+          NextCommand = "";
+          return;
+        }
+        else
+        {
+          NextCommand = receivedData.Substring(0, receivedData.IndexOf('\r'));
+          receivedData = receivedData.Remove(0, receivedData.IndexOf('\r') + 1);
+          if (NextCommand != "") return;
+        }
       }
-      else NextCommand = "";
     }
 
     /// <summary>熱的快適性の指標（PMV,PPD,SET*）を更新する</summary>
@@ -554,7 +562,7 @@ namespace MLLib
       }
       finally
       {
-        //エラーが置きてもとにかく次のコマンドへ移行
+        //エラーが起きてもとにかく次のコマンドへ移行
         SkipCommand();
       }
     }

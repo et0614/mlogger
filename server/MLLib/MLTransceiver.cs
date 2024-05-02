@@ -66,7 +66,7 @@ namespace MLLib
     public event EventHandler? RelayToBluetoothReceivedEvent;
 
     /// <summary>USBへの転送イベント</summary>
-    public event EventHandler? RelayToUSBReceivedEvent;
+    public event EventHandler? StopRelayToBluetoothReceivedEvent;
 
     /// <summary>コマンドリレーイベント</summary>
     public event EventHandler? CommandRelayEvent;
@@ -82,10 +82,10 @@ namespace MLLib
     public bool HasVersionReceived { get; set; } = false;
 
     /// <summary>Bluetoothへの転送を受信したか否かを設定・取得する</summary>
-    public bool HasRelayedToBluetoothReceived { get; set; } = false;
+    public bool HasRelayToBluetoothReceived { get; set; } = false;
 
     /// <summary>USBへの転送を受信したか否かを設定・取得する</summary>
-    public bool HasRelayedToUSBReceived { get; set; } = false;
+    public bool HasStopRelayToBluetoothReceived { get; set; } = false;
 
     /// <summary>現在日時変更イベントを受信したか否かを設定・取得する</summary>
     public bool HasUpdateCurrentTimeReceived { get; set; } = false;
@@ -125,12 +125,20 @@ namespace MLLib
     /// <summary>コマンドをスキップする</summary>
     public void SkipCommand()
     {
-      if (receivedData.Contains('\r'))
+      while (true)
       {
-        NextCommand = receivedData.Substring(0, receivedData.IndexOf('\r'));
-        receivedData = receivedData.Remove(0, receivedData.IndexOf('\r') + 1);
+        if (!receivedData.Contains('\r'))
+        {
+          NextCommand = "";
+          return;
+        }
+        else
+        {
+          NextCommand = receivedData.Substring(0, receivedData.IndexOf('\r'));
+          receivedData = receivedData.Remove(0, receivedData.IndexOf('\r') + 1);
+          if (NextCommand != "") return;
+        }
       }
-      else NextCommand = "";
     }
 
     #endregion
@@ -156,14 +164,14 @@ namespace MLLib
 
           //Relay To bluetooth
           case "RTB":
-            HasRelayedToBluetoothReceived = true;
+            HasRelayToBluetoothReceived = true;
             RelayToBluetoothReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
-          //Relay To USB
-          case "RTU":
-            HasRelayedToUSBReceived = true;
-            RelayToUSBReceivedEvent?.Invoke(this, EventArgs.Empty);
+          //Stop Relay To Bluetooth
+          case "SRB":
+            HasStopRelayToBluetoothReceived = true;
+            StopRelayToBluetoothReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
           //Command Relay
@@ -181,7 +189,7 @@ namespace MLLib
       catch { }
       finally
       {
-        //エラーが置きてもとにかく次のコマンドへ移行
+        //エラーが起きてもとにかく次のコマンドへ移行
         SkipCommand();
       }
     }
@@ -207,7 +215,7 @@ namespace MLLib
     private void solveCRY()
     {
       string lowAddress = NextCommand.Substring(3, 8);
-      string command = NextCommand.Substring(10);
+      string command = NextCommand.Substring(11);
 
       //新規のMLoggerの場合には検出イベントを通知
       if (!mLoggers.ContainsKey(lowAddress))
@@ -249,11 +257,11 @@ namespace MLLib
       return "\rRTB\r";
     }
 
-    /// <summary>USB転送コマンドをつくる</summary>
-    /// <returns>USB転送コマンド</returns>
-    public static string MakeRelayToUSBCommand()
+    /// <summary>Bluetooth転送停止コマンドをつくる</summary>
+    /// <returns>Bluetooth転送停止コマンド</returns>
+    public static string MakeStopRelayToBluetoothCommand()
     {
-      return "\rRTU\r";
+      return "\rSRB\r";
     }
 
     /// <summary>リレーコマンドをつくる</summary>

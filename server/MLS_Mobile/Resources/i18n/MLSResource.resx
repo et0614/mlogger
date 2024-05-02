@@ -444,6 +444,9 @@
   <data name="RelativeHumidity" xml:space="preserve">
     <value>Relative humidity</value>
   </data>
+  <data name="RV_Title" xml:space="preserve">
+    <value>Relayed data viewer</value>
+  </data>
   <data name="SC_Bluetooth" xml:space="preserve">
     <value>Please enable Bluetooth</value>
   </data>
@@ -460,7 +463,7 @@
     <value>Scanning MLogger...</value>
   </data>
   <data name="SC_Title" xml:space="preserve">
-    <value>MLDevice scanner</value>
+    <value>ML scanner</value>
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>Thermal comfort calculator</value>

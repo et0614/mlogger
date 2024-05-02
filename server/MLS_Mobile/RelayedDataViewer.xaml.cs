@@ -1,4 +1,5 @@
 using MLLib;
+using MLS_Mobile.Resources.i18n;
 using System.Collections.ObjectModel;
 using System.Text;
 
@@ -21,21 +22,6 @@ public partial class RelayedDataViewer : ContentPage
 		InitializeComponent();
 
     this.BindingContext = this;
-
-    //Transcieverの日時を更新
-    Task.Run(async () =>
-    {
-      while (!MLUtility.Transceiver.HasUpdateCurrentTimeReceived)
-      {
-        try
-        {
-          if (MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
-          await Task.Delay(500);
-        }
-        catch { }
-      }
-    });
   }
 
   #region ロード・アンロードイベント
@@ -92,39 +78,7 @@ public partial class RelayedDataViewer : ContentPage
     mLoggers.Add(logger);
     MLoggerViewModel mvm = new() { Logger = logger };
     mvm.IsEnabled = false;
-    MLoggerViewModelList.Add(mvm);
-
-    /*//名称を読み込む
-    Task.Run(async () =>
-    {
-      while (!logger.HasLoggerNameReceived)
-      {
-        try
-        {
-          if (MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
-              MLTransceiver.MakeRelayCommand(logger.LowAddress, MLogger.MakeLoadLoggerNameCommand())
-              ));
-          
-          await Task.Delay(500);
-        }
-        catch { }
-      }
-    });*/
+    MLoggerViewModelList.Add(mvm); //ここでエラー
   }
 
-  private void mlvList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-  {
-    if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
-
-    MLoggerViewModel selectedMLoggerViewModel = (MLoggerViewModel)e.CurrentSelection[0];
-    mlvList.SelectedItem = null;
-
-    Application.Current.Dispatcher.Dispatch(() =>
-    {
-      Shell.Current.GoToAsync(nameof(DataReceive),
-        new Dictionary<string, object> { { "mlLowAddress", selectedMLoggerViewModel.Logger.LowAddress } }
-        );
-    });
-  }
 }

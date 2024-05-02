@@ -1042,6 +1042,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Relayed data viewer に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string RV_Title {
+            get {
+                return ResourceManager.GetString("RV_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Please enable Bluetooth に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Bluetooth {
@@ -1087,7 +1096,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   MLDevice scanner に類似しているローカライズされた文字列を検索します。
+        ///   ML scanner に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Title {
             get {

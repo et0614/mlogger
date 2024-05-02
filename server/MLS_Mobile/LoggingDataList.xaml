@@ -8,7 +8,7 @@
                         SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
         <CollectionView.ItemTemplate>
             <DataTemplate>
-                <SwipeView BackgroundColor="{StaticResource Lightest_G}">
+                <SwipeView Margin="0,2,0,2" BackgroundColor="{StaticResource Lightest_G}">
                     <SwipeView.RightItems>
                         <SwipeItems Mode="Reveal">
                             <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}" 
@@ -16,7 +16,7 @@
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
                                 <SwipeItem.IconImageSource>
-                                    <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="24" Color="White"/>
+                                    <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="White"/>
                                 </SwipeItem.IconImageSource>
                             </SwipeItem>
                             <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
@@ -24,7 +24,7 @@
                                            Command="{Binding CopyCommand}"
                                            CommandParameter="{Binding .}">
                                 <SwipeItem.IconImageSource>
-                                    <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="24" Color="White"/>
+                                    <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="20" Color="White"/>
                                 </SwipeItem.IconImageSource>
                             </SwipeItem>
                         </SwipeItems>
@@ -39,11 +39,11 @@
 
                             <Label Grid.Row="0" Grid.Column="0"
                                Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
-                               FontSize="18" Padding="10,0"
+                               FontSize="18" Padding="10,5"
                                HorizontalOptions="Start" VerticalOptions="Center"/>
                             <Label Grid.Row="0" Grid.Column="1"
                                Text="{Binding Path=FileSize, StringFormat='{0} bytes'}" 
-                               FontSize="12" Padding="10,0"
+                               FontSize="16" Padding="10,5"
                                HorizontalTextAlignment="Start"
                                HorizontalOptions="FillAndExpand" VerticalOptions="Center"
                                TextColor="Gray"/>

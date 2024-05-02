@@ -67,6 +67,7 @@ namespace MLS_Mobile
 
       //XBeeをOpen
       ConnectedXBee.Connect();
+      ConnectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
 
       //接続先:MLogger
       if (device.Name.StartsWith("MLogger_"))
@@ -74,7 +75,6 @@ namespace MLS_Mobile
         ConnectedDevice = MLDevice.MLogger;
         Logger = new MLogger(ConnectedXBee.GetAddressString());
         Logger.LocalName = device.Name;
-        ConnectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
         return Logger.LowAddress;
       }
       //接続先:MLTransceiver
@@ -82,7 +82,6 @@ namespace MLS_Mobile
       {
         ConnectedDevice = MLDevice.MLTransciever;
         Transceiver = new MLTransceiver(ConnectedXBee.GetAddressString());
-        ConnectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
         return Transceiver.LowAddress;
       }
       else return "";

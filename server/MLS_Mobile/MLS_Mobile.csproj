@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<!-- 国際化に関するバグ対応。いずれ削除 -->
-	<PropertyGroup>
-		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
+	<!-- <PropertyGroup> -->
+		<!-- <GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore> -->
 		<!-- <EnableAssemblyILStripping>true</EnableAssemblyILStripping> -->
-	</PropertyGroup>
+	<!-- </PropertyGroup> -->
 	<!-- 国際化に関するバグ対応。いずれ削除 -->
 
 	<!-- iOS用。プライバシーマニフェストのインクルード処理 -->
@@ -34,7 +34,7 @@
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-		<!-- <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>-->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">30.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>		
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -108,10 +108,10 @@
 	
 	<ItemGroup>
 		<!-- App icon for android （小さい）-->
-		<!-- <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" ForegroundScale="0.6" Color="White" />-->
+		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" ForegroundScale="0.6" />
 
 		<!-- App icon for all other platforms （スケールなし）-->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
+		<MauiIcon Update="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="ForestGreen" BaseSize="128,128" />
@@ -318,13 +318,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="5.2.0" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="8.0.1" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.0" />
-	  <PackageReference Include="Mopups" Version="1.1.1" />
-	  <PackageReference Include="Popolo" Version="2.3.1.65" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.4" />
+	  <PackageReference Include="Mopups" Version="1.3.1" />
+	  <PackageReference Include="Popolo" Version="2.3.1.68" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
 	</ItemGroup>
 
 	<ItemGroup>

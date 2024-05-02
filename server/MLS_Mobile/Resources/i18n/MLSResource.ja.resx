@@ -441,6 +441,9 @@
   <data name="RelativeHumidity" xml:space="preserve">
     <value>相対湿度</value>
   </data>
+  <data name="RV_Title" xml:space="preserve">
+    <value>転送データビューワ</value>
+  </data>
   <data name="SC_Bluetooth" xml:space="preserve">
     <value>Bluetoothを有効にしてください</value>
   </data>
@@ -457,7 +460,7 @@
     <value>M-Logger探索中...</value>
   </data>
   <data name="SC_Title" xml:space="preserve">
-    <value>MLDeviceスキャナ</value>
+    <value>MLスキャナ</value>
   </data>
   <data name="TC_Title" xml:space="preserve">
     <value>熱的快適性の計算機</value>
