@@ -21,7 +21,7 @@ namespace MLS_Mobile
 
     private string _xbeeLowAddress = "00000000";
 
-    private string _mloggerName = "00000000";
+    private string _mloggerName = "MLogger_****";
 
     //private string _drybulbTemperature, _relativeHumidity, _globeTemperature, _velocity, _illuminance, _mrt, _pmv, _ppd, _set;
 

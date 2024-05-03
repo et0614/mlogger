@@ -78,7 +78,7 @@ public partial class RelayedDataViewer : ContentPage
     mLoggers.Add(logger);
     MLoggerViewModel mvm = new() { Logger = logger };
     mvm.IsEnabled = false;
-    MLoggerViewModelList.Add(mvm); //Ç±Ç±Ç≈ÉGÉâÅ[
+    MLoggerViewModelList.Add(mvm);
   }
 
 }

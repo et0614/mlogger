@@ -225,6 +225,7 @@ public partial class MLoggerScanner : ContentPage
       }
 
       //Bluetooth—LŒø‰»+Œ»İXV‚ª¬Œ÷‚µ‚½‚ç‰æ–Ê‘JˆÚ
+      await DisplayAlert("", "Current time has been updated.", "OK");
       await Shell.Current.GoToAsync(nameof(RelayedDataViewer));
     }
 

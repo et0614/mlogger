@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using XBeeLibrary.Core.Models;
+using System.Collections.Concurrent;
 
 namespace MLServer
 {
@@ -21,7 +22,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.3";
+    private const string VERSION = "1.1.4";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -29,11 +30,8 @@ namespace MLServer
     /// <summary>JSONデータを更新する時間間隔[msec]</summary>
     private const int JSON_REFRESH_SPAN = 10 * 1000;
 
-    /// <summary>コーディネータXBee探索時間間隔[msec]</summary>
-    private const int XBEE_SCAN_SPAN = 5 * 1000;
-
-    /// <summary>子機の探索時間間隔[msec]</summary>
-    private const int ENDDV_SCAN_SPAN = 5 * 1000;
+    /// <summary>Portに接続されたコーディネータXBeeの探索時間間隔[msec]</summary>
+    private const int PORT_SCAN_SPAN = 1 * 1000;
 
     /// <summary>UART通信のボーレート</summary>
     private const int BAUD_RATE = 9600;
@@ -45,9 +43,6 @@ namespace MLServer
 
     #region クラス変数
 
-    /// <summary>受信パケット総量[bytes]</summary>
-    private static int pBytes = 0;
-
     /// <summary>温冷感計算のための基準の物理量</summary>
     private static double metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue;
 
@@ -58,16 +53,13 @@ namespace MLServer
     private static string dataDirectory;
 
     /// <summary>発見されたMLogger端末のリスト</summary>
-    private static Dictionary<string, MLogger> mLoggers = new Dictionary<string, MLogger>();
+    private static ConcurrentDictionary<string, MLogger> mLoggers = new ConcurrentDictionary<string, MLogger>();
 
-    /// <summary>XBee端末と接続されたポート名のリスト</summary>
-    private static List<string> connectedPorts = new List<string>();
-
-    /// <summary>接続候補のポートリスト</summary>
+    /// <summary>接続できなかったポートリスト</summary>
     private static List<string> excludedPorts = new List<string>();
 
-    /// <summary>通信用XBee端末リスト</summary>
-    private static Dictionary<ZigBeeDevice, xbeeInfo> coordinators = new Dictionary<ZigBeeDevice, xbeeInfo>();
+    /// <summary>通信用コーディネータリスト</summary>
+    private static ConcurrentDictionary<ZigBeeDevice, xbeeInfo> coordinators = new ConcurrentDictionary<ZigBeeDevice, xbeeInfo>();
 
     /// <summary>MLoggerのアドレス-名称対応リスト</summary>
     private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
@@ -117,17 +109,34 @@ namespace MLServer
         }
       });
 
-      //定期的にXBeeコーディネータを探索する
-      scanCoordinator();
-
-      //子機を探す
-      //scanEndDevice();
-
       //現在日時更新タスク
       updateCurrentDateTime();
 
-      //メインループ
-      while (true) ;
+      //定期的にコーディネータをスキャン
+      scanCoordinators();
+
+      while (true)
+      {
+        foreach (ZigBeeDevice device in coordinators.Keys)
+        {
+          xbeeInfo xInfo = coordinators[device];
+          //接続タスクが終了した場合は結果を表示
+          if (!xInfo.resistEvent && xInfo.connectTask != null)
+          {
+            if (xInfo.connectTask.Status == TaskStatus.RanToCompletion)
+            {
+              coordinators[device].resistEvent = true;
+              Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
+              device.DataReceived += Device_DataReceived; //データ受信イベント登録
+            }
+            else if (xInfo.connectTask.Status == TaskStatus.Faulted)
+            {
+              coordinators[device].resistEvent = true;
+              Console.WriteLine("Failed to connect port " + xInfo.portName);
+            }
+          }
+        }
+      }
     }
 
     private static void showTitle()
@@ -187,130 +196,36 @@ namespace MLServer
       }
     }
 
-    private static void scanCoordinator()
+
+    private async static void scanCoordinators()
     {
-      Task xbeeScanTask = Task.Run(() =>
+      while (true)
       {
-        while (true)
+        //接続可能なポート一覧
+        string[] portList = System.IO.Ports.SerialPort.GetPortNames();
+
+        //接続候補のポートを絞り込む
+        foreach (string port in portList)
         {
-          //各ポートへの接続を試行
-          string[] portList = System.IO.Ports.SerialPort.GetPortNames();
-          foreach (string pn in excludedPorts)
-            if (Array.IndexOf(portList, pn) == -1)
-              excludedPorts.Remove(pn);
-
-          for (int i = 0; i < portList.Length; i++)
+          if (!excludedPorts.Contains(port))
           {
-            if (!connectedPorts.Contains(portList[i]) && !excludedPorts.Contains(portList[i]))
+            ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(port, BAUD_RATE));
+            xbeeInfo xInfo = new xbeeInfo(port);
+            if (coordinators.TryAdd(device, xInfo))
             {
-              Task tsk = makeConnectTask(portList[i]);
-              tsk.Start();
+              excludedPorts.Add(port);
+              xInfo.connectTask = Task.Run(device.Open);
             }
           }
-
-          //接続が切れた場合には再接続を試みる
-          foreach (ZigBeeDevice device in coordinators.Keys)
-          {
-            if (!device.IsOpen)
-            {
-              try
-              {
-                device.Open();
-                device.DataReceived += Device_DataReceived; //データ受信イベント
-                device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
-              }
-              catch (Exception ex)
-              {
-                Console.WriteLine(ex.Message);
-              }
-            }
-          }
-
-          Thread.Sleep(XBEE_SCAN_SPAN);
         }
-      });
+
+        await Task.Delay(PORT_SCAN_SPAN);
+      }
     }
-
-    /*private static void scanEndDevice()
-    {
-      //定期的にXBeeコーディネータを探索する
-      Task scanEndDeviceTask = Task.Run(() =>
-      {
-        while (true)
-        {
-          foreach (ZigBeeDevice coordinator in coordinators.Keys)
-          {
-            //切断されていたら接続を試みる
-            if (!coordinator.IsOpen)
-            {
-              try
-              {
-                coordinator.Open();
-              }
-              catch (Exception e)
-              {
-                Console.WriteLine(e.Message);
-                break;
-              }
-            }
-
-            XBeeNetwork net = coordinator.GetNetwork();
-
-            //既に探索中の場合は一旦停止
-            if (net.IsDiscoveryRunning) net.StopNodeDiscoveryProcess();
-
-            //探索開始
-            try
-            {              
-              Console.WriteLine("Start scanning end devices...");
-              net.SetDiscoveryTimeout((int)(ENDDV_SCAN_SPAN * 0.9));
-              net.StartNodeDiscoveryProcess(); //DiscoveryProcessの二重起動で例外が発生する
-            }
-            catch (Exception e)
-            {
-              Console.WriteLine(e.Message);
-            }
-          }
-
-          Thread.Sleep(ENDDV_SCAN_SPAN);
-        }
-      });
-    }*/
 
     #endregion
 
     #region コーディネータ接続関連の処理
-
-    /// <summary>Portへの接続Taskを生成</summary>
-    /// <param name="pName">Port名称</param>
-    /// <returns>Portへの接続Task</returns>
-    private static Task makeConnectTask(string pName)
-    {
-      return new Task(() =>
-      {
-        //通信用XBee端末をOpen
-        ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(pName, BAUD_RATE));
-        try
-        {
-          device.Open();
-
-          coordinators.Add(device, new xbeeInfo(pName));
-          Console.WriteLine(pName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
-
-          //イベント登録
-          device.DataReceived += Device_DataReceived; //データ受信イベント
-          device.PacketReceived += Device_PacketReceived;  //パケット総量を捕捉
-
-          connectedPorts.Add(pName);
-        }
-        catch (Exception ex)
-        {
-          excludedPorts.Add(pName);
-          Console.WriteLine(pName + ": " + ex.Message);
-          return;
-        }        
-      });
-    }
 
     private static void addXBeeDevice(RemoteXBeeDevice rdv)
     {
@@ -339,21 +254,12 @@ namespace MLServer
       //イベント登録
       ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
 
-      mLoggers.Add(add, ml);
+      mLoggers.TryAdd(add, ml);
 
       //子機のアドレスと通信用XBeeを対応付ける
       if (!coordinators[dv].longAddress.Contains(add))
         coordinators[dv].longAddress.Add(add);
     }
-
-    /*private static void Net_DeviceDiscovered(object sender, XBeeLibrary.Core.Events.DeviceDiscoveredEventArgs e)
-    {
-      //HTML更新フラグを立てる
-      hasNewData = true;
-
-      //MLoggerリストに追加
-      addXBeeDevice(e.DiscoveredDevice);
-    }*/
 
     private static void Device_DataReceived(object sender, XBeeLibrary.Core.Events.DataReceivedEventArgs e)
     {
@@ -363,7 +269,7 @@ namespace MLServer
 
       //未登録のノードからの受信の場合
       if (!mLoggers.ContainsKey(add))
-        addXBeeDevice(rdv);      
+        addXBeeDevice(rdv);
 
       //HTML更新フラグを立てる
       hasNewData = true;
@@ -387,42 +293,6 @@ namespace MLServer
           mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
         }
       }
-
-      //受信パケット総量が48500bytesを超えた場合に再接続
-      //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
-      //かなりいい加減でデータの取りこぼしが発生しかねない処理。
-      if (45000 < pBytes)
-      {
-        while (true)
-        {
-          try
-          {
-            XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
-
-            dvv.DataReceived -= Device_DataReceived;
-            dvv.PacketReceived -= Device_PacketReceived;
-            dvv.Close();
-
-            pBytes = 0;
-
-            dvv.Open();
-            dvv.DataReceived += Device_DataReceived;
-            dvv.PacketReceived += Device_PacketReceived;
-            return;
-          }
-          catch
-          {
-            Console.WriteLine("Re-connect Error");
-          }
-        }
-
-      }
-    }
-
-    private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
-    {
-      //受信パケット総量を加算
-      pBytes += e.ReceivedPacket.PacketLength;
     }
 
     #endregion
@@ -561,6 +431,10 @@ namespace MLServer
       public List<string> longAddress = new List<string>();
 
       public string portName { get; private set; }
+
+      public bool resistEvent { get; set; } = false;
+
+      public Task connectTask { get; set; }
     }
 
     #endregion

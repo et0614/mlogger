@@ -15,7 +15,7 @@ namespace MLLib
     #region 定数宣言
 
     /// <summary>UNIX時間起点</summary>
-    private static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+    private static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>日時の型（一体）</summary>
     private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";

@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Popolo" Version="2.3.1.65" />
+    <PackageReference Include="Popolo" Version="2.3.1.68" />
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <PackageReference Include="XBeeLibrary.Core" Version="1.0.3" />
   </ItemGroup>
