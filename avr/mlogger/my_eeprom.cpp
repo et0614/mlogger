@@ -11,6 +11,7 @@
 #include <avr/eeprom.h>
 
 #include "my_eeprom.h"
+#include "global_variables.h"
 
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;
@@ -110,7 +111,7 @@ void initMemory()
 {
 	//乾球温度補正係数A,B
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_DBTCF_A, 1.000);
+	eeprom_update_float(&EEP_DBTCF_A, DBT_COEF_A);
 	eeprom_busy_wait();
 	eeprom_update_float(&EEP_DBTCF_B, 0.000);
 	
@@ -184,7 +185,7 @@ void initMemory()
 	
 	//名前
 	eeprom_busy_wait();
-	eeprom_update_block((const void *)"Anonymous", (void *)EEP_NAME, sizeof(my_eeprom::mlName));
+	eeprom_update_block((const void *)ML_NAME, (void *)EEP_NAME, sizeof(my_eeprom::mlName));
 	
 	//初期化フラグ
 	eeprom_busy_wait();

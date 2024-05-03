@@ -7,6 +7,7 @@
 
 #include "my_xbee.h"
 #include "my_uart.h"
+#include "global_variables.h"
 
 #include <string.h>
 #include <avr/io.h>
@@ -214,8 +215,10 @@ bool my_xbee::xbee_setting_initialized(){
 	//bi‚ÍBluetooth identifier
 	my_uart::send_chars("atbi\r");
 	my_xbee::receive_message(message);
-	if(strncmp(message, "MLogger_", 8) != 0) {
-		my_uart::send_chars("atbiMLogger_xxxx\r");
+	if(strcmp(message, ML_NAME) != 0) {
+		my_uart::send_chars("atbi");
+		my_uart::send_chars(ML_NAME);
+		my_uart::send_chars("\r");
 		my_xbee::receive_message(message);
 		if(strcmp(message, "OK") != 0) return 0;
 		hasChanged = true;

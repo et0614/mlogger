@@ -141,7 +141,7 @@ static unsigned int tSensorInitTimer = 0;
 static unsigned long tSensorTuningTime = 86400; //1“ú
 
 int main(void)
-{
+{	
 	//EEPROM
 	my_eeprom::LoadEEPROM();
 		
