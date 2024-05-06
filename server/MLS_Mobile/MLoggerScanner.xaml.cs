@@ -11,6 +11,7 @@ using MLS_Mobile.Resources.i18n;
 using System.Windows.Input;
 using MLLib;
 using System.Text;
+using System.Reflection.Metadata;
 
 public partial class MLoggerScanner : ContentPage
 {
@@ -20,10 +21,10 @@ public partial class MLoggerScanner : ContentPage
   private bool bleChecked = false;
 
   /// <summary>XBeeを探索する時間[msec]</summary>
-  private const int SCAN_TIME = 1000;
+  private const int SCAN_TIME = 2000;
 
   /// <summary>探索できたXBeeのリスト</summary>
-  public ObservableCollection<IDevice> MLXBees { get; private set; } = new ObservableCollection<IDevice>();
+  public ObservableCollection<IDeviceViewModel> MLXBees { get; private set; } = new ObservableCollection<IDeviceViewModel>();
 
   #endregion
 
@@ -36,11 +37,37 @@ public partial class MLoggerScanner : ContentPage
 
     BindingContext = this;
 
+    //イベント登録
+    CrossBluetoothLE.Current.Adapter.DeviceDiscovered += (s, ev) =>
+    {
+      string dvName = ev.Device.Name;
+      if (dvName != null && dvName != "" && (dvName.StartsWith("MLogger_") || dvName.StartsWith("MLTransceiver")))
+      {
+        bool newItem = true;
+        for (int i = 0; i < MLXBees.Count; i++)
+        {
+          if (MLXBees[i].Name == dvName)
+          {
+            newItem = false;
+            break;
+          }
+        }
+        if (newItem) MLXBees.Add(
+          new IDeviceViewModel() { Device = ev.Device });
+      }
+    };
+
+    //スキャン時間経過後
+    CrossBluetoothLE.Current.Adapter.ScanTimeoutElapsed += (s, ev) =>
+    {
+      refView.IsRefreshing = false;
+    };
+
     //リフレッシュコマンド定義
     ICommand refreshCommand = new Command(() =>
     {
-      scanXBees();
-      refView.IsRefreshing = false;
+      if (!CrossBluetoothLE.Current.Adapter.IsScanning)
+        scanXBees();
     });
     refView.Command = refreshCommand;
   }
@@ -68,37 +95,12 @@ public partial class MLoggerScanner : ContentPage
     //接続済みのXBeeがある場合には解除
     MLUtility.CloseXbee();
 
-    //Bluetoothを用意
-    IBluetoothLE bluetoothLE = CrossBluetoothLE.Current;
-
     //アダプタを用意
-    IAdapter adapter = bluetoothLE.Adapter;
-
-    //スキャン中でなければスキャン開始
-    if (adapter.IsScanning) return;
+    IAdapter adapter = CrossBluetoothLE.Current.Adapter;
 
     //スキャン設定
     adapter.ScanTimeout = SCAN_TIME;
     adapter.ScanMode = ScanMode.LowLatency;
-
-    //BLEデバイスが見つかった時の処理
-    adapter.DeviceDiscovered += (s, ev) =>
-    {
-      string dvName = ev.Device.Name;
-      if (dvName != null && dvName != "" && (dvName.StartsWith("MLogger_") || dvName.StartsWith("MLTransceiver")))
-      {
-        bool newItem = true;
-        for (int i = 0; i < MLXBees.Count; i++)
-        {
-          if (MLXBees[i].Name == dvName)
-          {
-            newItem = false;
-            break;
-          }
-        }
-        if (newItem) MLXBees.Add(ev.Device);
-      }
-    };
 
     //非同期スキャン開始
     MLXBees.Clear();
@@ -113,7 +115,7 @@ public partial class MLoggerScanner : ContentPage
   {
     if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
 
-    IDevice selectedXBee = (IDevice)e.CurrentSelection[0];
+    IDevice selectedXBee = ((IDeviceViewModel)e.CurrentSelection[0]).Device;
     mlList.SelectedItem = null;
 
     //MLDeviceに接続する

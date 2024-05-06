@@ -157,11 +157,15 @@ namespace MLLib
     [JsonPropertyName("name")]
     /// <summary>MLogger名称を取得する</summary>
     /// <remarks>書き換えるためにはコマンドでMLogger内部にデータ送信が必要</remarks>
-    public string Name { get; private set; } = "Anonymous";
+    public string Name { get; private set; } = "Unloaded";
 
     [JsonPropertyName("localName")]
     /// <summary>汎用の名称を設定・取得する</summary>
     public string LocalName { get; set; }
+
+    [JsonPropertyName("xbeeName")]
+    /// <summary>XBeeの名称を設定・取得する</summary>
+    public string XBeeName { get; set; }
 
     [JsonIgnore]
     /// <summary>初回の保存か否か</summary>
@@ -1218,6 +1222,9 @@ namespace MLLib
 
     /// <summary>汎用の名称を取得する</summary>
     string LocalName { get; }
+
+    /// <summary>XBeeの名称を取得する</summary>
+    string XBeeName { get; }
 
     /// <summary>初回の保存か否か</summary>
     bool IsFirstSave { get; }

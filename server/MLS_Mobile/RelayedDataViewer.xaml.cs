@@ -75,6 +75,7 @@ public partial class RelayedDataViewer : ContentPage
   {
     if (mLoggers.Contains(logger)) return;
 
+    ((MLogger)logger).XBeeName = MLUtility.GetMLName(logger.LowAddress); //‚±‚Ìˆ—A‰˜‚¢
     mLoggers.Add(logger);
     MLoggerViewModel mvm = new() { Logger = logger };
     mvm.IsEnabled = false;

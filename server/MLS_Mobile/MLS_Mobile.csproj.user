@@ -60,6 +60,9 @@
     <MauiXaml Update="DeviceSetting.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="IDeviceView.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="LoggingData.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

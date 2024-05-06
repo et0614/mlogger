@@ -29,9 +29,9 @@
 
             <!--ID/名称-->
             <HorizontalStackLayout BackgroundColor="{StaticResource Light_G}" Padding="10,0,10,0">
-                <Label FontSize="Large" Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}" VerticalOptions="Center" HorizontalOptions="Start" />
-                <!--<Label FontSize="Large" Text="{Binding MLoggerName, FallbackValue='-'}" VerticalOptions="Center" HorizontalOptions="Start" />-->
-                <!--<Label FontSize="Body" Margin="20,0,0,0" Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}" VerticalOptions="Center" HorizontalOptions="Start" />-->
+                <!--<Label FontSize="Large" Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}" VerticalOptions="Center" HorizontalOptions="Start" />-->
+                <Label FontSize="Large" Text="{Binding XBeeName, FallbackValue='-'}" VerticalOptions="Center" HorizontalOptions="Start" />
+                <Label FontSize="Body" Margin="20,0,0,0" Text="{Binding XBeeLowAddress, FallbackValue='-', StringFormat='({0})'}" VerticalOptions="Center" HorizontalOptions="Start" />
             </HorizontalStackLayout>
 
             <!--計測値-->

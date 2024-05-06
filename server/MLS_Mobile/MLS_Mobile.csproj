@@ -1,12 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<!-- 国際化に関するバグ対応。いずれ削除 -->
-	<!-- <PropertyGroup> -->
-		<!-- <GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore> -->
-		<!-- <EnableAssemblyILStripping>true</EnableAssemblyILStripping> -->
-	<!-- </PropertyGroup> -->
-	<!-- 国際化に関するバグ対応。いずれ削除 -->
-
 	<!-- iOS用。プライバシーマニフェストのインクルード処理 -->
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
 		<BundleResource Include="Platforms\iOS\PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
@@ -226,6 +219,12 @@
 	  <None Remove="Resources\Fonts\Free-Regular-400.otf" />
 	  <None Remove="Resources\Fonts\Free-Solid-900.otf" />
 	  <None Remove="Resources\Images\trans.png" />
+	  <None Remove="Resources\Signals\pwr0.png" />
+	  <None Remove="Resources\Signals\pwr1.png" />
+	  <None Remove="Resources\Signals\pwr2.png" />
+	  <None Remove="Resources\Signals\pwr3.png" />
+	  <None Remove="Resources\Signals\pwr4.png" />
+	  <None Remove="Resources\Signals\pwr5.png" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -315,6 +314,12 @@
 	  <EmbeddedResource Include="Resources\Clothes\Clo_Sweatpants.png" />
 	  <EmbeddedResource Include="Resources\Clothes\Clo_TShirt.png" />
 	  <EmbeddedResource Include="Resources\Clothes\Clo_WalkingShorts.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr0.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr1.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr2.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr3.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr4.png" />
+	  <EmbeddedResource Include="Resources\Signals\pwr5.png" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -384,6 +389,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="DeviceSetting.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="IDeviceView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="LoggingData.xaml">

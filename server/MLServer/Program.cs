@@ -115,28 +115,12 @@ namespace MLServer
       //定期的にコーディネータをスキャン
       scanCoordinators();
 
+      //定期的にコーディネータのイベント登録
+      resistEvent();
+
+      //メインスレッドは休む
       while (true)
-      {
-        foreach (ZigBeeDevice device in coordinators.Keys)
-        {
-          xbeeInfo xInfo = coordinators[device];
-          //接続タスクが終了した場合は結果を表示
-          if (!xInfo.resistEvent && xInfo.connectTask != null)
-          {
-            if (xInfo.connectTask.Status == TaskStatus.RanToCompletion)
-            {
-              coordinators[device].resistEvent = true;
-              Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
-              device.DataReceived += Device_DataReceived; //データ受信イベント登録
-            }
-            else if (xInfo.connectTask.Status == TaskStatus.Faulted)
-            {
-              coordinators[device].resistEvent = true;
-              Console.WriteLine("Failed to connect port " + xInfo.portName);
-            }
-          }
-        }
-      }
+        Thread.Sleep(1000);
     }
 
     private static void showTitle()
@@ -196,7 +180,6 @@ namespace MLServer
       }
     }
 
-
     private async static void scanCoordinators()
     {
       while (true)
@@ -215,6 +198,34 @@ namespace MLServer
             {
               excludedPorts.Add(port);
               xInfo.connectTask = Task.Run(device.Open);
+            }
+          }
+        }
+
+        await Task.Delay(PORT_SCAN_SPAN);
+      }
+    }
+
+    private async static void resistEvent()
+    {
+      while (true)
+      {
+        foreach (ZigBeeDevice device in coordinators.Keys)
+        {
+          xbeeInfo xInfo = coordinators[device];
+          //接続タスクが終了した場合は結果を表示
+          if (!xInfo.resistEvent && xInfo.connectTask != null)
+          {
+            if (xInfo.connectTask.Status == TaskStatus.RanToCompletion)
+            {
+              coordinators[device].resistEvent = true;
+              Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
+              device.DataReceived += Device_DataReceived; //データ受信イベント登録
+            }
+            else if (xInfo.connectTask.Status == TaskStatus.Faulted)
+            {
+              coordinators[device].resistEvent = true;
+              Console.WriteLine("Failed to connect port " + xInfo.portName);
             }
           }
         }

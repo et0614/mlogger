@@ -18,8 +18,8 @@ namespace MLS_Mobile
     /// <summary>データフォルダの名称</summary>
     private const string DATA_DIR_NAME = "DATA";
 
-    /// <summary>SDカード使用に関する初期設定ファイル</summary>
-    private const string SD_F_NAME = "sd.ini";
+    /// <summary>MLoggerのLowAddress-名称対応リスト</summary>
+    private const string ML_LIST_NAME = "mlList.txt";
 
     #endregion
 
@@ -38,7 +38,10 @@ namespace MLS_Mobile
 
     #endregion
 
-    #region static変数
+    #region static変数・プロパティ
+
+    /// <summary>MLoggerのLowAddressと名称の対応リスト</summary>
+    private static Dictionary<string, string> mlNames = new Dictionary<string, string>();
 
     /// <summary>接続先のデバイス</summary>
     public static MLDevice ConnectedDevice { get; private set; } = MLDevice.None;
@@ -74,7 +77,8 @@ namespace MLS_Mobile
       {
         ConnectedDevice = MLDevice.MLogger;
         Logger = new MLogger(ConnectedXBee.GetAddressString());
-        Logger.LocalName = device.Name;
+        Logger.LocalName = Logger.XBeeName = device.Name;
+        SaveMLName(Logger.LowAddress, Logger.XBeeName); //LowAddressと名称の対応を保存
         return Logger.LowAddress;
       }
       //接続先:MLTransceiver
@@ -169,12 +173,12 @@ namespace MLS_Mobile
       if (!Directory.Exists(dFolder))
         Directory.CreateDirectory(dFolder);
 
-      string sdFPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + SD_F_NAME;
-      if (!File.Exists(sdFPath))
+      string mlPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + ML_LIST_NAME;
+      if (!File.Exists(mlPath))
       {
-        using (StreamWriter sWriter = new StreamWriter(sdFPath, false))
+        using (StreamWriter sWriter = new StreamWriter(mlPath, false))
         {
-          sWriter.Write("0");
+          sWriter.Write("");
         }
       }
     }
@@ -257,5 +261,70 @@ namespace MLS_Mobile
 
     #endregion
 
+    #region MLogger名称リスト関連の処理
+
+    /// <summary>MLoggerのLowAddressと名称の対応表を読み込む</summary>
+    public static void LoadMLNamesFile()
+    {
+      string fName = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + ML_LIST_NAME;
+      using (StreamReader sReader = new StreamReader(fName, Encoding.UTF8))
+      {
+        string line;
+        while ((line = sReader.ReadLine()) != null)
+        {
+          if (line != "" && line.Contains(','))
+          {
+            string[] buff = line.Split(',');
+            mlNames.Add(buff[0], buff[1]);
+          }
+        }
+      }
+    }
+
+    /// <summary>MLoggerのLowAddressと名称の対応表を更新する</summary>
+    public static void UpdateMLNamesFile()
+    {
+      string fName = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + ML_LIST_NAME;
+      using (StreamWriter sWriter = new StreamWriter(fName, false, Encoding.UTF8))
+      {
+        foreach (string lowAdd in mlNames.Keys)
+          sWriter.WriteLine(lowAdd + "," + mlNames[lowAdd].Replace(",", ""));
+      }
+    }
+
+    /// <summary>MLoggerの名称を取得する</summary>
+    /// <param name="lowAddress">XBeeの下位アドレス</param>
+    /// <returns>MLoggerの名称</returns>
+    public static string GetMLName(string lowAddress)
+    {
+      if (mlNames.ContainsKey(lowAddress)) return mlNames[lowAddress];
+      else return "MLogger_new";
+    }
+
+    /// <summary>MLoggerの名称を設定する</summary>
+    /// <param name="lowAddress">XBeeの下位アドレス</param>
+    /// <param name="name">MLoggerの名称</param>
+    public static void SaveMLName(string lowAddress, string name)
+    {
+      //登録済のMLoggerの場合
+      if (mlNames.ContainsKey(lowAddress))
+      {
+        if (mlNames[lowAddress] != name) //現実にはこのケースは発生しないはず。。。
+        {
+          mlNames[lowAddress] = name;
+          UpdateMLNamesFile();
+        }
+      }
+      //未登録のMLoggerの場合
+      else
+      {
+        mlNames.Add(lowAddress, name);
+        UpdateMLNamesFile();
+      }
+    }
+
+    #endregion
   }
+
+
 }

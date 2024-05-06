@@ -23,6 +23,8 @@ namespace MLS_Mobile
 
     private string _mloggerName = "MLogger_****";
 
+    private string _xbeeName = "MLogger_new";
+
     //private string _drybulbTemperature, _relativeHumidity, _globeTemperature, _velocity, _illuminance, _mrt, _pmv, _ppd, _set;
 
     private string _drybulbTemperature = "";
@@ -60,6 +62,20 @@ namespace MLS_Mobile
         if (_mloggerName != value)
         {
           _mloggerName = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    /// <summary>XBeeの名称を設定・取得する</summary>
+    public string XBeeName
+    {
+      get { return _xbeeName; }
+      set
+      {
+        if (_xbeeName != value)
+        {
+          _xbeeName = value;
           OnPropertyChanged();
         }
       }
@@ -302,6 +318,7 @@ namespace MLS_Mobile
           _mLogger.LoggerNameReceivedEvent += MLogger_LoggerNameReceivedEvent;
           _mLogger.DataReceivedEvent += _mLogger_DataReceivedEvent;
           XBeeLowAddress = _mLogger.LowAddress;
+          XBeeName = _mLogger.XBeeName;
         }
       }
     }
@@ -387,7 +404,6 @@ namespace MLS_Mobile
       //着色
       //FrameColor = Application.Current.Resources["Dark_G"] as Color;
     }
-
 
     #endregion
 
