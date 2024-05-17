@@ -64,11 +64,13 @@ namespace MLServer
     /// <summary>MLoggerのアドレス-名称対応リスト</summary>
     private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
 
-    #endregion
+        /// <summary>受信パケット総量[bytes]</summary>
+        private static int pBytes = 0;
+        #endregion
 
-    #region メイン処理
+        #region メイン処理
 
-    static void Main(string[] args)
+        static void Main(string[] args)
     {
       showTitle();
 
@@ -221,7 +223,8 @@ namespace MLServer
               coordinators[device].resistEvent = true;
               Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
               device.DataReceived += Device_DataReceived; //データ受信イベント登録
-            }
+                            device.PacketReceived += Device_PacketReceived; ;  //パケット総量を捕捉
+                        }
             else if (xInfo.connectTask.Status == TaskStatus.Faulted)
             {
               coordinators[device].resistEvent = true;
@@ -234,11 +237,16 @@ namespace MLServer
       }
     }
 
-    #endregion
+        private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
+        {
+            pBytes += e.ReceivedPacket.PacketLength;
+        }
 
-    #region コーディネータ接続関連の処理
+        #endregion
 
-    private static void addXBeeDevice(RemoteXBeeDevice rdv)
+        #region コーディネータ接続関連の処理
+
+        private static void addXBeeDevice(RemoteXBeeDevice rdv)
     {
       string add = rdv.GetAddressString();
 
@@ -304,7 +312,38 @@ namespace MLServer
           mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
         }
       }
-    }
+
+            //受信パケット総量が48500bytesを超えた場合に再接続
+            //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
+            //かなりいい加減でデータの取りこぼしが発生しかねない処理。
+            if (45000 < pBytes)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
+
+                        dvv.DataReceived -= Device_DataReceived;
+                        dvv.PacketReceived -= Device_PacketReceived;
+                        dvv.Close();
+
+                        pBytes = 0;
+
+                        dvv.Open();
+                        dvv.DataReceived += Device_DataReceived;
+                        dvv.PacketReceived += Device_PacketReceived;
+                        return;
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Re-connect Error");
+                    }
+                }
+
+            }
+
+        }
 
     #endregion
 
