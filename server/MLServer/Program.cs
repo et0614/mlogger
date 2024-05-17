@@ -64,13 +64,14 @@ namespace MLServer
     /// <summary>MLoggerのアドレス-名称対応リスト</summary>
     private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
 
-        /// <summary>受信パケット総量[bytes]</summary>
-        private static int pBytes = 0;
-        #endregion
+    /// <summary>受信パケット総量[bytes]</summary>
+    private static int pBytes = 0;
 
-        #region メイン処理
+    #endregion
 
-        static void Main(string[] args)
+    #region メイン処理
+
+    static void Main(string[] args)
     {
       showTitle();
 
@@ -91,7 +92,7 @@ namespace MLServer
           while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
             string[] bf = line.Split(':');
-            if(!mlNames.ContainsKey(HIGH_ADD + bf[0]))
+            if (!mlNames.ContainsKey(HIGH_ADD + bf[0]))
               mlNames.Add(HIGH_ADD + bf[0], bf[1]);
           }
         }
@@ -223,8 +224,8 @@ namespace MLServer
               coordinators[device].resistEvent = true;
               Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
               device.DataReceived += Device_DataReceived; //データ受信イベント登録
-                            device.PacketReceived += Device_PacketReceived; ;  //パケット総量を捕捉
-                        }
+              device.PacketReceived += Device_PacketReceived; ;  //パケット総量を捕捉
+            }
             else if (xInfo.connectTask.Status == TaskStatus.Faulted)
             {
               coordinators[device].resistEvent = true;
@@ -237,16 +238,16 @@ namespace MLServer
       }
     }
 
-        private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
-        {
-            pBytes += e.ReceivedPacket.PacketLength;
-        }
+    private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
+    {
+      pBytes += e.ReceivedPacket.PacketLength;
+    }
 
-        #endregion
+    #endregion
 
-        #region コーディネータ接続関連の処理
+    #region コーディネータ接続関連の処理
 
-        private static void addXBeeDevice(RemoteXBeeDevice rdv)
+    private static void addXBeeDevice(RemoteXBeeDevice rdv)
     {
       string add = rdv.GetAddressString();
 
@@ -313,37 +314,37 @@ namespace MLServer
         }
       }
 
-            //受信パケット総量が48500bytesを超えた場合に再接続
-            //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
-            //かなりいい加減でデータの取りこぼしが発生しかねない処理。
-            if (45000 < pBytes)
-            {
-                while (true)
-                {
-                    try
-                    {
-                        XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
+      //受信パケット総量が48500bytesを超えた場合に再接続
+      //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
+      //かなりいい加減でデータの取りこぼしが発生しかねない処理。
+      if (45000 < pBytes)
+      {
+        while (true)
+        {
+          try
+          {
+            XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
 
-                        dvv.DataReceived -= Device_DataReceived;
-                        dvv.PacketReceived -= Device_PacketReceived;
-                        dvv.Close();
+            dvv.DataReceived -= Device_DataReceived;
+            dvv.PacketReceived -= Device_PacketReceived;
+            dvv.Close();
 
-                        pBytes = 0;
+            pBytes = 0;
 
-                        dvv.Open();
-                        dvv.DataReceived += Device_DataReceived;
-                        dvv.PacketReceived += Device_PacketReceived;
-                        return;
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Re-connect Error");
-                    }
-                }
-
-            }
-
+            dvv.Open();
+            dvv.DataReceived += Device_DataReceived;
+            dvv.PacketReceived += Device_PacketReceived;
+            return;
+          }
+          catch
+          {
+            Console.WriteLine("Re-connect Error");
+          }
         }
+
+      }
+
+    }
 
     #endregion
 
@@ -352,7 +353,7 @@ namespace MLServer
     private static void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
     {
       //データ書き出し
-      MLogger ml = (MLogger)sender;      
+      MLogger ml = (MLogger)sender;
       string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
 
       try
