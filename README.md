@@ -7,7 +7,7 @@ Materials for the production of MLogger, an indoor thermal environment measureme
 MLogger was developed for the purpose of easily measuring the indoor thermal environment. <br>
 To evaluate the indoor thermal environment, it is necessary to measure at least dry bulb temperature, relative humidity, radiation temperature, and wind speed. <br>
 A comprehensive instrument that measures these physical quantities typically costs over $1000. They are also large in size and difficult to install many in the field because they are powered from an electrical outlet. <br>
-The MLogger costs less than $50 to produce, fits in the palm of your hand, and runs on AA batteries. <br>
+The MLogger costs less than $100 to produce, fits in the palm of your hand, and runs on AA batteries. <br>
 For more information about it, check the [paper](https://www.jstage.jst.go.jp/article/aijt/28/68/28_267/_article/-char/ja) and [website](https://www.mlogger.jp). <br> <br>
 
 Here, four materials for producing MLogger are published in a directory.
