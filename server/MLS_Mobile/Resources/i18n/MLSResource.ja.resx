@@ -363,6 +363,9 @@
   <data name="LD_NoData" xml:space="preserve">
     <value>保存データはありません</value>
   </data>
+  <data name="LD_Share" xml:space="preserve">
+    <value>共有</value>
+  </data>
   <data name="LD_Title" xml:space="preserve">
     <value>計測データ</value>
   </data>
@@ -451,7 +454,7 @@
     <value>M-Loggerに接続中...</value>
   </data>
   <data name="SC_Empty" xml:space="preserve">
-    <value>無し</value>
+    <value>デバイスが見つかりません</value>
   </data>
   <data name="SC_Notfound" xml:space="preserve">
     <value>M-Loggerが見つかりません</value>

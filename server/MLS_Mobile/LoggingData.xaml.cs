@@ -187,6 +187,15 @@ public partial class LoggingData : ContentPage
     }
   }
 
+  private async void share_Clicked(object sender, EventArgs e)
+  {
+    await Share.Default.RequestAsync(new ShareTextRequest
+    {      
+      Text = MakeClipData(FileName),
+      Title = "M-Logger Data"
+    });
+  }
+
   #endregion
 
   #region インジケータの操作

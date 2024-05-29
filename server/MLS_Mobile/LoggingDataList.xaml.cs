@@ -85,7 +85,7 @@ public partial class LoggingDataList : ContentPage
       FileSize = MLUtility.GetFileSize(FileName);
 
       DeleteCommand = new Command<LogFile>(OnDeleteCommand);
-      CopyCommand = new Command<LogFile>(OnCopyCommand);
+      ShareCommand = new Command<LogFile>(OnShareCommand);
     }
 
     #region プロパティ
@@ -100,7 +100,7 @@ public partial class LoggingDataList : ContentPage
 
     public Command<LogFile> DeleteCommand { get; private set; }
 
-    public Command<LogFile> CopyCommand { get; private set; }
+    public Command<LogFile> ShareCommand { get; private set; }
 
     /// <summary>計測機器名称を取得する</summary>
     public string MLoggerName { get; private set; }
@@ -117,10 +117,16 @@ public partial class LoggingDataList : ContentPage
       logFile.Parent.UpdateLogFiles();
     }
 
-    private void OnCopyCommand(LogFile logFile)
+    private async void OnShareCommand(LogFile logFile)
     {
-      Clipboard.Default.SetTextAsync
-        (LoggingData.MakeClipData(logFile.FileName));
+      await Share.Default.RequestAsync(new ShareTextRequest
+      {
+        Text = LoggingData.MakeClipData(FileName),
+        Title = "M-Logger Data"
+      });
+
+      //Clipboard.Default.SetTextAsync
+      //  (LoggingData.MakeClipData(logFile.FileName));
     }
   }
 

@@ -27,7 +27,7 @@
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">30.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>		
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -74,37 +74,37 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
-	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	  <CodesignKey>iPhone Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+	  <CodesignProvision>mls_dist</CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
-	  <ApplicationVersion>33</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.33</ApplicationDisplayVersion>
+	  <ApplicationVersion>36</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
-	  <ApplicationVersion>33</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.33</ApplicationDisplayVersion>
+	  <ApplicationVersion>36</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
-	  <ApplicationVersion>33</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.33</ApplicationDisplayVersion>
+	  <ApplicationVersion>36</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.30</ApplicationDisplayVersion>
-	  <ApplicationVersion>33</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.33</ApplicationDisplayVersion>
+	  <ApplicationVersion>36</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<!-- App icon for android （小さい）-->
-		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" ForegroundScale="0.6" />
-
 		<!-- App icon for all other platforms （スケールなし）-->
-		<MauiIcon Update="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
+
+		<!-- App icon for android （小さい）-->
+		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Update="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" ForegroundScale="0.6" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="ForestGreen" BaseSize="128,128" />
@@ -117,6 +117,21 @@
 
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <AndroidResource Remove="bin\**" />
+	  <AndroidResource Remove="obj\**" />
+	  <Compile Remove="bin\**" />
+	  <Compile Remove="obj\**" />
+	  <EmbeddedResource Remove="bin\**" />
+	  <EmbeddedResource Remove="obj\**" />
+	  <MauiCss Remove="bin\**" />
+	  <MauiCss Remove="obj\**" />
+	  <MauiXaml Remove="bin\**" />
+	  <MauiXaml Remove="obj\**" />
+	  <None Remove="bin\**" />
+	  <None Remove="obj\**" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -160,6 +175,7 @@
 	  <None Remove="Resources\Activities\Act_Walking_12.png" />
 	  <None Remove="Resources\Activities\Act_Walking_18.png" />
 	  <None Remove="Resources\Activities\Act_Wrestling.png" />
+	  <None Remove="Resources\AppIcon\appicon.svg" />
 	  <None Remove="Resources\Clothes\Clo_AnkleLengthAthleticSocks.png" />
 	  <None Remove="Resources\Clothes\Clo_Boots.png" />
 	  <None Remove="Resources\Clothes\Clo_Bra.png" />
@@ -225,6 +241,7 @@
 	  <None Remove="Resources\Signals\pwr3.png" />
 	  <None Remove="Resources\Signals\pwr4.png" />
 	  <None Remove="Resources\Signals\pwr5.png" />
+	  <None Remove="Resources\Splash\splash.svg" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -321,7 +338,7 @@
 	  <EmbeddedResource Include="Resources\Signals\pwr4.png" />
 	  <EmbeddedResource Include="Resources\Signals\pwr5.png" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="8.0.1" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.0.0" />

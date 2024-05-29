@@ -16,15 +16,15 @@
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
                                 <SwipeItem.IconImageSource>
-                                    <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="White"/>
+                                    <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="20" Color="White"/>
                                 </SwipeItem.IconImageSource>
                             </SwipeItem>
-                            <SwipeItem Text="{x:Static res:MLSResource.LD_Copy}" 
+                            <SwipeItem Text="{x:Static res:MLSResource.LD_Share}" 
                                            BackgroundColor="{StaticResource Light_G}"
-                                           Command="{Binding CopyCommand}"
+                                           Command="{Binding ShareCommand}"
                                            CommandParameter="{Binding .}">
                                 <SwipeItem.IconImageSource>
-                                    <FontImageSource Glyph="&#xf328;" FontFamily="FAR" Size="20" Color="White"/>
+                                    <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="20" Color="White"/>
                                 </SwipeItem.IconImageSource>
                             </SwipeItem>
                         </SwipeItems>
@@ -74,7 +74,7 @@
                     ColumnSpacing="5">
                 <Label 
                         Grid.Row="0" Grid.Column="0"
-                        Text="{x:Static res:MLSResource.SC_Empty}" 
+                        Text="{x:Static res:MLSResource.LD_NoData}" 
                         FontSize="18"
                         HorizontalOptions="Start"
                         VerticalOptions="Center" Padding="5"/>

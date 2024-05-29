@@ -6,20 +6,32 @@
              Title="{x:Static res:MLSResource.LD_Title}">
 
     <Grid Margin="0" RowDefinitions="60,*" ColumnDefinitions="*,*">
-        <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Orientation="Both" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
-            <Grid Padding="1" x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80,80"/>
-        </ScrollView>
 
-        <Button Grid.Row="0" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Copy}" Clicked="copy_Clicked" ContentLayout="Left, 10" Margin="5">
+        <!--コピーボタン-->
+        <!--<Button Grid.Row="0" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Copy}" Clicked="copy_Clicked" ContentLayout="Left, 10" Margin="5">
             <Button.ImageSource>
                 <FontImageSource Glyph="&#xf0ea;" FontFamily="FAR" Size="24" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>
+        </Button>-->
+
+        <!--共有ボタン-->
+        <Button Grid.Row="0" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Share}" Clicked="share_Clicked" ContentLayout="Left, 10" Margin="5">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="24" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
         </Button>
+
+        <!--削除ボタン-->
         <Button Grid.Row="0" Grid.Column="1" Text="{x:Static res:MLSResource.LD_Delete}" Clicked="delete_Clicked" ContentLayout="Left, 10" Margin="5">
             <Button.ImageSource>
                 <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="24" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>
         </Button>
+
+        <!--データテーブル表示-->
+        <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" Orientation="Both" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
+            <Grid Padding="1" x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80,80"/>
+        </ScrollView>
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" Grid.RowSpan="3" Grid.ColumnSpan="3"/>

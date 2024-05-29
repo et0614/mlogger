@@ -808,6 +808,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Share に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_Share {
+            get {
+                return ResourceManager.GetString("LD_Share", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Logging data に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string LD_Title {
@@ -1069,7 +1078,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Empty に類似しているローカライズされた文字列を検索します。
+        ///   The device cannnot be found. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Empty {
             get {
