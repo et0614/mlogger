@@ -182,7 +182,7 @@ int main(void)
 	_delay_ms(500);
 
 	//XBeeİ’èŠm”F
-	if(!my_xbee::xbee_setting_initialized()) showError(2);
+	//if(!my_xbee::xbee_setting_initialized()) showError(2);
 
 	//Š„‚è‚İÄŠJ
 	sei();

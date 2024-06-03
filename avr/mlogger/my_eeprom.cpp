@@ -113,19 +113,19 @@ void initMemory()
 	eeprom_busy_wait();
 	eeprom_update_float(&EEP_DBTCF_A, DBT_COEF_A);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_DBTCF_B, 0.000);
+	eeprom_update_float(&EEP_DBTCF_B, DBT_COEF_B);
 	
 	//相対湿度補正係数A,B
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_HMDCF_A, 1.000);
+	eeprom_update_float(&EEP_HMDCF_A, HMD_COEF_A);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_HMDCF_B, 0.000);
+	eeprom_update_float(&EEP_HMDCF_B, HMD_COEF_B);
 	
 	//グローブ温度補正係数A,B
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_GLBCF_A, 1.000);
+	eeprom_update_float(&EEP_GLBCF_A, GLB_COEF_A);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_GLBCF_B, 0.000);
+	eeprom_update_float(&EEP_GLBCF_B, GLB_COEF_B);
 	
 	//照度補正係数A,B
 	eeprom_busy_wait();
