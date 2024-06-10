@@ -385,7 +385,7 @@ namespace MLS_Mobile
       DrybulbTemperature = _mLogger.DrybulbTemperature.LastValue.ToString("F1");
       RelativeHumdity = _mLogger.RelativeHumdity.LastValue.ToString("F1");
       GlobeTemperature = _mLogger.GlobeTemperature.LastValue.ToString("F1");
-      Velocity = _mLogger.Velocity.LastValue.ToString("F2");
+      Velocity = (1.00 < _mLogger.Velocity.LastValue) ? "OOR" : _mLogger.Velocity.LastValue.ToString("F2"); // 1.00m/s以上はOut of Range
       Illuminance = _mLogger.Illuminance.LastValue.ToString("F1");
 
       //計測日時
