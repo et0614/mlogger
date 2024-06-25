@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.16\r";
+const char VERSION_NUMBER[] = "VER:3.3.17\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -182,7 +182,7 @@ int main(void)
 	_delay_ms(500);
 
 	//XBee設定確認
-	//if(!my_xbee::xbee_setting_initialized()) showError(2);
+	if(!my_xbee::xbee_setting_initialized()) showError(2);
 
 	//割り込み再開
 	sei();

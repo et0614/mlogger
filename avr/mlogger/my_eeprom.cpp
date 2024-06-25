@@ -16,6 +16,9 @@
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;
 
+//XBEEの初期化フラグ
+static uint8_t EEMEM EEP_XB_INITFLAG;
+
 //乾球温度補正係数A,B
 static float EEMEM EEP_DBTCF_A;
 static float EEMEM EEP_DBTCF_B;
@@ -186,6 +189,10 @@ void initMemory()
 	//名前
 	eeprom_busy_wait();
 	eeprom_update_block((const void *)ML_NAME, (void *)EEP_NAME, sizeof(my_eeprom::mlName));
+	
+	//XBee初期化フラグ
+	eeprom_busy_wait();
+	eeprom_write_byte(&EEP_XB_INITFLAG,'F');
 	
 	//初期化フラグ
 	eeprom_busy_wait();
@@ -483,4 +490,16 @@ void my_eeprom::LoadEEPROM()
 	LoadCorrectionFactor();
 	LoadMeasurementSetting();
 	LoadName();
+}
+
+//XBeeが初期化済か否かを取得する
+bool my_eeprom::IsXBeeInitialized(){
+	eeprom_busy_wait(); //EEPROM読み書き可能まで待機
+	return eeprom_read_byte(&EEP_XB_INITFLAG) == 'T';
+}
+
+//XBee初期化を記録する
+void my_eeprom::XBeeInitialized(){
+	eeprom_busy_wait();
+	eeprom_write_byte(&EEP_XB_INITFLAG,'T');	
 }

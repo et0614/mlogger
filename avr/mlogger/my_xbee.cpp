@@ -7,6 +7,7 @@
 
 #include "my_xbee.h"
 #include "my_uart.h"
+#include "my_eeprom.h"	//EEPROM処理
 #include "global_variables.h"
 
 #include <string.h>
@@ -117,6 +118,9 @@ void my_xbee::send_atcmd(const char data[]){
 }
 
 bool my_xbee::xbee_setting_initialized(){
+	//XBeeが初期化済みならばスキップ
+	if(my_eeprom::IsXBeeInitialized()) return 1;
+	
 	bool hasChanged = false;
 	char message[MBUFF_LENGTH];
 	memset(message, 0, sizeof(message));
@@ -240,7 +244,9 @@ bool my_xbee::xbee_setting_initialized(){
 		my_xbee::receive_message(message);
 		if(strcmp(message, "OK") != 0) return 0;
 	}
-		
+	
+	//XBee初期化フラグを記録
+	my_eeprom::XBeeInitialized();
 	return 1;
 }
 

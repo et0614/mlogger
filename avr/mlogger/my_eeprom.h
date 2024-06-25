@@ -46,6 +46,12 @@ class my_eeprom
 		
 		//–¼Ì‚ğ‘‚«‚Ş
 		static void SaveName();
+		
+		//XBee‚ª‰Šú‰»Ï‚©”Û‚©‚ğæ“¾‚·‚é
+		static bool IsXBeeInitialized();
+		
+		//XBee‰Šú‰»‚ğ‹L˜^‚·‚é
+		static void XBeeInitialized();
 };
 
 #endif /* MY_EEPROM_H_ */
