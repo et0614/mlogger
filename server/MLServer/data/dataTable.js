@@ -26,7 +26,7 @@ function loadMLoggerTable(){
     .then(data => {
         // テーブルの参照を取得
         const table = document.getElementById('mlTable').getElementsByTagName('tbody')[0];
-        
+
         for (let key in data) {
             // 新しい行を作成
             const newRow = table.insertRow(table.rows.length);
@@ -36,7 +36,7 @@ function loadMLoggerTable(){
             dTime = new Date(data[key]["lastCommunicated"]);
             cell = newRow.insertCell(row++);
             cell.classList.add('general');
-            cell.innerHTML = (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString();
+            cell.innerHTML = (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
 
             //名前
             cell = newRow.insertCell(row++);
@@ -53,7 +53,7 @@ function loadMLoggerTable(){
             hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
             cell = newRow.insertCell(row++);
             cell.classList.add('thlog');
-            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString();
+            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
             cell = newRow.insertCell(row++);
             cell.classList.add('thlog');
             cell.innerHTML = data[key]["drybulbTemperature"]["lastValue"].toFixed(1);
@@ -66,7 +66,7 @@ function loadMLoggerTable(){
             hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
             cell = newRow.insertCell(row++);
             cell.classList.add('glblog');
-            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString();
+            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
             cell = newRow.insertCell(row++);
             cell.classList.add('glblog');
             cell.innerHTML = data[key]["globeTemperature"]["lastValue"].toFixed(1);
@@ -76,7 +76,7 @@ function loadMLoggerTable(){
             hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
             cell = newRow.insertCell(row++);
             cell.classList.add('vellog');
-            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString();
+            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
             cell = newRow.insertCell(row++);
             cell.classList.add('vellog');
             cell.innerHTML = (100 * data[key]["velocity"]["lastValue"]).toFixed(1);
@@ -86,7 +86,7 @@ function loadMLoggerTable(){
             hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
             cell = newRow.insertCell(row++);
             cell.classList.add('illlog');
-            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString();
+            cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
             cell = newRow.insertCell(row++);
             cell.classList.add('illlog');
             cell.innerHTML = data[key]["illuminance"]["lastValue"].toFixed(2);

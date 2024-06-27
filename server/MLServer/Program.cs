@@ -22,7 +22,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.4";
+    private const string VERSION = "1.1.5";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
