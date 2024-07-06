@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.17\r";
+const char VERSION_NUMBER[] = "VER:3.3.18\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -614,8 +614,8 @@ ISR(RTC_PIT_vect)
 	
 	currentTime++; //1秒進める
 	
-	//電圧確認
-	if(isLowBattery()) lowBatteryTime++;
+	//風速計を使う場合には電圧確認（風速計が無ければ電池は限界まで使う）
+	if(my_eeprom::measure_vel && isLowBattery()) lowBatteryTime++;
 	else lowBatteryTime = 0;
 
 	//リセットボタン押し込み確認********************************
