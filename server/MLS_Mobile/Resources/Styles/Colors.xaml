@@ -4,8 +4,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <Color x:Key="ForestGreen">ForestGreen</Color>
-    <Color x:Key="DarkGreen">DarkGreen</Color>
+    <Color x:Key="ForestGreen">ForestGreen</Color> <!--#228B22-->
+    <Color x:Key="DarkGreen">DarkGreen</Color> <!--#006400-->
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
 

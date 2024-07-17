@@ -80,23 +80,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.34</ApplicationDisplayVersion>
-	  <ApplicationVersion>37</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.35</ApplicationDisplayVersion>
+	  <ApplicationVersion>38</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.34</ApplicationDisplayVersion>
-	  <ApplicationVersion>37</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.35</ApplicationDisplayVersion>
+	  <ApplicationVersion>38</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.34</ApplicationDisplayVersion>
-	  <ApplicationVersion>37</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.35</ApplicationDisplayVersion>
+	  <ApplicationVersion>38</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.34</ApplicationDisplayVersion>
-	  <ApplicationVersion>37</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.35</ApplicationDisplayVersion>
+	  <ApplicationVersion>38</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -234,6 +234,9 @@
 	  <None Remove="Resources\Fonts\Brands-Regular-400.otf" />
 	  <None Remove="Resources\Fonts\Free-Regular-400.otf" />
 	  <None Remove="Resources\Fonts\Free-Solid-900.otf" />
+	  <None Remove="Resources\Images\flash_memory.svg" />
+	  <None Remove="Resources\Images\laptop.svg" />
+	  <None Remove="Resources\Images\smart_phone.svg" />
 	  <None Remove="Resources\Images\trans.png" />
 	  <None Remove="Resources\Signals\pwr0.png" />
 	  <None Remove="Resources\Signals\pwr1.png" />
@@ -340,13 +343,13 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="8.0.1" />
-	  <PackageReference Include="DigiIoT.Maui" Version="1.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.4" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.2" />
+	  <PackageReference Include="DigiIoT.Maui" Version="1.0.1" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.7" />
 	  <PackageReference Include="Mopups" Version="1.3.1" />
-	  <PackageReference Include="Popolo" Version="2.3.1.68" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
+	  <PackageReference Include="Popolo" Version="2.3.1.69" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.70" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.70" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -384,6 +387,18 @@
 	    <Generator>ResXFileCodeGenerator</Generator>
 	    <LastGenOutput>TCResource.Designer.cs</LastGenOutput>
 	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiImage Update="Resources\Images\flash_memory.svg">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </MauiImage>
+	  <MauiImage Update="Resources\Images\laptop.svg">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </MauiImage>
+	  <MauiImage Update="Resources\Images\smart_phone.svg">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </MauiImage>
 	</ItemGroup>
 
 	<ItemGroup>

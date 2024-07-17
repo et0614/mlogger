@@ -628,7 +628,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Start logging に類似しているローカライズされた文字列を検索します。
+        ///   Start logging to: に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_StartLogging {
             get {

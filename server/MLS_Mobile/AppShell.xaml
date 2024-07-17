@@ -76,6 +76,7 @@
 
     <TabBar>
         <Tab Title="ML Scanner" Style="{StaticResource BLTab}">
+            <!--<ShellContent ContentTemplate="{DataTemplate local:DeviceSetting}"/>-->
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
         </Tab>
         <Tab Title="Data Files" Style="{StaticResource DFTab}">

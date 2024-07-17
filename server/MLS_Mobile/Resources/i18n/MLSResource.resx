@@ -307,7 +307,7 @@
     <value>Starting date and time</value>
   </data>
   <data name="DS_StartLogging" xml:space="preserve">
-    <value>Start logging</value>
+    <value>Start logging to:</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
     <value>Target and time interval</value>
