@@ -13,23 +13,23 @@
                 <Label Text="{x:Static res:MLSResource.DS_StartLogging}" FontSize="Subtitle"/>
                 <Grid Margin="5,5,0,0" RowDefinitions="Auto" ColumnDefinitions="*,*,*">
                     <!--スマートフォンに記録-->
-                    <Button Grid.Row="0" Grid.Column="0" Margin="0,0,4,0" Padding="0,0,0,0" HeightRequest="70"
+                    <Button Grid.Row="0" Grid.Column="0" Margin="0,0,4,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Phone" LineBreakMode="NoWrap"
-                            ImageSource="smart_phone.png" ContentLayout="Top, 10" 
+                            ImageSource="smart_phone.png" ContentLayout="Top, 5" 
                             Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
                     </Button>
 
                     <!--PCに記録-->
-                    <Button Grid.Row="0" Grid.Column="1" Margin="2,0,2,0" Padding="0,0,0,0" HeightRequest="70"
+                    <Button Grid.Row="0" Grid.Column="1" Margin="2,0,2,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="PC" LineBreakMode="NoWrap"
-                            ImageSource="laptop.png" ContentLayout="Top, 10" 
+                            ImageSource="laptop.png" ContentLayout="Top, 5" 
                             Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
                     </Button>
 
                     <!--フラッシュメモリに記録-->
-                    <Button Grid.Row="0" Grid.Column="2" Margin="4,0,0,0" Padding="0,0,0,0" HeightRequest="70"
+                    <Button Grid.Row="0" Grid.Column="2" Margin="4,0,0,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Flash" LineBreakMode="NoWrap"
-                            ImageSource="flash_memory.png" ContentLayout="Top, 10" 
+                            ImageSource="flash_memory.png" ContentLayout="Top, 5" 
                             Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
                     </Button>
                 </Grid>
