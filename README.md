@@ -1,36 +1,36 @@
 # M-Logger
 
-Materials for the production of M-Logger, an indoor thermal environment measurement device, are available.
+Materials for the production of M-Logger, an indoor thermal environment measurement device, are currently available.
 
 ## Description
 
-The M-Logger was developed to easily measure the indoor thermal environment. <br>
-To evaluate this environment accurately, it is necessary to measure at least the dry bulb temperature, relative humidity, radiation temperature, and wind speed.<br>
-Comprehensive instruments that measure these physical quantities typically cost over $1000. <br>
-Additionally, they are large, cumbersome, and difficult to install in multiple locations since they require a power outlet.<br>
-In contrast, the M-Logger costs less than $100 to produce, fits in the palm of your hand, and runs on AA batteries. <br>
-For more information, please refer to the [paper](https://www.jstage.jst.go.jp/article/aijt/28/68/28_267/_article/-char/ja) and [website](https://www.mlogger.jp).
+The M-Logger was developed with the objective of facilitating the measurement of the indoor thermal environment. <br>
+In order to evaluate the environment in question with the requisite degree of accuracy, it is necessary to measure at least the dry bulb temperature, relative humidity, radiation temperature, and wind speed.<br>
+The cost of comprehensive instruments that measure these physical quantities is typically in excess of $1000. <br>
+Furthermore, they are bulky and challenging to install in multiple locations due to the necessity of a power outlet.<br>
+In contrast, the M-Logger is manufactured at a cost of less than $100, is compact and portable, and is powered by two AA batteries. <br>
+Further information can be found in the accompanying [paper](https://www.jstage.jst.go.jp/article/aijt/28/68/28_267/_article/-char/ja) and [website](https://www.mlogger.jp).
 <br> <br>
 
-Here, four materials for producing M-Logger are published in a directory.
+In this directory, four materials for the production of the M-Logger are presented.
 
 ### board
-This directory contains materials for making the board. <br>
-It includes a project file for the board created with Autodesk's Eagle, a bill of materials (BOM) listing the components to be mounted on the board, and datasheets for the components, which can be outsourced using PCBA services.
+The directory contains the materials required for the fabrication of the board. <br>
+The directory includes a project file for the board created with Autodesk's Eagle, a bill of materials (BOM) listing the components to be mounted on the board, and datasheets for the components, which can be outsourced using PCBA services.
 
 ### avr
-This directory contains the program to be written to the microchip to make the board function. <br>
-Since this instrument uses Atmel's AVR128DB32, the development is done in Atmel Studio.
+The directory contains the program to be written to the microchip, which is necessary for the board to function. <br>
+As the instrument employs Atmel's AVR128DB32, the development is conducted within the Atmel Studio environment.
 
 ### server
-The measured data is sent to a PC via Zigbee communication using XBee. <br>
-A solution file containing a software project file for receiving this data on a PC is available. <br>
-The software is developed with Microsoft's Visual Studio, and since it targets .NET 8, it has been confirmed to work on Linux as well. <br>
-XBee can also communicate via Bluetooth from version 3.0 onwards, allowing data to be received by ordinary smartphones. <br>
+The measured data is transmitted to a personal computer via Zigbee communication using XBee. <br>
+A solution file containing a software project file for the reception of the aforementioned data on a personal computer is available for consultation. <br>
+The software has been developed with Microsoft's Visual Studio; and as it targets .NET 8, it has been confirmed to work on Linux as well. <br>
+Furthermore, XBee can communicate via Bluetooth from version 3.0 onwards, allowing data to be received by ordinary smartphones. <br>
 The solution file also includes a MAUI project file to receive measurements on iPhone and Android.
 
 ### 3d_data
-This directory contains 3D data for manufacturing cases. The files are in Rhinoceros format.
+The directory contains three-dimensional data for the purpose of manufacturing cases. The files are in the Rhinoceros format.
 
 ### license
 Copyright Eisuke Togashi 2023. <br>
