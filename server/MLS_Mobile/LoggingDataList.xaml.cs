@@ -1,8 +1,6 @@
 namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
-using System.Reflection.Metadata;
-using System.Windows.Input;
 
 public partial class LoggingDataList : ContentPage
 {
@@ -121,12 +119,10 @@ public partial class LoggingDataList : ContentPage
     {
       await Share.Default.RequestAsync(new ShareTextRequest
       {
-        Text = LoggingData.MakeClipData(FileName),
-        Title = "M-Logger Data"
+        Text = FileName + Environment.NewLine + LoggingData.MakeClipData(FileName),
+        Title = "M-Logger Data",
+        Subject = logFile.FileName
       });
-
-      //Clipboard.Default.SetTextAsync
-      //  (LoggingData.MakeClipData(logFile.FileName));
     }
   }
 
