@@ -24,7 +24,7 @@ As the instrument employs Atmel's AVR128DB32, the development is conducted withi
 
 ### server
 The measured data is transmitted to a personal computer via Zigbee communication using XBee. <br>
-A solution file containing a software project file for the reception of the aforementioned data on a personal computer is available for consultation. <br>
+A solution file containing a software project file for the reception of the aforementioned data on a personal computer is available. <br>
 The software has been developed with Microsoft's Visual Studio; and as it targets .NET 8, it has been confirmed to work on Linux as well. <br>
 Furthermore, XBee can communicate via Bluetooth from version 3.0 onwards, allowing data to be received by ordinary smartphones. <br>
 The solution file also includes a MAUI project file to receive measurements on iPhone and Android.
