@@ -848,7 +848,8 @@ static void execLogging()
 		}
 	}
 	slp_time++;
-	if(60 <= slp_time){
+	//この処理は意外に電池を消耗するので時間間隔を増やしXBee使用時のみとした（2024.07.22）
+	if(3500 <= slp_time && (outputToXBee || outputToBLE)){
 		wakeup_xbee(); //XBeeスリープ解除
 		_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
 		my_xbee::tx_chars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）

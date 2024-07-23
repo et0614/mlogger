@@ -11,7 +11,8 @@
 #include <avr/eeprom.h>
 
 #include "my_eeprom.h"
-#include "global_variables.h"
+#include "parameters.h"
+//#include "global_variables.h"
 
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;

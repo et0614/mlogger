@@ -8,7 +8,7 @@
 #include "my_xbee.h"
 #include "my_uart.h"
 #include "my_eeprom.h"	//EEPROMˆ—
-#include "global_variables.h"
+#include "parameters.h"
 
 #include <string.h>
 #include <avr/io.h>
