@@ -22,7 +22,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.5";
+    private const string VERSION = "1.1.6";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -370,7 +370,8 @@ namespace MLServer
             ml.Illuminance.LastValue.ToString("F2") + "," +
             ml.GlobeTemperatureVoltage.ToString("F3") + "," +
             ml.VelocityVoltage.ToString("F3") + "," +
-            ml.GeneralVoltage1.LastValue.ToString("F3"));
+            ml.GeneralVoltage1.LastValue.ToString("F3") + "," + 
+            ml.MeanRadiantTemperature.ToString("F2"));
           //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
           //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
           //ml.GeneralVoltage3.LastValue.ToString("F3"));

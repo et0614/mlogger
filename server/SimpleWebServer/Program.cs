@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text;
+using System.Net.Mime;
 
 namespace MLWebServer
 {
@@ -89,6 +90,35 @@ namespace MLWebServer
                   {
                     long numBytes = new FileInfo(path).Length;
                     byte[] content = br.ReadBytes((int)numBytes);
+
+                    //ファイルタイプを設定
+                    string extension = Path.GetExtension(path).ToLower();
+                    switch (extension)
+                    {
+                      case ".txt":
+                        res.ContentType = "text/plain";
+                        break;
+                      case ".csv":
+                        res.ContentType = "text/csv";
+                        break;
+                      case ".htm":
+                      case ".html":
+                        res.ContentType = "text/html";
+                        break;
+                      case ".js":
+                        res.ContentType = "text/javascript";
+                        break;
+                      case ".css":
+                        res.ContentType = "text/css";
+                        break;
+                      case ".json":
+                        res.ContentType = "application/json";
+                        break;
+                      default:
+                        res.ContentType = "application/octet-stream";
+                        break;
+                    }
+
                     res.OutputStream.Write(content, 0, content.Length);
                   }
                 }

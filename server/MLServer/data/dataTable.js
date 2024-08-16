@@ -1,5 +1,5 @@
 //テーブルのソート方向を決める配列
-const dirOrder = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+const dirOrder = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 function loadMLoggerInfo(){
     fetch('./latest.json')
@@ -92,6 +92,9 @@ function loadMLoggerTable(){
             cell.innerHTML = data[key]["illuminance"]["lastValue"].toFixed(2);
 
             //熱的快適性
+            cell = newRow.insertCell(row++);
+            cell.classList.add('cmftlog');
+            cell.innerHTML = data[key]["meanRadiantTemperature"].toFixed(1);
             cell = newRow.insertCell(row++);
             cell.classList.add('cmftlog');
             cell.innerHTML = data[key]["setStar"].toFixed(1);

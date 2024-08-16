@@ -11,7 +11,7 @@
 <body>
     <h2>Measurement status</h2>
 
-    <b>Number of M-Loggers connected: </b><span id="mlNum"/> unit(s)<br><br>
+    <b>Number of M-Loggers connected: </b><span id="mlNum"></span> unit(s)<br><br>
     <b>List of M-Loggers:</b><br><br>
     <div id="loggers">
         <table align="left" id="mlTable">
@@ -29,9 +29,10 @@
                     <th class="vellog_h" onclick="sortTable(9)">Velocity [cm/s]</th>
                     <th class="illlog_h" onclick="sortTable(10)">Date and time</th>
                     <th class="illlog_h" onclick="sortTable(11)">Illuminance [lx]</th>
-                    <th class="cmftlog_h" onclick="sortTable(12)">SET</th>
-                    <th class="cmftlog_h" onclick="sortTable(13)">PMV</th>
-                    <th class="cmftlog_h"onclick="sortTable(14)">PPD[%]</th>
+                    <th class="cmftlog_h" onclick="sortTable(12)">MRT</th>
+                    <th class="cmftlog_h" onclick="sortTable(13)">SET</th>
+                    <th class="cmftlog_h" onclick="sortTable(14)">PMV</th>
+                    <th class="cmftlog_h" onclick="sortTable(15)">PPD[%]</th>
                     <th class="general_h">DL</th>
                 </tr>
             </thead>
@@ -40,7 +41,7 @@
     </div>
 
     <br clear="all">
-    <div id="clomet"/>
+    <span id="clomet"></span>
     <hr>
     Web site: <a href="https://www.mlogger.jp">https://www.mlogger.jp</a>
 
