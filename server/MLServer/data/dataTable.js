@@ -1,8 +1,8 @@
 //テーブルのソート方向を決める配列
 const dirOrder = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
-function loadMLoggerInfo(){
-    fetch('./latest.json')
+function loadMLoggerInfo(path){
+    fetch(path)
     .then(response => response.json())
     .then(data => {
         //台数を反映
@@ -20,8 +20,8 @@ function loadMLoggerInfo(){
     return null;
 }
 
-function loadMLoggerTable(){
-    fetch('./latest.json')
+function loadMLoggerTable(path){
+    fetch(path)
     .then(response => response.json())
     .then(data => {
         // テーブルの参照を取得
@@ -108,7 +108,7 @@ function loadMLoggerTable(){
             //CSVデータ
             cell = newRow.insertCell(row++);
             cell.classList.add('general');
-            cell.innerHTML = "<a href='" + data[key]["lowAddress"] + ".csv'>" + data[key]["lowAddress"] + ".csv</a>";
+            cell.innerHTML = "<a href='../" + data[key]["lowAddress"] + ".csv'>" + data[key]["lowAddress"] + ".csv</a>";
         }
     })
     .catch(error => {

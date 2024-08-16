@@ -12,32 +12,32 @@ table {
     table-layout: fixed;
 }
 
-    table tr {
-        background-color: #e6f2f5;
-        padding: .35em;
-        border-bottom: 2px solid #fff;
-    }
+table tr {
+    background-color: #e6f2f5;
+    padding: .35em;
+    border-bottom: 2px solid #fff;
+}
 
-    table th,
-    table td {
-        padding: 1em 10px 1em 1em;
-        border-right: 2px solid #fff;
-        text-align: center;
-    }
+table th,
+table td {
+    padding: 1em 10px 1em 1em;
+    border-right: 2px solid #fff;
+    text-align: center;
+}
 
-    table th {
-        font-size: 1.0em;
-    }
+table th {
+    font-size: 1.0em;
+}
 
-    table thead tr {
-        background-color: #167F92;
-        color: #fff;
-    }
+table thead tr {
+    background-color: #167F92;
+    color: #fff;
+}
 
-    table tbody th {
-        background: #78bbc7;
-        color: #fff;
-    }
+table tbody th {
+    background: #78bbc7;
+    color: #fff;
+}
 
 .general_h {
     background: #3261AB;
@@ -139,4 +139,65 @@ table {
         table tbody th {
             color: #fff;
         }
+}
+
+/*ここからMap*/
+
+form {
+    margin: auto;
+    max-width: 1000px;
+    margin-right: auto;
+    margin: 0;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+
+group + group {
+    margin-top: 20px;
+}
+
+.inline-radio {
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #b6b6b6;
+}
+
+div {
+    position: relative;
+    flex: 1;
+}
+
+input {
+    width: 100%;
+    height: 60px;
+    opacity: 0;
+}
+
+label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #b6b6b6;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    border-right: 1px solid #b6b6b6;
+}
+
+div:last-child label {
+    border-right: 0;
+}
+
+input:checked + label {
+    background: #d81b60;
+    font-weight: 500;
+    color: #fff;
 }

@@ -1,57 +1,25 @@
-﻿<html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex,nofollow">
-    <meta http-equiv="refresh" content="60; URL=">
-    <title>Measurement status</title>
-    <link rel="stylesheet" href="style.css">
-
-    <script src="dataTable.js"></script>
-</head>
-<body>
-    <h2>Measurement status</h2>
-
-    <b>Number of M-Loggers connected: </b><span id="mlNum"></span> unit(s)<br><br>
-    <b>List of M-Loggers:</b><br><br>
-    <div id="loggers">
-        <table align="left" id="mlTable">
-            <thead>
-                <tr>
-                    <th class="general_h" onclick="sortTable(0)">Last connection</th>
-                    <th class="general_h" onclick="sortTable(1)">Name</th>
-                    <th class="general_h" onclick="sortTable(2)">Address</th>
-                    <th class="thlog_h" onclick="sortTable(3)">Date and time</th>
-                    <th class="thlog_h" onclick="sortTable(4)">Dry-bulb temperature [C]</th>
-                    <th class="thlog_h" onclick="sortTable(5)">Relative humidity [%]</th>
-                    <th class="glblog_h" onclick="sortTable(6)">Date and time</th>
-                    <th class="glblog_h" onclick="sortTable(7)">Globe temperature [C]</th>
-                    <th class="vellog_h" onclick="sortTable(8)">Date and time</th>
-                    <th class="vellog_h" onclick="sortTable(9)">Velocity [cm/s]</th>
-                    <th class="illlog_h" onclick="sortTable(10)">Date and time</th>
-                    <th class="illlog_h" onclick="sortTable(11)">Illuminance [lx]</th>
-                    <th class="cmftlog_h" onclick="sortTable(12)">MRT</th>
-                    <th class="cmftlog_h" onclick="sortTable(13)">SET</th>
-                    <th class="cmftlog_h" onclick="sortTable(14)">PMV</th>
-                    <th class="cmftlog_h" onclick="sortTable(15)">PPD[%]</th>
-                    <th class="general_h">DL</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <br clear="all">
-    <span id="clomet"></span>
-    <hr>
-    Web site: <a href="https://www.mlogger.jp">https://www.mlogger.jp</a>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Redirect</title>
     <script>
-        //一般情報をロード
-        loadMLoggerInfo();
+        // Function to detect browser language and redirect
+        function redirectBasedOnLanguage() {
+            var userLang = navigator.language || navigator.userLanguage; 
+            // Extract the primary language code (e.g., "en", "ja")
+            var langCode = userLang.split('-')[0];
 
-        //計測情報をロード
-        loadMLoggerTable();
+            if (langCode === "ja") {
+                window.location.href = "./ja/index.htm"; // Redirect to Japanese page
+            } else {
+                window.location.href = "./en/index.htm"; // Default to English page
+            }
+        }
     </script>
-
+</head>
+<body onload="redirectBasedOnLanguage()">
+    <h1>Redirecting based on your browser language...</h1>
 </body>
 </html>

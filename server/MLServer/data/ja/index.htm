@@ -1,0 +1,157 @@
+﻿<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="refresh" content="60; URL=">
+    <title>測定状況</title>
+    <link rel="stylesheet" href="../style.css">
+
+    <script src="../dataTable.js"></script>
+    <script src="../p5.min.js"></script>
+    <script src="../draw.js"></script>
+    <script src="../sketch.js"></script>
+</head>
+<body>
+    <h2>計測状況</h2>
+
+    <b>接続台数：</b><span id="mlNum"></span> 台<br><br>
+    <b>測定器一覧：</b><br><br>
+    <div id="loggers">
+        <table align="left" id="mlTable">
+            <thead>
+                <tr>
+                    <th class="general_h" onclick="sortTable(0)">最終接続</th>
+                    <th class="general_h" onclick="sortTable(1)">測定器名</th>
+                    <th class="general_h" onclick="sortTable(2)">アドレス</th>
+                    <th class="thlog_h" onclick="sortTable(3)">計測日時</th>
+                    <th class="thlog_h" onclick="sortTable(4)">乾球温度[C]</th>
+                    <th class="thlog_h" onclick="sortTable(5)">相対湿度[%]</th>
+                    <th class="glblog_h" onclick="sortTable(6)">計測日時</th>
+                    <th class="glblog_h" onclick="sortTable(7)">グローブ温度[C]</th>
+                    <th class="vellog_h" onclick="sortTable(8)">計測日時</th>
+                    <th class="vellog_h" onclick="sortTable(9)">風速[cm/s]</th>
+                    <th class="illlog_h" onclick="sortTable(10)">計測日時</th>
+                    <th class="illlog_h" onclick="sortTable(11)">照度[lx]</th>
+                    <th class="cmftlog_h" onclick="sortTable(12)">MRT</th>
+                    <th class="cmftlog_h" onclick="sortTable(13)">SET</th>
+                    <th class="cmftlog_h" onclick="sortTable(14)">PMV</th>
+                    <th class="cmftlog_h" onclick="sortTable(15)">PPD[%]</th>
+                    <th class="general_h">DL</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <br clear="all">
+    <span id="clomet"></span>
+    <hr>
+    <br/><br/>
+
+    <button id="toggleName" onclick="toggleDisplay()">ヒートマップ非表示</button>
+
+    <div id="heatMapBlock" style="display: block;">        
+        <h2>ヒートマップ</h2>
+        <form>
+            <group class="inline-radio">
+                <div>
+                    <input type="radio" name="mode" value="dbt" onchange="handleModeChange()" checked>
+                    <label>Drybulb temperature</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="hmd" onchange="handleModeChange()">
+                    <label>Relative humidity</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="glb" onchange="handleModeChange()">
+                    <label>Globe temperature</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="vel" onchange="handleModeChange()">
+                    <label>Velocity</label>
+                </div>
+            </group>
+            <group class="inline-radio">
+                <div>
+                    <input type="radio" name="mode" value="ill" onchange="handleModeChange()">
+                    <label>illuminance</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="pmv" onchange="handleModeChange()">
+                    <label>PMV</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="ppd" onchange="handleModeChange()">
+                    <label>PPD</label>
+                </div>
+                <div>
+                    <input type="radio" name="mode" value="clear" onchange="handleModeChange()">
+                    <label>Clear</label>
+                </div>
+            </group>
+        </form>
+
+        <div id="canvas-container"></div>
+
+        <hr>
+        <br/><br/>
+    </div>
+
+    <br/><br/>
+    Web site: <a href="https://www.mlogger.jp">https://www.mlogger.jp</a>
+
+    <script>
+        //一般情報をロード
+        loadMLoggerInfo('../latest.json');
+
+        //計測情報をロード
+        loadMLoggerTable('../latest.json');
+
+        function handleModeChange() {
+            // ラジオボタンが変更された時に呼び出される関数
+            var selectedMode = document.querySelector('input[name="mode"]:checked').value;
+            switch (selectedMode) {
+                case "dbt":
+                    changeMode(MODE.DBT);
+                    break;
+                case "hmd":
+                    changeMode(MODE.HMD);
+                    break;
+                case "glb":
+                    changeMode(MODE.GLB);
+                    break;
+                case "vel":
+                    changeMode(MODE.VEL);
+                    break;
+                case "ill":
+                    changeMode(MODE.ILL);
+                    break;
+                case "pmv":
+                    changeMode(MODE.PMV);
+                    break;
+                case "ppd":
+                    changeMode(MODE.PPD);
+                    break;
+                case "clear":
+                    changeMode(MODE.CLEAR);
+                    break;
+                default:
+                    break;
+            }
+        }
+        
+        function toggleDisplay() {
+            var element = document.getElementById("heatMapBlock");
+            var elem2 = document.getElementById("toggleName");
+            if (element.style.display === "none") {
+                element.style.display = "block";
+                elem2.textContent = "ヒートマップを非表示";
+            } else {
+                element.style.display = "none";
+                elem2.textContent = "ヒートマップを表示";
+            }
+        }
+    </script>
+
+</body>
+</html>

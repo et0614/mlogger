@@ -32,7 +32,7 @@ let noImage = false;
 
 function preload() {
   // 画像を読み込む
-  loadImage('background.png', success, failure);
+  loadImage('../background.png', success, failure);
 }
 
 function success(img) {
@@ -54,7 +54,10 @@ function setup() {
 
   //横幅を基準に縦を調整
   height = noImage ? WIDTH : bgimg.height * (WIDTH / bgimg.width);
-  createCanvas(MARGIN + WIDTH, MARGIN + height);
+  canvas = createCanvas(MARGIN + WIDTH, MARGIN + height);
+
+  //描画位置
+  canvas.parent('canvas-container');
 
   //配色の設定
   MAX_TMP_COLOR = color(204,102,0,50);
@@ -69,15 +72,15 @@ function setup() {
   MIN_PPD_COLOR = color(51,153,0,50);
   MAX_ILL_COLOR = color(255,241,0,50);
   MIN_ILL_COLOR = color(0,0,0,50);
-  MAX_TMP = 30;
-  MIN_TMP = 20;
+  MAX_TMP = 28;
+  MIN_TMP = 22;
   MAX_VEL = 0.4;
   MIN_VEL = 0;
   MAX_HMD = 60;
-  MIN_HMD = 20;
-  MAX_PMV = 2.0;
-  MIN_PMV = -2.0;
-  MAX_PPD = 60;
+  MIN_HMD = 30;
+  MAX_PMV = 1.5;
+  MIN_PMV = -1.5;
+  MAX_PPD = 50;
   MIN_PPD = 0;
   MAX_ILL = 1000;
   MIN_ILL = 0;
@@ -100,7 +103,7 @@ function draw() {
   translate(MARGIN, MARGIN);
 
   //最新の計測データを取得
-  fetch('latest.json')
+  fetch('../latest.json')
   .then(response => response.json())
   .then(data => {
 
