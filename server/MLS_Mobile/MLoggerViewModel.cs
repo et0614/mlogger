@@ -36,6 +36,8 @@ namespace MLS_Mobile
     private string _pmv = "";
     private string _ppd = "";
     private string _set = "";
+    private string _wbgt_out= "";
+    private string _wbgt_in = "";
 
     private DateTime _lastCom, _lastComDBT, _lastComHMD, _lastComGLB, _lastComVEL, _lastComILL;
 
@@ -291,6 +293,34 @@ namespace MLS_Mobile
       }
     }
 
+    /// <summary>WBGT(Outdoor)[C]を設定・取得する</summary>
+    public string WBGT_Outdoor
+    {
+      get { return _wbgt_out; }
+      set
+      {
+        if (_wbgt_out != value)
+        {
+          _wbgt_out = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    /// <summary>WBGT(Indoor)を設定・取得する</summary>
+    public string WBGT_Indoor
+    {
+      get { return _wbgt_in; }
+      set
+      {
+        if (_wbgt_in != value)
+        {
+          _wbgt_in = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
     private ImmutableMLogger _mLogger;
 
     public ImmutableMLogger Logger
@@ -400,7 +430,9 @@ namespace MLS_Mobile
       PMV = _mLogger.PMV.ToString("F2");
       PPD = _mLogger.PPD.ToString("F1");
       SETStar = _mLogger.SETStar.ToString("F1");
-      
+      WBGT_Outdoor = _mLogger.WBGT_Outdoor.ToString("F1");
+      WBGT_Indoor = _mLogger.WBGT_Indoor.ToString("F1");
+
       //着色
       //FrameColor = Application.Current.Resources["Dark_G"] as Color;
     }

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 
 using System.Text.Json.Serialization;
 using static MLLib.MLogger;
+using Popolo.ThermophysicalProperty;
 
 namespace MLLib
 {
@@ -19,6 +20,9 @@ namespace MLLib
 
     /// <summary>日時の型（一体）</summary>
     private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
+
+    /// <summary>大気圧[kPa]</summary>
+    private const double ATM = 101.325;
 
     #endregion
 
@@ -323,6 +327,14 @@ namespace MLLib
     /// <summary>SET*[-]を取得する</summary>
     public double SETStar { get; private set; }
 
+    [JsonPropertyName("wbgt_outdoor")]
+    /// <summary>屋外のWBGTを取得する</summary>
+    public double WBGT_Outdoor { get; private set; }
+
+    [JsonPropertyName("wbgt_indoor")]
+    /// <summary>屋内のWBGTを取得する</summary>
+    public double WBGT_Indoor { get; private set; }
+
     #endregion
 
     #region コンストラクタ
@@ -395,11 +407,15 @@ namespace MLLib
         double glb = double.IsNaN(GlobeTemperature.LastValue) ? DefaultGlobeTemperature : Math.Max(-10, Math.Min(50, GlobeTemperature.LastValue));
 
         MeanRadiantTemperature = getMRT(dbt, glb, vel);
+        double wbt = MoistAir.GetWetBulbTemperatureFromDryBulbTemperatureAndRelativeHumidity
+          (dbt, rhd, ATM);
 
         SETStar = TwoNodeModel.GetSETStarFromAmbientCondition
           (dbt, MeanRadiantTemperature, rhd, vel, CloValue, 58.15 * MetValue, 0);
         PMV = ThermalComfort.GetPMV(dbt, MeanRadiantTemperature, rhd, vel, CloValue, MetValue, 0);
         PPD = ThermalComfort.GetPPD(PMV);
+        WBGT_Indoor = 0.7 * wbt + 0.3 * glb;
+        WBGT_Outdoor = 0.7 * wbt + 0.2 * glb + 0.1 * dbt;
       }
     }
 
@@ -1344,6 +1360,12 @@ namespace MLLib
 
     /// <summary>SET*[-]を取得する</summary>
     double SETStar { get; }
+
+    /// <summary>屋外のWBGTを取得する</summary>
+    public double WBGT_Outdoor { get; }
+
+    /// <summary>屋内のWBGTを取得する</summary>
+    public double WBGT_Indoor { get; }
 
     #endregion
 

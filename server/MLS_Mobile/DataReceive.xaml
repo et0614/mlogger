@@ -33,6 +33,10 @@
                         <RowDefinition Height="45"/>
                         <RowDefinition Height="20"/>
                         <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="45"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
@@ -80,6 +84,14 @@
                     <Label Grid.Row="16" Grid.Column="0" Text="SETStar" VerticalTextAlignment="End"/>
                     <Label Grid.Row="17" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SETStar, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="17" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="18" Grid.Column="0" Text="WBGT (Outdoor)" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="19" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Outdoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="19" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+
+                    <Label Grid.Row="20" Grid.Column="0" Text="WBGT (Indoor)" VerticalTextAlignment="End"/>
+                    <Label Grid.Row="21" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Indoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="21" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
                 </Grid>
 
                 <Grid Margin="20">

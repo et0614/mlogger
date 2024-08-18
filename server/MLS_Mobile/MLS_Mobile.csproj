@@ -345,11 +345,11 @@
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.2" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.0.1" />
-	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.8" />
 	  <PackageReference Include="Mopups" Version="1.3.1" />
-	  <PackageReference Include="Popolo" Version="2.3.1.69" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.70" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.70" />
+	  <PackageReference Include="Popolo" Version="2.3.1.71" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.80" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.80" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,203 +1,450 @@
 body {
-    font-family: "Open Sans", sans-serif;
-    line-height: 1.25;
-    background-color: #ffffff;
+  font-family: "Open Sans", sans-serif;
+  line-height: 1.25;
+  background-color: #ffffff;
 }
 
 table {
-    border-collapse: collapse;
-    margin: 0 auto;
-    padding: 0;
-    width: 2250px;
-    table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0 auto;
+  padding: 0;
+  width: 100%;
+  min-width: 1200;
+  table-layout: fixed;
 }
 
 table tr {
-    background-color: #e6f2f5;
-    padding: .35em;
-    border-bottom: 2px solid #fff;
+  background-color: #e6f2f5;
+  padding: .35em;
+  border-bottom: 2px solid #fff;
 }
 
 table th,
 table td {
-    padding: 1em 10px 1em 1em;
-    border-right: 2px solid #fff;
-    text-align: center;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+  border-right: 2px solid #fff;
+  text-align: center;
+  word-break: break-all;
 }
 
 table th {
-    font-size: 1.0em;
+  font-size: 1.0em;
 }
 
 table thead tr {
-    background-color: #167F92;
-    color: #fff;
+  background-color: #167F92;
+  color: #fff;
 }
 
 table tbody th {
-    background: #78bbc7;
-    color: #fff;
+  background: #78bbc7;
+  color: #fff;
 }
 
 .general_h {
-    background: #3261AB;
+  background: #3261AB;
 }
 
 .thlog_h {
-    background: #007FB1;
+  background: #007FB1;
 }
 
 .glblog_h {
-    background: #A4C520;
+  background: #A4C520;
 }
 
 .vellog_h {
-    background: #EDAD0B;
+  background: #EDAD0B;
 }
 
 .illlog_h {
-    background: #ff6a00;
+  background: #ff6a00;
 }
 
 .cmftlog_h {
-    background: #cc528b;
+  background: #cc528b;
 }
 
 .general {
-    background: #D5E0F1;
+  background: #D5E0F1;
 }
 
 .thlog {
-    background: #CAE7F2;
+  background: #CAE7F2;
 }
 
 .glblog {
-    background: #D1F1CC;
+  background: #D1F1CC;
 }
 
 .vellog {
-    background: #FCF1D3;
+  background: #FCF1D3;
 }
 
 .illlog {
-    background: #ffe3cf;
+  background: #ffe3cf;
 }
 
 .cmftlog {
-    background: #f4c9dd;
+  background: #f4c9dd;
 }
 
+/*ここから表示列選択チェックボックス*/
+.checkbox-wrapper-2 .ikxBAC {
+  appearance: none;
+  background-color: #dfe1e4;
+  border-radius: 72px;
+  border-style: none;
+  flex-shrink: 0;
+  height: 20px;
+  margin: 0;
+  position: relative;
+  width: 30px;
+}
+
+.checkbox-wrapper-2 .ikxBAC::before {
+  bottom: -6px;
+  content: "";
+  left: -6px;
+  position: absolute;
+  right: -6px;
+  top: -6px;
+}
+
+.checkbox-wrapper-2 .ikxBAC,
+.checkbox-wrapper-2 .ikxBAC::after {
+  transition: all 100ms ease-out;
+}
+
+.checkbox-wrapper-2 .ikxBAC::after {
+  background-color: #fff;
+  border-radius: 50%;
+  content: "";
+  height: 14px;
+  left: 3px;
+  position: absolute;
+  top: 3px;
+  width: 14px;
+}
+
+.checkbox-wrapper-2 input[type=checkbox] {
+  cursor: default;
+  margin-left: 20px;
+  margin-right: 5px;
+  vertical-align: bottom;
+}
+
+.checkbox-wrapper-2 .ikxBAC:hover {
+  background-color: #c9cbcd;
+  transition-duration: 0s;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked::after {
+  background-color: #fff;
+  left: 13px;
+}
+
+.checkbox-wrapper-2 :focus:not(.focus-visible) {
+  outline: 0;
+}
+
+/*温湿度*/
+.checkbox-wrapper-2 .ikxBAC1:checked {
+  background-color: #007FB1;
+}
+
+.checkbox-wrapper-2 .ikxBAC1:checked:hover {
+  background-color: #005F91;
+}
+
+/*グローブ温度*/
+.checkbox-wrapper-2 .ikxBAC2:checked {
+  background-color: #A4C520;
+}
+
+.checkbox-wrapper-2 .ikxBAC2:checked:hover {
+  background-color: #84A500;
+}
+
+/*風速*/
+.checkbox-wrapper-2 .ikxBAC3:checked {
+  background-color: #EDAD0B;
+}
+
+.checkbox-wrapper-2 .ikxBAC3:checked:hover {
+  background-color: #CD8D00;
+}
+
+/*照度*/
+.checkbox-wrapper-2 .ikxBAC4:checked {
+  background-color: #ff6a00;
+}
+
+.checkbox-wrapper-2 .ikxBAC4:checked:hover {
+  background-color: #DF4A00;
+}
+
+/*熱的指標*/
+.checkbox-wrapper-2 .ikxBAC5:checked {
+  background-color: #cc528b;
+}
+
+.checkbox-wrapper-2 .ikxBAC5:checked:hover {
+  background-color: #AC326B;
+}
+
+/*日時*/
+.checkbox-wrapper-2 .ikxBAC6:checked {
+  background-color: #737373;
+}
+
+.checkbox-wrapper-2 .ikxBAC6:checked:hover {
+  background-color: #4e4e4e;
+}
+
+/*ここまで表示列選択チェックボックス*/
+
+/*ここからヒートマップ表示・非表示選択チェックス*/
+.checkbox-wrapper-8 .tgl {
+  display: none;
+}
+
+.checkbox-wrapper-8 .tgl,
+.checkbox-wrapper-8 .tgl:after,
+.checkbox-wrapper-8 .tgl:before,
+.checkbox-wrapper-8 .tgl *,
+.checkbox-wrapper-8 .tgl *:after,
+.checkbox-wrapper-8 .tgl *:before,
+.checkbox-wrapper-8 .tgl+.tgl-btn {
+  box-sizing: border-box;
+}
+
+.checkbox-wrapper-8 .tgl::-moz-selection,
+.checkbox-wrapper-8 .tgl:after::-moz-selection,
+.checkbox-wrapper-8 .tgl:before::-moz-selection,
+.checkbox-wrapper-8 .tgl *::-moz-selection,
+.checkbox-wrapper-8 .tgl *:after::-moz-selection,
+.checkbox-wrapper-8 .tgl *:before::-moz-selection,
+.checkbox-wrapper-8 .tgl+.tgl-btn::-moz-selection,
+.checkbox-wrapper-8 .tgl::selection,
+.checkbox-wrapper-8 .tgl:after::selection,
+.checkbox-wrapper-8 .tgl:before::selection,
+.checkbox-wrapper-8 .tgl *::selection,
+.checkbox-wrapper-8 .tgl *:after::selection,
+.checkbox-wrapper-8 .tgl *:before::selection,
+.checkbox-wrapper-8 .tgl+.tgl-btn::selection {
+  background: none;
+}
+
+.checkbox-wrapper-8 .tgl+.tgl-btn {
+  outline: 0;
+  display: block;
+  width: 4em;
+  height: 2em;
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.checkbox-wrapper-8 .tgl+.tgl-btn:after,
+.checkbox-wrapper-8 .tgl+.tgl-btn:before {
+  position: relative;
+  display: block;
+  content: "";
+  width: 50%;
+  height: 100%;
+}
+
+.checkbox-wrapper-8 .tgl+.tgl-btn:after {
+  left: 0;
+}
+
+.checkbox-wrapper-8 .tgl+.tgl-btn:before {
+  display: none;
+}
+
+.checkbox-wrapper-8 .tgl:checked+.tgl-btn:after {
+  left: 50%;
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn {
+  overflow: hidden;
+  transform: skew(-10deg);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transition: all 0.2s ease;
+  font-family: sans-serif;
+  background: #888;
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:after,
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:before {
+  transform: skew(10deg);
+  display: inline-block;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+  position: absolute;
+  line-height: 2em;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:after {
+  left: 100%;
+  content: attr(data-tg-on);
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:before {
+  left: 0;
+  content: attr(data-tg-off);
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:active {
+  background: #888;
+}
+
+.checkbox-wrapper-8 .tgl-skewed+.tgl-btn:active:before {
+  left: -10%;
+}
+
+.checkbox-wrapper-8 .tgl-skewed:checked+.tgl-btn {
+  background: #86d993;
+}
+
+.checkbox-wrapper-8 .tgl-skewed:checked+.tgl-btn:before {
+  left: -100%;
+}
+
+.checkbox-wrapper-8 .tgl-skewed:checked+.tgl-btn:after {
+  left: 0;
+}
+
+.checkbox-wrapper-8 .tgl-skewed:checked+.tgl-btn:active:after {
+  left: 10%;
+}
+
+/*ここまでヒートマップ表示・非表示選択チェックス*/
+
 @media screen and (max-width: 600px) {
-    table {
-        border: 0;
-        width: 100%
-    }
+  table {
+    border: 0;
+    width: 100%
+  }
 
-        table th {
-            display: block;
-            border-right: none;
-        }
+  table th {
+    display: block;
+    border-right: none;
+  }
 
-        table thead {
-            border: none;
-            clip: rect(0 0 0 0);
-            height: 1px;
-            margin: -1px;
-            overflow: hidden;
-            padding: 0;
-            position: absolute;
-            width: 1px;
-        }
+  table thead {
+    border: none;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
 
-        table tr {
-            display: block;
-            margin-bottom: .625em;
-        }
+  table tr {
+    display: block;
+    margin-bottom: .625em;
+  }
 
-        table td {
-            border-bottom: 1px solid #bbb;
-            display: block;
-            font-size: .8em;
-            text-align: right;
-            position: relative;
-            padding: .625em .625em .625em 4em;
-            border-right: none;
-        }
+  table td {
+    border-bottom: 1px solid #bbb;
+    display: block;
+    font-size: .8em;
+    text-align: right;
+    position: relative;
+    padding: .625em .625em .625em 4em;
+    border-right: none;
+  }
 
-            table td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                position: absolute;
-                left: 10px;
-                color: #167F92;
-            }
+  table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    position: absolute;
+    left: 10px;
+    color: #167F92;
+  }
 
-            table td:last-child {
-                border-bottom: 0;
-            }
+  table td:last-child {
+    border-bottom: 0;
+  }
 
-        table tbody th {
-            color: #fff;
-        }
+  table tbody th {
+    color: #fff;
+  }
 }
 
 /*ここからMap*/
 
-form {
-    margin: auto;
-    max-width: 1000px;
-    margin-right: auto;
-    margin: 0;
+#heatMapBlock form {
+  margin: auto;
+  max-width: 1000px;
+  margin-right: auto;
+  margin: 0;
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
+#heatMapBlock *,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 
-group + group {
-    margin-top: 20px;
+#heatMapBlock group+group {
+  margin-top: 20px;
 }
 
-.inline-radio {
-    display: flex;
-    border-radius: 3px;
-    overflow: hidden;
-    border: 1px solid #b6b6b6;
+#heatMapBlock .inline-radio {
+  display: flex;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #b6b6b6;
 }
 
-div {
-    position: relative;
-    flex: 1;
+#heatMapBlock div {
+  position: relative;
+  flex: 1;
 }
 
-input {
-    width: 100%;
-    height: 60px;
-    opacity: 0;
+#heatMapBlock input {
+  width: 100%;
+  height: 60px;
+  opacity: 0;
 }
 
-label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    color: #b6b6b6;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    border-right: 1px solid #b6b6b6;
+#heatMapBlock label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #b6b6b6;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  border-right: 1px solid #b6b6b6;
 }
 
-div:last-child label {
-    border-right: 0;
+#heatMapBlock div:last-child label {
+  border-right: 0;
 }
 
-input:checked + label {
-    background: #d81b60;
-    font-weight: 500;
-    color: #fff;
+#heatMapBlock input:checked+label {
+  background: #d81b60;
+  font-weight: 500;
+  color: #fff;
 }
+
+/*ここまでMap*/

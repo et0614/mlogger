@@ -81,7 +81,7 @@
                         <DatePicker x:Name="dpck_start" Date="1999/01/01" MinimumDate="1980/01/01" MaximumDate="2030/12/31" Format="yyyy/MM/dd" HorizontalOptions="Fill" DateSelected="dpck_start_DateSelected"/>
                     </Border>
                     <Border Margin="0,0,0,0">
-                        <TimePicker x:Name="tpck_start" Time="00:00" Format="HH:mm" HorizontalOptions="Fill" PropertyChanged="tpck_start_PropertyChanged"/>
+                        <TimePicker x:Name="tpck_start" Time="00:00" Format="HH:mm:ss" HorizontalOptions="Fill" PropertyChanged="tpck_start_PropertyChanged"/>
                     </Border>
                 </HorizontalStackLayout>
                 
@@ -97,29 +97,8 @@
                     </Button.ImageSource>
                 </Button>
 
-                <!--ロギング開始-->
-                <!--<Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_StartLogging}" FontSize="Subtitle"/>-->
-                <!--スマートフォンに記録-->
-                <!--<Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoggingToSmartPhone}" Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf144;" FontFamily="FAR" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>-->
-                <!--TF/MMカードに記録-->
-                <!--<Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoggingToMF}" Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf7c2;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button> -->
-
                 <!--PCとの通信設定-->
                 <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_ZigbeeSetting}" FontSize="Subtitle"/>
-                <!--PCと通信開始（電池が切れるまでの一時計測）-->
-                <!--<Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ConnectToPC}" Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand">
-                    <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf7bb;" FontFamily="FAB" Size="20" Color="{StaticResource Dark_G}"/>
-                    </Button.ImageSource>
-                </Button>-->
                 <!--PCと通信開始（常設モード）-->
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" x:Name="btn_pmntMode" Text="{x:Static res:MLSResource.DS_SetToPermanentMode}" IsEnabled="False" Clicked="PermanentModeButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
