@@ -151,7 +151,7 @@ void initMemory()
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_GLB,'T');
 	eeprom_busy_wait();
-	eeprom_update_byte(&EEP_MES_VEL,'T');
+	eeprom_update_byte(&EEP_MES_VEL,'F');
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_ILL,'T');
 	eeprom_busy_wait();
@@ -165,13 +165,13 @@ void initMemory()
 	
 	//Œv‘ªŠÔŠu
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_TH, 1);
+	eeprom_update_word(&EEP_STP_TH, 900);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_GLB, 1);
+	eeprom_update_word(&EEP_STP_GLB, 900);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_VEL, 1);
+	eeprom_update_word(&EEP_STP_VEL, 900);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_ILL, 1);
+	eeprom_update_word(&EEP_STP_ILL, 900);
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_AD1, 1);
 	eeprom_busy_wait();

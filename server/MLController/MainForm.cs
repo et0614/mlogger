@@ -745,33 +745,30 @@ namespace MLController
 
       try
       {
+        bool firstCall = !File.Exists(fName);
         using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
         {
-          /*sWriter.WriteLine(
-            ml.LastMeasured.ToString(DT_FORMAT_CSV) + "," + //子機の計測日時
-            ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
-            ml.RelativeHumdity.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
-            ml.Velocity.LastValue.ToString("F4") + "," +
-            ml.Illuminance.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
-            ml.VelocityVoltage.ToString("F3") + "," + 
-            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
-            DateTime.Now.ToString(DT_FORMAT_LINE)); //親機の現在日時*/
+          //初回呼び出し時はヘッダを追加
+          if (firstCall)
+            sWriter.WriteLine(
+              "Server Timestamp,Client Timestamp,Drybulb temperature[C],Relative humidity[%], " +
+              "Globe temperature[C],Velocity[m/s],Illuminance[lux],Forward Compatibility Placeholder," +
+              "Voltage for velocity measurement[V],Future Placeholder,Mean radiant temperature[C],WBGT (Indoor)[C],WBGT (Outdoor[C])");
+
           sWriter.WriteLine(
-            DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + "," + //親機の現在日時
-            ml.LastMeasured.ToString("yyyy/MM/dd HH:mm:ss") + "," + //子機の計測日時
-            ml.DrybulbTemperature.LastValue.ToString("F2") + "," +
-            ml.RelativeHumdity.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
+            DateTime.Now.ToString(DT_FORMAT) + "," + //親機の現在日時
+            ((ml.LastMeasured.Year == 2000 || 2100 < ml.LastMeasured.Year) ? "n/a" : ml.LastMeasured.ToString(DT_FORMAT)) + "," + //子機の計測日時
+            ml.DrybulbTemperature.LastValue.ToString("F1") + "," +
+            ml.RelativeHumdity.LastValue.ToString("F1") + "," +
+            ml.GlobeTemperature.LastValue.ToString("F1") + "," +
             ml.Velocity.LastValue.ToString("F4") + "," +
             ml.Illuminance.LastValue.ToString("F2") + "," +
             ml.GlobeTemperatureVoltage.ToString("F3") + "," +
             ml.VelocityVoltage.ToString("F3") + "," +
-            ml.GeneralVoltage1.LastValue.ToString("F3"));
-          //ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
-          //ml.GeneralVoltage2.LastValue.ToString("F3") + "," +
-          //ml.GeneralVoltage3.LastValue.ToString("F3"));
+            ml.GeneralVoltage1.LastValue.ToString("F3") + "," +
+            ml.MeanRadiantTemperature.ToString("F1") + "," +
+            ml.WBGT_Indoor.ToString("F1") + "," +
+            ml.WBGT_Outdoor.ToString("F1"));
         }
       }
       catch
