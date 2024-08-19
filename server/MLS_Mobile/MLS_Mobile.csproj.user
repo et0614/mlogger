@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ActiveDebugFramework>net8.0-ios</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>et_red</ActiveDebugProfile>
+    <ActiveDebugProfile>ローカル デバイス</ActiveDebugProfile>
     <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
     <DefaultDevice>pixel_5_-_api_34</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;

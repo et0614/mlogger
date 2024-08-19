@@ -414,8 +414,11 @@ namespace MLLib
           (dbt, MeanRadiantTemperature, rhd, vel, CloValue, 58.15 * MetValue, 0);
         PMV = ThermalComfort.GetPMV(dbt, MeanRadiantTemperature, rhd, vel, CloValue, MetValue, 0);
         PPD = ThermalComfort.GetPPD(PMV);
-        WBGT_Indoor = 0.7 * wbt + 0.3 * glb;
-        WBGT_Outdoor = 0.7 * wbt + 0.2 * glb + 0.1 * dbt;
+
+        //グローブ温度を150mmに換算する(JISB7922, JISZ8504)
+        double glb150 = dbt + (1 + 1.13 * Math.Pow(0.04, -0.4) * Math.Pow(vel, 0.6)) / (1 + 2.41 * Math.Pow(vel, 0.6)) * (glb - dbt);
+        WBGT_Indoor = 0.7 * wbt + 0.3 * glb150;
+        WBGT_Outdoor = 0.7 * wbt + 0.2 * glb150 + 0.1 * dbt;
       }
     }
 
