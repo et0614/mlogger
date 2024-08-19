@@ -75,28 +75,28 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
 	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
-	  <CodesignProvision>VS: WildCard Development</CodesignProvision>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.36</ApplicationDisplayVersion>
-	  <ApplicationVersion>39</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
+	  <ApplicationVersion>40</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.36</ApplicationDisplayVersion>
-	  <ApplicationVersion>39</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
+	  <ApplicationVersion>40</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.36</ApplicationDisplayVersion>
-	  <ApplicationVersion>39</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
+	  <ApplicationVersion>40</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.36</ApplicationDisplayVersion>
-	  <ApplicationVersion>39</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
+	  <ApplicationVersion>40</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -344,7 +344,6 @@
 	
 	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.2" />
-	  <PackageReference Include="DigiIoT.Maui" Version="1.0.1" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.8" />
 	  <PackageReference Include="Mopups" Version="1.3.1" />
 	  <PackageReference Include="Popolo" Version="2.3.1.71" />
@@ -353,6 +352,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\DigiIoT.Maui\DigiIoT.Maui.csproj" />
 	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
 	</ItemGroup>
 

@@ -1,0 +1,93 @@
+﻿                         Digi IoT Library for .NET MAUI
+                                  DigiIoT.Maui
+
+                         Release Notes (PN 93001378_B)
+                                  Build 1.0.1
+                                 20 May, 2024
+ 
+                    Copyright 2024, Digi International Inc.
+                              http://www.digi.com
+ 
+ Introduction
+-------------------------------------------------------------------------------
+
+ This document provides the latest release information for the Digi IoT Library
+ for .NET MAUI, which allows customers to easily develop cross-platform mobile
+ applications in .NET MAUI that communicate with Digi IoT devices over
+ Bluetooth Low Energy.
+
+ Digi IoT Library for .NET MAUI v1.0.1, May 2024
+-------------------------------------------------------------------------------
+ 1. Supported Hardware:
+      * Digi ConnectCore devices.
+      * Digi XBee 3 devices:
+        * XBee 3 Zigbee
+        * XBee 3 802.15.4
+        * XBee 3 DigiMesh
+        * XBee 3 Cellular
+        * XBee 3 BLU
+
+ 2. Changes with respect to previous version:
+      * Migrated the library to .NET 8.
+      * Made Bluetooth write operations synchronous.
+      * Added a new Bluetooth handler to notify when the device is disconnected.
+      * Library requests now a 'high' connection interval when connecting with a
+        Bluetooth device.
+
+ 3. Known Issues and Limitations:
+      * N/A
+
+ Digi IoT Library for .NET MAUI v1.0.0, September 2023
+-------------------------------------------------------------------------------
+ 1. Supported Hardware:
+      * Digi ConnectCore devices.
+      * Digi XBee 3 devices:
+        * XBee 3 Zigbee
+        * XBee 3 802.15.4
+        * XBee 3 DigiMesh
+        * XBee 3 Cellular
+
+ 2. Changes with respect to previous version:
+      * Support for communicating with the supported hardware over Bluetooth
+        Low Energy:
+        * Connect
+        * Disconnect
+        * Send data
+        * Receive data (directly or through events)
+
+      * XBee specific functionality:
+        * Configure common parameters with specific setters and getters.
+        * Configure any other parameter with generic methods.
+        * Execute AT commands.
+        * Apply configuration changes.
+        * Write configuration changes.
+        * Reset the device.
+        * Support for User Data Relay frames, allowing the communication
+          between different interfaces (Serial and MicroPython).
+        * IO lines management:
+          * Configure IO lines.
+          * Set IO line value.
+          * Read IO line value.
+
+      * Bluetooth Low Energy specific functionality:
+        * Automatic Bluetooth permissions request handling for Android and iOS
+        * Custom Bluetooth event delegates to be notified about changes in the
+          interface
+        * Bluetooth scan functionality to look for BLE devices and get notified
+          when they are discovered
+
+      * Maui application examples demonstrating some API specific features.
+        * Communicate with ConnectCore devices over Bluetooth Low Energy.
+        * Configure XBee devices over Bluetooth Low Energy.
+        * Send and receive data over Bluetooth Low Energy to a micro-controller
+          connected to the XBee serial interface.
+        * Send and receive data over Bluetooth Low Energy to the MicroPython
+		  application running in the XBee deivce.
+
+      * Comprehensive online documentation including:
+        * Getting Started Guide.
+        * Users Guide.
+        * API Reference Manual.
+
+ 3. Known Issues and Limitations:
+      * N/A
