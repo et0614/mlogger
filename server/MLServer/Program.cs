@@ -14,6 +14,7 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using XBeeLibrary.Core.Models;
 using System.Collections.Concurrent;
+using MLServer.BACnet;
 
 namespace MLServer
 {
@@ -22,7 +23,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.8";
+    private const string VERSION = "1.1.10";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -42,6 +43,14 @@ namespace MLServer
     #endregion
 
     #region クラス変数
+
+    /// <summary>BACnetを使うか否か</summary>
+    private static bool useBACnet = false;
+
+    /// <summary>BACnetを使う場合のポート番号（47808~）</summary>
+    private static int bacnetPort = 47808;
+
+    private static MLServerDevice mlBacDevice;
 
     /// <summary>温冷感計算のための基準の物理量</summary>
     private static double metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue;
@@ -81,6 +90,16 @@ namespace MLServer
 
       //温冷感計算のための代謝量[met]と着衣量[clo]を読み込む
       loadInitFile(out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
+
+      //必要に応じてBACnet起動
+      Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
+      if (useBACnet)
+      {
+        Console.WriteLine("Start the BACnet service on port " + bacnetPort + ".");
+        mlBacDevice = new MLServerDevice(bacnetPort);
+        mlBacDevice.Communicator.StartService();
+      }
+      Console.WriteLine();
 
       //MLoggerのアドレス-名称対応リストを読む
       string nFile = AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt";
@@ -177,6 +196,12 @@ namespace MLServer
               break;
             case "mrt":
               mrtValue = double.Parse(st[1]);
+              break;
+            case "bacnet":
+              useBACnet = bool.Parse(st[1]);
+              break;
+            case "bacport":
+              bacnetPort = int.Parse(st[1]);
               break;
           }
         }
@@ -389,6 +414,10 @@ namespace MLServer
         Console.WriteLine(ml.LocalName + ": Can't access to file.");
         return;
       }
+
+      //BACnet device更新
+      if (useBACnet) 
+        mlBacDevice.UpdateLogger(ml);
     }
 
     #endregion
