@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ActiveDebugFramework>net8.0-ios</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>ローカル デバイス</ActiveDebugProfile>
+    <ActiveDebugProfile>et_red</ActiveDebugProfile>
     <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
     <DefaultDevice>pixel_5_-_api_34</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -45,11 +45,11 @@
     <EmbeddedResource Update="Resources\i18n\MLSResource.ja.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Update="Resources\i18n\MLSResource.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <MauiXaml Update="AboutPage.xaml">
-      <SubType>Designer</SubType>
-    </MauiXaml>
     <MauiXaml Update="ActivitySelector.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
@@ -93,6 +93,9 @@
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="ThermalComfortCalculator.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
+    <MauiXaml Update="VelocityCalibrator.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
   </ItemGroup>

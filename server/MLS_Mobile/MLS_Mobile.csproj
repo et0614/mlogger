@@ -80,23 +80,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
-	  <ApplicationVersion>40</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
+	  <ApplicationVersion>41</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
-	  <ApplicationVersion>40</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
+	  <ApplicationVersion>41</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
-	  <ApplicationVersion>40</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
+	  <ApplicationVersion>41</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.37</ApplicationDisplayVersion>
-	  <ApplicationVersion>40</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
+	  <ApplicationVersion>41</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -144,6 +144,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <None Remove="Platforms\Android\Resources\values\attrs.xml" />
 	  <None Remove="Resources\Activities\Act_Aircraft_Combat.png" />
 	  <None Remove="Resources\Activities\Act_Aircraft_InstrumentLanding.png" />
 	  <None Remove="Resources\Activities\Act_Aircraft_Routine.png" />
@@ -343,7 +344,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.2" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.3" />
+	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc2" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.8" />
 	  <PackageReference Include="Mopups" Version="1.3.1" />
 	  <PackageReference Include="Popolo" Version="2.3.1.71" />
@@ -402,9 +404,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="AboutPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
 	  <MauiXaml Update="ActivitySelector.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
@@ -448,6 +447,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="VelocityCalibrator.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

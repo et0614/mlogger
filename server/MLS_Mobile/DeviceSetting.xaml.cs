@@ -5,6 +5,7 @@ using System.Text;
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Devices.Sensors;
 using Mopups.Services;
 using System;
 
@@ -77,7 +78,7 @@ public partial class DeviceSetting : ContentPage
 
   #endregion
 
-  #region コンストラクタ
+  #region コンストラクタ・デストラクタ
 
   /// <summary>インスタンスを初期化する</summary>
   public DeviceSetting()
@@ -86,6 +87,28 @@ public partial class DeviceSetting : ContentPage
 
     //ポップで戻ってきた場合
     MopupService.Instance.Popped += Instance_Popped;
+
+    //シェイクイベント登録
+    Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
+    Accelerometer.Start(SensorSpeed.UI);
+  }
+
+
+  protected override void OnDisappearing()
+  {
+    base.OnDisappearing();
+
+    //シェイクイベント解除
+    Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
+  }
+
+  /// <summary>シェイク時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private void Accelerometer_ShakeDetected(object sender, EventArgs e)
+  {
+    //一般的ではないボタン群の表示・非表示切り替え
+    calvBtnA.IsVisible = calvBtnB.IsVisible = !calvBtnA.IsVisible;
   }
 
   private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
@@ -412,9 +435,108 @@ public partial class DeviceSetting : ContentPage
 
   private void CFButton_Clicked(object sender, EventArgs e)
   {
-    Shell.Current.GoToAsync(nameof(Calibrator),
+    /*Shell.Current.GoToAsync(nameof(Calibrator),
       new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-      );
+      );*/
+
+    //インジケータ表示
+    showIndicator(MLSResource.CR_Connecting);
+
+    Task.Run(async () =>
+    {
+      try
+      {
+        int tryNum = 0;
+        Logger.HasCorrectionFactorsReceived = false;
+        while (!Logger.HasCorrectionFactorsReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+              return;
+            });
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.ConnectedXBee.SendSerialData
+          (Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
+
+          await Task.Delay(500);
+        }
+
+        //開始に成功したらページ移動
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          Shell.Current.GoToAsync(nameof(CFSetting),
+            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
+            );
+        });
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
+  }
+
+  private void VelocityCalibrationButton_Clicked(object sender, EventArgs e)
+  {
+    //インジケータ表示
+    showIndicator(MLSResource.CR_Connecting);
+
+    Task.Run(async () =>
+    {
+      try
+      {
+        int tryNum = 0;
+        Logger.HasStartCalibratingVoltageMessageReceived = false;
+        while (!Logger.HasStartCalibratingVoltageMessageReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+              return;
+            });
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.ConnectedXBee.SendSerialData
+          (Encoding.ASCII.GetBytes(MLogger.MakeStartCalibratingVoltageCommand()));
+
+          await Task.Delay(500);
+        }
+
+        //開始に成功したらページ移動
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          Shell.Current.GoToAsync(nameof(VelocityCalibrator),
+            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
+            );
+        });
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
   }
 
   private void SetNameButton_Clicked(object sender, EventArgs e)

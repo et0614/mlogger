@@ -61,15 +61,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   About this software に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string AboutThisSoftware {
-            get {
-                return ResourceManager.GetString("AboutThisSoftware", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Absolute humidity に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string AbsoluteHumidity {
@@ -439,11 +430,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Calibration に類似しているローカライズされた文字列を検索します。
+        ///   Calibrate Velocity Sensor に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string DS_Calibrate {
+        internal static string DS_CalibrateVelocitySensor {
             get {
-                return ResourceManager.GetString("DS_Calibrate", resourceCulture);
+                return ResourceManager.GetString("DS_CalibrateVelocitySensor", resourceCulture);
             }
         }
         
@@ -552,6 +543,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_SaveSetting {
             get {
                 return ResourceManager.GetString("DS_SaveSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Set Correction Coefficients に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_SetCorrectionCoefficients {
+            get {
+                return ResourceManager.GetString("DS_SetCorrectionCoefficients", resourceCulture);
             }
         }
         
@@ -1132,6 +1132,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Velocity Calibrator に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string VC_Title {
+            get {
+                return ResourceManager.GetString("VC_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Velocity に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Velocity {
@@ -1146,15 +1155,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string VelocityVoltage {
             get {
                 return ResourceManager.GetString("VelocityVoltage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Enclose the velocity probe so that there is no wind, wait 30 seconds for it to stabilize, and then adjust the voltage to a range of 1.45 ± 0.5 V. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string VT_VelocityAdjustMessage {
-            get {
-                return ResourceManager.GetString("VT_VelocityAdjustMessage", resourceCulture);
             }
         }
         

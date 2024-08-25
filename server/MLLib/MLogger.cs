@@ -63,6 +63,9 @@ namespace MLLib
     /// <summary>補正係数受信イベント</summary>
     public event EventHandler? CorrectionFactorsReceivedEvent;
 
+    /// <summary>風速特性係数受信イベント</summary>
+    public event EventHandler? VelocityCharateristicsReceivedEvent;
+
     /// <summary>測定開始通知受信イベント</summary>
     public event EventHandler? StartMeasuringMessageReceivedEvent;
 
@@ -110,6 +113,10 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>補正係数を受信したか否かを設定・取得する</summary>
     public bool HasCorrectionFactorsReceived { get; set; } = false;
+
+    [JsonIgnore]
+    /// <summary>風速特性係数を受信したか否かを設定・取得する</summary>
+    public bool HasVelocityCharacteristicsReceived { get; set; } = false;
 
     [JsonIgnore]
     /// <summary>測定開始通知を受信したか否かを設定・取得する</summary>
@@ -227,6 +234,22 @@ namespace MLLib
     /// <summary>温度校正残り時間[sec]を取得する</summary>
     public int TemperatureCalibrationTime { get; private set; } = 0;
 
+    [JsonIgnore]
+    /// <summary>無風時の電圧[V]を取得する</summary>
+    public double VelocityMinVoltage { get; private set; } = 1.45;
+
+    [JsonIgnore]
+    /// <summary>風速計の特性係数Aを取得する</summary>
+    public double VelocityCharacteristicsCoefA { get; private set; }
+
+    [JsonIgnore]
+    /// <summary>風速計の特性係数Bを取得する</summary>
+    public double VelocityCharacteristicsCoefB { get; private set; }
+
+    [JsonIgnore]
+    /// <summary>風速計の特性係数Cを取得する</summary>
+    public double VelocityCharacteristicsCoefC { get; private set; }
+
     #endregion
 
     #region 計測値関連のプロパティ
@@ -274,10 +297,6 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>近接センサ計測の真偽を取得する</summary>
     public bool MeasureProximity { get; private set; } = false;
-
-    [JsonIgnore]
-    /// <summary>微風速の無風時の電圧[V]を取得する</summary>
-    public double VelocityMinVoltage { get; private set; } = 1.45;
 
     #endregion
 
@@ -527,6 +546,16 @@ namespace MLLib
             solveCF();
             break;
 
+          //風速特性係数設定
+          case "SVC":
+            solveVC();
+            break;
+
+          //風速特性係数受信
+          case "LVC":
+            solveVC();
+            break;
+
           //ロギング終了命令
           case "ENL":
             //イベント通知
@@ -765,6 +794,28 @@ namespace MLLib
       HasCorrectionFactorsReceived = true;
     }
 
+    /// <summary>風速特性係数設定コマンドを処理する</summary>
+    private void solveVC()
+    {
+      string[] buff = NextCommand.Substring(4).Split(',');
+
+      if (!double.TryParse(buff[0], out double vel0)) vel0 = 1.45;
+      VelocityMinVoltage = vel0;
+
+      if (!double.TryParse(buff[1], out double cfA)) cfA = 79.744;
+      VelocityCharacteristicsCoefA = cfA;
+
+      if (!double.TryParse(buff[2], out double cfB)) cfB = -12.029;
+      VelocityCharacteristicsCoefB = cfB;
+
+      if (!double.TryParse(buff[3], out double cfC)) cfC = 2.356;
+      VelocityCharacteristicsCoefC = cfC;
+
+      //イベント通知
+      VelocityCharateristicsReceivedEvent?.Invoke(this, EventArgs.Empty);
+      HasVelocityCharacteristicsReceived = true;
+    }
+
     /// <summary>ロガー名称設定コマンド()を処理する</summary>
     private void solveLN()
     {
@@ -880,6 +931,22 @@ namespace MLLib
         string.Format("{0, 4}", (1000 * vel0).ToString("F0") + "\r");
     }
 
+    /// <summary>風速特性係数設定コマンドをつくる</summary>
+    /// <param name="vel0">無風風速の電圧[V]</param>
+    /// <param name="cCoefA">特性係数A</param>
+    /// <param name="cCoefB">特性係数B</param>
+    /// <param name="cCoefC">特性係数C</param>
+    /// <returns>風速特性係数設定コマンド</returns>
+    public static string MakeVelocityCharateristicsSettingCommand(
+      double vel0, double cCoefA, double cCoefB, double cCoefC)
+    {
+      return "\rSVC" +
+        string.Format("{0, 4}", (1000 * vel0).ToString("F0")) +
+        string.Format("{0, 7}", (1000 * cCoefA).ToString("F0")) +
+        string.Format("{0, 7}", (1000 * cCoefB).ToString("F0")) +
+        string.Format("{0, 7}", (1000 * cCoefC).ToString("F0") + "\r");
+    }
+
     /// <summary>バージョン取得コマンドをつくる</summary>
     /// <returns>バージョン取得コマンド</returns>
     public static string MakeGetVersionCommand()
@@ -899,6 +966,13 @@ namespace MLLib
     public static string MakeLoadCorrectionFactorsCommand()
     {
       return "\rLCF\r";
+    }
+
+    /// <summary>風速特性係数取得コマンドをつくる</summary>
+    /// <returns>風速特性係数取得コマンド</returns>
+    public static string MakeLoadVelocityCharateristicsCommand()
+    {
+      return "\rLVC\r";
     }
 
     /// <summary>測定終了コマンドをつくる</summary>
@@ -1287,6 +1361,18 @@ namespace MLLib
     /// <summary>温度校正残り時間[sec]を取得する</summary>
     int TemperatureCalibrationTime { get; }
 
+    /// <summary>無風時の電圧[V]を取得する</summary>
+    double VelocityMinVoltage { get; }
+
+    /// <summary>風速計の特性係数Aを取得する</summary>
+    double VelocityCharacteristicsCoefA { get; }
+
+    /// <summary>風速計の特性係数Bを取得する</summary>
+    double VelocityCharacteristicsCoefB { get; }
+
+    /// <summary>風速計の特性係数Cを取得する</summary>
+    double VelocityCharacteristicsCoefC { get; }
+
     #endregion
 
     #region 計測値関連のプロパティ
@@ -1323,9 +1409,6 @@ namespace MLLib
 
     /// <summary>近接センサ計測の真偽を取得する</summary>
     bool MeasureProximity { get; }
-
-    /// <summary>微風速の無風時の電圧[V]を取得する</summary>
-    double VelocityMinVoltage { get; }
 
     #endregion
 

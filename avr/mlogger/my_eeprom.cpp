@@ -41,6 +41,11 @@ static float EEMEM EEP_VELCF_A;
 static float EEMEM EEP_VELCF_B;
 static float EEMEM EEP_VEL0;
 
+//•—‘¬Œv“Á«ŒW”
+static float EEMEM EEP_VELCC_A;
+static float EEMEM EEP_VELCC_B;
+static float EEMEM EEP_VELCC_C;
+
 //Œv‘ª^‹U
 static uint8_t EEMEM EEP_MES_TH;
 static uint8_t EEMEM EEP_MES_GLB;
@@ -81,6 +86,11 @@ volatile float my_eeprom::Cf_luxB = 0.0;
 volatile float my_eeprom::Cf_velA = 1.0;
 volatile float my_eeprom::Cf_velB = 0.0;
 volatile float my_eeprom::Cf_vel0 = 1.45;
+
+//•—‘¬Œv“Á«ŒW”
+volatile float my_eeprom::VelCC_A = 79.744;
+volatile float my_eeprom::VelCC_B = -12.029;
+volatile float my_eeprom::VelCC_C = 2.356;
 
 //Œv‘ª^‹U
 volatile bool my_eeprom::measure_th = true;
@@ -145,13 +155,21 @@ void initMemory()
 	eeprom_busy_wait();
 	eeprom_update_float(&EEP_VEL0, 1.450);
 	
+	//•—‘¬Œv“Á«ŒW”
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_VELCC_A, 79.744);
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_VELCC_B, -12.029);
+	eeprom_busy_wait();
+	eeprom_update_float(&EEP_VELCC_C, 2.356);
+		
 	//Œv‘ª^‹U
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_TH,'T');
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_GLB,'T');
 	eeprom_busy_wait();
-	eeprom_update_byte(&EEP_MES_VEL,'F');
+	eeprom_update_byte(&EEP_MES_VEL,'T');
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_ILL,'T');
 	eeprom_busy_wait();
@@ -165,13 +183,13 @@ void initMemory()
 	
 	//Œv‘ªŠÔŠu
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_TH, 900);
+	eeprom_update_word(&EEP_STP_TH, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_GLB, 900);
+	eeprom_update_word(&EEP_STP_GLB, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_VEL, 900);
+	eeprom_update_word(&EEP_STP_VEL, 1);
 	eeprom_busy_wait();
-	eeprom_update_word(&EEP_STP_ILL, 900);
+	eeprom_update_word(&EEP_STP_ILL, 1);
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_AD1, 1);
 	eeprom_busy_wait();
@@ -337,6 +355,66 @@ void my_eeprom::MakeCorrectionFactorString(char * txbuff, const char * command)
 		command, dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, vel0);
 }
 
+//•—‘¬‚Ì“Á«ŒW”‚ğ‘‚«‚Ş
+void my_eeprom::SetVelocityCharacteristics(const char data[])
+{
+	float buff;
+	char num[8];
+	
+	//–³•—“dˆ³
+	num[4] = '\0';
+	strncpy(num, data + 3, 4);
+	buff = 0.001 * atol(num);
+	if(1.40 <= buff && buff <= 1.50)
+	my_eeprom::Cf_vel0 = buff;
+	
+	//“Á«A
+	num[7] = '\0';
+	strncpy(num, data + 7, 7);
+	buff = 0.001 * atol(num);
+	my_eeprom::VelCC_A = buff;
+	
+	//“Á«B
+	strncpy(num, data + 14, 7);
+	buff = 0.001 * atol(num);
+	my_eeprom::VelCC_B = buff;
+	
+	//“Á«C
+	strncpy(num, data + 21, 7);
+	buff = 0.001 * atol(num);
+	my_eeprom::VelCC_C = buff;
+
+	SetVelocityCharacteristics();	
+}
+
+//•—‘¬‚Ì“Á«ŒW”‚ğ‘‚«‚Ş
+void my_eeprom::SetVelocityCharacteristics()
+{
+	//–³•—“dˆ³
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VEL0, my_eeprom::Cf_vel0);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VELCC_A, my_eeprom::VelCC_A);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VELCC_B, my_eeprom::VelCC_B);
+	eeprom_busy_wait();
+	eeprom_update_float (&EEP_VELCC_C, my_eeprom::VelCC_C);
+}
+
+//•—‘¬‚Ì“Á«ŒW”‚ğ•\‚·•¶š—ñ‚ğì¬‚·‚é
+void my_eeprom::MakeVelocityCharateristicsString(char * txbuff, const char * command)
+{
+	char vel0[6],vccA[9],vccB[9],vccC[9];
+	
+	dtostrf(my_eeprom::Cf_vel0,5,3,vel0);
+	dtostrf(my_eeprom::VelCC_A,8,3,vccA);
+	dtostrf(my_eeprom::VelCC_B,8,3,vccB);
+	dtostrf(my_eeprom::VelCC_C,8,3,vccC);
+	
+	sprintf(txbuff, "%s:%s,%s,%s,%s\r",
+	command, vel0, vccA, vccB, vccC);
+}
+
 //Œv‘ªİ’è‚ğ‘‚«‚Ş
 void my_eeprom::SetMeasurementSetting()
 {
@@ -420,6 +498,19 @@ void LoadCorrectionFactor()
 	my_eeprom::Cf_vel0 = eeprom_read_float (&EEP_VEL0);
 }
 
+//•—‘¬‚Ì“Á«ŒW”‚ğ“Ç‚İ‚Ş
+void LoadVelocityCharateristics()
+{
+	eeprom_busy_wait();
+	my_eeprom::Cf_vel0 = eeprom_read_float (&EEP_VEL0);
+	eeprom_busy_wait();
+	my_eeprom::VelCC_A = eeprom_read_float (&EEP_VELCC_A);
+	eeprom_busy_wait();
+	my_eeprom::VelCC_B = eeprom_read_float (&EEP_VELCC_B);
+	eeprom_busy_wait();
+	my_eeprom::VelCC_C = eeprom_read_float (&EEP_VELCC_C);
+}
+
 //Œv‘ªİ’è‚ğ“Ç‚İ‚Ş
 void LoadMeasurementSetting()
 {
@@ -489,6 +580,7 @@ void my_eeprom::LoadEEPROM()
 	if (eeprom_read_byte(&EEP_INITFLAG) != 'T') initMemory();
 	
 	LoadCorrectionFactor();
+	LoadVelocityCharateristics();
 	LoadMeasurementSetting();
 	LoadName();
 }

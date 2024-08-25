@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<ContentPage x:Class="MLS_Mobile.DeviceSetting"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MLS_Mobile.DeviceSetting"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:DeviceSetting"
              Title="{x:Static res:MLSResource.DS_Title}"
              HideSoftInputOnTapped="True">
+    
     <Grid>
         <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{StaticResource Lightest_G}">
             <StackLayout Padding="15">
@@ -16,21 +19,21 @@
                     <Button Grid.Row="0" Grid.Column="0" Margin="0,0,4,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Phone" LineBreakMode="NoWrap"
                             ImageSource="smart_phone.png" ContentLayout="Top, 5" 
-                            Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
+                            Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
                     </Button>
 
                     <!--PCに記録-->
                     <Button Grid.Row="0" Grid.Column="1" Margin="2,0,2,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="PC" LineBreakMode="NoWrap"
                             ImageSource="laptop.png" ContentLayout="Top, 5" 
-                            Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
+                            Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
                     </Button>
 
                     <!--フラッシュメモリに記録-->
                     <Button Grid.Row="0" Grid.Column="2" Margin="4,0,0,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Flash" LineBreakMode="NoWrap"
                             ImageSource="flash_memory.png" ContentLayout="Top, 5" 
-                            Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start">
+                            Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
                     </Button>
                 </Grid>
 
@@ -44,7 +47,7 @@
                     <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_th" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
                     <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_th" Text="{x:Static res:MLSResource.DS_TemperatureAndHumidity}" VerticalTextAlignment="Center" LineBreakMode="WordWrap"/>
                     <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                        <Entry x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
@@ -52,7 +55,7 @@
                     <Switch Grid.Row="1" Grid.Column="0" x:Name="cbx_glb" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
                     <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_glb" Text="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="Center"/>
                     <Border Grid.Row="1" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                        <Entry x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="1" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
@@ -60,7 +63,7 @@
                     <Switch Grid.Row="2" Grid.Column="0" x:Name="cbx_vel" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
                     <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_vel" Text="{x:Static res:MLSResource.Velocity}"  VerticalTextAlignment="Center"/>
                     <Border Grid.Row="2" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_vel" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                        <Entry x:Name="ent_vel" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="2" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
 
@@ -68,7 +71,7 @@
                     <Switch Grid.Row="3" Grid.Column="0" x:Name="cbx_lux" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
                     <Label Grid.Row="3" Grid.Column="1" x:Name="lbl_lux" Text="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="Center"/>
                     <Border Grid.Row="3" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                        <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="3" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
                     
@@ -130,10 +133,18 @@
                         <FontImageSource Glyph="&#xf5b7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
-                <!--補正係数の設定-->
-                <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_Calibrate}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
+                
+                <!--特性係数の設定-->
+                <Button x:Name="calvBtnA" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetCorrectionCoefficients}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf013;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf7d9;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+
+                <!--風速計の校正-->
+                <Button x:Name="calvBtnB" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CalibrateVelocitySensor}" Clicked="VelocityCalibrationButton_Clicked" HorizontalOptions="FillAndExpand">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf72e;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
 

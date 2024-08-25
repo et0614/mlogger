@@ -17,6 +17,9 @@ class my_eeprom
 		//補正係数
 		volatile static float Cf_dbtA, Cf_dbtB, Cf_hmdA, Cf_hmdB, Cf_glbA, Cf_glbB, Cf_luxA, Cf_luxB, Cf_velA, Cf_velB, Cf_vel0;
 		
+		//風速計特性係数
+		volatile static float VelCC_A, VelCC_B, VelCC_C;
+		
 		//計測真偽  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
 		volatile static bool measure_th, measure_glb, measure_vel, measure_ill, measure_AD1, measure_AD2, measure_AD3, measure_Prox;
 		
@@ -37,6 +40,15 @@ class my_eeprom
 
 		//補正係数を表す文字列を作成する
 		static void MakeCorrectionFactorString(char * txbuff, const char * command);
+
+		//風速の特性係数を書き込む
+		static void SetVelocityCharacteristics(const char * data);
+
+		//風速の特性係数を書き込む
+		static void SetVelocityCharacteristics();
+		
+		//風速の特性係数を表す文字列を作成する
+		static void MakeVelocityCharateristicsString(char * txbuff, const char * command);
 		
 		//EEPROMを読み込む
 		static void LoadEEPROM();

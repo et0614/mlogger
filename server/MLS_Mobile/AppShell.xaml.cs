@@ -23,6 +23,7 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(CFSetting), typeof(CFSetting));
     Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
     Routing.RegisterRoute(nameof(Calibrator), typeof(Calibrator));
+    Routing.RegisterRoute(nameof(VelocityCalibrator), typeof(VelocityCalibrator));
     Routing.RegisterRoute(nameof(RelayedDataViewer), typeof(RelayedDataViewer));
   }
 
