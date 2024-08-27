@@ -367,6 +367,7 @@ namespace MLLib
     {
       LongAddress = longAddress;
       LocalName = LowAddress;
+      XBeeName = LowAddress;
     }
 
     #endregion

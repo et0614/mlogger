@@ -79,7 +79,7 @@
     <div class="checkbox-wrapper-8">
         <form>
             <b>ヒートマップ</b>
-            <input class="tgl tgl-skewed" id="cb3-8" type="checkbox" onclick="toggleHeatmap(this)" />
+            <input class="tgl tgl-skewed" id="cb3-8" type="checkbox" checked onclick="toggleHeatmap(this)" />
             <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
         </form>
     </div>
@@ -144,6 +144,9 @@
 
         //計測情報をロード
         loadMLoggerTable('../latest.json');
+
+        //マップ表示を復元
+        loadHeatmapState();
     </script>
 
 </body>

@@ -59,9 +59,6 @@ public partial class VelocityCalibrator : ContentPage
   /// <summary>風速電圧リスト[V]</summary>
   private double[] velVols = new double[AVE_TIME];
 
-  /// <summary>校正中の点番号</summary>
-  private int calibratingIndex = 5;
-
   /// <summary>校正中の電圧リスト[V]</summary>
   private double[] calbratingVoltages = { 1.450, 1.648, 1.734, 1.801 };
 
@@ -147,7 +144,7 @@ public partial class VelocityCalibrator : ContentPage
       instVoltage.TextColor = aveVoltage.TextColor = voltUnit.TextColor 
         = isStabled ? Colors.Green : Colors.Red;
 
-      voltagePoints[0].Y = voltagePoints[1].Y = aveVol;
+      voltagePoints[0].Y = voltagePoints[1].Y = Math.Max(1.41, Math.Min(1.99, aveVol)); //表示上は1.4 - 2.0Vにまるめる
     });
   }
 

@@ -55,9 +55,6 @@
     <None Update="errLog.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="mlnames.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="setting.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

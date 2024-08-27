@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>MLServer</RootNamespace>
-    <AssemblyVersion>1.1.10</AssemblyVersion>
-    <FileVersion>1.1.10</FileVersion>
+    <AssemblyVersion>1.1.11</AssemblyVersion>
+    <FileVersion>1.1.11</FileVersion>
     <BaseOutputPath>bin\</BaseOutputPath>
   </PropertyGroup>
 

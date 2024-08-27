@@ -23,7 +23,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.10";
+    private const string VERSION = "1.1.11";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -49,6 +49,9 @@ namespace MLServer
 
     /// <summary>BACnetを使う場合のポート番号（47808~）</summary>
     private static int bacnetPort = 47808;
+
+    /// <summary>BACnet DeviceのLocal End Point IP Address</summary>
+    private static string bacEPIPAddress = "127.0.0.1";
 
     private static MLServerDevice mlBacDevice;
 
@@ -95,8 +98,8 @@ namespace MLServer
       Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
       if (useBACnet)
       {
-        Console.WriteLine("Start the BACnet service on port " + bacnetPort + ".");
-        mlBacDevice = new MLServerDevice(bacnetPort);
+        Console.WriteLine("Start the BACnet service with the Local End Point set to " + bacEPIPAddress + " and the exclusive port set to " + bacnetPort + ".");
+        mlBacDevice = new MLServerDevice(bacnetPort, bacEPIPAddress);
         mlBacDevice.Communicator.StartService();
       }
       Console.WriteLine();
@@ -110,6 +113,7 @@ namespace MLServer
           string line;
           while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
+            line = line.Split("//", StringSplitOptions.None)[0].Trim(); //コメント削除
             string[] bf = line.Split(':');
             if (!mlNames.ContainsKey(HIGH_ADD + bf[0]))
               mlNames.Add(HIGH_ADD + bf[0], bf[1]);
@@ -202,6 +206,9 @@ namespace MLServer
               break;
             case "bacport":
               bacnetPort = int.Parse(st[1]);
+              break;
+            case "bacip":
+              bacEPIPAddress = st[1];
               break;
           }
         }

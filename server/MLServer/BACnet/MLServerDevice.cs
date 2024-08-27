@@ -11,6 +11,8 @@ using System.Reflection;
 using BaCSharp;
 using static Popolo.ThermophysicalProperty.Refrigerant;
 using MLLib;
+using System.Net;
+using System.Net.Sockets;
 
 namespace MLServer.BACnet
 {
@@ -27,10 +29,9 @@ namespace MLServer.BACnet
 
     #endregion
 
-
-    public MLServerDevice(int exclusivePort)
+    public MLServerDevice(int exclusivePort, string localEndPointAddress)
     {
-      Communicator = new BACnetCommunicator(makeDeviceStorage(), exclusivePort);
+      Communicator = new BACnetCommunicator(makeDeviceStorage(), exclusivePort, localEndPointAddress);
     }
 
     private DeviceStorage makeDeviceStorage()

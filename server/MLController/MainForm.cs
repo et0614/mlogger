@@ -182,6 +182,7 @@ namespace MLController
           string line;
           while ((line = sReader.ReadLine()) != null && line.Contains(':'))
           {
+            line = line.Split("//", StringSplitOptions.None)[0].Trim(); //コメント削除
             string[] bf = line.Split(':');
             string key = HIGH_ADD + bf[0];
             if (mlNames.ContainsKey(key)) mlNames[key] = bf[1];

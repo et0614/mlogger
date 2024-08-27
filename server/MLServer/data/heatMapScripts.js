@@ -246,9 +246,26 @@ function handleModeChange() {
 }
 
 function toggleHeatmap(checkbox) {
-  var element = document.getElementById("heatMapBlock");
-  if (checkbox.checked)
-    element.style.display = "block";
-  else
-    element.style.display = "none";
+    var element = document.getElementById("heatMapBlock");
+    if (checkbox.checked) {
+        element.style.display = 'none';
+        sessionStorage.setItem('displayMap', 'none');
+    }
+    else {
+        element.style.display = 'block';
+        sessionStorage.setItem('displayMap', 'block');
+    }
+}
+
+function loadHeatmapState() {
+    const displayState = sessionStorage.getItem('displayMap');
+    const map = document.getElementById('heatMapBlock');
+
+    // displayStateがnullの場合、デフォルトの状態を設定
+    if (displayState !== null) {
+        map.style.display = displayState;
+    } else {
+        cbx.checked = 'false'
+        map.style.display = 'none';  // 初期値として非表示に設定
+    }
 }
