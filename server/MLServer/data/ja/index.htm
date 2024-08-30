@@ -3,9 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex,nofollow">
-    <meta http-equiv="refresh" content="60; URL=">
     <title>測定状況</title>
     <link rel="stylesheet" href="../style.css">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+    <!--初期設定ファイル-->
+    <script src="../config.js"></script>
 
     <!--データテーブル関連のJavascript-->
     <script src="../dataTableScripts.js"></script>
@@ -137,17 +140,18 @@
     Web site: <a href="https://www.mlogger.jp">https://www.mlogger.jp</a>
 
     <script>
-        //一般情報をロード
-        loadMLoggerInfo('../latest.json');
-
         //チェックボックスの状態を復元
         load_checkBoxState();
 
-        //計測情報をロード
-        loadMLoggerTable('../latest.json');
-
         //マップ表示を復元
-        loadHeatmapState();
+        load_HeatmapState();
+
+        //一覧表示を定期更新
+        updateMLoggerList('../latest.json');
+        setInterval(updateMLoggerList, 1000, '../latest.json');
+
+        //ヒートマップ表示を定期更新
+        setInterval(handleModeChange, 10000);
     </script>
 
 </body>

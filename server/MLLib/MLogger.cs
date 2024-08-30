@@ -210,7 +210,6 @@ namespace MLLib
     /// <summary>バージョン（リビジョン）を取得する</summary>
     public int Version_Revision { get; private set; } = 0;
 
-    [JsonIgnore]
     /// <summary>現在の状態を取得する</summary>
     public Status CurrentStatus { get; private set; } = Status.Initializing;
 

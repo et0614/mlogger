@@ -1,322 +1,722 @@
 ﻿{
-  "0013A20042362472": {
+  "0013A200423631B0": {
     "name": "Unloaded",
-    "localName": "42362472",
-    "xbeeName": null,
-    "lowAddress": "42362472",
-    "lastCommunicated": "2024-08-16T14:44:20.6888827+09:00",
+    "localName": "Room125",
+    "xbeeName": "423631B0",
+    "lowAddress": "423631B0",
+    "lastCommunicated": "2024-08-30T08:34:48.2421321+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:20+09:00",
-      "lastValue": 23.56
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.4
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:20+09:00",
-      "lastValue": 66.64
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 70.8
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:20+09:00",
-      "lastValue": 23.73
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.57
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:20+09:00",
-      "lastValue": 0.2721
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1933
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:20+09:00",
-      "lastValue": 419.84
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 371.63
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 24.044776620774428,
-    "pmv": 0.9391260490115085,
-    "ppd": 23.62793339600283,
-    "setStar": 30.35674240917153,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.81678367585539,
+    "pmv": 1.686783137667895,
+    "ppd": 61.04287320583566,
+    "setStar": 34.44124536992507,
+    "wbgt_outdoor": 24.55003376210277,
+    "wbgt_indoor": 24.572660620201415
+  },
+  "0013A20042363D46": {
+    "name": "MLogger_0518",
+    "localName": "MLogger_0518",
+    "xbeeName": "42363D46",
+    "lowAddress": "42363D46",
+    "lastCommunicated": "2024-08-29T13:17:21.5610332+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 0,
+    "pmv": 0,
+    "ppd": 0,
+    "setStar": 0,
+    "wbgt_outdoor": 0,
+    "wbgt_indoor": 0
   },
   "0013A20042363F3A": {
     "name": "Unloaded",
-    "localName": "42363F3A",
-    "xbeeName": null,
+    "localName": "Room123",
+    "xbeeName": "42363F3A",
     "lowAddress": "42363F3A",
-    "lastCommunicated": "2024-08-16T14:44:21.3045753+09:00",
+    "lastCommunicated": "2024-08-30T08:34:02.5862322+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.44
+      "lastMeasureTime": "2024-08-30T08:34:00+09:00",
+      "lastValue": 27.51
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 67.62
+      "lastMeasureTime": "2024-08-30T08:34:00+09:00",
+      "lastValue": 70.98
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.59
+      "lastMeasureTime": "2024-08-30T08:34:00+09:00",
+      "lastValue": 27.68
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.2627
+      "lastMeasureTime": "2024-08-30T08:34:00+09:00",
+      "lastValue": 0.1719
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 379.73
+      "lastMeasureTime": "2024-08-30T08:34:00+09:00",
+      "lastValue": 290.99
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 23.862389889581323,
-    "pmv": 0.9243992057698499,
-    "ppd": 23.046995058280686,
-    "setStar": 30.281090869505324,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.90977531558036,
+    "pmv": 1.7164796248452698,
+    "ppd": 62.632032972349585,
+    "setStar": 34.56389590716974,
+    "wbgt_outdoor": 24.672102840213892,
+    "wbgt_indoor": 24.694521578498026
+  },
+  "0013A200420BCD57": {
+    "name": "Anonymous",
+    "localName": "420BCD57",
+    "xbeeName": "420BCD57",
+    "lowAddress": "420BCD57",
+    "lastCommunicated": "2024-08-28T08:10:52.1259678+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "velocity": {
+      "measure": false,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 0,
+    "pmv": 0,
+    "ppd": 0,
+    "setStar": 0,
+    "wbgt_outdoor": 0,
+    "wbgt_indoor": 0
+  },
+  "0013A200423484BA": {
+    "name": "Unloaded",
+    "localName": "Room142",
+    "xbeeName": "423484BA",
+    "lowAddress": "423484BA",
+    "lastCommunicated": "2024-08-30T08:34:47.5856503+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.42
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 72.13
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.54
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1691
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 356.69
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.700883614825557,
+    "pmv": 1.7010452716967661,
+    "ppd": 61.80762293142797,
+    "setStar": 34.55683479121561,
+    "wbgt_outdoor": 24.69753817669433,
+    "wbgt_indoor": 24.713342670237015
+  },
+  "0013A20042363EB1": {
+    "name": "Unloaded",
+    "localName": "Room121",
+    "xbeeName": "42363EB1",
+    "lowAddress": "42363EB1",
+    "lastCommunicated": "2024-08-30T05:17:45.7262366+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T05:18:00+09:00",
+      "lastValue": 28.01
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T05:18:00+09:00",
+      "lastValue": 63.5
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T05:18:00+09:00",
+      "lastValue": 27.98
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T05:18:00+09:00",
+      "lastValue": 0.7539
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T05:18:00+09:00",
+      "lastValue": 0
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.881687211622534,
+    "pmv": 1.6070999606019138,
+    "ppd": 56.731599088134836,
+    "setStar": 33.17601829605681,
+    "wbgt_outdoor": 24.254437831549204,
+    "wbgt_indoor": 24.250031593924675
   },
   "0013A20042347F20": {
     "name": "Unloaded",
-    "localName": "42347F20",
-    "xbeeName": null,
+    "localName": "Room122",
+    "xbeeName": "42347F20",
     "lowAddress": "42347F20",
-    "lastCommunicated": "2024-08-16T14:44:20.9964737+09:00",
+    "lastCommunicated": "2024-08-30T06:27:43.3676515+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.54
+      "lastMeasureTime": "2024-08-30T06:28:00+09:00",
+      "lastValue": 28.3
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 66.73
+      "lastMeasureTime": "2024-08-30T06:28:00+09:00",
+      "lastValue": 62.2
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.75
+      "lastMeasureTime": "2024-08-30T06:28:00+09:00",
+      "lastValue": 28.19
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.2867
+      "lastMeasureTime": "2024-08-30T06:28:00+09:00",
+      "lastValue": 0.9217
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 428.37
+      "lastMeasureTime": "2024-08-30T06:28:00+09:00",
+      "lastValue": 0
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 24.150973360650653,
-    "pmv": 0.935450133907453,
-    "ppd": 23.482117820300843,
-    "setStar": 30.383426140564637,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.78355222794596,
+    "pmv": 1.6233819870194837,
+    "ppd": 57.61653056777904,
+    "setStar": 32.964834687483574,
+    "wbgt_outdoor": 24.34703439963124,
+    "wbgt_indoor": 24.330677660178566
   },
-  "0013A20042347BDF": {
+  "0013A20042363DC9": {
     "name": "Unloaded",
-    "localName": "42347BDF",
-    "xbeeName": null,
-    "lowAddress": "42347BDF",
-    "lastCommunicated": "2024-08-16T14:44:20.9046493+09:00",
+    "localName": "Room141",
+    "xbeeName": "42363DC9",
+    "lowAddress": "42363DC9",
+    "lastCommunicated": "2024-08-30T08:34:46.7408048+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.57
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.45
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 65.92
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 71.92
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.72
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.58
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.2988
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.234
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 446.72
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 317.44
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 24.013850079984365,
-    "pmv": 0.9202827849953285,
-    "ppd": 22.886163012603575,
-    "setStar": 30.307979301119797,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.791657681748973,
+    "pmv": 1.6813679970257636,
+    "ppd": 60.75182728686439,
+    "setStar": 34.58213451734782,
+    "wbgt_outdoor": 24.706849036579097,
+    "wbgt_indoor": 24.724412212287923
   },
-  "0013A20042363DE5": {
+  "0013A20042363E7D": {
     "name": "Unloaded",
-    "localName": "42363DE5",
-    "xbeeName": null,
-    "lowAddress": "42363DE5",
-    "lastCommunicated": "2024-08-16T14:44:21.2131844+09:00",
+    "localName": "Room134",
+    "xbeeName": "42363E7D",
+    "lowAddress": "42363E7D",
+    "lastCommunicated": "2024-08-30T08:34:47.1036855+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.53
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.38
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 66.58
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 72.55
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.63
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.65
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.3603
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1608
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 387.41
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 325.97
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 23.8494637838715,
-    "pmv": 0.8798030024485299,
-    "ppd": 21.341091839812805,
-    "setStar": 30.27057302647492,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 28.000503840607962,
+    "pmv": 1.724076540478781,
+    "ppd": 63.036486554163716,
+    "setStar": 34.64818529642983,
+    "wbgt_outdoor": 24.743839136141393,
+    "wbgt_indoor": 24.77925817705862
   },
-  "0013A20042363E05": {
+  "0013A20042363D93": {
     "name": "Unloaded",
-    "localName": "42363E05",
-    "xbeeName": null,
-    "lowAddress": "42363E05",
-    "lastCommunicated": "2024-08-16T14:44:21.4887605+09:00",
+    "localName": "Room145",
+    "xbeeName": "42363D93",
+    "lowAddress": "42363D93",
+    "lastCommunicated": "2024-08-30T08:34:45.3818768+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:22+09:00",
-      "lastValue": 23.55
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.32
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:22+09:00",
-      "lastValue": 66.46
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 72.46
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:22+09:00",
-      "lastValue": 23.65
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.48
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:22+09:00",
-      "lastValue": 0.2902
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.2147
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:22+09:00",
-      "lastValue": 395.95
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 283.73
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 23.84273192140796,
-    "pmv": 0.9149445603999943,
-    "ppd": 22.678608053455164,
-    "setStar": 30.273931275683303,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.72759147189481,
+    "pmv": 1.6729385588488987,
+    "ppd": 60.29808179902419,
+    "setStar": 34.522425563928934,
+    "wbgt_outdoor": 24.64988646828335,
+    "wbgt_indoor": 24.671358261420398
   },
-  "0013A2004234842A": {
+  "0013A20042363EF7": {
     "name": "Unloaded",
-    "localName": "4234842A",
-    "xbeeName": null,
-    "lowAddress": "4234842A",
-    "lastCommunicated": "2024-08-16T14:44:21.3971556+09:00",
+    "localName": "Room144",
+    "xbeeName": "42363EF7",
+    "lowAddress": "42363EF7",
+    "lastCommunicated": "2024-08-30T08:34:47.9371612+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.44
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.38
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 66.99
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 72.6
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.61
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.5
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.3291
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1934
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 395.52
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 318.72
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 23.96318660947958,
-    "pmv": 0.8916455143756549,
-    "ppd": 21.786208839499125,
-    "setStar": 30.27404280213096,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 27.67443894388282,
+    "pmv": 1.68639437416922,
+    "ppd": 61.021990460061325,
+    "setStar": 34.56699333697924,
+    "wbgt_outdoor": 24.710260219105557,
+    "wbgt_indoor": 24.72623276800112
   },
-  "0013A20042362F90": {
+  "0013A20042362E01": {
     "name": "Unloaded",
-    "localName": "42362F90",
-    "xbeeName": null,
-    "lowAddress": "42362F90",
-    "lastCommunicated": "2024-08-16T14:44:21.0894707+09:00",
+    "localName": "Room143",
+    "xbeeName": "42362E01",
+    "lowAddress": "42362E01",
+    "lastCommunicated": "2024-08-29T17:24:50.6737723+09:00",
     "drybulbTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.48
+      "lastMeasureTime": "2024-08-29T17:25:00+09:00",
+      "lastValue": 24.68
     },
     "relativeHumdity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 66.7
+      "lastMeasureTime": "2024-08-29T17:25:00+09:00",
+      "lastValue": 67.46
     },
     "globeTemperature": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 23.63
+      "lastMeasureTime": "2024-08-29T17:25:00+09:00",
+      "lastValue": 24.49
     },
     "velocity": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 0.3154
+      "lastMeasureTime": "2024-08-29T17:25:00+09:00",
+      "lastValue": 0.6851
     },
     "illuminance": {
       "measure": true,
-      "lastMeasureTime": "2024-08-16T14:44:21+09:00",
-      "lastValue": 415.15
+      "lastMeasureTime": "2024-08-29T17:25:00+09:00",
+      "lastValue": 311.04
     },
     "metValue": 1.7,
     "cloValue": 1,
-    "meanRadiantTemperature": 23.933799800904637,
-    "pmv": 0.9001287570145935,
-    "ppd": 22.108583381685463,
-    "setStar": 30.272572847779063,
-    "wbgt_outdoor": 26.728,
-    "wbgt_indoor": 24.333
+    "meanRadiantTemperature": 23.879594825000083,
+    "pmv": 0.9498791596123081,
+    "ppd": 24.05756144363245,
+    "setStar": 30.149838695571237,
+    "wbgt_outdoor": 21.562768899864512,
+    "wbgt_indoor": 21.535032877267163
+  },
+  "0013A2004236379D": {
+    "name": "Unloaded",
+    "localName": "Room135",
+    "xbeeName": "4236379D",
+    "lowAddress": "4236379D",
+    "lastCommunicated": "2024-08-30T08:34:46.3694881+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.41
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 73.8
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.58
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.179
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 314.45
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.8156513540751,
+    "pmv": 1.713463242167023,
+    "ppd": 62.471193693541935,
+    "setStar": 34.7478487892108,
+    "wbgt_outdoor": 24.87871904975896,
+    "wbgt_indoor": 24.901209458506973
+  },
+  "0013A20042363D16": {
+    "name": "Unloaded",
+    "localName": "Room132",
+    "xbeeName": "42363D16",
+    "lowAddress": "42363D16",
+    "lastCommunicated": "2024-08-30T08:34:47.777994+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.44
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 71.87
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.58
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1573
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 344.32
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.759636999873067,
+    "pmv": 1.711601601109388,
+    "ppd": 62.37185853137786,
+    "setStar": 34.561275161177505,
+    "wbgt_outdoor": 24.69364543082522,
+    "wbgt_indoor": 24.711978948473615
+  },
+  "0013A20042363E30": {
+    "name": "Unloaded",
+    "localName": "Room133",
+    "xbeeName": "42363E30",
+    "lowAddress": "42363E30",
+    "lastCommunicated": "2024-08-30T08:34:47.2625282+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.42
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 71.77
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.58
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.1593
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 335.36
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.786833587688136,
+    "pmv": 1.7096185255889578,
+    "ppd": 62.265986767378564,
+    "setStar": 34.54372620419246,
+    "wbgt_outdoor": 24.669439882911945,
+    "wbgt_indoor": 24.690413405956875
+  },
+  "0013A20042362CC5": {
+    "name": "Unloaded",
+    "localName": "Room131",
+    "xbeeName": "42362CC5",
+    "lowAddress": "42362CC5",
+    "lastCommunicated": "2024-08-30T08:34:47.008255+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.45
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 71.7
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 27.61
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 0.172
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T08:35:00+09:00",
+      "lastValue": 346.45
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 27.82649995588332,
+    "pmv": 1.708731376050522,
+    "ppd": 62.218605094939406,
+    "setStar": 34.56940432718942,
+    "wbgt_outdoor": 24.69039996805657,
+    "wbgt_indoor": 24.711500925324472
+  },
+  "0013A20042363E57": {
+    "name": "MLogger_0504",
+    "localName": "Room124",
+    "xbeeName": "42363E57",
+    "lowAddress": "42363E57",
+    "lastCommunicated": "2024-08-30T07:11:51.2926781+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T07:10:10+09:00",
+      "lastValue": 27.79
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T07:10:10+09:00",
+      "lastValue": 67.55
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T07:10:10+09:00",
+      "lastValue": 27.87
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T07:10:10+09:00",
+      "lastValue": 0.6527
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "2024-08-30T07:10:10+09:00",
+      "lastValue": 0.43
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 28.11030454553628,
+    "pmv": 1.6243791848790035,
+    "ppd": 57.67067970920189,
+    "setStar": 33.674210368259146,
+    "wbgt_outdoor": 24.53782788740194,
+    "wbgt_indoor": 24.54946943874767
+  },
+  "0013A20042363D88": {
+    "name": "MLogger_0511",
+    "localName": "42363D88",
+    "xbeeName": "42363D88",
+    "lowAddress": "42363D88",
+    "lastCommunicated": "2024-08-29T13:31:39.3712599+09:00",
+    "drybulbTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "relativeHumdity": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "globeTemperature": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "velocity": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "illuminance": {
+      "measure": true,
+      "lastMeasureTime": "1970-01-01T00:00:00Z",
+      "lastValue": 0
+    },
+    "metValue": 1.7,
+    "cloValue": 1,
+    "meanRadiantTemperature": 0,
+    "pmv": 0,
+    "ppd": 0,
+    "setStar": 0,
+    "wbgt_outdoor": 0,
+    "wbgt_indoor": 0
   }
 }

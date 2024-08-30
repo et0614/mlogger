@@ -1,144 +1,219 @@
 //テーブルのソート方向を決める配列
 const dirOrder = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
-//MLoggerの一般情報（台数、着衣量、代謝量）を読み込む
-function loadMLoggerInfo(path) {
-    fetch(path)
+//強調表示用タイマ：複数用意しないとタイマが重なったときにキャンセルされて表示が異常になる
+const timers = {};
+
+//MLogger一覧を更新する
+function updateMLoggerList(path){
+    fetch(path+'?timestamp=' + new Date().getTime())
         .then(response => response.json())
         .then(data => {
-            //台数を反映
-            const elmNum = document.getElementById('mlNum');
-            elmNum.textContent = Object.keys(data).length;
-
-            //熱的快適性情報を反映
-            const elmCmft = document.getElementById('clomet');
-            elm = data[Object.keys(data)[0]];
-            elmCmft.textContent = "Clo value = " + elm["cloValue"] + " clo; Metabolic rate = " + elm["metValue"] + " met";
+            updateTable(data); //テーブル表示更新
         })
         .catch(error => {
             console.error('Error:', error);
         });
-    return null;
 }
 
-//MLoggerのデータを読み込んでテーブルを作成する
-function loadMLoggerTable(path) {
-    const isRowVisible = getRowsVisibility();
+//テーブルを更新する
+function updateTable(data){
+    // テーブルのすべての行を取得
+    const rows = document.querySelectorAll('#mlTable tr');
 
-    fetch(path)
-        .then(response => response.json())
-        .then(data => {
-            // テーブルの参照を取得
-            const table = document.getElementById('mlTable').getElementsByTagName('tbody')[0];
+    //それぞれのデータに対して
+    cnctedLogger=0;
+    for (let key in data) {
+        //一定時間通信できていないデータか否か
+        dTime = new Date(data[key]["lastCommunicated"]);
+        disconnected =　Config.cutoff_threshold < Math.floor(0.001 * (Date.now() - dTime.getTime()));
+        cnctedLogger += disconnected ? 0 : 1;
 
-            for (let key in data) {
-                // 新しい行を作成
-                const newRow = table.insertRow(table.rows.length);
-                row = 0;
-
-                //最終接続時刻
-                dTime = new Date(data[key]["lastCommunicated"]);
-                cell = newRow.insertCell(row++);
-                cell.classList.add('general');
-                cell.innerHTML = (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
-
-                //名前
-                cell = newRow.insertCell(row++);
-                cell.classList.add('general');
-                cell.innerHTML = data[key]["localName"];
-
-                //アドレス
-                cell = newRow.insertCell(row++);
-                cell.classList.add('general');
-                cell.innerHTML = data[key]["lowAddress"];
-
-                //温湿度
-                dTime = new Date(data[key]["drybulbTemperature"]["lastMeasureTime"]);
-                hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
-                cell = newRow.insertCell(row++);
-                cell.classList.add('thlog');
-                cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('thlog');
-                cell.innerHTML = data[key]["drybulbTemperature"]["lastValue"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('thlog');
-                cell.innerHTML = data[key]["relativeHumdity"]["lastValue"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-
-                //グローブ温度
-                dTime = new Date(data[key]["globeTemperature"]["lastMeasureTime"]);
-                hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
-                cell = newRow.insertCell(row++);
-                cell.classList.add('glblog');
-                cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('glblog');
-                cell.innerHTML = data[key]["globeTemperature"]["lastValue"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-
-                //風速
-                dTime = new Date(data[key]["velocity"]["lastMeasureTime"]);
-                hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
-                cell = newRow.insertCell(row++);
-                cell.classList.add('vellog');
-                cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('vellog');
-                cell.innerHTML = (100 * data[key]["velocity"]["lastValue"]).toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-
-                //照度
-                dTime = new Date(data[key]["illuminance"]["lastMeasureTime"]);
-                hasDisconnected = dTime.getFullYear() < 1900 || 2100 < dTime.getFullYear();
-                cell = newRow.insertCell(row++);
-                cell.classList.add('illlog');
-                cell.innerHTML = hasDisconnected ? "***" : (dTime.getMonth() + 1) + "/" + dTime.getDate() + " " + dTime.toLocaleTimeString().split('.')[0];
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('illlog');
-                cell.innerHTML = data[key]["illuminance"]["lastValue"].toFixed(2);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-
-                //熱的快適性
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["meanRadiantTemperature"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["setStar"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["pmv"].toFixed(2);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["ppd"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["wbgt_indoor"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-                cell = newRow.insertCell(row++);
-                cell.classList.add('cmftlog');
-                cell.innerHTML = data[key]["wbgt_outdoor"].toFixed(1);
-                cell.style.display = isRowVisible[row] ? '' : 'none';
-
-                //CSVデータ
-                cell = newRow.insertCell(row++);
-                cell.classList.add('general');
-                cell.innerHTML = "<a href='../" + data[key]["lowAddress"] + ".csv'>" + data[key]["lowAddress"] + ".csv</a>";
+        // 行をループして、IDが一致する行を探す
+        isNewRow = true;
+        disconnectedRow = null;
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0 && cells[2].textContent === data[key]["lowAddress"]) {
+                isNewRow = false;
+                if(disconnected) disconnectedRow = row;
+                else updateRow(data[key], cells);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
         });
+        if(isNewRow && !disconnected) addNewRow(data[key]);
+        if(disconnectedRow != null) disconnectedRow.parentNode.removeChild(disconnectedRow);
+    }
+
+    //接続台数を更新
+    const elmNum = document.getElementById('mlNum');
+    elmNum.textContent = cnctedLogger;
+
+    //熱的快適性情報を反映
+    const elmCmft = document.getElementById('clomet');
+    elm = data[Object.keys(data)[0]];
+    elmCmft.textContent = "Clo value = " + elm["cloValue"] + " clo; Metabolic rate = " + elm["metValue"] + " met";
+}
+
+//行を更新する
+function updateRow(singleData, cells){
+    //最終接続時刻
+    dTimeStr = makeDateTimeString(new Date(singleData["lastCommunicated"]));
+    if(cells[0].innerHTML == dTimeStr) return; //時刻一致の場合には更新不要
+    cells[0].innerHTML = dTimeStr;
+    //更新された場合には強調表示
+    lad = singleData["lowAddress"];
+    if (timers[lad]) clearTimeout(timers[lad]);
+    cells[0].classList.add('updated');
+    timers[lad] = setTimeout(() => {
+        cells[0].classList.remove('updated');
+        delete timers[lad];
+    }, 500);
+
+    clm=1; //列番号
+
+    //名前
+    cells[clm++].innerHTML = singleData["localName"];
+
+    //アドレス
+    cells[clm++].innerHTML = singleData["lowAddress"];
+
+    //温湿度
+    dTime = new Date(singleData["drybulbTemperature"]["lastMeasureTime"]);
+    cells[clm++].innerHTML = makeDateTimeString(dTime);
+    cells[clm++].innerHTML = singleData["drybulbTemperature"]["lastValue"].toFixed(1);
+    cells[clm++].innerHTML = singleData["relativeHumdity"]["lastValue"].toFixed(0);
+
+    //グローブ温度
+    dTime = new Date(singleData["globeTemperature"]["lastMeasureTime"]);
+    cells[clm++].innerHTML = makeDateTimeString(dTime);
+    cells[clm++].innerHTML = singleData["globeTemperature"]["lastValue"].toFixed(1);
+
+    //風速
+    dTime = new Date(singleData["velocity"]["lastMeasureTime"]);
+    cells[clm++].innerHTML = makeDateTimeString(dTime);
+    cells[clm++].innerHTML = (100 * singleData["velocity"]["lastValue"]).toFixed(1);
+
+    //照度
+    dTime = new Date(singleData["illuminance"]["lastMeasureTime"]);
+    cells[clm++].innerHTML = makeDateTimeString(dTime);
+    cells[clm++].innerHTML = singleData["illuminance"]["lastValue"].toFixed(2);
+
+    //熱的快適性
+    cells[clm++].innerHTML = singleData["meanRadiantTemperature"].toFixed(1);
+    cells[clm++].innerHTML = singleData["setStar"].toFixed(1);
+    cells[clm++].innerHTML = singleData["pmv"].toFixed(2);
+    cells[clm++].innerHTML = singleData["ppd"].toFixed(1);
+    cells[clm++].innerHTML = singleData["wbgt_indoor"].toFixed(1);
+    cells[clm++].innerHTML = singleData["wbgt_outdoor"].toFixed(1);
+
+    //CSVデータリンクは不変
+    //***
+}
+
+//行を追加する
+function addNewRow(singleData){
+    // テーブルの参照を取得
+    const table = document.getElementById('mlTable').getElementsByTagName('tbody')[0];
+    const isColumnVisible = getColumnsVisibility();
+
+    // 新しい行を作成
+    const newRow = table.insertRow(table.rows.length);
+    clm = 0;
+
+    //最終接続時刻
+    dTime = new Date(singleData["lastCommunicated"]);
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('general');
+    cell.innerHTML = makeDateTimeString(dTime);
+
+    //名前
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('general');
+    cell.innerHTML = singleData["localName"];
+
+    //アドレス
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('general');
+    cell.innerHTML = singleData["lowAddress"];
+
+    //温湿度
+    dTime = new Date(singleData["drybulbTemperature"]["lastMeasureTime"]);
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('thlog');
+    cell.innerHTML = makeDateTimeString(dTime);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('thlog');
+    cell.innerHTML = singleData["drybulbTemperature"]["lastValue"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('thlog');
+    cell.innerHTML = singleData["relativeHumdity"]["lastValue"].toFixed(0);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+
+    //グローブ温度
+    dTime = new Date(singleData["globeTemperature"]["lastMeasureTime"]);
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('glblog');
+    cell.innerHTML = makeDateTimeString(dTime);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('glblog');
+    cell.innerHTML = singleData["globeTemperature"]["lastValue"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+
+    //風速
+    dTime = new Date(singleData["velocity"]["lastMeasureTime"]);
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('vellog');
+    cell.innerHTML = makeDateTimeString(dTime);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('vellog');
+    cell.innerHTML = (100 * singleData["velocity"]["lastValue"]).toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+
+    //照度
+    dTime = new Date(singleData["illuminance"]["lastMeasureTime"]);
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('illlog');
+    cell.innerHTML = makeDateTimeString(dTime);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('illlog');
+    cell.innerHTML = singleData["illuminance"]["lastValue"].toFixed(2);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+
+    //熱的快適性
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["meanRadiantTemperature"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["setStar"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["pmv"].toFixed(2);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["ppd"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["wbgt_indoor"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('cmftlog');
+    cell.innerHTML = singleData["wbgt_outdoor"].toFixed(1);
+    cell.style.display = isColumnVisible[clm] ? '' : 'none';
+
+    //CSVデータ
+    cell = newRow.insertCell(clm++);
+    cell.classList.add('general');
+    cell.innerHTML = "<a href='../" + singleData["lowAddress"] + ".csv'>" + singleData["lowAddress"] + ".csv</a>";
 }
 
 //テーブルをソートする
@@ -166,7 +241,12 @@ function sortTable(columnIndex) {
     dirOrder[columnIndex] = !dirOrder[columnIndex];
 }
 
-//選択した列のみを表示する
+//日時を表す文字列を作成する
+function makeDateTimeString(dateTime){
+    return (dateTime.getMonth() + 1) + "/" + dateTime.getDate() + " " + dateTime.toLocaleTimeString().split('.')[0];
+}
+
+//列ごとの表示・非表示状態を切り替える
 function toggleColumns(checkbox) {
     //選択をcookieに保存
     const checkboxes = document.querySelectorAll('input[name="toggle-columns"]');
@@ -177,10 +257,11 @@ function toggleColumns(checkbox) {
     switchColumnDisplay();
 }
 
+//選択した列のみを表示する
 function switchColumnDisplay() {
     const table = document.getElementById('mlTable');
 
-    const isVisible = getRowsVisibility();
+    const isVisible = getColumnsVisibility();
     for (const key in isVisible) {
         if (isVisible.hasOwnProperty(key)) {
             const cells = table.querySelectorAll(`td:nth-child(${key}), th:nth-child(${key})`);
@@ -191,7 +272,8 @@ function switchColumnDisplay() {
     }
 }
 
-function getRowsVisibility() {
+//列ごとの表示・非常時状態を取得する
+function getColumnsVisibility() {
     const visibility = {
         "1": true, "2": true, "3": true, //一般情報
         "4": true, "5": true, "6": true, //温湿度
@@ -232,7 +314,7 @@ function getCookie(name) {
     return null;
 }
 
-// 保存されたチェックボックスの状態を復元
+// 保存されたチェックボックスの状態を復元する
 function load_checkBoxState() {
     const savedStates = getCookie("checked-toggle-columns");
     if (savedStates) {

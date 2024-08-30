@@ -48,6 +48,9 @@
     <None Update="data\en\index.htm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\favicon.svg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\heatMapScripts.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
