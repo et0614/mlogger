@@ -177,28 +177,32 @@ void my_i2c::InitializeI2C(void)
 }
 
 void my_i2c::InitializeVCNL4030(void){
-	//照度計測設定//設定は変えないので初期化時のみ呼び出し
+	//照度計・距離計を無効にする//この処理は不要かもしれない
+	//照度計測
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
 	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return; } //照度計測設定コマンド
-	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return; } //000 1 00 0 0: 計測レベル, ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効（常に有効で電力消費は問題ないか？）
+	if(_bus_write(0b00010001) != I2C_ACKED) { _bus_stop(); return; } //000 1 00 0 1: 計測レベル, ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測無効
 	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
 	_bus_stop();
 	
-	//距離計測設定
+	//距離計測
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
 	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド1(PS_CONF1, PS_CONF2)
-	if(_bus_write(0b11001110) != I2C_ACKED) { _bus_stop(); return; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測有効（常に有効で電力消費は問題ないか？）
+	if(_bus_write(0b11001111) != I2C_ACKED) { _bus_stop(); return; } //11 00 111 1: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測無効
 	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
 	_bus_stop();
-	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return; }
-	if(_bus_write(0x04) != I2C_ACKED) { _bus_stop(); return; } //距離計測設定コマンド2(PS_CONF3, PS_MS)
-	if(_bus_write(0b00000001) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 0 0 1: Normal current, Reserved, PS_SMART_PERS=Disable, Active force mode disable, No PS active force mode, PS_MS disabled, turn on sunlight cancel
-	if(_bus_write(0b00000111) != I2C_ACKED) { _bus_stop(); return; } //0 00 0 0 111: Reserved, 1xtypical sunlight cancel current, typical sunlight capability, 00h sunlight protect mode, LED current=200mA
-	_bus_stop();	
 }
 
 float my_i2c::ReadVCNL4030_ALS(void)
-{
+{	
+	//照度センサを有効にする
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測設定コマンド
+	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return 0; } //000 1 00 0 0: 計測レベル(50ms), ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効
+	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return 0; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
+	_bus_stop();
+	_delay_ms(100); //計測レベル50msなので、安全を見てその倍、待機
+	
 	//照度読み取り
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0x0B) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測コマンド
@@ -207,19 +211,33 @@ float my_i2c::ReadVCNL4030_ALS(void)
 	uint8_t buffer[2];
 	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK
 	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK
-		
 	uint16_t data = (buffer[1] << 8) + buffer[0];
+	
+	//照度センサを無効にする
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測設定コマンド
+	if(_bus_write(0b00010001) != I2C_ACKED) { _bus_stop(); return 0; } //000 1 00 0 1: 計測レベル(50ms), ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測無効
+	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return 0; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
+	_bus_stop();
+	
 	return 0.064 * 4 * data; //ダイナミックレンジ2倍、感度1倍設定のため:2/(1/2)=4
 }
 
 float my_i2c::ReadVCNL4030_PS(void)
 {
-	//1回のみの読み取りのため、Active Force Modeを使う
-	/*if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	//1回のみの読み取りのため、Active Force Modeにする
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
 	if(_bus_write(0x04) != I2C_ACKED) { _bus_stop(); return 0; } //距離計測設定コマンド
 	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //0 00 0 1 0 0 0
 	if(_bus_write(0b00000000) != I2C_ACKED) { _bus_stop(); return 0; } //0 00 0 0 000
-	_bus_stop();*/
+	_bus_stop();
+	//距離計測を有効にする
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return 0; } //距離計測設定コマンド1(PS_CONF1, PS_CONF2)
+	if(_bus_write(0b11001110) != I2C_ACKED) { _bus_stop(); return 0; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測有効
+	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
+	_bus_stop();
+	_delay_ms(150); //技術資料によると8Tの場合には128msのようだが。。。
 	
 	//距離読み取り
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
@@ -229,8 +247,15 @@ float my_i2c::ReadVCNL4030_PS(void)
 	uint8_t buffer[2];
 	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK
 	if(_bus_read(0, 1, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK
-		
 	uint16_t data = (buffer[1] << 8) + buffer[0];
+	
+	//距離計測を無効にする
+	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x03) != I2C_ACKED) { _bus_stop(); return 0; } //距離計測設定コマンド1(PS_CONF1, PS_CONF2)
+	if(_bus_write(0b11001111) != I2C_ACKED) { _bus_stop(); return 0; } //11 00 111 1: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測無効
+	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
+	_bus_stop();	
+	
 	float ld = log(data);
 	return exp((-0.018 * ld - 0.234) * ld + 6.564);
 }
