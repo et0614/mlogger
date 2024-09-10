@@ -302,6 +302,9 @@ public partial class DeviceSetting : ContentPage
       //更新された情報を反映
       Application.Current.Dispatcher.Dispatch(() =>
       {
+        //ロギング
+        MLUtility.WriteLog(Logger.XBeeName + "; Name changed; " + Logger.Name + "; ");
+
         spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
       });
     });
@@ -342,6 +345,14 @@ public partial class DeviceSetting : ContentPage
       //更新された情報を反映
       Application.Current.Dispatcher.Dispatch(() =>
       {
+        //ロギング
+        MLUtility.WriteLog(Logger.XBeeName + ": Measurement setting changed; " +
+          (MLSResource.DrybulbTemperature + "=" + (Logger.DrybulbTemperature.Measure ? Logger.DrybulbTemperature.Interval + " sec; " : "false; ")) +
+          (MLSResource.GlobeTemperature + "=" + (Logger.GlobeTemperature.Measure ? Logger.GlobeTemperature.Interval + " sec; " : "false; ")) +
+          (MLSResource.Velocity + "=" + (Logger.Velocity.Measure ? Logger.Velocity.Interval + " sec; " : "false; ")) +
+          (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; "))
+          );
+
         //計測設定
         cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
         ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
@@ -435,10 +446,6 @@ public partial class DeviceSetting : ContentPage
 
   private void CFButton_Clicked(object sender, EventArgs e)
   {
-    /*Shell.Current.GoToAsync(nameof(Calibrator),
-      new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-      );*/
-
     //インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
@@ -456,8 +463,8 @@ public partial class DeviceSetting : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-              return;
             });
+            return;
           }
           tryNum++;
 
@@ -497,7 +504,32 @@ public partial class DeviceSetting : ContentPage
     {
       try
       {
+        //風速補正係数取得
         int tryNum = 0;
+        Logger.HasVelocityCharacteristicsReceived = false;
+        while (!Logger.HasVelocityCharacteristicsReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+            });
+            return;
+          }
+          tryNum++;
+
+          //開始コマンドを送信
+          MLUtility.ConnectedXBee.SendSerialData
+          (Encoding.ASCII.GetBytes(MLogger.MakeLoadVelocityCharateristicsCommand()));
+
+          await Task.Delay(500);
+        }
+        double[] minVandCoefs = new double[] { Logger.VelocityMinVoltage, Logger.VelocityCharacteristicsCoefA, Logger.VelocityCharacteristicsCoefB, Logger.VelocityCharacteristicsCoefC };
+
+        //風速校正開始
+        tryNum = 0;
         Logger.HasStartCalibratingVoltageMessageReceived = false;
         while (!Logger.HasStartCalibratingVoltageMessageReceived)
         {
@@ -507,8 +539,8 @@ public partial class DeviceSetting : ContentPage
             Application.Current.Dispatcher.Dispatch(() =>
             {
               DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-              return;
             });
+            return;
           }
           tryNum++;
 
@@ -523,7 +555,7 @@ public partial class DeviceSetting : ContentPage
         Application.Current.Dispatcher.Dispatch(() =>
         {
           Shell.Current.GoToAsync(nameof(VelocityCalibrator),
-            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
+            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
             );
         });
       }

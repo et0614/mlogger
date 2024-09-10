@@ -21,6 +21,15 @@ namespace MLS_Mobile
     /// <summary>MLoggerのLowAddress-名称対応リスト</summary>
     private const string ML_LIST_NAME = "mlList.txt";
 
+    /// <summary>ログファイルの名称</summary>
+    private const string LOG_FILE_NAME = "log.txt";
+    
+    /// <summary>ログファイルの最大バイト数</summary>
+    private const long MAX_LOG_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    /// <summary>ログファイル超過時の削除行数</summary>
+    private const int LINES_TRIM = 100;
+
     #endregion
 
     #region 列挙型定義
@@ -181,6 +190,15 @@ namespace MLS_Mobile
           sWriter.Write("");
         }
       }
+
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      if (!File.Exists(logPath))
+      {
+        using (StreamWriter sWriter = new StreamWriter(logPath, false))
+        {
+          sWriter.Write("");
+        }
+      }
     }
 
     /// <summary>データファイルリストを取得する</summary>
@@ -321,6 +339,55 @@ namespace MLS_Mobile
         mlNames.Add(lowAddress, name);
         UpdateMLNamesFile();
       }
+    }
+
+    #endregion
+
+    #region Log関連の処理
+
+    public static string ReadLog()
+    {
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      using (StreamReader sr = new StreamReader(logPath))
+      {
+        return sr.ReadToEnd();
+      }
+    }
+
+    public static void WriteLog(string logMessage)
+    {
+      // 既存のログが上限を超えているか確認
+      ManageLogFileSize();
+
+      // ログをファイルに追加
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      using (StreamWriter sw = new StreamWriter(logPath, true))
+      {
+        sw.WriteLine($"{DateTime.Now}: {logMessage}");
+      }
+    }
+
+    private static void ManageLogFileSize()
+    {
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      FileInfo logFile = new FileInfo(logPath);
+      if (logFile.Exists && logFile.Length > MAX_LOG_FILE_SIZE)
+      {
+        // 古い行を削除する
+        TrimLogFile();
+      }
+    }
+
+    private static void TrimLogFile()
+    {
+      // ファイルのすべての行を読み込む
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      string[] allLines = File.ReadAllLines(logPath);
+
+      // 指定された行数を削除
+      if (allLines.Length > LINES_TRIM)
+        File.WriteAllLines(logPath, allLines[LINES_TRIM..]);
+      else File.WriteAllText(logPath, "");
     }
 
     #endregion

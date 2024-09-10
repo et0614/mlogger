@@ -56,6 +56,14 @@ public partial class LoggingDataList : ContentPage
     Shell.Current.GoToAsync($"LoggingData", navigationParameter);
   }
 
+  /// <summary>ログデータ閲覧ボタンクリック時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private void log_Clicked(object sender, EventArgs e)
+  {
+    Shell.Current.GoToAsync(nameof(LogView));
+  }
+
   #region インナークラス定義
 
   public class LogFileGroup : List<LogFile>

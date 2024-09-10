@@ -328,7 +328,7 @@
     <value>Globe temperature</value>
   </data>
   <data name="GlobeTemperatureVoltage" xml:space="preserve">
-    <value>Globe temperature voltage</value>
+    <value>Globe temperature voltage (deprecated item)</value>
   </data>
   <data name="Hour" xml:space="preserve">
     <value>Hour</value>
@@ -488,5 +488,8 @@
   </data>
   <data name="VC_Title" xml:space="preserve">
     <value>Velocity Calibrator</value>
+  </data>
+  <data name="LD_ViewLog" xml:space="preserve">
+    <value>View log data</value>
   </data>
 </root>

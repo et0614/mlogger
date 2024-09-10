@@ -328,7 +328,7 @@
     <value>グローブ温度</value>
   </data>
   <data name="GlobeTemperatureVoltage" xml:space="preserve">
-    <value>グローブ温度電圧</value>
+    <value>グローブ温度電圧 (廃止予定)</value>
   </data>
   <data name="Hour" xml:space="preserve">
     <value>時間</value>
@@ -488,5 +488,8 @@
   </data>
   <data name="VC_Title" xml:space="preserve">
     <value>風速校正</value>
+  </data>
+  <data name="LD_ViewLog" xml:space="preserve">
+    <value>ログデータの閲覧</value>
   </data>
 </root>

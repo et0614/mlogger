@@ -73,15 +73,16 @@ public partial class LoggingData : ContentPage
   /// <returns>クリップボード用データ</returns>
   public static string MakeClipData(string fileName, int maxLines)
   {
-    return MLSResource.Date + "," + MLSResource.Time + "," +
-        MLSResource.DrybulbTemperature + "," +
-        MLSResource.RelativeHumidity + "," +
-        MLSResource.GlobeTemperature + "," +
-        MLSResource.Velocity + "," +
-        MLSResource.Illuminance + "," +
-        MLSResource.GlobeTemperatureVoltage + "," +
-        MLSResource.VelocityVoltage + Environment.NewLine +
-        MLUtility.LoadDataFile(fileName, maxLines);
+    return MLSResource.Date + "," + 
+      MLSResource.Time + "," +
+      MLSResource.DrybulbTemperature + "," +
+      MLSResource.RelativeHumidity + "," +
+      MLSResource.GlobeTemperature + "," +
+      MLSResource.Velocity + "," +
+      MLSResource.Illuminance + "," +
+      MLSResource.GlobeTemperatureVoltage + "," +
+      MLSResource.VelocityVoltage + Environment.NewLine +
+      MLUtility.LoadDataFile(fileName, maxLines);
   }
 
   /// <summary>ファイルからクリップボード用データを作る</summary>
@@ -99,9 +100,10 @@ public partial class LoggingData : ContentPage
 
     //タイトル行
     string[] bf = lines[0].Split(',');
+    int col = 0;
     for (int j = 1; j < 9; j++)
     {
-      tableGrid.Add(new Label
+      Label lbl = new Label
       {
         Text = bf[j],
         BackgroundColor = Colors.White,
@@ -112,33 +114,39 @@ public partial class LoggingData : ContentPage
         Margin = new Thickness(1),
         Padding = new Thickness(2),
         LineBreakMode = LineBreakMode.CharacterWrap
-      }, j - 1, 0);
+      };
+      if (j != 7) tableGrid.Add(lbl, col++, 0);
     }
 
     //データ行
-    StringBuilder[] sBuilds = new StringBuilder[8];
+    StringBuilder[] sBuilds = new StringBuilder[7];
     for (int i = 1; i < lines.Length; i++)
     {
       if (lines[i] != "")
       {
         bf = lines[i].Split(',');
+        col = 0;
         for (int j = 1; j < 9; j++)
         {
-          if (i == 1) sBuilds[j - 1] = new StringBuilder("");
-          if(i == lines.Length-1) sBuilds[j - 1].Append(bf[j]);
-          else sBuilds[j - 1].AppendLine(bf[j]);
+          if (j != 7)
+          {
+            if (i == 1) sBuilds[col] = new StringBuilder("");
+            if (i == lines.Length - 1) sBuilds[col].Append(bf[j]);
+            else sBuilds[col].AppendLine(bf[j]);
+            col++;
+          }
         }
       }
     }
     //データが少ない場合には空行を入れておく
     if (lines.Length < 40)
       for (int i = 0; i < 40 - lines.Length; i++)
-        for (int j = 1; j < 9; j++)
-          sBuilds[j - 1].AppendLine();
+        for (int j = 0; j < sBuilds.Length; j++)
+          sBuilds[j].AppendLine();
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < sBuilds.Length; i++)
     {
-      tableGrid.Add(new Label
+      Label lbl = new Label
       {
         Text = sBuilds[i].ToString(),
         BackgroundColor = Colors.White,
@@ -147,7 +155,8 @@ public partial class LoggingData : ContentPage
         HorizontalOptions = LayoutOptions.Fill,
         VerticalOptions = LayoutOptions.Fill,
         Margin = new Thickness(1)
-      }, i, 1);
+      };
+      tableGrid.Add(lbl, i, 1);
     }
 
     //データが500を超える場合には続きがあることを表示

@@ -11,6 +11,7 @@ using MLS_Mobile.Resources.i18n;
 namespace MLS_Mobile;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
+[QueryProperty(nameof(MinVoltageAndCoefficients), "minVandCoefs")]
 public partial class VelocityCalibrator : ContentPage
 {
 
@@ -19,12 +20,39 @@ public partial class VelocityCalibrator : ContentPage
   /// <summary>平均化する時間[sec]</summary>
   private const int AVE_TIME = 10;
 
+  /// <summary>風速校正用最小風速[m/s]</summary>
+  private const float MIN_AFLOW = 0.2f;
+
+  /// <summary>風速校正用中間風速[m/s]</summary>
+  private const float MID_AFLOW = 0.6f;
+
+  /// <summary>風速校正用最大風速[m/s]</summary>
+  private const float MAX_AFLOW = 1.2f;
+
   #endregion
 
   #region インスタンス変数・プロパティ
 
   /// <summary>通信するMLoggerを取得する</summary>
   public MLogger Logger { get { return MLUtility.GetLogger(_mlLowAddress); } }
+
+  /// <summary>最小電圧[V]と係数リストを設定する</summary>
+  public double[] MinVoltageAndCoefficients
+  {
+    set
+    {
+      estimatedLine.Values = makePointsFromCoefficients(value[0], value[1], value[2], value[3]);
+      stopUpdatingChart = true;
+      aveVoltage.Text = value[0].ToString("F3");
+      coefA.Text = value[1].ToString("F3");
+      coefB.Text = value[2].ToString("F3");
+      coefC.Text = value[3].ToString("F3");
+      stopUpdatingChart = false;
+    }
+  }
+
+  /// <summary>校正中の電圧リスト[V]</summary>
+  private double[] calibratingVoltages { get; set; } = { 1.450, 1.648, 1.734, 1.801 };
 
   /// <summary>低位アドレス</summary>
   private string _mlLowAddress = "";
@@ -59,16 +87,13 @@ public partial class VelocityCalibrator : ContentPage
   /// <summary>風速電圧リスト[V]</summary>
   private double[] velVols = new double[AVE_TIME];
 
-  /// <summary>校正中の電圧リスト[V]</summary>
-  private double[] calbratingVoltages = { 1.450, 1.648, 1.734, 1.801 };
-
   private LineSeries<ObservablePoint> estimatedLine;
 
   /// <summary>計測された点</summary>
   private ObservablePoint[] measuredPoints = new ObservablePoint[4];
 
   /// <summary>計測中の電圧</summary>
-  private ObservablePoint[] voltagePoints = [new ObservablePoint(0.0, 1.0), new ObservablePoint(1.2, 1.0)];
+  private ObservablePoint[] voltagePoints = [new ObservablePoint(0.0, 1.0), new ObservablePoint(MAX_AFLOW + 0.2, 1.0)];
 
   #endregion
 
@@ -93,12 +118,51 @@ public partial class VelocityCalibrator : ContentPage
   {
     base.OnDisappearing();
 
-    //終了コマンド送信
+    showIndicator(MLSResource.CR_Connecting);
+    Task.Run(async () =>
+    {
+      try
+      {
+        //風速校正終了コマンド送信
+        int tryNum = 0;
+        Logger.HasEndCalibratingVoltageMessageReceived = false;
+        while (!Logger.HasEndCalibratingVoltageMessageReceived)
+        {
+          //5回失敗したらエラー表示
+          if (5 <= tryNum)
+          {
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+            });
+            return;
+          }
+          tryNum++;
+
+          //終了コマンドを送信
+          MLUtility.ConnectedXBee.SendSerialData
+          (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
+
+          await Task.Delay(500);
+        }
+      }
+      catch { }
+      finally
+      {
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          hideIndicator();
+        });
+      }
+    });
+
+    /*//終了コマンド送信
     Task.Run(() =>
     {
       MLUtility.ConnectedXBee.SendSerialData
       (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
-    });
+    });*/
 
     Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
   }
@@ -127,7 +191,7 @@ public partial class VelocityCalibrator : ContentPage
     bool isStabled = true;
     for (int i = 0; i < AVE_TIME - 1; i++)
     {
-      if (0.05 < Math.Abs(velVols[i] - aveVol))
+      if (0.03 < Math.Abs(velVols[i] - aveVol))
       {
         isStabled = false;
         break;
@@ -172,7 +236,7 @@ public partial class VelocityCalibrator : ContentPage
           NamePadding = new LiveChartsCore.Drawing.Padding(0, 0, 0, 10),
 
           MinLimit = 0.0,
-          MaxLimit = 1.2,
+          MaxLimit = MAX_AFLOW + 0.2,
           MinStep = 0.1,
           ForceStepToMin = true,
           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)
@@ -216,18 +280,12 @@ public partial class VelocityCalibrator : ContentPage
         }
       };
 
-    //特性係数初期化
-    MLUtility.EstimateCoefs(
-      0.3, 0.6, 1.0,
-      calbratingVoltages[0], calbratingVoltages[1], calbratingVoltages[2], calbratingVoltages[3],
-      out double cfA, out double cfB, out double cfC);
-
     //点
     measuredPoints = [
-        new ObservablePoint(0.0, calbratingVoltages[0]),
-        new ObservablePoint(0.3, calbratingVoltages[1]),
-        new ObservablePoint(0.6, calbratingVoltages[2]),
-        new ObservablePoint(1.0, calbratingVoltages[3])
+        new ObservablePoint(0.0, calibratingVoltages[0]),
+        new ObservablePoint(MIN_AFLOW, calibratingVoltages[1]),
+        new ObservablePoint(MID_AFLOW, calibratingVoltages[2]),
+        new ObservablePoint(MAX_AFLOW, calibratingVoltages[3])
       ];
 
     //電圧線
@@ -258,7 +316,7 @@ public partial class VelocityCalibrator : ContentPage
     //特性係数から算出した線
     estimatedLine = new LineSeries<ObservablePoint>
     {
-      Values = makePointsFromCoefficients(calbratingVoltages[0], cfA, cfB, cfC),
+      Values = makePointsFromCoefficients(1.45, 79.744, -12.029, 2.3595),
 
       Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 2 }, //線
       Fill = null, //下部塗りつぶし
@@ -319,7 +377,7 @@ public partial class VelocityCalibrator : ContentPage
       double vN = (cV / minV) - 1.0;
       double vel = vN * (coefC + vN * (coefB + vN * coefA));
       points.Add(new ObservablePoint(vel, cV));
-      if (1.2 < vel) break;
+      if (MAX_AFLOW + 0.2 < vel) break;
       cV += 0.05;
     }
     return points;
@@ -355,7 +413,7 @@ public partial class VelocityCalibrator : ContentPage
 
     //電圧から係数を推定
     MLUtility.EstimateCoefs(
-      0.3, 0.6, 1.0, 
+      MIN_AFLOW, MID_AFLOW, MAX_AFLOW, 
       volRef, vol1, vol2, vol3, 
       out double cfA, out double cfB, out double cfC);
 
@@ -447,6 +505,14 @@ public partial class VelocityCalibrator : ContentPage
         //開始に成功したら反映
         Application.Current.Dispatcher.Dispatch(() =>
         {
+          //ロギング
+          MLUtility.WriteLog(Logger.XBeeName + "; Velocity coefficient changed; " +
+            Logger.LowAddress + "; " +
+            "coef. A=" + Logger.VelocityCharacteristicsCoefA.ToString("F3") + "; " +
+            "coef. B=" + Logger.VelocityCharacteristicsCoefB.ToString("F3") + "; " +
+            "coef. C=" + Logger.VelocityCharacteristicsCoefC.ToString("F3") + "; "
+            );
+
           stopUpdatingChart = true;
           coefA.Text = Logger.VelocityCharacteristicsCoefA.ToString("F3");
           coefB.Text = Logger.VelocityCharacteristicsCoefB.ToString("F3");

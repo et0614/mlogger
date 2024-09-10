@@ -91,11 +91,7 @@
                 </Grid>
 
                 <!--係数設定-->
-                <Button Margin="0,15,0,0" Text="Set" FontSize="Large" Clicked="UpdateCoefficientButton_Clicked"/>
-                <!--<Grid Margin="0,15,0,0" RowDefinitions="Auto" ColumnDefinitions="*,*">
-                    <Button Grid.Row="0" Grid.Column="0" Margin="20,10,10,10" Text="Cancel" FontSize="Large" />
-                    <Button Grid.Row="0" Grid.Column="1" Margin="10,10,20,10" Text="Set" FontSize="Large" />
-                </Grid>-->
+                <Button Margin="0,15,0,0" Text="Update Coefficients" FontSize="Large" Clicked="UpdateCoefficientButton_Clicked"/>
 
             </StackLayout>
         </ScrollView>

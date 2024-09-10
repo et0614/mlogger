@@ -709,7 +709,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Globe temperature voltage に類似しているローカライズされた文字列を検索します。
+        ///   Globe temperature voltage (deprecated item) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string GlobeTemperatureVoltage {
             get {
@@ -822,6 +822,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string LD_Title {
             get {
                 return ResourceManager.GetString("LD_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   View log data に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_ViewLog {
+            get {
+                return ResourceManager.GetString("LD_ViewLog", resourceCulture);
             }
         }
         

@@ -431,6 +431,9 @@
 	  <MauiXaml Update="LoggingDataList.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="LogView.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="MLoggerScanner.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

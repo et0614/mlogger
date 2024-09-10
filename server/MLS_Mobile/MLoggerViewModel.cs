@@ -25,8 +25,6 @@ namespace MLS_Mobile
 
     private string _xbeeName = "MLogger_new";
 
-    //private string _drybulbTemperature, _relativeHumidity, _globeTemperature, _velocity, _illuminance, _mrt, _pmv, _ppd, _set;
-
     private string _drybulbTemperature = "";
     private string _relativeHumidity = "";
     private string _globeTemperature = "";
