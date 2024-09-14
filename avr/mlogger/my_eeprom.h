@@ -21,10 +21,10 @@ class my_eeprom
 		volatile static float VelCC_A, VelCC_B, VelCC_C;
 		
 		//計測真偽  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
-		volatile static bool measure_th, measure_glb, measure_vel, measure_ill, measure_AD1, measure_AD2, measure_AD3, measure_Prox;
+		volatile static bool measure_th, measure_glb, measure_vel, measure_ill, measure_AD1, measure_AD2, measure_AD3, measure_Prox, measure_co2;
 		
 		//計測間隔  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
-		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3;
+		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3, interval_co2;
 		
 		//計測開始日時
 		volatile static uint32_t start_dt;

@@ -107,6 +107,7 @@ volatile static int pass_glb = 0;
 volatile static int pass_vel = 0;
 volatile static int pass_ill = 0;
 volatile static int pass_ad1 = 0;
+volatile static int pass_co2 = 0;
 
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
@@ -167,6 +168,7 @@ int main(void)
 	my_i2c::InitializeI2C(); //I2C通信
 	my_i2c::InitializeAHT20(); //温湿度計
 	my_i2c::InitializeVCNL4030(); //照度計
+	my_i2c::InitializeSTC31C(); //CO2濃度計
 	if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
 	my_xbee::Initialize();  //XBee（UART）
 	
@@ -397,6 +399,7 @@ static void solve_command(const char *command)
 		pass_vel = getNormTime(lastSavedTime, my_eeprom::interval_vel);
 		pass_ill = getNormTime(lastSavedTime, my_eeprom::interval_ill);
 		pass_ad1 = getNormTime(lastSavedTime, my_eeprom::interval_AD1);
+		pass_co2 = getNormTime(lastSavedTime, my_eeprom::interval_co2);
 		
 		//ロギング設定をEEPROMに保存
 		my_eeprom::startAuto = command[13]=='e'; //Endlessロギング
@@ -418,19 +421,13 @@ static void solve_command(const char *command)
 		my_eeprom::measure_glb = (command[9] == 't');
 		my_eeprom::measure_vel = (command[15] == 't');
 		my_eeprom::measure_ill = (command[21] == 't');
-		if(37 < strlen(command))
-		{
-			my_eeprom::measure_AD1 = (command[37] == 't');
-			my_eeprom::measure_AD2 = (command[43] == 't');
-			my_eeprom::measure_AD3 = (command[49] == 't');
-		}
+		my_eeprom::measure_AD1 = (command[37] == 't');
+		my_eeprom::measure_AD2 = (command[43] == 't');
+		my_eeprom::measure_AD3 = (command[49] == 't');
+		my_eeprom::measure_Prox = (command[55] == 't');
 		//バージョンが低い場合の処理
-		else
-		{
-			my_eeprom::measure_AD1 = false;
-			my_eeprom::measure_AD2 = false;
-			my_eeprom::measure_AD3 = false;
-		}
+		if(56 < strlen(command)) my_eeprom::measure_co2 = (command[56] == 't');
+		else my_eeprom::measure_co2 = false;
 		
 		//測定時間間隔
 		char num[6];
@@ -443,28 +440,20 @@ static void solve_command(const char *command)
 		my_eeprom::interval_vel = atoi(num);
 		strncpy(num, command + 22, 5);
 		my_eeprom::interval_ill = atoi(num);
-		if(37 < strlen(command))
-		{
-			strncpy(num, command + 38, 5);
-			my_eeprom::interval_AD1 = atoi(num);
-			strncpy(num, command + 44, 5);
-			my_eeprom::interval_AD2 = atoi(num);
-			strncpy(num, command + 50, 5);
-			my_eeprom::interval_AD3 = atoi(num);
-		}
+		strncpy(num, command + 38, 5);
+		my_eeprom::interval_AD1 = atoi(num);
+		strncpy(num, command + 44, 5);
+		my_eeprom::interval_AD2 = atoi(num);
+		strncpy(num, command + 50, 5);
+		my_eeprom::interval_AD3 = atoi(num);
 		//バージョンが低い場合の処理
-		else
+		if(56 < strlen(command))
 		{
-			my_eeprom::interval_AD1 = 60;
-			my_eeprom::interval_AD2 = 60;
-			my_eeprom::interval_AD3 = 60;
+			strncpy(num, command + 57,5);
+			my_eeprom::interval_co2 = atoi(num);
 		}
-		
-		//近接センサの有効無効
-		if(37 < strlen(command)) my_eeprom::measure_Prox = (command[55] == 't');
-		//バージョンが低い場合の処理
-		else my_eeprom::measure_Prox = false;
-		
+		else my_eeprom::interval_co2 = 60;
+
 		//計測開始時刻
 		char num2[11];
 		num2[10] = '\0';
@@ -475,7 +464,7 @@ static void solve_command(const char *command)
 		my_eeprom::SetMeasurementSetting();
 		
 		//ACK
-		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d\r",
+		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
 			my_eeprom::measure_th, my_eeprom::interval_th, 
 			my_eeprom::measure_glb, my_eeprom::interval_glb, 
 			my_eeprom::measure_vel, my_eeprom::interval_vel, 
@@ -484,13 +473,14 @@ static void solve_command(const char *command)
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1, 
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2, 
 			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
-			my_eeprom::measure_Prox);
+			my_eeprom::measure_Prox,
+			my_eeprom::measure_co2, my_eeprom::interval_co2);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//Load Measurement Settings
 	else if(strncmp(command, "LMS", 3) == 0)
 	{
-		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d\r",
+		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
 			my_eeprom::measure_th, my_eeprom::interval_th,
 			my_eeprom::measure_glb, my_eeprom::interval_glb,
 			my_eeprom::measure_vel, my_eeprom::interval_vel,
@@ -499,7 +489,8 @@ static void solve_command(const char *command)
 			my_eeprom::measure_AD1, my_eeprom::interval_AD1,
 			my_eeprom::measure_AD2, my_eeprom::interval_AD2,
 			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
-			my_eeprom::measure_Prox);
+			my_eeprom::measure_Prox,
+			my_eeprom::measure_co2, my_eeprom::interval_co2);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//End Logging
@@ -598,6 +589,12 @@ static void solve_command(const char *command)
 		sleep_anemo();
 		calibratingVelocityVoltage = false;
 		my_xbee::bltx_chars("ECV\r");
+	}
+	//CO2センサの有無
+	else if(strncmp(command, "HCS", 3) == 0)
+	{
+		if(my_i2c::HasSTC31C()) my_xbee::bltx_chars("HCS:1\r");
+		else my_xbee::bltx_chars("HCS:0\r");
 	}
 	//現在時刻の更新
 	else if (strncmp(command, "UCT", 3) == 0)
@@ -712,6 +709,7 @@ static void execLogging()
 	char velVS[7] = "n/a";
 	char illS[9] = "n/a"; //0.01~83865.60
 	char adV1S[7] = "n/a";
+	char co2S[6] = "n/a"; //0~65535//5文字+\r
 	
 	//微風速測定************
 	pass_vel++;
@@ -731,8 +729,9 @@ static void execLogging()
 	}
 	
 	//温湿度測定************
+	bool mesCo2 = my_eeprom::measure_co2 && (int)my_eeprom::interval_co2 <= pass_co2; //CO2を計測する場合は温湿度が必要
 	pass_th++;
-	if(my_eeprom::measure_th && (int)my_eeprom::interval_th <= pass_th)
+	if(mesCo2 || (my_eeprom::measure_th && (int)my_eeprom::interval_th <= pass_th))
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
@@ -745,6 +744,14 @@ static void execLogging()
 		}
 		pass_th = 0;
 		hasNewData = true;
+		
+		//CO2測定
+		if(mesCo2)
+		{
+			uint16_t co2_u = 0;
+			if(my_i2c::ReadSTC31C(tmp_f, hmd_f, &co2_u)) sprintf(co2S, "%u\n", co2_u);
+			pass_co2 = 0;
+		}
 	}
 	
 	//グローブ温度測定************
@@ -829,13 +836,13 @@ static void execLogging()
 		gmtime_r(&ct, &dtNow);
 		
 		//書き出し文字列を作成
-		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,n/a,n/a\r",
+		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,n/a,n/a,%s\r",
 		dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S);
+		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, co2S);
 		
 		//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-		charBuff[my_xbee::MAX_CMD_CHAR-1]= '\0';
+		charBuff[my_xbee::MAX_CMD_CHAR-1]='\0';
 
 		if(outputToXBee) 
 			my_xbee::tx_chars(charBuff); //XBee Zigbee出力

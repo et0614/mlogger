@@ -25,19 +25,22 @@ namespace MLS_Mobile
 
     private string _xbeeName = "MLogger_new";
 
+    private bool _hasCO2LevelSensor = false;
+
     private string _drybulbTemperature = "";
     private string _relativeHumidity = "";
     private string _globeTemperature = "";
     private string _velocity = "";
     private string _illuminance = "";
     private string _mrt = "";
+    private string _co2Level = "";
     private string _pmv = "";
     private string _ppd = "";
     private string _set = "";
     private string _wbgt_out= "";
     private string _wbgt_in = "";
 
-    private DateTime _lastCom, _lastComDBT, _lastComHMD, _lastComGLB, _lastComVEL, _lastComILL;
+    private DateTime _lastCom, _lastComDBT, _lastComHMD, _lastComGLB, _lastComVEL, _lastComILL, _lastComCO2;
 
     /// <summary>XBee Low Addressを設定・取得する</summary>
     public string XBeeLowAddress
@@ -90,6 +93,20 @@ namespace MLS_Mobile
         if (_lastCom != value)
         {
           _lastCom = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    /// <summary>CO2濃度センサの有無を設定・取得する</summary>
+    public bool HasCO2LevelSensor
+    {
+      get { return _hasCO2LevelSensor; }
+      set
+      {
+        if (_hasCO2LevelSensor != value)
+        {
+          _hasCO2LevelSensor = value;
           OnPropertyChanged();
         }
       }
@@ -165,6 +182,20 @@ namespace MLS_Mobile
       }
     }
 
+    /// <summary>CO2濃度[ppm]を設定・取得する</summary>
+    public string CO2Level
+    {
+      get { return _co2Level; }
+      set
+      {
+        if (_co2Level != value)
+        {
+          _co2Level = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
     /// <summary>乾球温度の最終更新日時を設定・取得する</summary>
     public DateTime LastCommunicated_DBT
     {
@@ -230,6 +261,20 @@ namespace MLS_Mobile
         if (_lastComILL != value)
         {
           _lastComILL = value;
+          OnPropertyChanged();
+        }
+      }
+    }
+
+    /// <summary>CO2濃度の最終更新日時を設定・取得する</summary>
+    public DateTime LastCommunicated_CO2
+    {
+      get { return _lastComCO2; }
+      set
+      {
+        if (_lastComCO2 != value)
+        {
+          _lastComCO2 = value;
           OnPropertyChanged();
         }
       }
@@ -415,6 +460,7 @@ namespace MLS_Mobile
       GlobeTemperature = _mLogger.GlobeTemperature.LastValue.ToString("F1");
       Velocity = (1.00 < _mLogger.Velocity.LastValue) ? "OOR" : _mLogger.Velocity.LastValue.ToString("F2"); // 1.00m/s以上はOut of Range
       Illuminance = _mLogger.Illuminance.LastValue.ToString("F1");
+      CO2Level = _mLogger.CO2Level.LastValue.ToString("F0");
 
       //計測日時
       LastCommunicated_DBT = _mLogger.DrybulbTemperature.LastMeasureTime;
@@ -422,6 +468,7 @@ namespace MLS_Mobile
       LastCommunicated_GLB = _mLogger.GlobeTemperature.LastMeasureTime;
       LastCommunicated_VEL = _mLogger.Velocity.LastMeasureTime;
       LastCommunicated_ILL = _mLogger.Illuminance.LastMeasureTime;
+      LastCommunicated_CO2 = _mLogger.CO2Level.LastMeasureTime;
 
       //演算値
       MeanRadiantTemperature = _mLogger.MeanRadiantTemperature.ToString("F1");

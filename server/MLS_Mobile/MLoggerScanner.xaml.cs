@@ -11,7 +11,6 @@ using MLS_Mobile.Resources.i18n;
 using System.Windows.Input;
 using MLLib;
 using System.Text;
-using System.Reflection.Metadata;
 
 public partial class MLoggerScanner : ContentPage
 {
@@ -83,11 +82,8 @@ public partial class MLoggerScanner : ContentPage
     //スキャン実行
     refView.Command.Execute(null);
 
-    if (!bleChecked)
-    {
-      await checkBLEPermission();
-      bleChecked = true;
-    }
+    //BLE有効化を確認（Androidのみ）
+    await checkBLEPermission();
   }
 
   private void scanXBees()
@@ -143,7 +139,7 @@ public partial class MLoggerScanner : ContentPage
         await Task.Run(async() =>
         {
           //バージョンを取得する
-          for (int i = 0; i < 10; i++)
+          for (int i = 0; i < 5; i++)
           {
             if (MLUtility.Logger.HasVersionReceived) return;
             MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
@@ -238,15 +234,21 @@ public partial class MLoggerScanner : ContentPage
 
   private async Task checkBLEPermission()
   {
+    if (!bleChecked)
+    {
+
 #if ANDROID
-    var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
-    if (status == PermissionStatus.Granted) return;
+      var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+      if (status == PermissionStatus.Granted) return;
 
-    if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
-      await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_Bluetooth, "OK");
+      if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
+        await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_Bluetooth, "OK");
 
-    status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+      status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 #endif
+
+      bleChecked = true;
+    }
   }
 
 #region インジケータの操作

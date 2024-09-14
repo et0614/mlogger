@@ -53,26 +53,6 @@
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
-	  <ApplicationVersion>25</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
-	  <ApplicationVersion>25</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
-	  <ApplicationVersion>25</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.22</ApplicationDisplayVersion>
-	  <ApplicationVersion>25</ApplicationVersion>
-	</PropertyGroup>
-
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
 	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
 	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>

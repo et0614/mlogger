@@ -99,6 +99,7 @@ public partial class DeviceSetting : ContentPage
     base.OnDisappearing();
 
     //シェイクイベント解除
+    Accelerometer.Stop();
     Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
   }
 
@@ -172,6 +173,9 @@ public partial class DeviceSetting : ContentPage
           }
           catch { }
         }
+
+        //ログ
+        MLUtility.WriteLog(Logger.XBeeName + "; End logging; ");
       });
     }
   }
@@ -205,6 +209,9 @@ public partial class DeviceSetting : ContentPage
 
     //Zigbee LED状態を更新
     loadZigbeeLEDStatus();
+
+    //CO2濃度センサの有無を反映
+    loadCO2SensorInfo();
   }
 
   #endregion
@@ -279,6 +286,35 @@ public partial class DeviceSetting : ContentPage
     });
   }
 
+  private void loadCO2SensorInfo()
+  {
+    Logger.HasCO2LevelSensorReceived = false;
+    Task.Run(async () =>
+    {
+      int tryNum = 0;
+      while (!Logger.HasCO2LevelSensorReceived)
+      {
+        try
+        {
+          //CO2濃度センサの有無取得コマンドを送信
+          if (MLUtility.ConnectedXBee.IsConnected)
+            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeHasCO2LevelSensorCommand()));
+        }
+        catch { }
+        await Task.Delay(500);
+        if (Logger == null) return; //接続解除時には終了
+        tryNum++;
+        if (5 < tryNum) return; //5回であきらめる（旧機種には本機能は無いため）
+      }
+
+      //更新された情報を反映
+      Application.Current.Dispatcher.Dispatch(() =>
+      {
+        co2LevelGird.IsVisible = Logger.HasCO2LevelSensor;
+      });
+    });
+  }
+
   /// <summary>名称を設定する</summary>
   /// <param name="name">名称</param>
   private void updateName(string name)
@@ -324,8 +360,7 @@ public partial class DeviceSetting : ContentPage
       cbx_glb.IsToggled, glbSpan,
       cbx_vel.IsToggled, velSpan,
       cbx_lux.IsToggled, luxSpan,
-      false, 0, false, 0, false, 0, false);
-
+      false, 0, false, 0, false, 0, false, false, 0);
 
     Logger.HasMeasurementSettingReceived = false;
     Task.Run(async () =>
@@ -674,14 +709,22 @@ public partial class DeviceSetting : ContentPage
         //開始に成功したらページ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          if (lMode == loggingMode.bluetooth) 
-          {
+          //Bluetoothの場合にはスマートフォンでデータ表示
+          if (lMode == loggingMode.bluetooth)
             Shell.Current.GoToAsync(nameof(DataReceive),
               new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
               );
-          }
+          //フラッシュメモリまたはPCへの保存の場合にはスタートページへ戻る
           else Shell.Current.GoToAsync("..");
         });
+
+        //ログ
+        if(lMode == loggingMode.bluetooth)
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging by smart phone; ");
+        else if(lMode == loggingMode.mfcard)
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to flash memory; ");
+        else
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to PC; ");
       }
       catch { }
       finally

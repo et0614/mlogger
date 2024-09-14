@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.LogView"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="LogView">
+    <StackLayout>
+        <ScrollView Orientation="Both" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+            <Label 
+                x:Name="logLabel"
+                Text=""
+                HorizontalTextAlignment="Start"
+                VerticalTextAlignment="Start"
+                VerticalOptions="FillAndExpand"
+                BackgroundColor="White"
+                Padding="10"
+                FontSize="Medium"
+            />
+        </ScrollView>
+
+        <!--共有ボタン-->
+        <BoxView HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
+        <Button Text="{x:Static res:MLSResource.LD_Share}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="share_Clicked" FontSize="Medium">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="24" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
+        </Button>
+    </StackLayout>
+</ContentPage>

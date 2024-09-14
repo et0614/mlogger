@@ -87,6 +87,9 @@ namespace MLLib
     /// <summary>温度自動校正受信イベント</summary>
     public event EventHandler? TemperatureAutoCalibrationReceivedEvent;
 
+    /// <summary>CO2濃度センサの有無受信イベント</summary>
+    public event EventHandler? HasCO2LevelSensorReceivedEvent;
+
     /// <summary>日時更新受信イベント</summary>
     public event EventHandler? UpdateCurrentTimeReceivedEvent;
 
@@ -145,6 +148,10 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>温度自動校正イベントを受信したか否かを設定・取得する</summary>
     public bool HasTemperatureAutoCalibrationReceived { get; set; } = false;
+
+    [JsonIgnore]
+    /// <summary>CO2濃度センサの有無を受信したか否かを設定・取得する</summary>
+    public bool HasCO2LevelSensorReceived { get; set; } = false;
 
     [JsonIgnore]
     /// <summary>現在日時変更イベントを受信したか否かを設定・取得する</summary>
@@ -248,6 +255,10 @@ namespace MLLib
     /// <summary>風速計の特性係数Cを取得する</summary>
     public double VelocityCharacteristicsCoefC { get; private set; }
 
+    [JsonIgnore]
+    /// <summary>CO2濃度センサの有無を取得する</summary>
+    public bool HasCO2LevelSensor { get; private set; }
+
     #endregion
 
     #region 計測値関連のプロパティ
@@ -291,6 +302,10 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>汎用電圧3計測情報を取得する</summary>
     public MeasurementInfo GeneralVoltage3 { get; } = new MeasurementInfo();
+
+    [JsonPropertyName("co2Level")]
+    /// <summary>CO2濃度計測情報を取得する</summary>
+    public MeasurementInfo CO2Level { get; } = new MeasurementInfo();
 
     [JsonIgnore]
     /// <summary>近接センサ計測の真偽を取得する</summary>
@@ -600,6 +615,13 @@ namespace MLLib
             HasTemperatureAutoCalibrationReceived = true;
             break;
 
+          //CO2濃度センサの有無
+          case "HCS":
+            HasCO2LevelSensor = bool.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+            HasCO2LevelSensorReceivedEvent?.Invoke(this, EventArgs.Empty);
+            HasCO2LevelSensorReceived = true;
+            break;
+
           //日時更新
           case "UCT":
             UpdateCurrentTimeReceivedEvent?.Invoke(this, EventArgs.Empty);
@@ -639,6 +661,9 @@ namespace MLLib
         double gpVoltage1 = (buff[10] == "n/a") ? double.NaN : double.Parse(buff[10]);
         double gpVoltage2 = (buff[11] == "n/a") ? double.NaN : double.Parse(buff[11]);
         double gpVoltage3 = (buff[12] == "n/a") ? double.NaN : double.Parse(buff[12]);
+        //CO2濃度がある場合
+        double co2Level = double.NaN;
+        if(13 < buff.Length) co2Level = (buff[13] == "n/a") ? double.NaN : double.Parse(buff[13]);
 
         //最後の計測日時
         LastMeasured = now;
@@ -680,6 +705,11 @@ namespace MLLib
           GeneralVoltage3.LastMeasureTime = now;
           GeneralVoltage3.LastValue = gpVoltage3;
         }
+        if (!double.IsNaN(co2Level))
+        {
+          CO2Level.LastMeasureTime = now;
+          CO2Level.LastValue = co2Level;
+        }
 
         //熱的快適性指標を計算する
         updateThermalIndices();
@@ -710,6 +740,7 @@ namespace MLLib
       GeneralVoltage2.Measure = (buff[11] == "1");
       GeneralVoltage3.Measure = (buff[13] == "1");
       MeasureProximity = (buff[15] == "1");
+      if(16 < buff.Length) CO2Level.Measure = (buff[16] == "1");
 
       //計測時間間隔[sec]
       DrybulbTemperature.Interval = RelativeHumdity.Interval = int.Parse(buff[1]);
@@ -719,6 +750,7 @@ namespace MLLib
       GeneralVoltage1.Interval = int.Parse(buff[10]);
       GeneralVoltage2.Interval = int.Parse(buff[12]);
       GeneralVoltage3.Interval = int.Parse(buff[14]);
+      if(17 < buff.Length) CO2Level.Interval = int.Parse(buff[17]);
 
       //計測開始日時
       StartMeasuringDateTime = GetDateTimeFromUTime(long.Parse(buff[8]));
@@ -882,7 +914,8 @@ namespace MLLib
       bool measureGPV1, int intervalGPV1,
       bool measureGPV2, int intervalGPV2,
       bool measureGPV3, int intervalGPV3,
-      bool measureProx)
+      bool measureProx,
+      bool measureCO2, int intervalCO2)
     {
       return "\rCMS"
         + (measureTH ? "t" : "f") + string.Format("{0,5}", intervalTH)
@@ -893,7 +926,9 @@ namespace MLLib
         + (measureGPV1 ? "t" : "f") + string.Format("{0,5}", intervalGPV1)
         + (measureGPV2 ? "t" : "f") + string.Format("{0,5}", intervalGPV2)
         + (measureGPV3 ? "t" : "f") + string.Format("{0,5}", intervalGPV3)
-        + (measureProx ? "t" : "f") + "\r";
+        + (measureProx ? "t" : "f") 
+        + (measureCO2 ? "t" : "f") + string.Format("{0,5}", intervalCO2)
+        + "\r";
     }
 
     /// <summary>補正係数設定コマンドをつくる</summary>
@@ -1038,6 +1073,13 @@ namespace MLLib
     public static string MakeUpdateCurrentTimeCommand()
     {
       return MakeUpdateCurrentTimeCommand(DateTime.Now);
+    }
+
+    /// <summary>CO2濃度計の有無確認コマンドをつくる</summary>
+    /// <returns>CO2濃度計の有無確認コマンド</returns>
+    public static string MakeHasCO2LevelSensorCommand()
+    {
+      return "\rHCS\r";
     }
 
     /// <summary>現在日時更新コマンドをつくる</summary>
@@ -1405,6 +1447,9 @@ namespace MLLib
 
     /// <summary>汎用電圧3計測情報を取得する</summary>
     MeasurementInfo GeneralVoltage3 { get; }
+
+    /// <summary>CO2濃度計測情報を取得する</summary>
+    MeasurementInfo CO2Level { get; }
 
     /// <summary>近接センサ計測の真偽を取得する</summary>
     bool MeasureProximity { get; }

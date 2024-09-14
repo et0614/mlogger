@@ -80,6 +80,29 @@ class my_i2c
 		 * @return 読取成功で1、失敗で0
 		 */
 		static uint8_t ReadP3T1750DP(float * tempValue);
+		
+		/**
+		 * @fn
+		 * STC31Cがあるか否か
+		 * @return あれば1、なければ0
+		 */
+		static uint8_t HasSTC31C();
+		
+		/**
+		 * @fn
+		 * STC31Cを初期化する
+		 */
+		static void InitializeSTC31C();
+		
+		/**
+		 * @fn
+		 * STC31CからCO2濃度[ppm]を読み取る
+		 * @param (temperature) 補正用の乾球温度[C]
+		 * @param (relatvieHumid) 補正用の相対湿度[%]
+		 * @param (co2Level) CO2濃度[ppm]
+		 * @return 読取成功で1、失敗で0
+		 */
+		static uint8_t ReadSTC31C(float temperature, float relatvieHumid, uint16_t *co2Level);
 };
   
 #endif /* MY_I2C_H_ */

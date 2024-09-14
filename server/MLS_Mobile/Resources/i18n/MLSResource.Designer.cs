@@ -232,6 +232,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   CO2 Level に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CO2level {
+            get {
+                return ResourceManager.GetString("CO2level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Connect to M-Logger に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string ConnectMLogger {
@@ -516,15 +525,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_LoggingToSmartPhone {
             get {
                 return ResourceManager.GetString("DS_LoggingToSmartPhone", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   The name must be one-byte characters に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_OnebyteAlert {
-            get {
-                return ResourceManager.GetString("DS_OnebyteAlert", resourceCulture);
             }
         }
         
@@ -826,7 +826,7 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   View log data に類似しているローカライズされた文字列を検索します。
+        ///   View activity log に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string LD_ViewLog {
             get {

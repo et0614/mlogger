@@ -267,9 +267,6 @@
   <data name="DS_LoggingToSmartPhone" xml:space="preserve">
     <value>スマートフォンに記録</value>
   </data>
-  <data name="DS_OnebyteAlert" xml:space="preserve">
-    <value>半角名称が必要です</value>
-  </data>
   <data name="DS_OtherSetting" xml:space="preserve">
     <value>その他の設定</value>
   </data>
@@ -490,6 +487,9 @@
     <value>風速校正</value>
   </data>
   <data name="LD_ViewLog" xml:space="preserve">
-    <value>ログデータの閲覧</value>
+    <value>計測器操作ログの閲覧</value>
+  </data>
+  <data name="CO2level" xml:space="preserve">
+    <value>CO2濃度</value>
   </data>
 </root>

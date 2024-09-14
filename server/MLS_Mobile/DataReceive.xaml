@@ -12,89 +12,98 @@
     
     <Grid BackgroundColor="{StaticResource Lightest_G}">
         <ScrollView Orientation="Vertical" VerticalScrollBarVisibility="Never">
-            <StackLayout>
-                <Grid Margin="20,20,20,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="45"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="40"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.DrybulbTemperature}" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{ Binding LastCommunicated_DBT, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
+            <StackLayout Margin="20,20,20,0">
+                <!--乾球温度-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.DrybulbTemperature}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{ Binding LastCommunicated_DBT, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{ Binding DrybulbTemperature, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
                     <Label Grid.Row="1" Grid.Column="2" Text="°CDB" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="2" Grid.Column="0" Text ="{x:Static res:MLSResource.RelativeHumidity}" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_HMD, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
-                    <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding RelativeHumdity, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="3" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="4" Grid.Column="0" Text ="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_GLB, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
-                    <Label Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding GlobeTemperature, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="5" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="6" Grid.Column="0" Text ="{x:Static res:MLSResource.Velocity}" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_VEL, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
-                    <Label Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Velocity, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="7" Grid.Column="2" Text="m/s" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="8" Grid.Column="0" Text ="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_ILL, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="End" HorizontalTextAlignment="End" TextColor="Black"/>
-                    <Label Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Illuminance, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="9" Grid.Column="2" Text="lux" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="10" Grid.Column="0" Text="MRT" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding MeanRadiantTemperature, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="11" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="12" Grid.Column="0" Text="PMV" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding PMV, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="13" Grid.Column="2" Text="-" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="14" Grid.Column="0" Text="PPD" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="15" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding PPD, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="15" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="16" Grid.Column="0" Text="SETStar" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="17" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SETStar, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="17" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="18" Grid.Column="0" Text="WBGT (Outdoor)" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="19" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Outdoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="19" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
-
-                    <Label Grid.Row="20" Grid.Column="0" Text="WBGT (Indoor)" VerticalTextAlignment="End"/>
-                    <Label Grid.Row="21" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Indoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
-                    <Label Grid.Row="21" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
                 </Grid>
 
-                <Grid Margin="20">
+                <!--相対湿度-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.RelativeHumidity}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_HMD, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding RelativeHumdity, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--グローブ温度-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_GLB, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding GlobeTemperature, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--風速-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.Velocity}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_VEL, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Velocity, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="m/s" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--照度-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_ILL, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Illuminance, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="lux" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--CO2-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40" IsVisible="{ Binding HasCO2LevelSensor }">
+                    <Label Grid.Row="0" Grid.Column="0" Text ="{x:Static res:MLSResource.CO2level}" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_CO2, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding CO2Level, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="ppm" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--MRT-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="MRT" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding MeanRadiantTemperature, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--PMV-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="PMV" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding PMV, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="-" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--PPD-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="PPD" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding PPD, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="%" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--SET Star-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="SETStar" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SETStar, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--WBGT(Outdoor)-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="WBGT (Outdoor)" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Outdoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <!--WBGT(Indoor)-->
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
+                    <Label Grid.Row="0" Grid.Column="0" Text="WBGT (Indoor)" VerticalTextAlignment="End" FontSize="Large"/>
+                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding WBGT_Indoor, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>

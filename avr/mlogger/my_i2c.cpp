@@ -20,6 +20,9 @@ const uint8_t AHT20_ADD = 0x38 << 1;
 //P3T1750DPのアドレス（0x24=0b10010000; 0x48=0b01001000, A0=A1=A2=GND）
 const uint8_t P3T1750DP_ADD = 0x48 << 1;
 
+//STC31Cのアドレス
+const uint8_t STC31C_ADD = 0x29 << 1;
+
 enum 
 {
 	I2C_INIT = 0,
@@ -456,4 +459,110 @@ uint8_t my_i2c::ReadP3T1750DP(float *tempValue)
 		*tempValue = 0.0625 * data;
 	}
 	return 1; //成功
+}
+
+uint8_t my_i2c::HasSTC31C(void)
+{
+	if(_start_writing(STC31C_ADD) != I2C_ACKED)
+	{
+		_bus_stop();
+		return 0; 
+	}
+	else 
+	{
+		_bus_stop();
+		return 1;
+	}
+}
+
+void my_i2c::InitializeSTC31C(void)
+{	
+	//スリープさせる
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return; } //スリープコマンド1
+	if(_bus_write(0x77) != I2C_ACKED) { _bus_stop(); return; } //スリープコマンド2
+	_bus_stop();
+}
+
+uint8_t my_i2c::ReadSTC31C(float temperature, float relatvieHumid, uint16_t *co2Level)
+{
+	*co2Level = 0;
+	
+	//プローブ抜き差し時には初期化されてしまうため、念の為、毎回、ガス設定をする
+	uint8_t buffer[2];
+	buffer[0] = 0x00;
+	buffer[1] = 0x13;
+	uint8_t rcrc = crc8((uint8_t*)buffer, 2);
+	
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return 0; } //測定ガス種別設定コマンド1
+	if(_bus_write(0x15) != I2C_ACKED) { _bus_stop(); return 0; } //測定ガス種別設定コマンド2
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; } //引数1：空気中の二酸化炭素(40%=400000ppmまで)
+	if(_bus_write(0x13) != I2C_ACKED) { _bus_stop(); return 0; } //引数2：空気中の二酸化炭素(40%=400000ppmまで)
+	if(_bus_write(rcrc) != I2C_ACKED) { _bus_stop(); return 0; } //CRC
+	_bus_stop();
+	
+	//補正用温度をキャスト
+	uint16_t tmp = (temperature * 200.0f);
+	uint8_t tmps[2];
+	tmps[0] = (uint8_t)(tmp >> 8);
+	tmps[1] = (uint8_t)(tmp & 0xFF);
+	rcrc = crc8((uint8_t*)tmps, 2);
+	
+	//温度を送信
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return 0; } //補正用温度送信コマンド1
+	if(_bus_write(0x1E) != I2C_ACKED) { _bus_stop(); return 0; } //補正用温度送信コマンド2
+	if(_bus_write(tmps[0]) != I2C_ACKED) { _bus_stop(); return 0; } //引数1：乾球温度（上位ビット）
+	if(_bus_write(tmps[1]) != I2C_ACKED) { _bus_stop(); return 0; } //引数2：乾球温度（下位ビット）
+	if(_bus_write(rcrc) != I2C_ACKED) { _bus_stop(); return 0; } //CRC
+	_bus_stop();
+	
+	//補正用湿度をキャスト
+	uint16_t hmd = (relatvieHumid * 65535 / 100);
+	uint8_t hmds[2];
+	hmds[0] = (uint8_t)(hmd >> 8);
+	hmds[1] = (uint8_t)(hmd & 0xFF);
+	rcrc = crc8((uint8_t*)hmds, 2);
+	
+	//湿度を送信
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return 0; } //補正用湿度送信コマンド1
+	if(_bus_write(0x24) != I2C_ACKED) { _bus_stop(); return 0; } //補正用湿度送信コマンド2
+	if(_bus_write(hmds[0]) != I2C_ACKED) { _bus_stop(); return 0; } //引数1：相対湿度（上位ビット）
+	if(_bus_write(hmds[1]) != I2C_ACKED) { _bus_stop(); return 0; } //引数2：相対湿度（下位ビット）
+	if(_bus_write(rcrc) != I2C_ACKED) { _bus_stop(); return 0; } //CRC
+	_bus_stop();
+	
+	//気圧補正もあるが計測していないため、デフォルトの101.3kPaとなる
+	//***
+	
+	//計測コマンド送信
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return 0; } //計測コマンド1
+	if(_bus_write(0x39) != I2C_ACKED) { _bus_stop(); return 0; } //計測コマンド2
+		
+	//計測には最大で110ms必要
+	_delay_ms(110);
+	
+	//計測値受信
+	if(_start_reading(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; } //計測値がない場合にはNACKを受信
+	if(_bus_read(1, 0, &buffer[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //計測値上位ビット
+	if(_bus_read(1, 0, &buffer[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //計測値下位ビット
+	if(_bus_read(0, 1, &rcrc) != I2C_SUCCESS) { _bus_stop(); return 0; } //CRC, NACKで受信を終了させる
+	
+	//CRCチェック
+	if(crc8((uint8_t*)buffer, 2) != rcrc) return 0;
+
+	// 16ビットの整数値に再構成
+	*co2Level = (uint16_t)(buffer[0] << 8) | buffer[1];
+	*co2Level = (uint16_t)(((float)(*co2Level - 16384) / 32768.0f) * 1000000.0f);
+
+	//スリープさせる
+	if(_start_writing(STC31C_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0x36) != I2C_ACKED) { _bus_stop(); return 0; } //スリープコマンド1
+	if(_bus_write(0x77) != I2C_ACKED) { _bus_stop(); return 0; } //スリープコマンド2
+	_bus_stop();
+
+	return 1;
 }

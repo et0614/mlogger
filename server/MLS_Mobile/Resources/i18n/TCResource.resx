@@ -519,4 +519,7 @@
   <data name="Wrestling" xml:space="preserve">
     <value>Wrestling, competitive</value>
   </data>
+  <data name="DS_OnebyteAlert" xml:space="preserve">
+    <value>The name must be one-byte characters</value>
+  </data>
 </root>

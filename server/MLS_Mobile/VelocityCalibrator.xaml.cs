@@ -118,7 +118,6 @@ public partial class VelocityCalibrator : ContentPage
   {
     base.OnDisappearing();
 
-    showIndicator(MLSResource.CR_Connecting);
     Task.Run(async () =>
     {
       try
@@ -147,22 +146,7 @@ public partial class VelocityCalibrator : ContentPage
         }
       }
       catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
     });
-
-    /*//終了コマンド送信
-    Task.Run(() =>
-    {
-      MLUtility.ConnectedXBee.SendSerialData
-      (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
-    });*/
 
     Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
   }
@@ -191,7 +175,7 @@ public partial class VelocityCalibrator : ContentPage
     bool isStabled = true;
     for (int i = 0; i < AVE_TIME - 1; i++)
     {
-      if (0.03 < Math.Abs(velVols[i] - aveVol))
+      if (0.02 < Math.Abs(velVols[i] - aveVol))
       {
         isStabled = false;
         break;
@@ -508,6 +492,7 @@ public partial class VelocityCalibrator : ContentPage
           //ロギング
           MLUtility.WriteLog(Logger.XBeeName + "; Velocity coefficient changed; " +
             Logger.LowAddress + "; " +
+            "min. voltage=" + Logger.VelocityMinVoltage.ToString("F3") + "; " +
             "coef. A=" + Logger.VelocityCharacteristicsCoefA.ToString("F3") + "; " +
             "coef. B=" + Logger.VelocityCharacteristicsCoefB.ToString("F3") + "; " +
             "coef. C=" + Logger.VelocityCharacteristicsCoefC.ToString("F3") + "; "

@@ -445,6 +445,4 @@ namespace MLS_Mobile
     #endregion
 
   }
-
-
 }

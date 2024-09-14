@@ -1217,9 +1217,8 @@ namespace MLController
         cbx_gpv1Measure.Checked, itGV1,
         false, 87600,
         false, 87600,
-        //cbx_gpv2Measure.Checked, itGV2,
-        //cbx_gpv3Measure.Checked, itGV3,
-        rbtn_prox.Checked);
+        rbtn_prox.Checked,
+        false, 87600);
 
       //1件ずつコマンドを送信
       for (int i = 0; i < lv_setting.SelectedItems.Count; i++)

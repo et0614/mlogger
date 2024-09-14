@@ -55,6 +55,7 @@ static uint8_t EEMEM EEP_MES_AD1;
 static uint8_t EEMEM EEP_MES_AD2;
 static uint8_t EEMEM EEP_MES_AD3;
 static uint8_t EEMEM EEP_MES_PRX;
+static uint8_t EEMEM EEP_MES_CO2;
 
 //計測間隔
 static unsigned int EEMEM EEP_STP_TH;
@@ -64,6 +65,7 @@ static unsigned int EEMEM EEP_STP_ILL;
 static unsigned int EEMEM EEP_STP_AD1;
 static unsigned int EEMEM EEP_STP_AD2;
 static unsigned int EEMEM EEP_STP_AD3;
+static unsigned int EEMEM EEP_STP_CO2;
 
 //計測開始日時
 static uint32_t EEMEM EEP_START_DT;
@@ -101,6 +103,7 @@ volatile bool my_eeprom::measure_AD1 = false;
 volatile bool my_eeprom::measure_AD2 = false;
 volatile bool my_eeprom::measure_AD3 = false;
 volatile bool my_eeprom::measure_Prox = false;
+volatile bool my_eeprom::measure_co2 = false;
 
 //計測間隔
 volatile unsigned int my_eeprom::interval_th = 1;
@@ -110,6 +113,7 @@ volatile unsigned int my_eeprom::interval_ill = 1;
 volatile unsigned int my_eeprom::interval_AD1 = 1;
 volatile unsigned int my_eeprom::interval_AD2 = 1;
 volatile unsigned int my_eeprom::interval_AD3 = 1;
+volatile unsigned int my_eeprom::interval_co2 = 1;
 
 //計測開始日時
 volatile uint32_t my_eeprom::start_dt = 1609459200;
@@ -180,6 +184,8 @@ void initMemory()
 	eeprom_update_byte(&EEP_MES_AD3,'F');
 	eeprom_busy_wait();
 	eeprom_update_byte(&EEP_MES_PRX,'F');
+	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_CO2,'F');
 	
 	//計測間隔
 	eeprom_busy_wait();
@@ -196,6 +202,8 @@ void initMemory()
 	eeprom_update_word(&EEP_STP_AD2, 1);
 	eeprom_busy_wait();
 	eeprom_update_word(&EEP_STP_AD3, 1);
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_CO2, 1);
 	
 	//計測開始日時
 	eeprom_busy_wait();
@@ -460,6 +468,11 @@ void my_eeprom::SetMeasurementSetting()
 	eeprom_update_byte(&EEP_MES_PRX,my_eeprom::measure_Prox ? 'T' : 'F');
 
 	eeprom_busy_wait();
+	eeprom_update_byte(&EEP_MES_CO2,my_eeprom::measure_co2 ? 'T' : 'F');
+	eeprom_busy_wait();
+	eeprom_update_word(&EEP_STP_CO2,my_eeprom::interval_co2);
+	
+	eeprom_busy_wait();
 	eeprom_update_dword(&EEP_START_DT,my_eeprom::start_dt); //uint32_t
 }
 
@@ -551,6 +564,11 @@ void LoadMeasurementSetting()
 	my_eeprom::measure_AD3 = (eeprom_read_byte(&EEP_MES_AD3) == 'T');
 	eeprom_busy_wait();
 	my_eeprom::interval_AD3 = eeprom_read_word(&EEP_STP_AD3);
+	
+	eeprom_busy_wait();
+	my_eeprom::measure_co2 = (eeprom_read_byte(&EEP_MES_CO2) == 'T');
+	eeprom_busy_wait();
+	my_eeprom::interval_co2 = eeprom_read_word(&EEP_STP_CO2);
 	
 	eeprom_busy_wait();
 	my_eeprom::measure_Prox = (eeprom_read_byte(&EEP_MES_PRX) == 'T');
