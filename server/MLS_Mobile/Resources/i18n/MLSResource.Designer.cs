@@ -1096,6 +1096,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Please enable NearByDevice permission に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string SC_NearByDevice {
+            get {
+                return ResourceManager.GetString("SC_NearByDevice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   M-Logger not found に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Notfound {

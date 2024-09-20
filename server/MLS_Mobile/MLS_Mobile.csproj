@@ -54,7 +54,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
-	  <CodesignKey>Apple Development: Created via API (LL92SRYF5R)</CodesignKey>
+	  <CodesignKey>iPhone Developer</CodesignKey>
 	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>

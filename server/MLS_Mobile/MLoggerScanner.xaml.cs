@@ -238,20 +238,29 @@ public partial class MLoggerScanner : ContentPage
     {
 
 #if ANDROID
+      //Bluetoothに関わる権限
       var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
       if (status == PermissionStatus.Granted) return;
-
       if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
         await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_Bluetooth, "OK");
 
       status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+      //付近のデバイス（NearByDevice）に関わる権限
+      status = await Permissions.CheckStatusAsync<PermissionNearByDevice>();
+      if (status == PermissionStatus.Granted) return;
+      if (Permissions.ShouldShowRationale<PermissionNearByDevice>())
+        await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_NearByDevice, "OK");
+
+      status = await Permissions.RequestAsync<PermissionNearByDevice>();
+
 #endif
 
       bleChecked = true;
     }
   }
 
-#region インジケータの操作
+  #region インジケータの操作
 
   /// <summary>インジケータを表示する</summary>
   private void showIndicator(string message)
@@ -274,4 +283,21 @@ public partial class MLoggerScanner : ContentPage
 
 #endregion
 
+}
+
+/// <summary>
+/// 付近のデバイス（NearByDevice）の権限設定画面用
+/// </summary>
+internal class PermissionNearByDevice : Permissions.BasePlatformPermission
+{
+#if ANDROID
+  public override (string androidPermission, bool isRuntime)[] RequiredPermissions =>
+    new List<(string androidPermission, bool isRuntime)>
+    {
+        // Near By Deviceは以下の権限を要求するようにすると設定画面を出せる
+       (global::Android.Manifest.Permission.BluetoothScan,true),
+        (global::Android.Manifest.Permission.BluetoothConnect,true),
+        (global::Android.Manifest.Permission.BluetoothAdvertise,true)
+    }.ToArray();
+#endif
 }

@@ -45,7 +45,7 @@
                     </Border>
                     <Label Grid.Row="1" Grid.Column="2" Margin="5,0,0,0" Text="V" FontSize="Large" VerticalOptions="Center" HorizontalOptions="Start"/>
 
-                    <Button x:Name="btnVol2" Grid.Row="2" Grid.Column="0" Margin="0,2,10,2" Text="0.6 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
+                    <Button x:Name="btnVol2" Grid.Row="2" Grid.Column="0" Margin="0,2,10,2" Text="0.7 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
                     <Border Grid.Row="2" Grid.Column="1" Margin="5,2,5,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="eVol2" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
                                Text="1.734" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
@@ -53,7 +53,7 @@
                     </Border>
                     <Label Grid.Row="2" Grid.Column="2" Margin="5,0,0,0" Text="V" FontSize="Large" VerticalOptions="Center" HorizontalOptions="Start"/>
 
-                    <Button x:Name="btnVol3" Grid.Row="3" Grid.Column="0" Margin="0,2,10,2" Text="1.0 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
+                    <Button x:Name="btnVol3" Grid.Row="3" Grid.Column="0" Margin="0,2,10,2" Text="1.5 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
                     <Border Grid.Row="3" Grid.Column="1" Margin="5,2,5,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="eVol3" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
                                Text="1.801" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
@@ -68,26 +68,29 @@
                 </Grid>
 
                 <!--推定された係数-->
-                <Grid Margin="0,5,0,0" RowDefinitions="*,*,*" ColumnDefinitions="Auto,Auto,*">
-                    <Label Grid.Row="0" Grid.Column="0" Text="Velocity = " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="End"/>
+                <Grid Margin="0,5,0,0" RowDefinitions="*,*,*" ColumnDefinitions="Auto,*, Auto">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Vel = " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="End"/>
+                    
                     <Border Grid.Row="0" Grid.Column="1" Margin="10,2,10,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="coefA" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
                                Text="79.774" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="CoefficientEntry_TextChanged"/>
                     </Border>
-                    <Label Grid.Row="0" Grid.Column="2" Text="&#x00D7; (V/Vref)&#x00B3; + " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
+                    <Label Grid.Row="0" Grid.Column="2" Text="&#x00D7; (V/Vref-1.0)&#x00B3; + " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
+                    
                     <Border Grid.Row="1" Grid.Column="1" Margin="10,2,10,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="coefB" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
                                Text="-12.029" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="CoefficientEntry_TextChanged"/>
                     </Border>
-                    <Label Grid.Row="1" Grid.Column="2" Text="&#x00D7; (V/Vref)&#x00B2; + " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
+                    <Label Grid.Row="1" Grid.Column="2" Text="&#x00D7; (V/Vref-1.0)&#x00B2; + " FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
+                    
                     <Border Grid.Row="2" Grid.Column="1" Margin="10,2,10,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="coefC" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
                                Text="2.360" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="CoefficientEntry_TextChanged"/>
                     </Border>
-                    <Label Grid.Row="2" Grid.Column="2" Text="&#x00D7; (V/Vref)" FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
+                    <Label Grid.Row="2" Grid.Column="2" Text="&#x00D7; (V/Vref-1.0)" FontSize="Large" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" HorizontalOptions="Start"/>
                 </Grid>
 
                 <!--係数設定-->

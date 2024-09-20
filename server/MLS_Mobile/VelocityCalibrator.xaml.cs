@@ -21,13 +21,13 @@ public partial class VelocityCalibrator : ContentPage
   private const int AVE_TIME = 10;
 
   /// <summary>風速校正用最小風速[m/s]</summary>
-  private const float MIN_AFLOW = 0.2f;
+  private const float MIN_AFLOW = 0.3f;
 
   /// <summary>風速校正用中間風速[m/s]</summary>
-  private const float MID_AFLOW = 0.6f;
+  private const float MID_AFLOW = 0.7f;
 
   /// <summary>風速校正用最大風速[m/s]</summary>
-  private const float MAX_AFLOW = 1.2f;
+  private const float MAX_AFLOW = 1.5f;
 
   #endregion
 
@@ -52,7 +52,7 @@ public partial class VelocityCalibrator : ContentPage
   }
 
   /// <summary>校正中の電圧リスト[V]</summary>
-  private double[] calibratingVoltages { get; set; } = { 1.450, 1.648, 1.734, 1.801 };
+  private double[] calibratingVoltages { get; set; } = { 1.450, 1.527, 1.582, 1.646 };
 
   /// <summary>低位アドレス</summary>
   private string _mlLowAddress = "";
@@ -175,7 +175,7 @@ public partial class VelocityCalibrator : ContentPage
     bool isStabled = true;
     for (int i = 0; i < AVE_TIME - 1; i++)
     {
-      if (0.02 < Math.Abs(velVols[i] - aveVol))
+      if (0.01 < Math.Abs(velVols[i] - aveVol))
       {
         isStabled = false;
         break;
@@ -220,7 +220,7 @@ public partial class VelocityCalibrator : ContentPage
           NamePadding = new LiveChartsCore.Drawing.Padding(0, 0, 0, 10),
 
           MinLimit = 0.0,
-          MaxLimit = MAX_AFLOW + 0.2,
+          MaxLimit = MAX_AFLOW + 0.1,
           MinStep = 0.1,
           ForceStepToMin = true,
           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)
@@ -247,7 +247,7 @@ public partial class VelocityCalibrator : ContentPage
           NamePadding = new LiveChartsCore.Drawing.Padding(0, 10, 0, 0),
 
           MinLimit = 1.4,
-          MaxLimit = 2.0,
+          MaxLimit = 1.8,
           MinStep = 0.1,
           ForceStepToMin = true,
           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)
@@ -289,7 +289,7 @@ public partial class VelocityCalibrator : ContentPage
     //基準線
     LineSeries<ObservablePoint> referenceLine = new LineSeries<ObservablePoint>()
     {
-      Values = makePointsFromCoefficients(1.45, 79.744, -12.029, 2.3595),
+      Values = makePointsFromCoefficients(1.45, 0, 70.477, 1.519),
       Stroke = new SolidColorPaint(SKColors.LightGray) { StrokeThickness = 3 },
       Fill = null, //下部塗りつぶし
       GeometryFill = null, //プロット塗りつぶし
@@ -346,14 +346,13 @@ public partial class VelocityCalibrator : ContentPage
 
   /// <summary>特性係数をもとに風速の推定点を作成する</summary>
   /// <param name="minV"></param>
-  /// <param name="coefA"></param>
   /// <param name="coefB"></param>
   /// <param name="coefC"></param>
   /// <returns></returns>
   private static List<ObservablePoint> makePointsFromCoefficients(
     double minV, double coefA, double coefB, double coefC)
   {
-    double maxV = 2.00;
+    double maxV = 1.8;
     List<ObservablePoint> points = new List<ObservablePoint>();
     double cV = minV;
     while (cV < maxV)
@@ -361,8 +360,8 @@ public partial class VelocityCalibrator : ContentPage
       double vN = (cV / minV) - 1.0;
       double vel = vN * (coefC + vN * (coefB + vN * coefA));
       points.Add(new ObservablePoint(vel, cV));
-      if (MAX_AFLOW + 0.2 < vel) break;
-      cV += 0.05;
+      if (MAX_AFLOW + 0.1 < vel) break;
+      cV += 0.01;
     }
     return points;
   }
@@ -383,7 +382,7 @@ public partial class VelocityCalibrator : ContentPage
     if (!double.TryParse(eVol3.Text, out double vol3)) return;
 
     //異常な値の場合には無視
-    if (vol1 < volRef | vol2 < vol1 | vol3 < vol2) return; //単純増加ではない
+    //if (vol1 < volRef | vol2 < vol1 | vol3 < vol2) return; //単純増加ではない
     if (volRef < 1.0 || 2.0 < volRef) return;
     if (vol1 < 1.0 || 2.0 < vol1) return;
     if (vol2 < 1.0 || 2.0 < vol2) return;
@@ -396,13 +395,13 @@ public partial class VelocityCalibrator : ContentPage
     if (sender == eVol3) measuredPoints[3].Y = vol3;
 
     //電圧から係数を推定
-    MLUtility.EstimateCoefs(
+    EstimateCoefs(
       MIN_AFLOW, MID_AFLOW, MAX_AFLOW, 
       volRef, vol1, vol2, vol3, 
-      out double cfA, out double cfB, out double cfC);
+      out double cfB, out double cfC);
 
     stopUpdatingChart = true;
-    coefA.Text = cfA.ToString("F3");
+    coefA.Text = "0.0";
     coefB.Text = cfB.ToString("F3");
     coefC.Text = cfC.ToString("F3");
     stopUpdatingChart = false;
@@ -410,7 +409,7 @@ public partial class VelocityCalibrator : ContentPage
     coefA.TextColor = coefB.TextColor = coefC.TextColor = Colors.Red;
 
     //再描画
-    estimatedLine.Values = makePointsFromCoefficients(volRef, cfA, cfB, cfC);
+    estimatedLine.Values = makePointsFromCoefficients(volRef, 0.0, cfB, cfC);
   }
 
   /// <summary>風速ごとの電圧が更新された場合の処理</summary>
@@ -517,6 +516,48 @@ public partial class VelocityCalibrator : ContentPage
       }
     });
 
+  }
+
+  /// <summary>計測値3点から風量と電圧の関係式の係数を計算する</summary>
+  /// <remarks>
+  /// vel = B * vtg_n^2 + C * vtg_n
+  /// vtg_n = vtg / refVtg - 1.0
+  /// </remarks>
+  /// <param name="vel1">風速1[m/s]</param>
+  /// <param name="vel2">風速2[m/s]</param>
+  /// <param name="vel3">風速3[m/s]</param>
+  /// <param name="refVtg">0m/sの基準電圧[V]</param>
+  /// <param name="vtg1">風速1に対する電圧[V]</param>
+  /// <param name="vtg2">風速2に対する電圧[V]</param>
+  /// <param name="vtg3">風速3に対する電圧[V]</param>
+  /// <param name="cfB">出力:係数B</param>
+  /// <param name="cfC">出力:係数C</param>
+  /// <returns>係数推定が成功したか否か</returns>
+  public static bool EstimateCoefs(
+    double vel1, double vel2, double vel3,
+    double refVtg, double vtg1, double vtg2, double vtg3,
+    out double cfB, out double cfC)
+  {
+    cfB = cfC = 0;
+
+    double vn1 = vtg1 / refVtg - 1;
+    double vn2 = vtg2 / refVtg - 1;
+    double vn3 = vtg3 / refVtg - 1;
+
+    double mA = Math.Pow(vn1, 4) + Math.Pow(vn2, 4) + Math.Pow(vn3, 4);
+    double mB = Math.Pow(vn1, 3) + Math.Pow(vn2, 3) + Math.Pow(vn3, 3);
+    double mC = mB;
+    double mD = Math.Pow(vn1, 2) + Math.Pow(vn2, 2) + Math.Pow(vn3, 2);
+    double mE = Math.Pow(vn1, 2) * vel1 + Math.Pow(vn2, 2) * vel2 + Math.Pow(vn3, 2) * vel3;
+    double mF = vn1 * vel1 + vn2 * vel2 + vn3 * vel3;
+
+    double detA = mA * mD - mB * mC;
+    if (detA == 0) return false;
+
+    cfB = mD / detA * mE - mB / detA * mF;
+    cfC = -mC / detA * mE + mA / detA * mF;
+
+    return true;
   }
 
   #region インジケータの操作

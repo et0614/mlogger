@@ -492,4 +492,7 @@
   <data name="CO2level" xml:space="preserve">
     <value>CO2 Level</value>
   </data>
+  <data name="SC_NearByDevice" xml:space="preserve">
+    <value>Please enable NearByDevice permission</value>
+  </data>
 </root>

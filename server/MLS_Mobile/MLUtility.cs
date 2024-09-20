@@ -392,57 +392,5 @@ namespace MLS_Mobile
 
     #endregion
 
-    #region 係数推定用関数
-
-    /// <summary>計測値3点から風量と電圧の関係式の係数を計算する</summary>
-    /// <remarks>
-    /// vel = A * vtg_n^3 + B * vtg_n^2 + C * vtg_n
-    /// vtg_n = vtg / refVtg - 1.0
-    /// </remarks>
-    /// <param name="vel1">風速1[m/s]</param>
-    /// <param name="vel2">風速2[m/s]</param>
-    /// <param name="vel3">風速3[m/s]</param>
-    /// <param name="refVtg">0m/sの基準電圧[V]</param>
-    /// <param name="vtg1">風速1に対する電圧[V]</param>
-    /// <param name="vtg2">風速2に対する電圧[V]</param>
-    /// <param name="vtg3">風速3に対する電圧[V]</param>
-    /// <param name="cfA">出力:係数A</param>
-    /// <param name="cfB">出力:係数B</param>
-    /// <param name="cfC">出力:係数C</param>
-    /// <returns>係数推定が成功したか否か</returns>
-    public static bool EstimateCoefs(
-      double vel1, double vel2, double vel3,
-      double refVtg, double vtg1, double vtg2, double vtg3,
-      out double cfA, out double cfB, out double cfC)
-    {
-      cfA = cfB = cfC = 0;
-
-      if (vel1 == vel2 || vel1 == vel3 || vel2 == vel3) return false;
-      if (vtg1 == vtg2 || vtg1 == vtg3 || vtg2 == vtg3) return false;
-      if (vtg1 < refVtg || vtg2 < refVtg || vtg3 < refVtg) return false;
-
-      //解析的に逆行列を求めて3変数の3元連立方程式を解く
-      double c = vtg1 / refVtg - 1;
-      double f = vtg2 / refVtg - 1;
-      double i = vtg3 / refVtg - 1;
-
-      double b = c * c;
-      double a = b * c;
-      double e = f * f;
-      double d = e * f;
-      double h = i * i;
-      double g = h * i;
-
-      double detX = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
-
-      cfA = (vel1 * (e * i - f * h) + vel2 * (c * h - b * i) + vel3 * (b * f - c * e)) / detX;
-      cfB = (vel1 * (f * g - d * i) + vel2 * (a * i - c * g) + vel3 * (c * d - a * f)) / detX;
-      cfC = (vel1 * (d * h - e * g) + vel2 * (b * g - a * h) + vel3 * (a * e - b * d)) / detX;
-
-      return true;
-    }
-
-    #endregion
-
   }
 }
