@@ -387,9 +387,6 @@
 	  <MauiXaml Update="ActivitySelector.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Calibrator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
 	  <MauiXaml Update="CFSetting.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

@@ -20,6 +20,9 @@ namespace MLLib
     /// <summary>大気圧[kPa]</summary>
     private const double ATM = 101.325;
 
+    /// <summary>グローブ温度計の直径[m]</summary>
+    private const double GLOBE_DIAMETER = 0.038;
+
     #endregion
 
     #region 列挙型定義
@@ -348,19 +351,19 @@ namespace MLLib
     public double PMV { get; private set; }
 
     [JsonPropertyName("ppd")]
-    /// <summary>PPD[-]を取得する</summary>
+    /// <summary>PPD[%]を取得する</summary>
     public double PPD { get; private set; }
 
     [JsonPropertyName("setStar")]
-    /// <summary>SET*[-]を取得する</summary>
+    /// <summary>SET*[C]を取得する</summary>
     public double SETStar { get; private set; }
 
     [JsonPropertyName("wbgt_outdoor")]
-    /// <summary>屋外のWBGTを取得する</summary>
+    /// <summary>屋外のWBGT[C]を取得する</summary>
     public double WBGT_Outdoor { get; private set; }
 
     [JsonPropertyName("wbgt_indoor")]
-    /// <summary>屋内のWBGTを取得する</summary>
+    /// <summary>屋内のWBGT[C]を取得する</summary>
     public double WBGT_Indoor { get; private set; }
 
     #endregion
@@ -445,7 +448,7 @@ namespace MLLib
         PPD = ThermalComfort.GetPPD(PMV);
 
         //グローブ温度を150mmに換算する(JISB7922, JISZ8504)
-        double glb150 = dbt + (1 + 1.13 * Math.Pow(0.04, -0.4) * Math.Pow(vel, 0.6)) / (1 + 2.41 * Math.Pow(vel, 0.6)) * (glb - dbt);
+        double glb150 = dbt + (1 + 1.13 * Math.Pow(GLOBE_DIAMETER, -0.4) * Math.Pow(vel, 0.6)) / (1 + 2.41 * Math.Pow(vel, 0.6)) * (glb - dbt);
         WBGT_Indoor = 0.7 * wbt + 0.3 * glb150;
         WBGT_Outdoor = 0.7 * wbt + 0.2 * glb150 + 0.1 * dbt;
       }
@@ -458,25 +461,15 @@ namespace MLLib
     /// <returns></returns>
     private static double getMRT(double tmp, double glb, double vel)
     {
-      const double DIA = 0.04; //ピンポン球の直径[m]
       const double EPS = 0.95; //ピンポン球の放射率[-]
       const double SIG = 5.67e-8;
       const double ES = EPS * SIG;
 
       //ISO 7726:Ergonomics of the thermal environment
-      double hc1 = 1.4 * Math.Pow(Math.Abs(tmp - glb) / DIA, 0.25);
-      double hc2 = 6.3 * Math.Pow(vel, 0.6) / Math.Pow(DIA, 0.4);
+      double hc1 = 1.4 * Math.Pow(Math.Abs(tmp - glb) / GLOBE_DIAMETER, 0.25);
+      double hc2 = 6.3 * Math.Pow(vel, 0.6) / Math.Pow(GLOBE_DIAMETER, 0.4);
       double glbK = glb + 273.15;
       return Math.Pow(Math.Max(0, Math.Pow(glbK, 4) + Math.Max(hc1, hc2) / ES * (glb - tmp)), 0.25) - 273.15;
-    }
-
-    /// <summary>風速電圧[V]を風速[m/s]に換算する</summary>
-    /// <param name="velVoltage">風速電圧[V]</param>
-    /// <returns>風速[m/s]</returns>
-    public double ConvertVelocityVoltage(double velVoltage)
-    {
-      double bff = Math.Max(0, velVoltage / VelocityMinVoltage - 1.0);
-      return bff * (2.3595 + bff * (-12.029 + bff * 79.744)); //電圧-風速換算式
     }
 
     #endregion
@@ -1391,16 +1384,16 @@ namespace MLLib
     /// <summary>PMV[-]を取得する</summary>
     double PMV { get; }
 
-    /// <summary>PPD[-]を取得する</summary>
+    /// <summary>PPD[%]を取得する</summary>
     double PPD { get; }
 
-    /// <summary>SET*[-]を取得する</summary>
+    /// <summary>SET*[C]を取得する</summary>
     double SETStar { get; }
 
-    /// <summary>屋外のWBGTを取得する</summary>
+    /// <summary>屋外のWBGT[C]を取得する</summary>
     public double WBGT_Outdoor { get; }
 
-    /// <summary>屋内のWBGTを取得する</summary>
+    /// <summary>屋内のWBGT[C]を取得する</summary>
     public double WBGT_Indoor { get; }
 
     #endregion

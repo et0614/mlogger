@@ -53,9 +53,6 @@
     <MauiXaml Update="ActivitySelector.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
-    <MauiXaml Update="Calibrator.xaml">
-      <SubType>Designer</SubType>
-    </MauiXaml>
     <MauiXaml Update="CFSetting.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

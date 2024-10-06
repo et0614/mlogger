@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BACnet" Version="2.0.4" />
     <PackageReference Include="Popolo" Version="2.3.1.68" />
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <PackageReference Include="XBeeLibrary.Core" Version="1.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BACSharp\BACSharp.csproj" />
     <ProjectReference Include="..\MLLib\MLLib.csproj" />
   </ItemGroup>
 
