@@ -52,7 +52,7 @@ public partial class VelocityCalibrator : ContentPage
   }
 
   /// <summary>校正中の電圧リスト[V]</summary>
-  private double[] calibratingVoltages { get; set; } = { 1.450, 1.527, 1.582, 1.646 };
+  private double[] calibratingVoltages { get; set; } = { 1.450, 1.522, 1.572, 1.639 };
 
   /// <summary>低位アドレス</summary>
   private string _mlLowAddress = "";
@@ -171,16 +171,20 @@ public partial class VelocityCalibrator : ContentPage
     velVols[AVE_TIME - 1] = Logger.VelocityVoltage;
     aveVol /= AVE_TIME;
 
-    //平均電圧が安定したか否かの判定
+    //平均電圧が安定したか否かの判定（現在値と平均の誤差<0.005V かつ 過去AVE_TIMEステップとの誤差<0.01V）
     bool isStabled = true;
-    for (int i = 0; i < AVE_TIME - 1; i++)
+    if (Math.Abs(Logger.VelocityVoltage - aveVol) < 0.005)
     {
-      if (0.01 < Math.Abs(velVols[i] - aveVol))
+      for (int i = 0; i < AVE_TIME - 1; i++)
       {
-        isStabled = false;
-        break;
+        if (0.01 < Math.Abs(velVols[i] - aveVol))
+        {
+          isStabled = false;
+          break;
+        }
       }
     }
+    else isStabled = false;
 
     //電圧表示を更新
     Application.Current.Dispatcher.Dispatch(() =>
@@ -289,7 +293,7 @@ public partial class VelocityCalibrator : ContentPage
     //基準線
     LineSeries<ObservablePoint> referenceLine = new LineSeries<ObservablePoint>()
     {
-      Values = makePointsFromCoefficients(1.45, 0, 70.477, 1.519),
+      Values = makePointsFromCoefficients(1.45, 0, 68.572, 2.592),
       Stroke = new SolidColorPaint(SKColors.LightGray) { StrokeThickness = 3 },
       Fill = null, //下部塗りつぶし
       GeometryFill = null, //プロット塗りつぶし
@@ -300,7 +304,7 @@ public partial class VelocityCalibrator : ContentPage
     //特性係数から算出した線
     estimatedLine = new LineSeries<ObservablePoint>
     {
-      Values = makePointsFromCoefficients(1.45, 79.744, -12.029, 2.3595),
+      Values = makePointsFromCoefficients(1.45, 0, 68.572, 2.592),
 
       Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 2 }, //線
       Fill = null, //下部塗りつぶし

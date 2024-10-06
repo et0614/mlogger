@@ -23,7 +23,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.11";
+    private const string VERSION = "1.1.12";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -48,7 +48,7 @@ namespace MLServer
     private static bool useBACnet = false;
 
     /// <summary>BACnetを使う場合のポート番号（47808~）</summary>
-    private static int bacnetPort = 47808;
+    private static int bacnetPort = 47809;
 
     /// <summary>BACnet DeviceのLocal End Point IP Address</summary>
     private static string bacEPIPAddress = "127.0.0.1";
@@ -98,7 +98,7 @@ namespace MLServer
       Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
       if (useBACnet)
       {
-        Console.WriteLine("Start the BACnet service with the Local End Point set to " + bacEPIPAddress + " and the exclusive port set to " + bacnetPort + ".");
+        Console.WriteLine("Start the BACnet service. (Local end point = \"" + (bacEPIPAddress == "" ? "0.0.0.0" : bacEPIPAddress) + "\", Exclusive port = \"" + bacnetPort + "\")");
         mlBacDevice = new MLServerDevice(bacnetPort, bacEPIPAddress);
         mlBacDevice.Communicator.StartService();
       }
@@ -154,10 +154,10 @@ namespace MLServer
       Console.WriteLine("\r\n");
       Console.WriteLine("#########################################################################");
       Console.WriteLine("#                                                                       #");
-      Console.WriteLine("#                       MLServer  verstion " + VERSION + "                        #");
+      Console.WriteLine("#                     MLServer  verstion " + VERSION + "                         #");
       Console.WriteLine("#                                                                       #");
-      Console.WriteLine("#                Software for logging data sent from M-Logger           #");
-      Console.WriteLine("#                         (https://www.mlogger.jp)                      #");
+      Console.WriteLine("#        Software for logging data transmitted from the M-Logger.       #");
+      Console.WriteLine("#                       (https://www.mlogger.jp)                        #");
       Console.WriteLine("#                                                                       #");
       Console.WriteLine("#########################################################################");
       Console.WriteLine("\r\n");
@@ -179,6 +179,9 @@ namespace MLServer
         string line;
         while ((line = sReader.ReadLine()) != null)
         {
+          if (string.IsNullOrEmpty(line)) continue;
+          if (line.StartsWith('#')) continue;
+
           line = line.Remove(line.IndexOf(';'));
           string[] st = line.Split('=');
           switch (st[0])

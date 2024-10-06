@@ -1,6 +1,7 @@
 ﻿using System.IO.BACnet;
 using System.IO.BACnet.Storage;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace BaCSharp
 {
@@ -57,7 +58,7 @@ namespace BaCSharp
 
       //BACnetClientを作成
       BacnetIpUdpProtocolTransport bUDP = new BacnetIpUdpProtocolTransport
-        (0xBAC0, exclusivePort,false ,1472, localEndPointIP);
+        (0xBAC0, exclusivePort, false, 1472, localEndPointIP);
       m_ip_server = new BacnetClient(bUDP);
 
       m_ip_server.OnWhoIs += new BacnetClient.WhoIsHandler(OnWhoIs);
@@ -760,6 +761,9 @@ namespace BaCSharp
 
     private void OnWhoIs(BacnetClient sender, BacnetAddress adr, int low_limit, int high_limit)
     {
+      //Console.WriteLine("Recieve Who-is");//DEBUG
+      //Console.WriteLine("1. Broadcast I-am to " + sender.Transport.GetBroadcastAddress().ToString());     
+
       lock (m_lockObject)
       {
         if (low_limit != -1 && m_storage.DeviceId < low_limit) return;

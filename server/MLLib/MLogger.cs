@@ -1,5 +1,4 @@
 ﻿using Popolo.HumanBody;
-using System.Text;
 using System.Text.RegularExpressions;
 
 using System.Text.Json.Serialization;
@@ -17,9 +16,6 @@ namespace MLLib
 
     /// <summary>UNIX時間起点</summary>
     private static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-
-    /// <summary>日時の型（一体）</summary>
-    private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
 
     /// <summary>大気圧[kPa]</summary>
     private const double ATM = 101.325;
@@ -1126,96 +1122,6 @@ namespace MLLib
     /// <returns>下位アドレス</returns>
     public static string GetLowAddress(ulong longAddress)
     { return GetLongHexAddress(longAddress); }
-
-    /// <summary>HTMLでMLoggerの一覧表を作成する</summary>
-    /// <param name="baseHTML">基礎となるHTML</param>
-    /// <param name="mLoggers">MLogger</param>
-    /// <returns>HTMLでMLoggerの一覧表</returns>
-    public static string MakeHTMLTable(string baseHTML, MLogger[] mLoggers)
-    {
-      //編集
-      //台数を表示
-      baseHTML = baseHTML.Replace("<!--ML_NUMBER-->", mLoggers.Length.ToString());
-
-      //計測値を表示
-      StringBuilder contents = new StringBuilder("");
-      for (int i = 0; i < mLoggers.Length; i++)
-      {
-        MLogger ml = mLoggers[i];
-        bool isInterrupted = (ml.LastMeasured.Year == 2000 || 2100 < ml.LastMeasured.Year);
-
-        contents.AppendLine("<tr>");
-        //一般情報
-        contents.AppendLine("<td class=\"dt_last general\">" + ml.LastCommunicated.ToString("M/d HH:mm:ss") + "</td>");
-        contents.AppendLine("<td class=\"name general\">" + ml.LocalName + "</td>");
-        contents.AppendLine("<td class=\"id general\">" + ml.LowAddress + "</td>");
-        //温湿度
-        contents.AppendLine("<td class=\"dt_th thlog\">" + (isInterrupted ? "***" : ml.DrybulbTemperature.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
-        contents.AppendLine("<td class=\"tmp thlog\">" + ml.DrybulbTemperature.LastValue.ToString("F1") + "</td>");
-        contents.AppendLine("<td class=\"hmd thlog\">" + ml.RelativeHumdity.LastValue.ToString("F1") + "</td>");
-        //グローブ温度
-        contents.AppendLine("<td class=\"dt_glb glblog\">" + (isInterrupted ? "***" : ml.GlobeTemperature.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
-        contents.AppendLine("<td class=\"glb glblog\">" + ml.GlobeTemperature.LastValue.ToString("F2") + "</td>");
-        //微風速
-        contents.AppendLine("<td class=\"dt_vel vellog\">" + (isInterrupted ? "***" : ml.Velocity.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
-        contents.AppendLine("<td class=\"vel vellog\">" + (ml.Velocity.LastValue * 100).ToString("F1") + "</td>");
-        //照度
-        contents.AppendLine("<td class=\"dt_ill illlog\">" + (isInterrupted ? "***" : ml.Illuminance.LastMeasureTime.ToString("M/d HH:mm:ss")) + "</td>");
-        contents.AppendLine("<td class=\"ill illlog\">" + ml.Illuminance.LastValue.ToString("F2") + "</td>");
-        //熱的快適性指標の計算
-        ml.updateThermalIndices();
-        contents.AppendLine("<td class=\"cmft_set cmftlog\">" + ml.SETStar.ToString("F1") + "</td>");
-        contents.AppendLine("<td class=\"cmft_pmv cmftlog\">" + ml.PMV.ToString("F2") + "</td>");
-        contents.AppendLine("<td class=\"cmft_ppd cmftlog\">" + ml.PPD.ToString("F1") + "</td>");
-        //データリンク先
-        contents.AppendLine("<td class=\"general\"><a href=\"" + ml.LowAddress + ".csv\">" + ml.LowAddress + ".csv</a></td>");
-        contents.AppendLine("</tr>");
-      }
-      baseHTML = baseHTML.Replace("<!--ML_CONTENTS-->", contents.ToString());
-
-      return baseHTML;
-    }
-
-    /// <summary>HTMLでMLoggerの一覧表を作成する</summary>
-    /// <param name="baseHTML">基礎となるHTML</param>
-    /// <param name="mLoggers">MLogger</param>
-    /// <param name="cloValue">着衣量[clo]</param>
-    /// <param name="metValue">代謝量[met]</param>
-    /// <returns>HTMLでMLoggerの一覧表</returns>
-    public static string MakeHTMLTable(string baseHTML, MLogger[] mLoggers, double cloValue, double metValue)
-    {
-      baseHTML = MakeHTMLTable(baseHTML, mLoggers);
-      baseHTML = baseHTML.Replace("<!--ML_PMV_ASM-->", 
-        "Clo value = " + cloValue.ToString("F2") + " clo; Metabolic rate = " + metValue.ToString("F2") + " met");
-
-      return baseHTML;
-    }
-
-    public static string MakeLatestData(MLogger[] mLoggers)
-    {
-      StringBuilder sBuilder = new StringBuilder();
-      for (int i = 0; i < mLoggers.Length; i++)
-      {
-        MLogger ml = mLoggers[i];
-        sBuilder.Append(ml.LocalName);
-        //温湿度
-        sBuilder.Append("," + ml.DrybulbTemperature.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.DrybulbTemperature.LastValue.ToString("F1"));
-        sBuilder.Append("," + ml.RelativeHumdity.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.RelativeHumdity.LastValue.ToString("F1"));
-        //グローブ温度
-        sBuilder.Append("," + ml.GlobeTemperature.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.GlobeTemperature.LastValue.ToString("F1"));
-        //微風速
-        sBuilder.Append("," + ml.Velocity.LastMeasureTime.ToString(DT_FORMAT) + "," + (ml.Velocity.LastValue * 100).ToString("F1"));
-        //照度
-        sBuilder.Append("," + ml.Illuminance.LastMeasureTime.ToString(DT_FORMAT) + "," + ml.Illuminance.LastValue.ToString("F2"));
-        //熱的快適性指標の更新
-        ml.updateThermalIndices();
-        sBuilder.Append("," + ml.SETStar.ToString("F2"));
-        sBuilder.Append("," + ml.PMV.ToString("F2"));
-        sBuilder.Append("," + ml.PPD.ToString("F2"));
-        sBuilder.AppendLine();
-      }
-      return sBuilder.ToString();
-    }
 
     #endregion
 

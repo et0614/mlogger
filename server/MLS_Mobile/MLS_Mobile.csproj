@@ -55,28 +55,28 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
 	  <CodesignKey>iPhone Developer</CodesignKey>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	  <CodesignProvision></CodesignProvision>
 	  <ProvisioningType>manual</ProvisioningType>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
-	  <ApplicationVersion>41</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.39</ApplicationDisplayVersion>
+	  <ApplicationVersion>42</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
-	  <ApplicationVersion>41</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.39</ApplicationDisplayVersion>
+	  <ApplicationVersion>42</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
-	  <ApplicationVersion>41</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.39</ApplicationDisplayVersion>
+	  <ApplicationVersion>42</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.38</ApplicationDisplayVersion>
-	  <ApplicationVersion>41</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.39</ApplicationDisplayVersion>
+	  <ApplicationVersion>42</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>

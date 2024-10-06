@@ -90,9 +90,9 @@ volatile float my_eeprom::Cf_velB = 0.0;
 volatile float my_eeprom::Cf_vel0 = 1.45;
 
 //風速計特性係数
-volatile float my_eeprom::VelCC_A = 79.744;
-volatile float my_eeprom::VelCC_B = -12.029;
-volatile float my_eeprom::VelCC_C = 2.356;
+volatile float my_eeprom::VelCC_A = 0.0;
+volatile float my_eeprom::VelCC_B = 68.572;
+volatile float my_eeprom::VelCC_C = 2.592;
 
 //計測真偽
 volatile bool my_eeprom::measure_th = true;
@@ -161,11 +161,11 @@ void initMemory()
 	
 	//風速計特性係数
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_A, 79.744);
+	eeprom_update_float(&EEP_VELCC_A, 0.0);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_B, -12.029);
+	eeprom_update_float(&EEP_VELCC_B, 68.572);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_C, 2.356);
+	eeprom_update_float(&EEP_VELCC_C, 2.592);
 		
 	//計測真偽
 	eeprom_busy_wait();

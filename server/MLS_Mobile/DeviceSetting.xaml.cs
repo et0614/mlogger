@@ -38,6 +38,9 @@ public partial class DeviceSetting : ContentPage
 
   #region インスタンス変数・プロパティ
 
+  /// <summary>開発者モードか否か</summary>
+  private static bool isDeveloperMode = false;
+
   /// <summary>ロギングを停止させるか否か</summary>
   private bool isStopLogging = true;
 
@@ -93,23 +96,13 @@ public partial class DeviceSetting : ContentPage
     Accelerometer.Start(SensorSpeed.UI);
   }
 
-
-  protected override void OnDisappearing()
-  {
-    base.OnDisappearing();
-
-    //シェイクイベント解除
-    Accelerometer.Stop();
-    Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
-  }
-
   /// <summary>シェイク時の処理</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
   private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
     //一般的ではないボタン群の表示・非表示切り替え
-    calvBtnA.IsVisible = calvBtnB.IsVisible = !calvBtnA.IsVisible;
+    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = !calvBtnA.IsVisible;
   }
 
   private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
@@ -149,8 +142,19 @@ public partial class DeviceSetting : ContentPage
   {
     base.OnAppearing();
 
+    //校正ボタンの表示・非表示
+    calvBtnA.IsVisible = calvBtnB.IsVisible = isDeveloperMode;
+
     //基本は測定を停止させる
     isStopLogging = true;
+  }
+  protected override void OnDisappearing()
+  {
+    base.OnDisappearing();
+
+    //シェイクイベント解除
+    Accelerometer.Stop();
+    Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
   }
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)

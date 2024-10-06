@@ -40,7 +40,7 @@
                     <Button x:Name="btnVol1" Grid.Row="1" Grid.Column="0" Margin="0,2,10,2" Text="0.3 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
                     <Border Grid.Row="1" Grid.Column="1" Margin="5,2,5,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="eVol1" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
-                               Text="1.648" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
+                               Text="1.522" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="VoltageEntry_TextChanged"/>
                     </Border>
                     <Label Grid.Row="1" Grid.Column="2" Margin="5,0,0,0" Text="V" FontSize="Large" VerticalOptions="Center" HorizontalOptions="Start"/>
@@ -48,7 +48,7 @@
                     <Button x:Name="btnVol2" Grid.Row="2" Grid.Column="0" Margin="0,2,10,2" Text="0.7 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
                     <Border Grid.Row="2" Grid.Column="1" Margin="5,2,5,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="eVol2" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
-                               Text="1.734" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
+                               Text="1.572" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="VoltageEntry_TextChanged"/>
                     </Border>
                     <Label Grid.Row="2" Grid.Column="2" Margin="5,0,0,0" Text="V" FontSize="Large" VerticalOptions="Center" HorizontalOptions="Start"/>
@@ -56,7 +56,7 @@
                     <Button x:Name="btnVol3" Grid.Row="3" Grid.Column="0" Margin="0,2,10,2" Text="1.5 m/s" FontSize="Large" Clicked="VoltageButton_Clicked" />
                     <Border Grid.Row="3" Grid.Column="1" Margin="5,2,5,2" HorizontalOptions="FillAndExpand">
                         <Entry x:Name="eVol3" VerticalOptions="Center" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center"
-                               Text="1.801" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
+                               Text="1.639" FontSize="Large" Keyboard="Numeric" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                                TextChanged="VoltageEntry_TextChanged"/>
                     </Border>
                     <Label Grid.Row="3" Grid.Column="2" Margin="5,0,0,0" Text="V" FontSize="Large" VerticalOptions="Center" HorizontalOptions="Start"/>

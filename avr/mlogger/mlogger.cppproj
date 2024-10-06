@@ -90,7 +90,7 @@
     <ListValues>
       <Value>F_CPU=4000000UL</Value>
       <Value>NDEBUG</Value>
-      <Value>MLPARAM_0516</Value>
+      <Value>MLPARAM_0520</Value>
     </ListValues>
   </avrgcccpp.compiler.symbols.DefSymbols>
   <avrgcccpp.compiler.directories.IncludePaths>
