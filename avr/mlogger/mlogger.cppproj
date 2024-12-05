@@ -28,7 +28,8 @@
     <ResetRule>0</ResetRule>
     <eraseonlaunchrule>1</eraseonlaunchrule>
     <EraseKey />
-    <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
+    <avrtool>
+    </avrtool>
     <avrtoolserialnumber>J42700018795</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E9618</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
@@ -90,7 +91,7 @@
     <ListValues>
       <Value>F_CPU=4000000UL</Value>
       <Value>NDEBUG</Value>
-      <Value>MLPARAM_0520</Value>
+      <Value>MLPARAM_0512</Value>
     </ListValues>
   </avrgcccpp.compiler.symbols.DefSymbols>
   <avrgcccpp.compiler.directories.IncludePaths>
@@ -148,6 +149,7 @@
           <ListValues>
             <Value>F_CPU=4000000UL</Value>
             <Value>DEBUG</Value>
+            <Value>MLPARAM_0000</Value>
           </ListValues>
         </avrgcccpp.compiler.symbols.DefSymbols>
         <avrgcccpp.compiler.directories.IncludePaths>

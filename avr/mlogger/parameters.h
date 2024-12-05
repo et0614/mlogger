@@ -9,7 +9,16 @@
 #define PARAMETERS_H_
 
 //ここからペースト*********************************
-#ifdef	MLPARAM_1101
+#ifdef	MLPARAM_0000
+#define ML_NAME	"MLogger_0000"
+#define DBT_COEF_A	1.0
+#define DBT_COEF_B	0.0
+#define HMD_COEF_A	1.0
+#define HMD_COEF_B	0.0
+#define GLB_COEF_A	1.0
+#define GLB_COEF_B	0.0
+
+#elif	MLPARAM_1101
 #define ML_NAME	"MLogger_1101"
 #define DBT_COEF_A	1.031
 #define DBT_COEF_B	-0.22
