@@ -495,4 +495,10 @@
   <data name="SC_NearByDevice" xml:space="preserve">
     <value>付近のデバイスを有効にしてください</value>
   </data>
+  <data name="OK" xml:space="preserve">
+    <value>はい</value>
+  </data>
+  <data name="LD_SaveFileAlert" xml:space="preserve">
+    <value>データ量が大きいため、外部に書き出します</value>
+  </data>
 </root>

@@ -1,32 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<application android:allowBackup="true"
-			 android:icon="@mipmap/appicon"
-			 android:roundIcon="@mipmap/appicon_round"
-			 android:supportsRtl="true">
-	</application>
-	
+	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
-
 	<!-- BluetoothおよびBLE対応機種のみ起動可能にする -->
-	<uses-feature android:name="android.hardware.bluetooth" android:required="true"/>
-	<uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
-
+	<uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+	<uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 	<!-- すべてのAndroidデバイスで必要なpermission -->
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 	<!-- Android12(API level31)未満では設定する必要があるpermission -->
 	<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
 	<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-
 	<!-- Android12(API level31)以上で求められるようになったpermission -->
 	<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
 	<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 	<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-
 	<!-- Sleep機能の制御 -->
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
-	
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

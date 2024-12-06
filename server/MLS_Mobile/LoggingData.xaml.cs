@@ -1,8 +1,9 @@
 namespace MLS_Mobile;
 
 using System.Text;
-
 using Microsoft.Maui.ApplicationModel.DataTransfer;
+
+using CommunityToolkit.Maui.Storage;
 
 using MLS_Mobile.Resources.i18n;
 
@@ -198,11 +199,28 @@ public partial class LoggingData : ContentPage
 
   private async void share_Clicked(object sender, EventArgs e)
   {
-    await Share.Default.RequestAsync(new ShareTextRequest
-    {      
-      Text = MakeClipData(FileName),
+    string cData = MakeClipData(FileName);
+    ShareTextRequest st = new ShareTextRequest
+    {
+      Text = cData,
       Title = "M-Logger Data"
-    });
+    };
+
+    try
+    {
+      //Androidでは1MBを境界にandroid.os.TransactionTooLargeExceptionというエラーが出る模様
+      await Share.Default.RequestAsync(st);
+    }
+    catch
+    {
+      bool result = await DisplayAlert("Alert", MLSResource.LD_SaveFileAlert, MLSResource.OK, MLSResource.Cancel);
+      if (result)
+      {
+        var data = Encoding.GetEncoding("UTF-8").GetBytes(cData);
+        var stream = new MemoryStream(data);
+        await FileSaver.Default.SaveAsync(FileName, stream);
+      }
+    }
   }
 
   #endregion

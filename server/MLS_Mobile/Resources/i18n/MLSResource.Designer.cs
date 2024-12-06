@@ -808,6 +808,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Large data; exporting to shared folder. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_SaveFileAlert {
+            get {
+                return ResourceManager.GetString("LD_SaveFileAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Share に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string LD_Share {
@@ -1038,6 +1047,15 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string No {
             get {
                 return ResourceManager.GetString("No", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
             }
         }
         

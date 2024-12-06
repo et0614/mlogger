@@ -495,4 +495,10 @@
   <data name="SC_NearByDevice" xml:space="preserve">
     <value>Please enable NearByDevice permission</value>
   </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="LD_SaveFileAlert" xml:space="preserve">
+    <value>Large data; exporting to shared folder.</value>
+  </data>
 </root>

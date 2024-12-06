@@ -24,6 +24,8 @@
 &lt;/dict&gt;
 &lt;/plist&gt;
 </TargetiOSDevice>
+    <DeveloperId>MQDW8P86K5</DeveloperId>
+    <DevelopmentTeamId>MQDW8P86K5</DevelopmentTeamId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0-android|AnyCPU'">
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
