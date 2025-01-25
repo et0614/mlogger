@@ -1,8 +1,8 @@
 namespace MLS_Mobile;
 
-using System.Collections.ObjectModel;
-using Popolo.HumanBody;
+using CommunityToolkit.Maui.Views;
 using MLS_Mobile.Resources.i18n;
+using Popolo.HumanBody;
 
 [QueryProperty(nameof(CloValue), "CloValue")]
 [QueryProperty(nameof(MetValue), "MetValue")]
@@ -70,20 +70,6 @@ public partial class ThermalComfortCalculator : ContentPage
 
   #region コントロール操作時の処理
 
-  /*private void Accelerometer_ShakeDetected(object sender, EventArgs e)
-  {
-    if (MLUtility.MMCardEnabled)
-    {
-      MLUtility.MMCardEnabled = false;
-      DisplayAlert("", "Debug mode disabled", "Yes");
-    }
-    else
-    {
-      MLUtility.MMCardEnabled = true;
-      DisplayAlert("", "Debug mode enabled", "Yes");
-    }
-  }*/
-
   private void slider_ValueChanged(object sender, ValueChangedEventArgs e)
   {
     updateIndices();
@@ -117,6 +103,51 @@ public partial class ThermalComfortCalculator : ContentPage
   private void ActBtn_Clicked(object sender, EventArgs e)
   {
     Shell.Current.GoToAsync(nameof(ActivitySelector));
+  }
+
+  /// <summary>ラベルタップ時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private async void Value_Tapped(object sender, TappedEventArgs e)
+  {
+    Label target = (Label)sender;
+    Slider sld = null;
+    TextInputPopup popup = null;
+    if (target == dbtLabel)
+    {
+      sld = dbtSlider;
+      popup = new TextInputPopup(MLSResource.DrybulbTemperature, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == hmdLabel)
+    {
+      sld = hmdSlider;
+      popup = new TextInputPopup(MLSResource.RelativeHumidity, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == mrtLabel)
+    {
+      sld = mrtSlider;
+      popup = new TextInputPopup(MLSResource.MeanRadiantTemperature, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == velLabel)
+    {
+      sld = velSlider;
+      popup = new TextInputPopup(MLSResource.Velocity, sld.Value.ToString("F2"), Keyboard.Numeric);
+    }
+    else if (target == cloLabel)
+    {
+      sld = cloSlider;
+      popup = new TextInputPopup(MLSResource.ClothingUnit, sld.Value.ToString("F2"), Keyboard.Numeric);
+    }
+    else if (target == metLabel)
+    {
+      sld = metSlider;
+      popup = new TextInputPopup(MLSResource.MetabolicUnit, sld.Value.ToString("F2"), Keyboard.Numeric);
+    }
+
+    if (popup == null) return;
+    if (await this.ShowPopupAsync(popup) != null)
+      if (double.TryParse(popup.EntryValue, out double val))
+        sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }
 
   #endregion

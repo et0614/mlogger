@@ -3,9 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Name="this"
              x:Class="MLS_Mobile.IDeviceView"
-             xmlns:local="clr-namespace:MLS_Mobile">
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:IDeviceViewModel">
     <ContentView.BindingContext>
-        <local:IDeviceViewModel/>
+        <model:IDeviceViewModel/>
     </ContentView.BindingContext>
 
     <Grid

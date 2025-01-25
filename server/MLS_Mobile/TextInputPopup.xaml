@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<mopups:PopupPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:mopups="clr-namespace:Mopups.Pages;assembly=Mopups"
-             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
-             x:Class="MLS_Mobile.SettingNamePopup"
-             Title="SettingNamePopup" Background="#80000000" CloseWhenBackgroundIsClicked="True">
-    <ScrollView HorizontalOptions="Center" VerticalOptions="Center">
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MLS_Mobile.TextInputPopup"
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:TextInputPopup">
+    <VerticalStackLayout>
         <Border WidthRequest="300" HeightRequest="160" Padding="10"
                 Stroke="{StaticResource Dark_G}" BackgroundColor="{StaticResource Lightest_G}"
                 HorizontalOptions="Center" StrokeThickness="1">
@@ -13,15 +13,15 @@
                 <RoundRectangle CornerRadius="10"/>
             </Border.StrokeShape>
             <VerticalStackLayout>
-                <Label Text="{x:Static res:MLSResource.DS_SetName}" Margin="5"/>
+                <Label x:Name="lblMessage" Text="{Binding LabelText}" Margin="5"/>
                 <Border Stroke="Black" Margin="5,10" StrokeThickness="1" Padding="0">
-                    <Entry x:Name="entName" Text="{Binding Name}" Margin="0" HorizontalTextAlignment="Center"/>
+                    <Entry x:Name="entName" Text="{Binding EntryValue}" Keyboard="{Binding Key}" Margin="0" HorizontalTextAlignment="Center" BackgroundColor="White" TextColor="Black"/>
                 </Border>
                 <HorizontalStackLayout HorizontalOptions="End">
                     <Button Text="OK" Clicked="btnOK_Clicked" Margin="5"/>
                     <Button Text="Cancel" Clicked="btnCancel_Clicked" Margin="5"/>
-                </HorizontalStackLayout>               
+                </HorizontalStackLayout>
             </VerticalStackLayout>
         </Border>
-    </ScrollView>
-</mopups:PopupPage>
+    </VerticalStackLayout>
+</toolkit:Popup>

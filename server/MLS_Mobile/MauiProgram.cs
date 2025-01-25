@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Maui;
-using Mopups.Hosting;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MLS_Mobile;
@@ -12,9 +11,8 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
     builder
       .UseMauiApp<App>()
-			.ConfigureMopups()
 			.UseMauiCommunityToolkit()
-      .UseSkiaSharp(true)
+      .UseSkiaSharp()
       .ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

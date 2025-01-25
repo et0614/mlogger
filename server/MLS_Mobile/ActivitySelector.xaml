@@ -4,13 +4,14 @@
              x:Class="MLS_Mobile.ActivitySelector"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:TCResource.SelectActivity}">
+
     <Grid>
         <CollectionView x:Name="actView"
                         ItemsSource="{Binding Activities}" IsGrouped="true" SelectionMode="Single" 
                         SelectionChanged="OnCollectionViewSelectionChanged">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid 
+                    <Grid
                         Padding="5" 
                         RowDefinitions="Auto, Auto"
                         ColumnDefinitions="Auto, *" 

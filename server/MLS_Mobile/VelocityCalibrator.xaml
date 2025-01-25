@@ -101,12 +101,12 @@
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-        <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
+        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
             <StackLayout BackgroundColor="White">
                 <ActivityIndicator Color="Black" IsRunning="True"/>
                 <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
             </StackLayout>
-        </Frame>
+        </Border>
         <!--インジケータここまで-->
     </Grid>
 </ContentPage>

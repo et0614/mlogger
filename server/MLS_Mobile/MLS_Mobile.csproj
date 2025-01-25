@@ -7,11 +7,11 @@
 
 	<PropertyGroup>
 		<!-- <TargetFrameworks>net8.0-android;net8.0-ios</TargetFrameworks> -->
-		<TargetFrameworks>net8.0-android;net8.0-ios</TargetFrameworks>
+		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
-		<MauiVersion>8.0.3</MauiVersion>
+		<MauiVersion>9.0.21</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 
@@ -39,30 +39,30 @@
 
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.40</ApplicationDisplayVersion>
-	  <ApplicationVersion>43</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.40</ApplicationDisplayVersion>
-	  <ApplicationVersion>43</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.40</ApplicationDisplayVersion>
-	  <ApplicationVersion>43</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.40</ApplicationDisplayVersion>
-	  <ApplicationVersion>43</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0-ios'">
+	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
 	  <ProvisioningType>automatic</ProvisioningType>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.41</ApplicationDisplayVersion>
+	  <ApplicationVersion>44</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.41</ApplicationDisplayVersion>
+	  <ApplicationVersion>44</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.41</ApplicationDisplayVersion>
+	  <ApplicationVersion>44</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.41</ApplicationDisplayVersion>
+	  <ApplicationVersion>44</ApplicationVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -103,10 +103,12 @@
 	<ItemGroup>
 	  <Compile Remove="MainPage.xaml.cs" />
 	  <Compile Remove="MLogger.cs" />
+	  <Compile Remove="SettingNamePopup.xaml.cs" />
 	</ItemGroup>
 	
 	<ItemGroup>
 	  <MauiXaml Remove="MainPage.xaml" />
+	  <MauiXaml Remove="SettingNamePopup.xaml" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -310,17 +312,16 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="9.0.3" />
-	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc2" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="10.0.0" />
+	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
+	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc4.5" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.0" />
-	  <PackageReference Include="Mopups" Version="1.3.2" />
 	  <PackageReference Include="Popolo" Version="2.3.1.76" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.100" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.21" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.21" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\DigiIoT.Maui\DigiIoT.Maui.csproj" />
 	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
 	</ItemGroup>
 
@@ -340,9 +341,6 @@
 	    <DesignTime>True</DesignTime>
 	    <AutoGen>True</AutoGen>
 	    <DependentUpon>TCResource.resx</DependentUpon>
-	  </Compile>
-	  <Compile Update="SettingPopup.xaml.cs">
-	    <DependentUpon>SettingPopup.xaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 
@@ -409,7 +407,7 @@
 	  <MauiXaml Update="RelayedDataViewer.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="SettingPopup.xaml">
+	  <MauiXaml Update="TextInputPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">

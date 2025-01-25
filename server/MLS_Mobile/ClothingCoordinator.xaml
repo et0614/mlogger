@@ -4,6 +4,7 @@
              x:Class="MLS_Mobile.ClothingCoordinator"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.CC_Title}">
+    
     <Grid Padding="0" 
           RowSpacing="0"
           ColumnSpacing="0"

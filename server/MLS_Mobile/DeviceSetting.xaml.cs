@@ -1,13 +1,13 @@
 namespace MLS_Mobile;
 
+using System;
 using System.Text;
 
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Devices.Sensors;
-using Mopups.Services;
-using System;
+using CommunityToolkit.Maui.Views;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 public partial class DeviceSetting : ContentPage
@@ -88,9 +88,6 @@ public partial class DeviceSetting : ContentPage
   {
     InitializeComponent();
 
-    //ポップで戻ってきた場合
-    MopupService.Instance.Popped += Instance_Popped;
-
     //シェイクイベント登録
     Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
     Accelerometer.Start(SensorSpeed.UI);
@@ -103,35 +100,6 @@ public partial class DeviceSetting : ContentPage
   {
     //一般的ではないボタン群の表示・非表示切り替え
     isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = !calvBtnA.IsVisible;
-  }
-
-  private void Instance_Popped(object sender, Mopups.Events.PopupNavigationEventArgs e)
-  {
-    if (!(e.Page is SettingPopup)) return;
-
-    SettingPopup snPop = (SettingPopup)e.Page;
-
-    //状態値を更新
-    if (snPop.HasChanged)
-    {
-      if (snPop.PopID == 0)
-        updateName(snPop.ChangedValue);
-      else if (snPop.PopID == 1)
-      {
-        try
-        {
-          int panID = Convert.ToInt32(snPop.ChangedValue, 16);
-          byte[] ar = BitConverter.GetBytes(panID);
-          Array.Reverse(ar);
-          Task.Run(() =>
-          {
-            MLUtility.ConnectedXBee.SetParameter("ID", ar);
-            MLUtility.ConnectedXBee.WriteChanges();
-          });
-        }
-        catch { }
-      }
-    }
   }
 
   #endregion
@@ -610,14 +578,11 @@ public partial class DeviceSetting : ContentPage
     });
   }
 
-  private void SetNameButton_Clicked(object sender, EventArgs e)
+  private async void SetNameButton_Clicked(object sender, EventArgs e)
   {
-    MopupService.Instance.PushAsync(new SettingPopup(
-      0,
-      MLSResource.DS_SetName, 
-      Logger.Name,
-      Keyboard.Text
-      ));
+    var popup = new TextInputPopup(MLSResource.DS_SetName, Logger.Name, Keyboard.Text);
+    var result = await this.ShowPopupAsync(popup);
+    if (result != null) updateName(popup.EntryValue);
   }
 
   private void SDButton_Clicked(object sender, EventArgs e)
@@ -637,14 +602,26 @@ public partial class DeviceSetting : ContentPage
         byte[] id = MLUtility.ConnectedXBee.GetParameter("ID");
         string panID = BitConverter.ToString(id).Replace("-", "").TrimStart('0');
 
-        Application.Current.Dispatcher.Dispatch(() =>
+        Application.Current.Dispatcher.Dispatch(async () =>
         {
-          MopupService.Instance.PushAsync(new SettingPopup(
-            1,
-            MLSResource.DS_ChangePANID,
-            panID,
-            Keyboard.Numeric
-            ));
+          var popup = new TextInputPopup(MLSResource.DS_ChangePANID, panID, Keyboard.Numeric);
+          var result = await this.ShowPopupAsync(popup);
+          if (result != null)
+          {
+            try
+            {
+              int panID = Convert.ToInt32(popup.EntryValue, 16);
+              byte[] ar = BitConverter.GetBytes(panID);
+              Array.Reverse(ar);
+
+              await Task.Run(() =>
+              {
+                MLUtility.ConnectedXBee.SetParameter("ID", ar);
+                MLUtility.ConnectedXBee.WriteChanges();
+              });
+            }
+            catch { }
+          }
         });
       }
       catch { }

@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.MoistAirCalculator"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n" 
-             Title="{x:Static res:MLSResource.MS_Title}">
+             Title="{x:Static res:MLSResource.MS_Title}"
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:MoistAirCalculator">
     <StackLayout BackgroundColor="{StaticResource Lightest_G}">
         <Picker x:Name="pairList" Margin="20" SelectedIndexChanged="pairList_SelectedIndexChanged"/>
 
@@ -39,10 +41,11 @@
                     Margin="30,0,0,0" 
                     ValueChanged="slider_ValueChanged" 
                     Maximum="50" Minimum="-10" Value="26"/>
-            <Label Grid.Row="1" Grid.Column="1"
-                   x:Name="dbtLabel"
-                   HorizontalTextAlignment="End" VerticalTextAlignment="Center" 
-                   FontSize="Large"/>
+            <Label Grid.Row="1" Grid.Column="1" x:Name="dbtLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--相対湿度-->
             <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -50,7 +53,11 @@
                    Text="{Binding Source={x:Static res:MLSResource.RelativeHumidity}, StringFormat='{0} [%]'}"
                    />
             <Slider Grid.Row="3" Grid.Column="0" x:Name="rhmdSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="100" Value="50"/>
-            <Label Grid.Row="3" Grid.Column="1" x:Name="rhmdLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
+            <Label Grid.Row="3" Grid.Column="1" x:Name="rhmdLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--絶対湿度-->
             <Label Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -58,7 +65,11 @@
                    Text="{Binding Source={x:Static res:MLSResource.AbsoluteHumidity}, StringFormat='{0} [g/kg]'}"
                    />
             <Slider Grid.Row="5" Grid.Column="0" x:Name="ahmdSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="35" Value="26"/>
-            <Label Grid.Row="5" Grid.Column="1" x:Name="ahmdLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
+            <Label Grid.Row="5" Grid.Column="1" x:Name="ahmdLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--湿球温度-->
             <Label Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -66,7 +77,11 @@
                    Text="{Binding Source={x:Static res:MLSResource.WetbulbTemperature}, StringFormat='{0} [°CWB]'}"
                    />
             <Slider Grid.Row="7" Grid.Column="0" x:Name="wbtSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="40" Value="20"/>
-            <Label Grid.Row="7" Grid.Column="1" x:Name="wbtLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
+            <Label Grid.Row="7" Grid.Column="1" x:Name="wbtLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--エンタルピー[-->
             <Label Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -74,7 +89,11 @@
                    Text="{Binding Source={x:Static res:MLSResource.Enthalpy}, StringFormat='{0} [kJ/kg]'}"
                    />
             <Slider Grid.Row="9" Grid.Column="0" x:Name="entSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="130" Value="50.0"/>
-            <Label Grid.Row="9" Grid.Column="1" x:Name="entLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
+            <Label Grid.Row="9" Grid.Column="1" x:Name="entLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--比重量-->
             <Label Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -82,15 +101,24 @@
                    Text="{Binding Source={x:Static res:MLSResource.Density}, StringFormat='{0} [kg/m3]'}"
                    />
             <Slider Grid.Row="11" Grid.Column="0" x:Name="dnsSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="1.35" Minimum="1.05" Value="1.20"/>
-            <Label Grid.Row="11" Grid.Column="1" x:Name="dnsLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large"/>
+            <Label Grid.Row="11" Grid.Column="1" x:Name="dnsLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
 
             <!--大気圧-->
             <Label Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="2" 
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.AtmosphericPressure}, StringFormat='{0} [kPa]'}"
                    />
-            <Slider Grid.Row="13" Grid.Column="0" x:Name="atmSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="120" Minimum="60" Value="101.3"/>
-            <Label Grid.Row="13" Grid.Column="1" x:Name="atmLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" Text="{Binding Source={x:Reference atmSlider}, Path=Value, StringFormat='{0:F1}'}"/>
+            <Slider Grid.Row="13" Grid.Column="0" x:Name="atmSlider" Margin="30,0,0,0" ValueChanged="slider_ValueChanged" Maximum="120" Minimum="30" Value="101.3"/>
+            <!--エベレスト山頂で31kPa程度-->
+            <Label Grid.Row="13" Grid.Column="1" x:Name="atmLabel" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large" Text="{Binding Source={x:Reference atmSlider}, Path=Value, StringFormat='{0:F1}'}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Value_Tapped"/>
+                </Label.GestureRecognizers>
+            </Label>
         </Grid>
 
         <Grid Margin="20,10,20,20">

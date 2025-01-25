@@ -3,6 +3,7 @@ namespace MLS_Mobile;
 using System.Collections.ObjectModel;
 using Popolo.ThermophysicalProperty;
 using MLS_Mobile.Resources.i18n;
+using CommunityToolkit.Maui.Views;
 
 public partial class MoistAirCalculator : ContentPage
 {
@@ -70,6 +71,9 @@ public partial class MoistAirCalculator : ContentPage
     wbtLabel.FontAttributes = wbtSlider.IsEnabled ? bld : non;
     entLabel.FontAttributes = entSlider.IsEnabled ? bld : non;
     dnsLabel.FontAttributes = dnsSlider.IsEnabled ? bld : non;
+
+    //更新
+    updateValue();
   }
 
   private void updateValue()
@@ -219,18 +223,6 @@ public partial class MoistAirCalculator : ContentPage
         dnsLabel.Text = dnsSlider.Value.ToString("F2");
         break;
 
-      /*case 12: //湿球温度と比エンタルピー
-        dbt = MoistAir.GetDryBulbTemperatureFromWetBulbTemperatureAndEnthalpy(wbtSlider.Value, entSlider.Value, atmSlider.Value);
-        ahmd = MoistAir.GetHumidityRatioFromWetBulbTemperatureAndEnthalpy(wbtSlider.Value, entSlider.Value, atmSlider.Value);
-        dbtLabel.Text = dbt.ToString("F1");
-        ahmdLabel.Text = (1000 * ahmd).ToString("F1");
-        rhmdLabel.Text = Math.Max(0, Math.Min(100, MoistAir.GetRelativeHumidityFromDryBulbTemperatureAndHumidityRatio(dbt, ahmd, atmSlider.Value))).ToString("F1");
-        wbtLabel.Text = wbtSlider.Value.ToString("F1");
-        entLabel.Text = entSlider.Value.ToString("F1");
-        svol = MoistAir.GetSpecificVolumeFromDryBulbTemperatureAndHumidityRatio(dbt, ahmd, atmSlider.Value);
-        dnsLabel.Text = (1.0 / svol).ToString("F2");
-        break;*/
-
       case 12: //湿球温度と比重量
         dbt = MoistAir.GetDryBulbTemperatureFromWetBulbTemperatureAndSpecificVolume(wbtSlider.Value, 1.0 / dnsSlider.Value, atmSlider.Value);
         ahmd = MoistAir.GetHumidityRatioFromDryBulbTemperatureAndSpecificVolume(dbt, 1.0 / dnsSlider.Value, atmSlider.Value);
@@ -260,6 +252,58 @@ public partial class MoistAirCalculator : ContentPage
       (target == btnSummerOutdoor ? 70 : 40)));
     atmSlider.Value = 101.3;
     updateValue();
+  }
+
+  /// <summary>ラベルタップ時の処理</summary>
+  /// <param name="sender"></param>
+  /// <param name="e"></param>
+  private async void Value_Tapped(object sender, TappedEventArgs e)
+  {
+    Label target = (Label)sender;
+    Slider sld = null;
+    TextInputPopup popup = null;
+    if (target == dbtLabel)
+    {
+      sld = dbtSlider;
+      popup = new TextInputPopup(MLSResource.DrybulbTemperature, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == rhmdLabel)
+    {
+      sld = rhmdSlider;
+      popup = new TextInputPopup(MLSResource.RelativeHumidity, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == ahmdLabel)
+    {
+      sld = ahmdSlider;
+      popup = new TextInputPopup(MLSResource.AbsoluteHumidity, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == wbtLabel)
+    {
+      sld = wbtSlider;
+      popup = new TextInputPopup(MLSResource.WetbulbTemperature, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == entLabel)
+    {
+      sld = entSlider;
+      popup = new TextInputPopup(MLSResource.Enthalpy, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+    else if (target == dnsLabel)
+    {
+      sld = dnsSlider;
+      popup = new TextInputPopup(MLSResource.Density, sld.Value.ToString("F2"), Keyboard.Numeric);
+    }
+    else if (target == atmLabel)
+    {
+      sld = atmSlider;
+      popup = new TextInputPopup(MLSResource.AtmosphericPressure, sld.Value.ToString("F1"), Keyboard.Numeric);
+    }
+
+    if (popup == null) return;
+    if (!sld.IsEnabled) return;
+
+    if (await this.ShowPopupAsync(popup) != null)
+      if (double.TryParse(popup.EntryValue, out double val))
+        sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }
 
 }

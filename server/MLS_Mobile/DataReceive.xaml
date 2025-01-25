@@ -4,7 +4,9 @@
              x:Class="MLS_Mobile.DataReceive"
              xmlns:local="clr-namespace:MLS_Mobile"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
-             Title="{x:Static res:MLSResource.DR_Title}">
+             Title="{x:Static res:MLSResource.DR_Title}"
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:MLoggerViewModel">
 
     <ContentPage.BindingContext>
         <local:MLoggerViewModel />
@@ -142,12 +144,12 @@
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-        <Frame x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center">
+        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
             <StackLayout BackgroundColor="White">
                 <ActivityIndicator Color="Black" IsRunning="True"/>
                 <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
             </StackLayout>
-        </Frame>
+        </Border>
         <!--インジケータここまで-->
     </Grid>
 </ContentPage>
