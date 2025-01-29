@@ -40,9 +40,9 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>automatic</ProvisioningType>
-	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	  <ProvisioningType>manual</ProvisioningType>
+	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+	  <CodesignProvision>mls_dist</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
@@ -312,13 +312,13 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="10.0.0" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="11.0.0" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
-	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc4.5" />
-	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.0" />
-	  <PackageReference Include="Popolo" Version="2.3.1.76" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.21" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.21" />
+	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.1" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.1" />
+	  <PackageReference Include="Popolo" Version="2.3.1.79" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.30" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.30" />
 	</ItemGroup>
 
 	<ItemGroup>

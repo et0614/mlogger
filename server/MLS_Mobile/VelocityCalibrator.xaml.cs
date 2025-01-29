@@ -105,6 +105,48 @@ public partial class VelocityCalibrator : ContentPage
     InitializeComponent();
 
     initChart();
+
+    //戻るボタンで遷移する場合の処理
+    Shell.Current.Navigated += Current_Navigated;
+  }
+
+  private void Current_Navigated(object sender, ShellNavigatedEventArgs e)
+  {
+    if (e.Source == ShellNavigationSource.Pop)
+    {
+      Task.Run(async () =>
+      {
+        try
+        {
+          //風速校正終了コマンド送信
+          int tryNum = 0;
+          Logger.HasEndCalibratingVoltageMessageReceived = false;
+          while (!Logger.HasEndCalibratingVoltageMessageReceived)
+          {
+            //5回失敗したらエラー表示
+            if (5 <= tryNum)
+            {
+              Application.Current.Dispatcher.Dispatch(() =>
+              {
+                DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+              });
+              return;
+            }
+            tryNum++;
+
+            //終了コマンドを送信
+            MLUtility.ConnectedXBee.SendSerialData
+            (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
+
+            await Task.Delay(500);
+          }
+        }
+        catch { }
+      });
+
+      Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
+      Shell.Current.Navigated -= Current_Navigated; //イベント解除
+    }
   }
 
   protected override void OnAppearing()
@@ -112,43 +154,6 @@ public partial class VelocityCalibrator : ContentPage
     base.OnAppearing();
 
     isFirstVoltageMessage = true;
-  }
-
-  protected override void OnDisappearing()
-  {
-    base.OnDisappearing();
-
-    Task.Run(async () =>
-    {
-      try
-      {
-        //風速校正終了コマンド送信
-        int tryNum = 0;
-        Logger.HasEndCalibratingVoltageMessageReceived = false;
-        while (!Logger.HasEndCalibratingVoltageMessageReceived)
-        {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //終了コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
-
-          await Task.Delay(500);
-        }
-      }
-      catch { }
-    });
-
-    Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
   }
 
   private void Logger_CalibratingVoltageReceivedEvent(object sender, EventArgs e)
