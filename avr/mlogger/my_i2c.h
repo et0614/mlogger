@@ -103,6 +103,23 @@ class my_i2c
 		 * @return 読取成功で1、失敗で0
 		 */
 		static uint8_t ReadSTC31C(float temperature, float relatvieHumid, uint16_t *co2Level);
+		
+		/**
+		 * @fn
+		 * SHT4X-ADを初期化する
+		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
+		 */
+		static void InitializeSHT4X(bool isAD);
+				
+		/**
+		 * @fn
+		 * SHT4X-ADから乾球温度と相対湿度を読み取る
+		 * @param (tempValue) 乾球温度
+		 * @param (humiValue) 相対湿度
+		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
+		 * @return 読取成功で1、失敗で0
+		 */
+		static uint8_t ReadSHT4X(float * tempValue, float * humiValue, bool isAD);
 };
   
 #endif /* MY_I2C_H_ */

@@ -70,6 +70,9 @@ const uint8_t V_WAKEUP_TIME = 20;
 //グローブ温度計測用モジュールのタイプ
 const bool IS_MCP9700 = false; //MCP9701ならばfalse
 
+//SHT4Xを使うか否か
+const bool USE_SHT4X = true;
+
 //P3T1750DPを使うか否か
 const bool USE_P3T1750DP = true;
 
@@ -169,7 +172,11 @@ int main(void)
 	my_i2c::InitializeAHT20(); //温湿度計
 	my_i2c::InitializeVCNL4030(); //照度計
 	my_i2c::InitializeSTC31C(); //CO2濃度計
-	if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
+	if(USE_SHT4X) {
+		my_i2c::InitializeSHT4X(true);
+		my_i2c::InitializeSHT4X(false);
+	}
+	else if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
 	my_xbee::Initialize();  //XBee（UART）
 	
 	//タイマ初期化
@@ -624,8 +631,8 @@ ISR(RTC_PIT_vect)
 	
 	currentTime++; //1秒進める
 	
-	//風速計を使う場合には電圧確認（風速計が無ければ電池は限界まで使う）
-	if(my_eeprom::measure_vel && isLowBattery()) lowBatteryTime++;
+	//電圧確認（限界まで使うとFlashメモリのデータが破損することがある）
+	if(isLowBattery()) lowBatteryTime++;
 	else lowBatteryTime = 0;
 
 	//リセットボタン押し込み確認********************************
@@ -735,7 +742,16 @@ static void execLogging()
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
+		if(USE_SHT4X){
+			if(my_i2c::ReadSHT4X(&tmp_f, &hmd_f, true))
+			{
+				tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
+				hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
+				dtostrf(tmp_f,6,2,tmpS);
+				dtostrf(hmd_f,6,2,hmdS);
+			}			
+		}
+		else if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
 		{
 			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
 			hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
@@ -758,7 +774,16 @@ static void execLogging()
 	pass_glb++;
 	if(my_eeprom::measure_glb && (int)my_eeprom::interval_glb <= pass_glb)
 	{
-		if(USE_P3T1750DP){
+		if(USE_SHT4X){
+			float glbT = 0;
+			float glbH = 0;
+			if(my_i2c::ReadSHT4X(&glbT, &glbH, false))
+			{
+				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+				dtostrf(glbT,6,2,glbTS);
+			}			
+		}		
+		else if(USE_P3T1750DP){
 			float glbT = 0;
 			if(my_i2c::ReadP3T1750DP(&glbT))
 			{

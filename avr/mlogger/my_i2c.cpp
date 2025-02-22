@@ -23,6 +23,12 @@ const uint8_t P3T1750DP_ADD = 0x48 << 1;
 //STC31Cのアドレス
 const uint8_t STC31C_ADD = 0x29 << 1;
 
+//SHT4X-ADXのアドレス
+const uint8_t SHT4X_ADX_ADD = 0x44 << 1; //SHT40-ADXのアドレス。BDXとCDXは異なるので注意
+
+//SHT4X-BDXのアドレス
+const uint8_t SHT4X_BDX_ADD = 0x45 << 1; //SHT40-BDXのアドレス。ADXとCDXは異なるので注意
+
 enum 
 {
 	I2C_INIT = 0,
@@ -566,3 +572,73 @@ uint8_t my_i2c::ReadSTC31C(float temperature, float relatvieHumid, uint16_t *co2
 
 	return 1;
 }
+
+void my_i2c::InitializeSHT4X(bool isAD)
+{
+	
+	if(_start_writing(isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD) != I2C_ACKED) { _bus_stop(); return; }
+	if(_bus_write(0x94) != I2C_ACKED) { _bus_stop(); return; } //Soft Reset
+	_bus_stop();
+	_delay_ms(1); //Soft Resetには1ms必要
+}
+
+uint8_t my_i2c::ReadSHT4X(float* tempValue, float* humiValue, bool isAD)
+{
+	*humiValue = -99;
+	*tempValue = -99;
+	
+	uint8_t tBuff[3];
+	uint8_t hBuff[3];
+	
+	//測定命令(計測終了まで80ms必要)
+	if(_start_writing(isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	if(_bus_write(0xF6) != I2C_ACKED) { _bus_stop(); return 0; } //Medium precisionで計測
+	_bus_stop();
+	_delay_ms(10); //Medium precisionでの測定には4.5ms必要
+	
+	//測定値を受信
+	if(_start_reading(isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
+	//乾球温度
+	if(_bus_read(1, 0, &tBuff[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度1
+	if(_bus_read(1, 0, &tBuff[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:乾球温度2
+	if(_bus_read(1, 0, &tBuff[2]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:CRC
+	//相対湿度
+	if(_bus_read(1, 0, &hBuff[0]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度1
+	if(_bus_read(1, 0, &hBuff[1]) != I2C_SUCCESS) { _bus_stop(); return 0; } //ACK:相対湿度2
+	if(_bus_read(0, 1, &hBuff[2]) != I2C_SUCCESS) { _bus_stop(); return 0; } //NACK:CRC
+	
+	//乾球温度のCRC8をチェック
+	volatile uint8_t rcrc = crc8((uint8_t*)tBuff, 2);
+	if (tBuff[2] == rcrc)
+	{
+		float tmp = 0;
+		tmp += tBuff[0];
+		tmp *= 256;
+		tmp += tBuff[1];
+		tmp /= 65535;
+		tmp *= 175;
+		tmp -= 45;
+		*tempValue = tmp;
+	}
+	else return 0;
+	
+	//相対湿度のCRC8をチェック
+	rcrc = crc8((uint8_t*)hBuff, 2);
+	if (hBuff[2] == rcrc)
+	{
+		float hmd = 0;
+		hmd += hBuff[0];
+		hmd *= 256;
+		hmd += hBuff[1];
+		hmd /= 65535;
+		hmd *= 125;
+		hmd -= 6;
+		if(hmd < 0) hmd = 0;
+		else if(100 < hmd) hmd = 100;
+		*humiValue = hmd;
+	}
+	else return 0;
+	
+	return 1;
+}
+
