@@ -41,8 +41,8 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
 	  <ProvisioningType>automatic</ProvisioningType>
-	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
-	  <CodesignProvision>mls_dist</CodesignProvision>
+	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
@@ -342,6 +342,9 @@
 	    <AutoGen>True</AutoGen>
 	    <DependentUpon>TCResource.resx</DependentUpon>
 	  </Compile>
+	  <Compile Update="VelocityCalibrator2.xaml.cs">
+	    <DependentUpon>VelocityCalibrator2.xaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -411,6 +414,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ThermalComfortCalculator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="VelocityCalibrator2.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="VelocityCalibrator.xaml">

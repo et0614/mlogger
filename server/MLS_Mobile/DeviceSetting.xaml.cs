@@ -558,12 +558,29 @@ public partial class DeviceSetting : ContentPage
           await Task.Delay(500);
         }
 
+        //バージョンによって近似方法が異なるのでバージョン読み込み確認
+        if (!MLUtility.Logger.VersionLoaded)
+        {
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            DisplayAlert("Alert", "Version number has not loaded.", "OK");
+          });
+          return;
+        }
+
         //開始に成功したらページ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          Shell.Current.GoToAsync(nameof(VelocityCalibrator),
-            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
-            );
+          //新風速近似式
+          if (3 < MLUtility.Logger.Version_Major || 3 < MLUtility.Logger.Version_Minor || 19 < MLUtility.Logger.Version_Revision)
+            Shell.Current.GoToAsync(nameof(VelocityCalibrator2),
+              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
+              );
+          //旧風速近似式
+          else 
+            Shell.Current.GoToAsync(nameof(VelocityCalibrator),
+              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
+              );
         });
       }
       catch { }

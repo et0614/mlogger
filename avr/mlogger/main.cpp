@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.19\r";
+const char VERSION_NUMBER[] = "VER:3.3.20\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -81,6 +81,9 @@ const int N_LINE_BUFF = 30;
 
 //照度計カバーアクリル板の透過率
 const double TRANSMITTANCE = 0.60;
+
+//風速特性式version2か否か
+const bool IS_VEL_FNC2 = true;
 
 //広域変数定義********************************************************
 //日時関連
@@ -726,7 +729,11 @@ static void execLogging()
 		dtostrf(velV,6,4,velVS);
 			
 		float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
-		float vel = bff * (my_eeprom::VelCC_C + bff * (my_eeprom::VelCC_B + bff * my_eeprom::VelCC_A)); //電圧-風速換算式
+		float vel = 0;
+		if(IS_VEL_FNC2)
+			vel = my_eeprom::VelCC_B * pow(bff,my_eeprom::VelCC_A);
+		else
+			vel = bff * (my_eeprom::VelCC_C + bff * (my_eeprom::VelCC_B + bff * my_eeprom::VelCC_A)); //電圧-風速換算式
 		dtostrf(vel,6,4,velS);
 		
 		pass_vel = 0;
