@@ -87,10 +87,6 @@ public partial class DeviceSetting : ContentPage
   public DeviceSetting()
   {
     InitializeComponent();
-
-    //シェイクイベント登録
-    Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
-    Accelerometer.Start(SensorSpeed.UI);
   }
 
   /// <summary>シェイク時の処理</summary>
@@ -109,6 +105,10 @@ public partial class DeviceSetting : ContentPage
   protected override void OnAppearing()
   {
     base.OnAppearing();
+
+    //シェイクイベント登録
+    Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
+    Accelerometer.Start(SensorSpeed.UI);
 
     //校正ボタンの表示・非表示
     calvBtnA.IsVisible = calvBtnB.IsVisible = isDeveloperMode;
