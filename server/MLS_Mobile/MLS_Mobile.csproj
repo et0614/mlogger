@@ -40,29 +40,35 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>automatic</ProvisioningType>
-	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
-	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
+	  <ProvisioningType>manual</ProvisioningType>
+	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+	  <CodesignProvision>mls_dist</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.42</ApplicationDisplayVersion>
-	  <ApplicationVersion>45</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
+	  <ApplicationVersion>46</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.42</ApplicationDisplayVersion>
-	  <ApplicationVersion>45</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
+	  <ApplicationVersion>46</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.42</ApplicationDisplayVersion>
-	  <ApplicationVersion>45</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
+	  <ApplicationVersion>46</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.42</ApplicationDisplayVersion>
-	  <ApplicationVersion>45</ApplicationVersion>
+		<ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
+		<ApplicationVersion>46</ApplicationVersion>
+		<!--ここから-->
+		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
+		<MtouchLink>SdkOnly</MtouchLink>
+		<UseInterpreter>true</UseInterpreter>
+		<MtouchExtraArgs>--optimize:-static-block-to-delegate-lookup</MtouchExtraArgs>
+		<!--ここまで-->
 	</PropertyGroup>
 	
 	<ItemGroup>
