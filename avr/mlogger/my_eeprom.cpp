@@ -372,7 +372,7 @@ void my_eeprom::SetVelocityCharacteristics(const char data[])
 	num[4] = '\0';
 	strncpy(num, data + 3, 4);
 	buff = 0.001 * atol(num);
-	if(1.40 <= buff && buff <= 1.50)
+	if(1.40 <= buff && buff <= 1.60)
 	my_eeprom::Cf_vel0 = buff;
 	
 	//“Á«A

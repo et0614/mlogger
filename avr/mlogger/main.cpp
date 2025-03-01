@@ -727,7 +727,7 @@ static void execLogging()
 	{
 		double velV = readVelVoltage(); //AD•ÏŠ·
 		dtostrf(velV,6,4,velVS);
-			
+				
 		float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
 		float vel = 0;
 		if(IS_VEL_FNC2)
