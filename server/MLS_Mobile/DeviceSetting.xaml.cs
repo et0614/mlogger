@@ -394,7 +394,7 @@ public partial class DeviceSetting : ContentPage
           });
           return;
         }
-        catch{ }
+        catch { }
         await Task.Delay(500);
       }
     });
@@ -408,7 +408,7 @@ public partial class DeviceSetting : ContentPage
     if (!int.TryParse(ent_th.Text, out thSpan))
     {
       hasError = true;
-      alert +=　MLSResource.DS_InvalidNumber + "(" + MLSResource.DrybulbTemperature + ")\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.DrybulbTemperature + ")\r\n";
     }
     if (!int.TryParse(ent_glb.Text, out glbSpan))
     {
@@ -577,7 +577,7 @@ public partial class DeviceSetting : ContentPage
               new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
               );
           //旧風速近似式
-          else 
+          else
             Shell.Current.GoToAsync(nameof(VelocityCalibrator),
               new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
               );
@@ -717,9 +717,9 @@ public partial class DeviceSetting : ContentPage
         });
 
         //ログ
-        if(lMode == loggingMode.bluetooth)
+        if (lMode == loggingMode.bluetooth)
           MLUtility.WriteLog(Logger.XBeeName + "; Start logging by smart phone; ");
-        else if(lMode == loggingMode.mfcard)
+        else if (lMode == loggingMode.mfcard)
           MLUtility.WriteLog(Logger.XBeeName + "; Start logging to flash memory; ");
         else
           MLUtility.WriteLog(Logger.XBeeName + "; Start logging to PC; ");
@@ -767,18 +767,18 @@ public partial class DeviceSetting : ContentPage
   private void tpck_start_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
   {
     //時刻変更がなければ終了
-    if (tpck_start == null  || Logger == null || tpck_start.Time == Logger.StartMeasuringDateTime.TimeOfDay) return;
+    if (tpck_start == null || Logger == null || tpck_start.Time == Logger.StartMeasuringDateTime.TimeOfDay) return;
 
     lbl_stdtime.TextColor = Colors.Red;
   }
 
   private void resetTextColor()
   {
-    lbl_th.TextColor = 
-      lbl_glb.TextColor = 
-      lbl_vel.TextColor = 
-      lbl_lux.TextColor = 
-      lbl_stdtime.TextColor = 
+    lbl_th.TextColor =
+      lbl_glb.TextColor =
+      lbl_vel.TextColor =
+      lbl_lux.TextColor =
+      lbl_stdtime.TextColor =
       Colors.DarkGreen;
   }
 
@@ -853,6 +853,28 @@ public partial class DeviceSetting : ContentPage
         await Task.Delay(500);
       }
     });
+  }
+
+  #endregion
+
+  #region ヘルプタップ時の処理
+
+  private async void TapGestureRecognizer_Measure_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.StartLogging);
+    var result = await this.ShowPopupAsync(popup);
+  }
+
+  private async void TapGestureRecognizer_Setting_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.MeasurementInterval);
+    var result = await this.ShowPopupAsync(popup);
+  }
+
+  private async void TapGestureRecognizer_PCSetting_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.PCSetting);
+    var result = await this.ShowPopupAsync(popup);
   }
 
   #endregion

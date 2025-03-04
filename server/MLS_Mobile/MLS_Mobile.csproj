@@ -40,29 +40,29 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>manual</ProvisioningType>
+	  <ProvisioningType>automatic</ProvisioningType>
 	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
 	  <CodesignProvision>mls_dist</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
-	  <ApplicationVersion>46</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
+	  <ApplicationVersion>47</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
-	  <ApplicationVersion>46</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
+	  <ApplicationVersion>47</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
-	  <ApplicationVersion>46</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
+	  <ApplicationVersion>47</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
-		<ApplicationDisplayVersion>1.2.43</ApplicationDisplayVersion>
-		<ApplicationVersion>46</ApplicationVersion>
+		<ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
+		<ApplicationVersion>47</ApplicationVersion>
 		<!--ここから-->
 		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
 		<MtouchLink>SdkOnly</MtouchLink>
@@ -338,6 +338,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Resources\i18n\DescriptionText.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>DescriptionText.resx</DependentUpon>
+	  </Compile>
 	  <Compile Update="Resources\i18n\MLSResource.Designer.cs">
 	    <DesignTime>True</DesignTime>
 	    <AutoGen>True</AutoGen>
@@ -348,12 +353,23 @@
 	    <AutoGen>True</AutoGen>
 	    <DependentUpon>TCResource.resx</DependentUpon>
 	  </Compile>
+	  <Compile Update="DescriptionPopup.xaml.cs">
+	    <DependentUpon>DescriptionPopup.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="VelocityCalibrator2.xaml.cs">
 	    <DependentUpon>VelocityCalibrator2.xaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Update="Resources\i18n\DescriptionText.ja.resx">
+	    <LastGenOutput>DescriptionText - コピー.Designer.cs</LastGenOutput>
+	    <Generator>ResXFileCodeGenerator</Generator>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\i18n\DescriptionText.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>DescriptionText.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	  <EmbeddedResource Update="Resources\i18n\MLSResource.resx">
 	    <Generator>ResXFileCodeGenerator</Generator>
 	    <LastGenOutput>MLSResource.Designer.cs</LastGenOutput>
@@ -414,6 +430,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="RelayedDataViewer.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="DescriptionPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="TextInputPopup.xaml">

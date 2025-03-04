@@ -3,6 +3,7 @@ namespace MLS_Mobile;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using MLLib;
+using CommunityToolkit.Maui.Views;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 [QueryProperty(nameof(CloValue), "CloValue")]
@@ -143,6 +144,9 @@ public partial class DataReceive : ContentPage
 
   private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
   {
+    //メモ
+    string memo = ent_memo.Text?.Replace("\r", "").Replace("\n", "").Replace(",", "") ?? "";
+
     //データを保存
     string line =
       Logger.LastMeasured.ToString("yyyy/M/d,HH:mm:ss") + "," +
@@ -152,10 +156,20 @@ public partial class DataReceive : ContentPage
       Logger.Velocity.LastValue.ToString("F3") + "," +
       Logger.Illuminance.LastValue.ToString("F2") + "," +
       Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
-      Logger.VelocityVoltage.ToString("F3") + Environment.NewLine;
+      Logger.VelocityVoltage.ToString("F3") + "," + memo + Environment.NewLine;
 
     string fileName = Logger.LocalName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
     MLUtility.AppendData(fileName, line);
+  }
+
+  #endregion
+
+  #region ヘルプタップ時の処理
+
+  private async void TapGestureRecognizer_ShortMemo_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.ShortMemo);
+    var result = await this.ShowPopupAsync(popup);
   }
 
   #endregion

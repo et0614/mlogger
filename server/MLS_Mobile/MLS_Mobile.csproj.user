@@ -3,8 +3,8 @@
   <PropertyGroup>
     <ActiveDebugFramework>net9.0-ios</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>Remote Device</ActiveDebugProfile>
-    <SelectedPlatformGroup>RemoteDevice</SelectedPlatformGroup>
+    <ActiveDebugProfile>et_red</ActiveDebugProfile>
+    <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
     <DefaultDevice>iPad Pro 13-inch (M4) iOS 18.2</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
@@ -15,9 +15,9 @@
 		&lt;key&gt;architecture&lt;/key&gt;
 		&lt;string&gt;ARMv6, ARMv7, ARMv7s, ARM64&lt;/string&gt;
 		&lt;key&gt;model&lt;/key&gt;
-		&lt;string&gt;iPhone11,2&lt;/string&gt;
+		&lt;string&gt;iPhone14,4&lt;/string&gt;
 		&lt;key&gt;os-version&lt;/key&gt;
-		&lt;string&gt;16.6&lt;/string&gt;
+		&lt;string&gt;18.3.1&lt;/string&gt;
 		&lt;key&gt;os&lt;/key&gt;
 		&lt;string&gt;iOS&lt;/string&gt;
 	&lt;/dict&gt;
@@ -42,6 +42,9 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Update="Resources\i18n\DescriptionText.ja.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\i18n\MLSResource.ja.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="MLS_Mobile.DescriptionPopup"
+             xmlns:model="clr-namespace:MLS_Mobile"
+             x:DataType="model:DescriptionPopup"
+             CanBeDismissedByTappingOutsideOfPopup="True">
+
+    <Grid BackgroundColor="White"
+          HeightRequest="400"
+          HorizontalOptions="Fill"
+          Padding="5">
+        <ScrollView Margin="15">
+            <Label x:Name="lblMessage" Text="{Binding LabelText}" TextColor="Black" 
+                   HorizontalOptions="Fill"
+                   VerticalOptions="Fill" FontSize="Medium" LineBreakMode="WordWrap"/>
+        </ScrollView>
+    </Grid>
+
+</toolkit:Popup>

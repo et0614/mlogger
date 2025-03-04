@@ -13,32 +13,51 @@
             <StackLayout Padding="15">
                 
                 <!--主要な3機能-->
-                <Label Text="{x:Static res:MLSResource.DS_StartLogging}" FontSize="Subtitle"/>
+                <HorizontalStackLayout>
+                    <Label Text="{x:Static res:MLSResource.DS_StartLogging}" FontSize="Subtitle"/>
+                    <!--(i)マーク-->
+                    <Border Margin="8,0,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
+                        <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="TapGestureRecognizer_Measure_Tapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </HorizontalStackLayout>                
+
                 <Grid Margin="5,5,0,0" RowDefinitions="Auto" ColumnDefinitions="*,*,*">
                     <!--スマートフォンに記録-->
                     <Button Grid.Row="0" Grid.Column="0" Margin="0,0,4,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Phone" LineBreakMode="NoWrap"
                             ImageSource="smart_phone.png" ContentLayout="Top, 0" 
-                            Clicked="StartButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
+                            Clicked="StartButton_Clicked" VerticalOptions="Start" FontSize="Large">
                     </Button>
 
                     <!--PCに記録-->
                     <Button Grid.Row="0" Grid.Column="1" Margin="2,0,2,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="PC" LineBreakMode="NoWrap"
                             ImageSource="laptop.png" ContentLayout="Top, 0" 
-                            Clicked="CnctToPcButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
+                            Clicked="CnctToPcButton_Clicked" VerticalOptions="Start" FontSize="Large">
                     </Button>
 
                     <!--フラッシュメモリに記録-->
                     <Button Grid.Row="0" Grid.Column="2" Margin="4,0,0,0" Padding="0,5,0,0" HeightRequest="70"
                             Text="Flash" LineBreakMode="NoWrap"
                             ImageSource="flash_memory.png" ContentLayout="Top, 0" 
-                            Clicked="SDButton_Clicked" HorizontalOptions="FillAndExpand" VerticalOptions="Start" FontSize="Large">
+                            Clicked="SDButton_Clicked" VerticalOptions="Start" FontSize="Large">
                     </Button>
                 </Grid>
 
                 <!--測定設定-->
-                <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
+                <HorizontalStackLayout>
+                    <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
+                    <!--(i)マーク-->
+                    <Border Margin="8,15,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
+                        <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="TapGestureRecognizer_Setting_Tapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </HorizontalStackLayout>
 
                 <!--温湿度計-->
                 <Grid Margin="10,5,0,0" ColumnDefinitions="60,*,80,30" IsVisible="True">
@@ -114,7 +133,16 @@
                 </Button>
 
                 <!--PCとの通信設定-->
-                <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_ZigbeeSetting}" FontSize="Subtitle"/>
+                <HorizontalStackLayout>
+                    <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_ZigbeeSetting}" FontSize="Subtitle"/>
+                    <!--(i)マーク-->
+                    <Border Margin="8,15,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
+                        <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="TapGestureRecognizer_PCSetting_Tapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </HorizontalStackLayout>                
                 <!--PCと通信開始（常設モード）-->
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" x:Name="btn_pmntMode" Text="{x:Static res:MLSResource.DS_SetToPermanentMode}" IsEnabled="False" Clicked="PermanentModeButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>

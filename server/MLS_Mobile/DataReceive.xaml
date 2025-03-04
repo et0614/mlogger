@@ -105,6 +105,7 @@
                     <Label Grid.Row="1" Grid.Column="2" Text="°C" HorizontalTextAlignment="Start"/>
                 </Grid>
 
+                <!--着衣と代謝-->
                 <Grid Margin="0,0,0,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -139,6 +140,25 @@
                         </Button.ImageSource>
                     </Button>
                 </Grid>
+
+                <!--メモ-->
+                <Grid Margin="0,0,0,50" RowDefinitions="30,*" ColumnDefinitions="*">
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="0">
+                        <Label Text="Short memo (Max 30 characters)" VerticalTextAlignment="Start" FontSize="Large"/>
+                        <!--(i)マーク-->
+                        <Border Margin="8,0,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
+                            <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="TapGestureRecognizer_ShortMemo_Tapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </HorizontalStackLayout>
+                    
+                    <Border Grid.Row="1" Grid.Column="0" Stroke="Gray">
+                        <Entry x:Name="ent_memo" MaxLength="30" HorizontalOptions="Fill" VerticalOptions="Center"/>
+                    </Border>                    
+                </Grid>
+                
             </StackLayout>
         </ScrollView>
 
