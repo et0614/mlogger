@@ -33,6 +33,9 @@ public partial class VelocityCalibrator2 : ContentPage
 
   #region インスタンス変数・プロパティ
 
+  /// <summary>初期化中か否か</summary>
+  private bool initializing = false;
+
   /// <summary>通信するMLoggerを取得する</summary>
   public MLogger Logger { get { return MLUtility.GetLogger(_mlLowAddress); } }
 
@@ -42,16 +45,34 @@ public partial class VelocityCalibrator2 : ContentPage
     set
     {
       estimatedLine.Values = makePointsFromCoefficients(value[0], value[1], value[2]);
+
+      initializing = true;
+      double[] yVal = {
+        value[0],
+        (Math.Pow(MIN_AFLOW / value[2], 1d / value[1]) + 1) * value[0],
+        (Math.Pow(MID_AFLOW / value[2], 1d / value[1]) + 1) * value[0],
+        (Math.Pow(MAX_AFLOW / value[2], 1d / value[1]) + 1) * value[0]
+      };
+
+      measuredPoints[0].Y = yVal[0];
+      measuredPoints[1].Y = yVal[1];
+      measuredPoints[2].Y = yVal[2];
+      measuredPoints[3].Y = yVal[3];
+
+      eVolRef.Text = yVal[0].ToString();      
+      eVol1.Text = yVal[1].ToString("F3");
+      eVol2.Text = yVal[2].ToString("F3");
+      eVol3.Text = yVal[3].ToString("F3");
+      initializing = false;
+
       stopUpdatingChart = true;
-      aveVoltage.Text = value[0].ToString("F3");
       coefA.Text = value[1].ToString("F3");
       coefB.Text = value[2].ToString("F3");
       stopUpdatingChart = false;
+
+      coefA.TextColor = coefB.TextColor = Colors.Black;
     }
   }
-
-  /// <summary>校正中の電圧リスト[V]</summary>
-  private double[] calibratingVoltages { get; set; } = { 1.450, 1.522, 1.572, 1.639 };
 
   /// <summary>低位アドレス</summary>
   private string _mlLowAddress = "";
@@ -255,7 +276,7 @@ public partial class VelocityCalibrator2 : ContentPage
           NamePadding = new LiveChartsCore.Drawing.Padding(0, 10, 0, 0),
 
           MinLimit = 1.4,
-          MaxLimit = 1.8,
+          MaxLimit = 1.9,
           MinStep = 0.1,
           ForceStepToMin = true,
           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)
@@ -272,12 +293,12 @@ public partial class VelocityCalibrator2 : ContentPage
         }
       };
 
-    //点
+    //点:すぐに書き換わるので意味は無いが。
     measuredPoints = [
-        new ObservablePoint(0.0, calibratingVoltages[0]),
-        new ObservablePoint(MIN_AFLOW, calibratingVoltages[1]),
-        new ObservablePoint(MID_AFLOW, calibratingVoltages[2]),
-        new ObservablePoint(MAX_AFLOW, calibratingVoltages[3])
+        new ObservablePoint(0.0, 1.450),
+        new ObservablePoint(MIN_AFLOW, 1.522),
+        new ObservablePoint(MID_AFLOW, 1.572),
+        new ObservablePoint(MAX_AFLOW, 1.639)
       ];
 
     //電圧線
@@ -297,7 +318,7 @@ public partial class VelocityCalibrator2 : ContentPage
     //基準線
     LineSeries<ObservablePoint> referenceLine = new LineSeries<ObservablePoint>()
     {
-      Values = makePointsFromCoefficients(1.45, 2.494776, 104.0555),
+      Values = makePointsFromCoefficients(1.51, 2.730, 128.0),  //100台校正の平均値
       Stroke = new SolidColorPaint(SKColors.LightGray) { StrokeThickness = 3 },
       Fill = null, //下部塗りつぶし
       GeometryFill = null, //プロット塗りつぶし
@@ -308,7 +329,7 @@ public partial class VelocityCalibrator2 : ContentPage
     //特性係数から算出した線
     estimatedLine = new LineSeries<ObservablePoint>
     {
-      Values = makePointsFromCoefficients(1.45, 2.494776, 104.0555),
+      Values = makePointsFromCoefficients(1.51, 2.730, 128.0),  //100台校正の平均値
 
       Stroke = new SolidColorPaint(SKColors.Green) { StrokeThickness = 2 }, //線
       Fill = null, //下部塗りつぶし
@@ -360,7 +381,7 @@ public partial class VelocityCalibrator2 : ContentPage
   private static List<ObservablePoint> makePointsFromCoefficients(
     double minV, double coefA, double coefB)
   {
-    double maxV = 1.8;
+    double maxV = 1.9;
     List<ObservablePoint> points = new List<ObservablePoint>();
     double cV = minV;
     while (cV < maxV)
@@ -383,6 +404,9 @@ public partial class VelocityCalibrator2 : ContentPage
   /// <param name="e"></param>
   private void VoltageEntry_TextChanged(object sender, TextChangedEventArgs e)
   {
+    //初期化中は無視
+    if (initializing) return;
+
     //電圧を取得
     if (!double.TryParse(eVolRef.Text, out double volRef)) return;
     if (!double.TryParse(eVol1.Text, out double vol1)) return;

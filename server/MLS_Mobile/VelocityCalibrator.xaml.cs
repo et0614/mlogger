@@ -256,7 +256,7 @@ public partial class VelocityCalibrator : ContentPage
           NamePadding = new LiveChartsCore.Drawing.Padding(0, 10, 0, 0),
 
           MinLimit = 1.4,
-          MaxLimit = 1.8,
+          MaxLimit = 1.9,
           MinStep = 0.1,
           ForceStepToMin = true,
           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)

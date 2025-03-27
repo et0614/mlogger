@@ -46,23 +46,23 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
-	  <ApplicationVersion>47</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
+	  <ApplicationVersion>48</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
-	  <ApplicationVersion>47</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
+	  <ApplicationVersion>48</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
-	  <ApplicationVersion>47</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
+	  <ApplicationVersion>48</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
-		<ApplicationDisplayVersion>1.2.44</ApplicationDisplayVersion>
-		<ApplicationVersion>47</ApplicationVersion>
+		<ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
+		<ApplicationVersion>48</ApplicationVersion>
 		<!--ここから-->
 		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
 		<MtouchLink>SdkOnly</MtouchLink>
