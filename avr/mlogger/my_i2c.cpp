@@ -206,7 +206,7 @@ float my_i2c::ReadVCNL4030_ALS(void)
 {	
 	//照度センサを有効にする
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }
-	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測設定コマンド
+	if(_bus_write(0x00) != I2C_ACKED) { _bus_stop(); return 0; } //照度計測設定コマンド(ALS_CONF1, ALS_CONF2)
 	if(_bus_write(0b00010000) != I2C_ACKED) { _bus_stop(); return 0; } //000 1 00 0 0: 計測レベル(50ms), ダイナミックレンジ2倍, 割込回数は毎回, 割込無効, 照度計測有効
 	if(_bus_write(0b00000011) != I2C_ACKED) { _bus_stop(); return 0; } //000000 0 1: reserved, 感度1倍, White channel無効（この機能はよくわからん）
 	_bus_stop();
@@ -246,7 +246,7 @@ float my_i2c::ReadVCNL4030_PS(void)
 	if(_bus_write(0b11001110) != I2C_ACKED) { _bus_stop(); return 0; } //11 00 111 0: Duty ratio=1/320, 割込回数は毎回, Integration time=8T(400us), 距離計測有効
 	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
 	_bus_stop();
-	_delay_ms(150); //技術資料によると8Tの場合には128msのようだが。。。
+	_delay_ms(150); //技術資料によると8Tの場合には128usのようだが。。。
 	
 	//距離読み取り
 	if(_start_writing(VCNL_ADD) != I2C_ACKED) { _bus_stop(); return 0; }

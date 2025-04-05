@@ -156,15 +156,18 @@ void initMemory()
 	eeprom_busy_wait();
 	eeprom_update_float(&EEP_VELCF_B, 0.000);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VEL0, 1.450);
+	eeprom_update_float(&EEP_VEL0, VEL_VEL0);
 	
 	//風速計特性係数
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_A, 0.0);
+	//eeprom_update_float(&EEP_VELCC_A, 0.0); //旧バージョン
+	eeprom_update_float(&EEP_VELCC_A, VEL_COEF_A);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_B, 68.572);
+	//eeprom_update_float(&EEP_VELCC_B, 68.572); //旧バージョン
+	eeprom_update_float(&EEP_VELCC_B, VEL_COEF_B);
 	eeprom_busy_wait();
-	eeprom_update_float(&EEP_VELCC_C, 2.592);
+	//eeprom_update_float(&EEP_VELCC_C, 2.592); //旧バージョン
+	eeprom_update_float(&EEP_VELCC_C, 0.0);
 		
 	//計測真偽
 	eeprom_busy_wait();

@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.20\r";
+const char VERSION_NUMBER[] = "VER:3.3.21\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -750,7 +750,7 @@ static void execLogging()
 		float tmp_f = 0;
 		float hmd_f = 0;
 		if(USE_SHT4X){
-			if(my_i2c::ReadSHT4X(&tmp_f, &hmd_f, true))
+			if(my_i2c::ReadSHT4X(&tmp_f, &hmd_f, false))
 			{
 				tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
 				hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
@@ -784,7 +784,7 @@ static void execLogging()
 		if(USE_SHT4X){
 			float glbT = 0;
 			float glbH = 0;
-			if(my_i2c::ReadSHT4X(&glbT, &glbH, false))
+			if(my_i2c::ReadSHT4X(&glbT, &glbH, true))
 			{
 				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
 				dtostrf(glbT,6,2,glbTS);
@@ -870,7 +870,7 @@ static void execLogging()
 		//書き出し文字列を作成
 		snprintf(charBuff, sizeof(charBuff), "DTT:%04d,%02d/%02d,%02d:%02d:%02d,%s,%s,%s,%s,%s,%s,%s,%s,n/a,n/a,%s\r",
 		dtNow.tm_year + 1900, dtNow.tm_mon + 1, dtNow.tm_mday, dtNow.tm_hour, dtNow.tm_min, dtNow.tm_sec,
-		tmpS, hmdS, glbTS, velS, illS, glbVS, velVS, adV1S, co2S);
+		tmpS, hmdS, glbTS, velS, illS, "n/a", velVS, adV1S, co2S);
 		
 		//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
 		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
@@ -1204,17 +1204,20 @@ inline static void blinkGreenAndRedLED(int iterNum)
 
 inline static void turnOnGreenLED(void)
 {
-	PORTA.OUTSET = PIN6_bm; //点灯
+	//PORTA.OUTSET = PIN6_bm; //点灯
+	PORTA.OUTSET = PIN7_bm; //点灯
 }
 
 inline static void turnOffGreenLED(void)
 {
-	PORTA.OUTCLR = PIN6_bm; //消灯
+	//PORTA.OUTCLR = PIN6_bm; //消灯
+	PORTA.OUTCLR = PIN7_bm; //消灯
 }
 
 inline static void toggleGreenLED(void)
 {
-	PORTA.OUTTGL = PIN6_bm; //反転
+	//PORTA.OUTTGL = PIN6_bm; //反転
+	PORTA.OUTTGL = PIN7_bm; //反転
 }
 
 inline static void blinkGreenLED(int iterNum)
@@ -1235,17 +1238,20 @@ inline static void blinkGreenLED(int iterNum)
 
 inline static void turnOnRedLED(void)
 {
-	PORTA.OUTSET = PIN7_bm; //点灯
+	//PORTA.OUTSET = PIN7_bm; //点灯
+	PORTA.OUTSET = PIN6_bm; //点灯
 }
 
 inline static void turnOffRedLED(void)
 {
-	PORTA.OUTCLR = PIN7_bm; //消灯
+	//PORTA.OUTCLR = PIN7_bm; //消灯
+	PORTA.OUTCLR = PIN6_bm; //消灯
 }
 
 inline static void toggleRedLED(void)
 {
-	PORTA.OUTTGL = PIN7_bm; //反転
+	//PORTA.OUTTGL = PIN7_bm; //反転
+	PORTA.OUTTGL = PIN6_bm; //反転
 }
 
 inline static void blinkRedLED(int iterNum)
