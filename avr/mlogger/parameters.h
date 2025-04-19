@@ -2399,6 +2399,9 @@
 #define HMD_COEF_B	0.95
 #define GLB_COEF_A	1.013
 #define GLB_COEF_B	0.05
+#define VEL_VEL0	1.518
+#define VEL_COEF_A	2.556
+#define VEL_COEF_B	81.323
 
 #elif	MLPARAM_0532
 #define ML_NAME	"MLogger_0532"
@@ -2408,6 +2411,9 @@
 #define HMD_COEF_B	0.82
 #define GLB_COEF_A	1.015
 #define GLB_COEF_B	0.05
+#define VEL_VEL0	1.506
+#define VEL_COEF_A	2.463
+#define VEL_COEF_B	88.246
 
 #elif	MLPARAM_0533
 #define ML_NAME	"MLogger_0533"
@@ -2417,6 +2423,9 @@
 #define HMD_COEF_B	0.97
 #define GLB_COEF_A	1.011
 #define GLB_COEF_B	0.13
+#define VEL_VEL0	1.497
+#define VEL_COEF_A	2.379
+#define VEL_COEF_B	74.392
 
 #elif	MLPARAM_0534
 #define ML_NAME	"MLogger_0534"
@@ -2426,6 +2435,9 @@
 #define HMD_COEF_B	0.97
 #define GLB_COEF_A	1.016
 #define GLB_COEF_B	0.01
+#define VEL_VEL0	1.497
+#define VEL_COEF_A	2.429
+#define VEL_COEF_B	108.624
 
 #elif	MLPARAM_0535
 #define ML_NAME	"MLogger_0535"
@@ -2435,6 +2447,9 @@
 #define HMD_COEF_B	1.11
 #define GLB_COEF_A	1.015
 #define GLB_COEF_B	0.04
+#define VEL_VEL0	1.489
+#define VEL_COEF_A	2.457
+#define VEL_COEF_B	60.665
 
 #elif	MLPARAM_0536
 #define ML_NAME	"MLogger_0536"
@@ -2444,6 +2459,9 @@
 #define HMD_COEF_B	0.75
 #define GLB_COEF_A	1.012
 #define GLB_COEF_B	0.08
+#define VEL_VEL0	1.502
+#define VEL_COEF_A	2.538
+#define VEL_COEF_B	80.196
 
 #elif	MLPARAM_0537
 #define ML_NAME	"MLogger_0537"
@@ -2453,6 +2471,9 @@
 #define HMD_COEF_B	0.94
 #define GLB_COEF_A	1.017
 #define GLB_COEF_B	-0.03
+#define VEL_VEL0	1.510
+#define VEL_COEF_A	2.510
+#define VEL_COEF_B	104.761
 
 #elif	MLPARAM_0538
 #define ML_NAME	"MLogger_0538"
@@ -2462,6 +2483,9 @@
 #define HMD_COEF_B	1.07
 #define GLB_COEF_A	1.013
 #define GLB_COEF_B	0.06
+#define VEL_VEL0	1.519
+#define VEL_COEF_A	2.553
+#define VEL_COEF_B	88.064
 
 #elif	MLPARAM_0539
 #define ML_NAME	"MLogger_0539"
@@ -2471,6 +2495,9 @@
 #define HMD_COEF_B	1.25
 #define GLB_COEF_A	1.034
 #define GLB_COEF_B	-0.49
+#define VEL_VEL0	1.515
+#define VEL_COEF_A	2.503
+#define VEL_COEF_B	79.109
 
 #elif	MLPARAM_0540
 #define ML_NAME	"MLogger_0540"
@@ -2480,6 +2507,9 @@
 #define HMD_COEF_B	1.19
 #define GLB_COEF_A	1.033
 #define GLB_COEF_B	-0.47
+#define VEL_VEL0	1.511
+#define VEL_COEF_A	2.570
+#define VEL_COEF_B	138.400
 
 #elif	MLPARAM_0541
 #define ML_NAME	"MLogger_0541"
@@ -2489,6 +2519,9 @@
 #define HMD_COEF_B	1.19
 #define GLB_COEF_A	1.033
 #define GLB_COEF_B	-0.48
+#define VEL_VEL0	1.511
+#define VEL_COEF_A	2.542
+#define VEL_COEF_B	79.702
 
 #elif	MLPARAM_0542
 #define ML_NAME	"MLogger_0542"
@@ -2498,6 +2531,9 @@
 #define HMD_COEF_B	1.42
 #define GLB_COEF_A	1.032
 #define GLB_COEF_B	-0.48
+#define VEL_VEL0	1.508
+#define VEL_COEF_A	2.579
+#define VEL_COEF_B	92.303
 
 #elif	MLPARAM_0543
 #define ML_NAME	"MLogger_0543"
@@ -2507,6 +2543,9 @@
 #define HMD_COEF_B	1.19
 #define GLB_COEF_A	1.031
 #define GLB_COEF_B	-0.42
+#define VEL_VEL0	1.502
+#define VEL_COEF_A	2.334
+#define VEL_COEF_B	77.285
 
 #elif	MLPARAM_0544
 #define ML_NAME	"MLogger_0544"
@@ -2516,6 +2555,9 @@
 #define HMD_COEF_B	1.39
 #define GLB_COEF_A	1.028
 #define GLB_COEF_B	-0.36
+#define VEL_VEL0	1.503
+#define VEL_COEF_A	2.362
+#define VEL_COEF_B	96.061
 
 #elif	MLPARAM_0545
 #define ML_NAME	"MLogger_0545"
@@ -2525,6 +2567,9 @@
 #define HMD_COEF_B	1.41
 #define GLB_COEF_A	1.037
 #define GLB_COEF_B	-0.55
+#define VEL_VEL0	1.503
+#define VEL_COEF_A	2.619
+#define VEL_COEF_B	79.888
 
 #elif	MLPARAM_0546
 #define ML_NAME	"MLogger_0546"
@@ -2534,6 +2579,9 @@
 #define HMD_COEF_B	1.28
 #define GLB_COEF_A	1.032
 #define GLB_COEF_B	-0.51
+#define VEL_VEL0	1.503
+#define VEL_COEF_A	2.386
+#define VEL_COEF_B	54.240
 
 #elif	MLPARAM_0547
 #define ML_NAME	"MLogger_0547"
@@ -2543,6 +2591,9 @@
 #define HMD_COEF_B	1.38
 #define GLB_COEF_A	1.032
 #define GLB_COEF_B	-0.50
+#define VEL_VEL0	1.509
+#define VEL_COEF_A	2.459
+#define VEL_COEF_B	75.949
 
 #elif	MLPARAM_0548
 #define ML_NAME	"MLogger_0548"
@@ -2552,6 +2603,9 @@
 #define HMD_COEF_B	1.21
 #define GLB_COEF_A	1.033
 #define GLB_COEF_B	-0.52
+#define VEL_VEL0	1.503
+#define VEL_COEF_A	2.339
+#define VEL_COEF_B	66.942
 
 #elif	MLPARAM_0549
 #define ML_NAME	"MLogger_0549"
@@ -2561,6 +2615,9 @@
 #define HMD_COEF_B	1.40
 #define GLB_COEF_A	1.033
 #define GLB_COEF_B	-0.56
+#define VEL_VEL0	1.500
+#define VEL_COEF_A	2.229
+#define VEL_COEF_B	58.864
 
 #elif	MLPARAM_0550
 #define ML_NAME	"MLogger_0550"
@@ -2570,6 +2627,10 @@
 #define HMD_COEF_B	0.00
 #define GLB_COEF_A	1.000
 #define GLB_COEF_B	0.00
+#define VEL_VEL0	1.501
+#define VEL_COEF_A	2.166
+#define VEL_COEF_B	48.757
+
 
 //ここまでペースト*********************************
 #else
