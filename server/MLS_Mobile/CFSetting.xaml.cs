@@ -51,8 +51,6 @@ public partial class CFSetting : ContentPage
     lbl_glb.Text = MLSResource.GlobeTemperature;
     lbl_vel.Text = MLSResource.Velocity;
     lbl_lux.Text = MLSResource.Illuminance;
-
-    vel_voltage.Text = MLSResource.CF_VelocityVoltage;
   }
 
   protected override void OnAppearing()
@@ -156,16 +154,6 @@ public partial class CFSetting : ContentPage
       hasError = true;
       errMsg += String.Format(MLSResource.CF_Invalid, "B", MLSResource.RelativeAirVelocity) + Environment.NewLine;
     }
-    if (!double.TryParse(vel_0V.Text, out double velV))
-    {
-      hasError = true;
-      errMsg += MLSResource.CF_InvalidVelocity1 + Environment.NewLine;
-    }
-    else if (velV <= 0)
-    {
-      hasError = true;
-      errMsg += MLSResource.CF_InvalidVelocity2 + Environment.NewLine;
-    }
 
     if (!double.TryParse(cA_lux.Text, out double luxA))
     {
@@ -181,7 +169,7 @@ public partial class CFSetting : ContentPage
     if (hasError) DisplayAlert("Alert", errMsg, "OK");
     else 
       saveCorrectionFactors(MLogger.MakeCorrectionFactorsSettingCommand
-          (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, velV));
+          (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, Logger.VelocityMinVoltage));
   }
 
   private void saveCorrectionFactors(string command)
@@ -295,7 +283,6 @@ public partial class CFSetting : ContentPage
 
     cA_vel.Text = Logger.Velocity.CorrectionFactorA.ToString("F3");
     cB_vel.Text = Logger.Velocity.CorrectionFactorB.ToString("F3");
-    vel_0V.Text = Logger.VelocityMinVoltage.ToString("F3");
 
     cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
     cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");

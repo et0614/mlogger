@@ -82,7 +82,6 @@
             <Grid Margin="10,5,0,20">
                 <Grid.RowDefinitions>
                     <RowDefinition/>
-                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
@@ -98,10 +97,6 @@
                 <Label Grid.Row="0" Grid.Column="2" x:Name="ms_vel" VerticalOptions="Center" HorizontalOptions="Center"/>
                 <Border Grid.Row="0" Grid.Column="3">
                     <Entry x:Name="cB_vel" VerticalOptions="Center" HorizontalOptions="Fill" Keyboard="Numeric" TextChanged="vel_TextChanged" HorizontalTextAlignment="Center"/>
-                </Border>
-                <Label Grid.Row="1" Grid.Column="0" x:Name="vel_voltage" VerticalOptions="Center" HorizontalOptions="Center"/>
-                <Border Grid.Row="1" Grid.Column="1">
-                    <Entry x:Name="vel_0V" VerticalOptions="Center" HorizontalOptions="Fill" Keyboard="Numeric" TextChanged="vel_TextChanged" HorizontalTextAlignment="Center"/>
                 </Border>
             </Grid>
 

@@ -199,8 +199,19 @@ public partial class LoggingData : ContentPage
 
   private async void share_Clicked(object sender, EventArgs e)
   {
+    // 一時ファイルに保存
     string cData = MakeClipData(FileName);
-    ShareTextRequest st = new ShareTextRequest
+    string filePath = Path.Combine(FileSystem.CacheDirectory, FileName);
+    File.WriteAllText(filePath, cData, Encoding.UTF8);
+
+    //ファイルを共有
+    await Share.Default.RequestAsync(new ShareFileRequest
+    {
+      Title = "M-Logger Data",
+      File = new ShareFile(filePath)
+    });
+
+    /*  ShareTextRequest st = new ShareTextRequest
     {
       Text = cData,
       Title = "M-Logger Data"
@@ -220,7 +231,7 @@ public partial class LoggingData : ContentPage
         var stream = new MemoryStream(data);
         await FileSaver.Default.SaveAsync(FileName, stream);
       }
-    }
+    }*/
   }
 
   #endregion

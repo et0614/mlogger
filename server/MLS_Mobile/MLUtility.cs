@@ -248,6 +248,7 @@ namespace MLS_Mobile
     {
       string filePath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + DATA_DIR_NAME
         + Path.DirectorySeparatorChar + fileName;
+
       using (StreamWriter sWriter = new StreamWriter(filePath, true))
       {
         sWriter.Write(data);

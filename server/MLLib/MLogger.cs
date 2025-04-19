@@ -2,7 +2,6 @@
 using System.Text.RegularExpressions;
 
 using System.Text.Json.Serialization;
-using static MLLib.MLogger;
 using Popolo.ThermophysicalProperty;
 
 namespace MLLib
@@ -1284,7 +1283,7 @@ namespace MLLib
     int Version_Revision { get; }
 
     /// <summary>現在の状態を取得する</summary>
-    Status CurrentStatus { get; }
+    MLogger.Status CurrentStatus { get; }
 
     /// <summary>計測開始日時を取得する</summary>
     DateTime StartMeasuringDateTime { get; }
@@ -1318,37 +1317,37 @@ namespace MLLib
     #region 計測値関連のプロパティ
 
     /// <summary>乾球温度計測情報を取得する</summary>
-    MeasurementInfo DrybulbTemperature { get; }
+    MLogger.MeasurementInfo DrybulbTemperature { get; }
 
     /// <summary>相対湿度計測情報を取得する</summary>
-    MeasurementInfo RelativeHumdity { get; }
+    MLogger.MeasurementInfo RelativeHumdity { get; }
 
     /// <summary>グローブ温度計測情報を取得する</summary>
-    MeasurementInfo GlobeTemperature { get; }
+    MLogger.MeasurementInfo GlobeTemperature { get; }
 
     /// <summary>グローブ温度の電圧[V]を取得する</summary>
     double GlobeTemperatureVoltage { get; }
 
     /// <summary>風速計測情報を取得する</summary>
-    MeasurementInfo Velocity { get; }
+    MLogger.MeasurementInfo Velocity { get; }
 
     /// <summary>風速の電圧[V]を取得する</summary>
     double VelocityVoltage { get; }
 
     /// <summary>照度計測情報を取得する</summary>
-    MeasurementInfo Illuminance { get; }
+    MLogger.MeasurementInfo Illuminance { get; }
 
     /// <summary>汎用電圧1計測情報を取得する</summary>
-    MeasurementInfo GeneralVoltage1 { get; }
+    MLogger.MeasurementInfo GeneralVoltage1 { get; }
 
     /// <summary>汎用電圧2計測情報を取得する</summary>
-    MeasurementInfo GeneralVoltage2 { get; }
+    MLogger.MeasurementInfo GeneralVoltage2 { get; }
 
     /// <summary>汎用電圧3計測情報を取得する</summary>
-    MeasurementInfo GeneralVoltage3 { get; }
+    MLogger.MeasurementInfo GeneralVoltage3 { get; }
 
     /// <summary>CO2濃度計測情報を取得する</summary>
-    MeasurementInfo CO2Level { get; }
+    MLogger.MeasurementInfo CO2Level { get; }
 
     /// <summary>近接センサ計測の真偽を取得する</summary>
     bool MeasureProximity { get; }

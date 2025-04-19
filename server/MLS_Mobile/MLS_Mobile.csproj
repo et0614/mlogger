@@ -40,29 +40,29 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>automatic</ProvisioningType>
+	  <ProvisioningType>manual</ProvisioningType>
 	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
 	  <CodesignProvision>mls_dist</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
-	  <ApplicationVersion>48</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.47</ApplicationDisplayVersion>
+	  <ApplicationVersion>50</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
-	  <ApplicationVersion>48</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.47</ApplicationDisplayVersion>
+	  <ApplicationVersion>50</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
-	  <ApplicationVersion>48</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.47</ApplicationDisplayVersion>
+	  <ApplicationVersion>50</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
-		<ApplicationDisplayVersion>1.2.45</ApplicationDisplayVersion>
-		<ApplicationVersion>48</ApplicationVersion>
+		<ApplicationDisplayVersion>1.2.47</ApplicationDisplayVersion>
+		<ApplicationVersion>50</ApplicationVersion>
 		<!--ここから-->
 		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
 		<MtouchLink>SdkOnly</MtouchLink>
