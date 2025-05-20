@@ -265,6 +265,7 @@ float my_i2c::ReadVCNL4030_PS(void)
 	if(_bus_write(0b00001000) != I2C_ACKED) { _bus_stop(); return 0; } //00 00 1 0 00: reserved, two-step mode, 16bit, typical sensitivity, no interrupt
 	_bus_stop();	
 	
+	if(data < 1) data = 1; //2025.05.10 Bugfix. data=0‚¾‚Æ‹——£‚ª0‚É‚È‚Á‚Ä‚µ‚Ü‚¤
 	float ld = log(data);
 	return exp((-0.018 * ld - 0.234) * ld + 6.564);
 }

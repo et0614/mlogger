@@ -62,7 +62,7 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.21\r";
+const char VERSION_NUMBER[] = "VER:3.3.22\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -164,8 +164,13 @@ int main(void)
 	ADC0.CTRLC |= ADC_PRESC_DIV128_gc; //128分周で計測（大きい方が精度は高く、時間はかかる模様）
 	VREF.ADC0REF = VREF_REFSEL_VREFA_gc; //基準電圧をVREFA(2.0V)に設定
 
-	//電池残量確認
-	if(isLowBattery()) showError(1);
+	//低電圧が1秒継続したら電池残量エラー
+	int count = 0;
+	while(isLowBattery()){
+		count++;
+		if(10 <= count)	showError(1);
+		_delay_ms(100);
+	}
 	
 	//スイッチ割り込み設定
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
