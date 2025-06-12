@@ -205,7 +205,7 @@ int main(void)
 	sei();
 
 	//通信再開フラグを確認
-	if(my_eeprom::startAuto)
+	if(my_eeprom::mSettings.start_auto)
 	{
 		logging = true;
 		outputToXBee = true;
@@ -223,7 +223,7 @@ int main(void)
 		if(logging)
 		{
 			//XBee通信時または電源接続常設モード時はIDLEスリープ
-			if(outputToBLE || my_eeprom::startAuto) 
+			if(outputToBLE || my_eeprom::mSettings.start_auto) 
 			{
 				set_sleep_mode(SLEEP_MODE_IDLE);
 				wakeup_xbee();
@@ -409,15 +409,15 @@ static void solve_command(const char *command)
 		outputToFM = (command[15]=='t'); //FMに書き出すか否か
 		
 		//きりのよい秒で計測開始
-		pass_th	= getNormTime(lastSavedTime, my_eeprom::interval_th);
-		pass_glb = getNormTime(lastSavedTime, my_eeprom::interval_glb);
-		pass_vel = getNormTime(lastSavedTime, my_eeprom::interval_vel);
-		pass_ill = getNormTime(lastSavedTime, my_eeprom::interval_ill);
-		pass_ad1 = getNormTime(lastSavedTime, my_eeprom::interval_AD1);
-		pass_co2 = getNormTime(lastSavedTime, my_eeprom::interval_co2);
+		pass_th	= getNormTime(lastSavedTime, my_eeprom::mSettings.interval_th);
+		pass_glb = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_glb);
+		pass_vel = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_vel);
+		pass_ill = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_ill);
+		pass_ad1 = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_AD1);
+		pass_co2 = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_co2);
 		
 		//ロギング設定をEEPROMに保存
-		my_eeprom::startAuto = command[13]=='e'; //Endlessロギング
+		my_eeprom::mSettings.start_auto = command[13]=='e'; //Endlessロギング
 		my_eeprom::SetMeasurementSetting();
 		
 		//ロギング開始
@@ -432,80 +432,80 @@ static void solve_command(const char *command)
 		logging = false;
 		
 		//測定の是非
-		my_eeprom::measure_th = (command[3] == 't');
-		my_eeprom::measure_glb = (command[9] == 't');
-		my_eeprom::measure_vel = (command[15] == 't');
-		my_eeprom::measure_ill = (command[21] == 't');
-		my_eeprom::measure_AD1 = (command[37] == 't');
-		my_eeprom::measure_AD2 = (command[43] == 't');
-		my_eeprom::measure_AD3 = (command[49] == 't');
-		my_eeprom::measure_Prox = (command[55] == 't');
+		my_eeprom::mSettings.measure_th = (command[3] == 't');
+		my_eeprom::mSettings.measure_glb = (command[9] == 't');
+		my_eeprom::mSettings.measure_vel = (command[15] == 't');
+		my_eeprom::mSettings.measure_ill = (command[21] == 't');
+		my_eeprom::mSettings.measure_AD1 = (command[37] == 't');
+		my_eeprom::mSettings.measure_AD2 = (command[43] == 't');
+		my_eeprom::mSettings.measure_AD3 = (command[49] == 't');
+		my_eeprom::mSettings.measure_Prox = (command[55] == 't');
 		//バージョンが低い場合の処理
-		if(56 < strlen(command)) my_eeprom::measure_co2 = (command[56] == 't');
-		else my_eeprom::measure_co2 = false;
+		if(56 < strlen(command)) my_eeprom::mSettings.measure_co2 = (command[56] == 't');
+		else my_eeprom::mSettings.measure_co2 = false;
 		
 		//測定時間間隔
 		char num[6];
 		num[5] = '\0';
 		strncpy(num, command + 4, 5);
-		my_eeprom::interval_th = atoi(num);
+		my_eeprom::mSettings.interval_th = atoi(num);
 		strncpy(num, command + 10, 5);
-		my_eeprom::interval_glb = atoi(num);
+		my_eeprom::mSettings.interval_glb = atoi(num);
 		strncpy(num, command + 16, 5);
-		my_eeprom::interval_vel = atoi(num);
+		my_eeprom::mSettings.interval_vel = atoi(num);
 		strncpy(num, command + 22, 5);
-		my_eeprom::interval_ill = atoi(num);
+		my_eeprom::mSettings.interval_ill = atoi(num);
 		strncpy(num, command + 38, 5);
-		my_eeprom::interval_AD1 = atoi(num);
+		my_eeprom::mSettings.interval_AD1 = atoi(num);
 		strncpy(num, command + 44, 5);
-		my_eeprom::interval_AD2 = atoi(num);
+		my_eeprom::mSettings.interval_AD2 = atoi(num);
 		strncpy(num, command + 50, 5);
-		my_eeprom::interval_AD3 = atoi(num);
+		my_eeprom::mSettings.interval_AD3 = atoi(num);
 		//バージョンが低い場合の処理
 		if(56 < strlen(command))
 		{
 			strncpy(num, command + 57,5);
-			my_eeprom::interval_co2 = atoi(num);
+			my_eeprom::mSettings.interval_co2 = atoi(num);
 		}
-		else my_eeprom::interval_co2 = 60;
+		else my_eeprom::mSettings.interval_co2 = 60;
 
 		//計測開始時刻
 		char num2[11];
 		num2[10] = '\0';
 		strncpy(num2, command + 27, 10);
-		my_eeprom::start_dt = atol(num2);
+		my_eeprom::mSettings.start_dt = atol(num2);
 		
 		//ロギング設定をEEPROMに保存
 		my_eeprom::SetMeasurementSetting();
 		
 		//ACK
 		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
-			my_eeprom::measure_th, my_eeprom::interval_th, 
-			my_eeprom::measure_glb, my_eeprom::interval_glb, 
-			my_eeprom::measure_vel, my_eeprom::interval_vel, 
-			my_eeprom::measure_ill, my_eeprom::interval_ill, 
-			my_eeprom::start_dt,
-			my_eeprom::measure_AD1, my_eeprom::interval_AD1, 
-			my_eeprom::measure_AD2, my_eeprom::interval_AD2, 
-			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
-			my_eeprom::measure_Prox,
-			my_eeprom::measure_co2, my_eeprom::interval_co2);
+			my_eeprom::mSettings.measure_th, my_eeprom::mSettings.interval_th, 
+			my_eeprom::mSettings.measure_glb, my_eeprom::mSettings.interval_glb, 
+			my_eeprom::mSettings.measure_vel, my_eeprom::mSettings.interval_vel, 
+			my_eeprom::mSettings.measure_ill, my_eeprom::mSettings.interval_ill, 
+			my_eeprom::mSettings.start_dt,
+			my_eeprom::mSettings.measure_AD1, my_eeprom::mSettings.interval_AD1, 
+			my_eeprom::mSettings.measure_AD2, my_eeprom::mSettings.interval_AD2, 
+			my_eeprom::mSettings.measure_AD3, my_eeprom::mSettings.interval_AD3,
+			my_eeprom::mSettings.measure_Prox,
+			my_eeprom::mSettings.measure_co2, my_eeprom::mSettings.interval_co2);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//Load Measurement Settings
 	else if(strncmp(command, "LMS", 3) == 0)
 	{
 		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
-			my_eeprom::measure_th, my_eeprom::interval_th,
-			my_eeprom::measure_glb, my_eeprom::interval_glb,
-			my_eeprom::measure_vel, my_eeprom::interval_vel,
-			my_eeprom::measure_ill, my_eeprom::interval_ill, 
-			my_eeprom::start_dt,
-			my_eeprom::measure_AD1, my_eeprom::interval_AD1,
-			my_eeprom::measure_AD2, my_eeprom::interval_AD2,
-			my_eeprom::measure_AD3, my_eeprom::interval_AD3,
-			my_eeprom::measure_Prox,
-			my_eeprom::measure_co2, my_eeprom::interval_co2);
+			my_eeprom::mSettings.measure_th, my_eeprom::mSettings.interval_th,
+			my_eeprom::mSettings.measure_glb, my_eeprom::mSettings.interval_glb,
+			my_eeprom::mSettings.measure_vel, my_eeprom::mSettings.interval_vel,
+			my_eeprom::mSettings.measure_ill, my_eeprom::mSettings.interval_ill, 
+			my_eeprom::mSettings.start_dt,
+			my_eeprom::mSettings.measure_AD1, my_eeprom::mSettings.interval_AD1,
+			my_eeprom::mSettings.measure_AD2, my_eeprom::mSettings.interval_AD2,
+			my_eeprom::mSettings.measure_AD3, my_eeprom::mSettings.interval_AD3,
+			my_eeprom::mSettings.measure_Prox,
+			my_eeprom::mSettings.measure_co2, my_eeprom::mSettings.interval_co2);
 		my_xbee::bltx_chars(charBuff);
 	}
 	//End Logging
@@ -650,7 +650,7 @@ ISR(RTC_PIT_vect)
 		if(resetTime == 3)
 		{
 			//Endlessロギングを解除
-			my_eeprom::startAuto = false;
+			my_eeprom::mSettings.start_auto = false;
 			my_eeprom::SetMeasurementSetting();
 			
 			logging=false;	//ロギング停止
@@ -665,11 +665,10 @@ ISR(RTC_PIT_vect)
 	//風速計校正処理*******************************************
 	if(calibratingVelocityVoltage) calibrateVelocityVoltage();
 	
-	//風速計自動校正処理*******************************************
-	else if(autCalibratingVSensor) autoCalibrateVelocitySensor();
-	
-	//温度計自動校正処理*******************************************
-	else if(autCalibratingTSensor) autoCalibrateTemperatureSensor();
+	//廃止
+	//風速計・温度計自動校正処理*******************************************
+	//else if(autCalibratingVSensor) autoCalibrateVelocitySensor();
+	//else if(autCalibratingTSensor) autoCalibrateTemperatureSensor();
 	
 	//ロギング中であれば****************************************
 	else if(logging) execLogging();
@@ -701,7 +700,7 @@ static void execLogging()
 	if(outputToFM && !initFM) blinkRedLED(1);
 	
 	//自動計測開始がOffで計測開始時刻の前ならば終了
-	if(!my_eeprom::startAuto && currentTime < my_eeprom::start_dt) return;
+	if(!my_eeprom::mSettings.start_auto && currentTime < my_eeprom::mSettings.start_dt) return;
 	
 	//ロギング中は5秒ごとに点灯
 	blinkCount++;
@@ -713,7 +712,7 @@ static void execLogging()
 	}
 	
 	//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
-	if(my_eeprom::measure_vel && my_eeprom::interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
+	if(my_eeprom::mSettings.measure_vel && my_eeprom::mSettings.interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
 	
 	bool hasNewData = false;
 	char tmpS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
@@ -728,45 +727,45 @@ static void execLogging()
 	
 	//微風速測定************
 	pass_vel++;
-	if(my_eeprom::measure_vel && (int)my_eeprom::interval_vel <= pass_vel)
+	if(my_eeprom::mSettings.measure_vel && (int)my_eeprom::mSettings.interval_vel <= pass_vel)
 	{
 		double velV = readVelVoltage(); //AD変換
 		dtostrf(velV,6,4,velVS);
 				
-		float bff = max(0, velV / my_eeprom::Cf_vel0 - 1.0);
+		float bff = max(0, velV / my_eeprom::cFactors.vel0 - 1.0);
 		float vel = 0;
 		if(IS_VEL_FNC2)
-			vel = my_eeprom::VelCC_B * pow(bff,my_eeprom::VelCC_A);
+			vel = my_eeprom::vcCoefficients.ccB * pow(bff,my_eeprom::vcCoefficients.ccA);
 		else
-			vel = bff * (my_eeprom::VelCC_C + bff * (my_eeprom::VelCC_B + bff * my_eeprom::VelCC_A)); //電圧-風速換算式
+			vel = bff * (my_eeprom::vcCoefficients.ccC + bff * (my_eeprom::vcCoefficients.ccB + bff * my_eeprom::vcCoefficients.ccA)); //電圧-風速換算式
 		dtostrf(vel,6,4,velS);
 		
 		pass_vel = 0;
 		hasNewData = true;
 		//次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
-		if(V_WAKEUP_TIME <= my_eeprom::interval_vel) sleep_anemo();
+		if(V_WAKEUP_TIME <= my_eeprom::mSettings.interval_vel) sleep_anemo();
 	}
 	
 	//温湿度測定************
-	bool mesCo2 = my_eeprom::measure_co2 && (int)my_eeprom::interval_co2 <= pass_co2; //CO2を計測する場合は温湿度が必要
+	bool mesCo2 = my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 <= pass_co2; //CO2を計測する場合は温湿度が必要
 	pass_th++;
-	if(mesCo2 || (my_eeprom::measure_th && (int)my_eeprom::interval_th <= pass_th))
+	if(mesCo2 || (my_eeprom::mSettings.measure_th && (int)my_eeprom::mSettings.interval_th <= pass_th))
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
 		if(USE_SHT4X){
 			if(my_i2c::ReadSHT4X(&tmp_f, &hmd_f, false))
 			{
-				tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
-				hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
+				tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
+				hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
 				dtostrf(tmp_f,6,2,tmpS);
 				dtostrf(hmd_f,6,2,hmdS);
 			}			
 		}
 		else if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
 		{
-			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
-			hmd_f = max(0,min(100,my_eeprom::Cf_hmdA *(hmd_f) + my_eeprom::Cf_hmdB));
+			tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
+			hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
 			dtostrf(tmp_f,6,2,tmpS);
 			dtostrf(hmd_f,6,2,hmdS);
 		}
@@ -784,14 +783,14 @@ static void execLogging()
 	
 	//グローブ温度測定************
 	pass_glb++;
-	if(my_eeprom::measure_glb && (int)my_eeprom::interval_glb <= pass_glb)
+	if(my_eeprom::mSettings.measure_glb && (int)my_eeprom::mSettings.interval_glb <= pass_glb)
 	{
 		if(USE_SHT4X){
 			float glbT = 0;
 			float glbH = 0;
 			if(my_i2c::ReadSHT4X(&glbT, &glbH, true))
 			{
-				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+				glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
 				dtostrf(glbT,6,2,glbTS);
 			}			
 		}		
@@ -799,7 +798,7 @@ static void execLogging()
 			float glbT = 0;
 			if(my_i2c::ReadP3T1750DP(&glbT))
 			{
-				glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+				glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
 				dtostrf(glbT,6,2,glbTS);
 			}
 		}
@@ -808,7 +807,7 @@ static void execLogging()
 			dtostrf(glbV,6,4,glbVS);
 			
 			float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
-			glbT = max(-10,min(50,my_eeprom::Cf_glbA * glbT + my_eeprom::Cf_glbB));
+			glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
 			dtostrf(glbT,6,2,glbTS);
 		}
 		
@@ -818,10 +817,10 @@ static void execLogging()
 	
 	//照度センサ測定**************
 	pass_ill++;
-	if(my_eeprom::measure_ill && (int)my_eeprom::interval_ill <= pass_ill)
+	if(my_eeprom::mSettings.measure_ill && (int)my_eeprom::mSettings.interval_ill <= pass_ill)
 	{
 		//近接計
-		if(my_eeprom::measure_Prox)
+		if(my_eeprom::mSettings.measure_Prox)
 		{
 			float ill_d = my_i2c::ReadVCNL4030_PS();
 			dtostrf(ill_d,8,2,illS);
@@ -830,7 +829,7 @@ static void execLogging()
 		else
 		{
 			float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
-			ill_d = max(0,min(99999.99,my_eeprom::Cf_luxA * ill_d + my_eeprom::Cf_luxB));
+			ill_d = max(0,min(99999.99,my_eeprom::cFactors.luxA * ill_d + my_eeprom::cFactors.luxB));
 			dtostrf(ill_d,8,2,illS);
 		}
 		pass_ill = 0;
@@ -839,7 +838,7 @@ static void execLogging()
 	
 	//汎用AD変換測定1
 	pass_ad1++;
-	if(my_eeprom::measure_AD1 && (int)my_eeprom::interval_AD1 <= pass_ad1)
+	if(my_eeprom::mSettings.measure_AD1 && (int)my_eeprom::mSettings.interval_AD1 <= pass_ad1)
 	{
 		float adV = readVoltage(1); //AD変換
 		dtostrf(adV,6,4,adV1S);
@@ -929,101 +928,6 @@ static void calibrateVelocityVoltage()
 	dtostrf(velV,6,4,velVS);	
 	snprintf(charBuff, sizeof(charBuff), "SCV:%s\r", velVS);
 	my_xbee::bltx_chars(charBuff);
-}
-
-static void autoCalibrateVelocitySensor()
-{
-	const unsigned int VS_INIT_WAIT = 60; //風速校正開始までの待ち時間[sec]
-	
-	//LED点灯
-	blinkGreenAndRedLED(1);
-	
-	vSensorInitTimer++;
-	
-	//残り時間を通知
-	char buff[11];
-	sprintf(buff, "TNV:%lo\r", vSensorTuningTime + VS_INIT_WAIT - vSensorInitTimer);
-	my_xbee::bltx_chars(buff);
-	
-	if(VS_INIT_WAIT < vSensorInitTimer)
-		vSensorInitVoltage += readVelVoltage(); //AD変換
-	if(vSensorTuningTime + VS_INIT_WAIT < vSensorInitTimer)
-	{
-		vSensorInitVoltage /= vSensorTuningTime;
-		if(1.4 < vSensorInitVoltage && vSensorInitVoltage < 1.55)
-		{
-			my_eeprom::Cf_vel0 = vSensorInitVoltage;
-			my_eeprom::SetCorrectionFactor();
-		}
-		
-		sleep_anemo();
-		autCalibratingVSensor = false; //校正終了
-	}
-}
-
-static void autoCalibrateTemperatureSensor()
-{
-	const unsigned int TS_INIT_WAIT = 60; //温度校正開始までの待ち時間[sec]
-	
-	//LED点灯
-	blinkGreenAndRedLED(1);
-	
-	tSensorInitTimer++;
-	
-	//残り時間を通知
-	char buff[11];
-	sprintf(buff, "TNV:%lo\r", tSensorTuningTime + TS_INIT_WAIT - tSensorInitTimer);
-	my_xbee::bltx_chars(buff);
-	
-	if(TS_INIT_WAIT < tSensorInitTimer)
-	{
-		//温湿度測定
-		float tmp_f = 0;
-		float hmd_f = 0;
-		if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
-			tmp_f = max(-10,min(50,my_eeprom::Cf_dbtA *(tmp_f) + my_eeprom::Cf_dbtB));
-		else return;
-		
-		//グローブ温度
-		float glb_f = 0;
-		if(USE_P3T1750DP){
-			my_i2c::ReadP3T1750DP(&glb_f);
-		}
-		else{
-			float glbV = readGlbVoltage(); //AD変換
-			glb_f = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
-		}
-		
-		//極端に誤差が大きくなければ回帰係数を更新
-		if(abs(tmp_f - glb_f) < 5)
-		{
-			if(RecursiveLeastSquares::Initialized) 
-				RecursiveLeastSquares::UpdateCoefficients(glb_f, tmp_f);			
-			else 
-			{
-				//一旦、広くy=xで初期化すると安定する
-				RecursiveLeastSquares::InitializeCoefficients(0, 0);
-				RecursiveLeastSquares::UpdateCoefficients(10, 10);
-				RecursiveLeastSquares::UpdateCoefficients(20, 20);
-				RecursiveLeastSquares::UpdateCoefficients(30, 30);
-				RecursiveLeastSquares::UpdateCoefficients(40, 40);
-				RecursiveLeastSquares::UpdateCoefficients(glb_f, tmp_f);
-			}
-		}
-		
-		if(tSensorTuningTime + TS_INIT_WAIT < tSensorInitTimer)
-		{
-			//あまり酷い補正は採用しない
-			if(0.7 < RecursiveLeastSquares::coefA && RecursiveLeastSquares::coefA < 1.3 
-			&& -5 < RecursiveLeastSquares::coefB && RecursiveLeastSquares::coefB < 5)
-			{
-				my_eeprom::Cf_glbA = RecursiveLeastSquares::coefA;
-				my_eeprom::Cf_glbB = RecursiveLeastSquares::coefB;
-				my_eeprom::SetCorrectionFactor();
-			}
-			autCalibratingTSensor = false; //校正終了
-		}
-	}
 }
 
 static void writeFlashMemory(const tm dtNow, const char write_chars[])

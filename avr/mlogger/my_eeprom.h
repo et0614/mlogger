@@ -8,26 +8,69 @@
 #ifndef MY_EEPROM_H_
 #define MY_EEPROM_H_
 
+// 補正係数
+struct CorrectionFactors {
+	uint16_t version; //バージョン
+	float dbtA; //乾球温度a
+	float dbtB; //乾球温度b
+	float hmdA; //相対湿度a
+	float hmdB; //相対湿度b
+	float glbA; //グローブ温度a
+	float glbB; //グローブ温度b
+	float luxA; //照度a
+	float luxB; //照度b
+	float velA; //風速a
+	float velB; //風速b
+	float vel0; //無風時
+	uint8_t crc; //CRC
+};
+
+// 風速特性係数
+struct VelocityCharacteristicCoefficients{
+	uint16_t version; //バージョン
+	float ccA;
+	float ccB;
+	float ccC;
+	uint8_t crc; //CRC
+};
+
+//計測設定
+struct MeasurementSettings{
+	uint16_t version; //バージョン
+	bool start_auto; //自動測定開始
+	bool measure_th; //乾球温度の計測真偽
+	bool measure_glb; //グローブ温度の計測真偽
+	bool measure_vel; //風速の計測真偽
+	bool measure_ill; //照度の計測真偽
+	bool measure_AD1; //汎用AD1の計測真偽
+	bool measure_AD2; //汎用AD2の計測真偽
+	bool measure_AD3; //汎用AD3の計測真偽
+	bool measure_Prox; //近接センサの計測真偽
+	bool measure_co2; //CO2の計測真偽
+	unsigned int interval_th; //乾球温度の計測間隔[sec]
+	unsigned int interval_glb; //グローブ温度の計測間隔[sec]
+	unsigned int interval_vel; //風速の計測間隔[sec]
+	unsigned int interval_ill; //照度の計測間隔[sec]
+	unsigned int interval_AD1; //汎用AD1の計測間隔[sec]
+	unsigned int interval_AD2; //汎用AD2の計測間隔[sec]
+	unsigned int interval_AD3; //汎用AD3の計測間隔[sec]
+	unsigned int interval_Prox; //近接センサの計測間隔[sec]
+	unsigned int interval_co2; //CO2の計測間隔[sec]
+	uint32_t start_dt;	//計測開始日時
+	uint8_t crc; //CRC
+};
+
 class my_eeprom
 {
 	public:
-		//自動通信開始設定
-		volatile static bool startAuto;
-	
 		//補正係数
-		volatile static float Cf_dbtA, Cf_dbtB, Cf_hmdA, Cf_hmdB, Cf_glbA, Cf_glbB, Cf_luxA, Cf_luxB, Cf_velA, Cf_velB, Cf_vel0;
+		static CorrectionFactors cFactors;
+
+		//風速特性係数
+		static VelocityCharacteristicCoefficients vcCoefficients;
 		
-		//風速計特性係数
-		volatile static float VelCC_A, VelCC_B, VelCC_C;
-		
-		//計測真偽  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
-		volatile static bool measure_th, measure_glb, measure_vel, measure_ill, measure_AD1, measure_AD2, measure_AD3, measure_Prox, measure_co2;
-		
-		//計測間隔  th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
-		volatile static unsigned int interval_th, interval_glb, interval_vel, interval_ill, interval_AD1, interval_AD2, interval_AD3, interval_co2;
-		
-		//計測開始日時
-		volatile static uint32_t start_dt;
+		//計測設定
+		static MeasurementSettings mSettings;
 		
 		//名称
 		static char mlName[21];

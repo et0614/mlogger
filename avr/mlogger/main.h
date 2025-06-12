@@ -33,10 +33,6 @@ static void execLogging(void);
 
 static void calibrateVelocityVoltage(void);
 
-static void autoCalibrateVelocitySensor(void);
-
-static void autoCalibrateTemperatureSensor(void);
-
 static void showError(short int errNum);
 
 static bool isLowBattery(void);
