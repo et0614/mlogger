@@ -52,9 +52,10 @@ extern "C"{
 
 #include "main.h"
 #include "my_eeprom.h"	//EEPROM処理
-#include "my_i2c.h"		//I2C通信
+#include "i2c/i2c_driver.h" //I2C通信
+#include "i2c/sht4x.h"      //SHT4X(温湿度センサ)
+#include "i2c/vcnl4030.h"	//VCNL4030(照度センサ)
 #include "my_xbee.h"	//XBee通信
-#include "RecursiveLeastSquares.h"
 
 //FatFs関連
 #include "ff/ff.h"
@@ -62,19 +63,10 @@ extern "C"{
 #include "ff/rtc.h"
 
 //定数宣言***********************************************************
-const char VERSION_NUMBER[] = "VER:3.3.22\r";
+const char VERSION_NUMBER[] = "VER:3.4.0\r";
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
-
-//グローブ温度計測用モジュールのタイプ
-const bool IS_MCP9700 = false; //MCP9701ならばfalse
-
-//SHT4Xを使うか否か
-const bool USE_SHT4X = true;
-
-//P3T1750DPを使うか否か
-const bool USE_P3T1750DP = true;
 
 //何行分のデータを一時保存するか
 const int N_LINE_BUFF = 30;
@@ -176,15 +168,10 @@ int main(void)
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
 	
 	//初期化処理
-	my_i2c::InitializeI2C(); //I2C通信
-	my_i2c::InitializeAHT20(); //温湿度計
-	my_i2c::InitializeVCNL4030(); //照度計
-	my_i2c::InitializeSTC31C(); //CO2濃度計
-	if(USE_SHT4X) {
-		my_i2c::InitializeSHT4X(true);
-		my_i2c::InitializeSHT4X(false);
-	}
-	else if(USE_P3T1750DP) my_i2c::InitializeP3T1750DP(); //温度計
+	i2c_driver::Initialize(); //I2C通信
+	sht4x::Initialize(true); //温湿度センサ
+	sht4x::Initialize(false); //グローブ温度センサ
+	vcnl4030::Initialize(); //照度計
 	my_xbee::Initialize();  //XBee（UART）
 	
 	//タイマ初期化
@@ -261,7 +248,6 @@ static void initialize_port(void)
 	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
-	PORTD.DIRCLR = PIN4_bm; //グローブ温度センサAD変換
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
 	PORTF.DIRCLR = PIN4_bm; //汎用AD変換1
 	
@@ -273,6 +259,7 @@ static void initialize_port(void)
 	PORTA.PIN5CTRL = PORT_ISC_INPUT_DISABLE_gc; // PA5
 	PORTD.PIN1CTRL = PORT_ISC_INPUT_DISABLE_gc; // PD1
 	PORTD.PIN3CTRL = PORT_ISC_INPUT_DISABLE_gc; // PD3
+	PORTD.PIN4CTRL = PORT_ISC_INPUT_DISABLE_gc; // PD4
 }
 
 //タイマ初期化
@@ -587,7 +574,6 @@ static void solve_command(const char *command)
 		sprintf(buff, "CBT:%lo\r", tSensorTuningTime);
 		my_xbee::bltx_chars(buff);
 
-		RecursiveLeastSquares::Initialized = false;
 		autCalibratingTSensor = true;
 		tSensorInitTimer = 0;
 	}
@@ -608,8 +594,8 @@ static void solve_command(const char *command)
 	//CO2センサの有無
 	else if(strncmp(command, "HCS", 3) == 0)
 	{
-		if(my_i2c::HasSTC31C()) my_xbee::bltx_chars("HCS:1\r");
-		else my_xbee::bltx_chars("HCS:0\r");
+		//if(my_i2c::HasSTC31C()) my_xbee::bltx_chars("HCS:1\r");
+		//else my_xbee::bltx_chars("HCS:0\r");
 	}
 	//現在時刻の更新
 	else if (strncmp(command, "UCT", 3) == 0)
@@ -664,12 +650,7 @@ ISR(RTC_PIT_vect)
 	
 	//風速計校正処理*******************************************
 	if(calibratingVelocityVoltage) calibrateVelocityVoltage();
-	
-	//廃止
-	//風速計・温度計自動校正処理*******************************************
-	//else if(autCalibratingVSensor) autoCalibrateVelocitySensor();
-	//else if(autCalibratingTSensor) autoCalibrateTemperatureSensor();
-	
+		
 	//ロギング中であれば****************************************
 	else if(logging) execLogging();
 	
@@ -753,16 +734,7 @@ static void execLogging()
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(USE_SHT4X){
-			if(my_i2c::ReadSHT4X(&tmp_f, &hmd_f, false))
-			{
-				tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
-				hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
-				dtostrf(tmp_f,6,2,tmpS);
-				dtostrf(hmd_f,6,2,hmdS);
-			}			
-		}
-		else if(my_i2c::ReadAHT20(&tmp_f, &hmd_f))
+		if(sht4x::ReadValue(&tmp_f, &hmd_f, false))
 		{
 			tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
 			hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
@@ -775,8 +747,8 @@ static void execLogging()
 		//CO2測定
 		if(mesCo2)
 		{
-			uint16_t co2_u = 0;
-			if(my_i2c::ReadSTC31C(tmp_f, hmd_f, &co2_u)) sprintf(co2S, "%u\n", co2_u);
+			//uint16_t co2_u = 0;
+			//if(my_i2c::ReadSTC31C(tmp_f, hmd_f, &co2_u)) sprintf(co2S, "%u\n", co2_u);
 			pass_co2 = 0;
 		}
 	}
@@ -785,28 +757,10 @@ static void execLogging()
 	pass_glb++;
 	if(my_eeprom::mSettings.measure_glb && (int)my_eeprom::mSettings.interval_glb <= pass_glb)
 	{
-		if(USE_SHT4X){
-			float glbT = 0;
-			float glbH = 0;
-			if(my_i2c::ReadSHT4X(&glbT, &glbH, true))
-			{
-				glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
-				dtostrf(glbT,6,2,glbTS);
-			}			
-		}		
-		else if(USE_P3T1750DP){
-			float glbT = 0;
-			if(my_i2c::ReadP3T1750DP(&glbT))
-			{
-				glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
-				dtostrf(glbT,6,2,glbTS);
-			}
-		}
-		else{
-			float glbV = readGlbVoltage(); //AD変換
-			dtostrf(glbV,6,4,glbVS);
-			
-			float glbT = (glbV - (IS_MCP9700 ? 0.5 : 0.4)) / (IS_MCP9700 ? 0.0100 : 0.0195);
+		float glbT = 0;
+		float glbH = 0;
+		if(sht4x::ReadValue(&glbT, &glbH, true))
+		{
 			glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
 			dtostrf(glbT,6,2,glbTS);
 		}
@@ -822,13 +776,18 @@ static void execLogging()
 		//近接計
 		if(my_eeprom::mSettings.measure_Prox)
 		{
-			float ill_d = my_i2c::ReadVCNL4030_PS();
+			float ill_d;
+			vcnl4030::ReadPS(&ill_d);
+			//float ill_d = my_i2c::ReadVCNL4030_PS();
 			dtostrf(ill_d,8,2,illS);
 		}
 		//照度計
 		else
 		{
-			float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
+			float ill_d;
+			vcnl4030::ReadALS(&ill_d);
+			ill_d /= TRANSMITTANCE;
+			//float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
 			ill_d = max(0,min(99999.99,my_eeprom::cFactors.luxA * ill_d + my_eeprom::cFactors.luxB));
 			dtostrf(ill_d,8,2,illS);
 		}
@@ -968,17 +927,6 @@ ISR(PORTA_PORT_vect)
 	else turnOnRedLED();
 }
 
-//グローブ温度の電圧を読み取る
-static float readGlbVoltage(void)
-{
-	//AI4を計測
-	ADC0.MUXPOS = ADC_MUXPOS_AIN4_gc;
-	_delay_ms(5);
-	ADC0.COMMAND = ADC_STCONV_bm; //変換開始
-	while (!(ADC0.INTFLAGS & ADC_RESRDY_bm)) ; //変換終了待ち
-	return 2.0 * (float)ADC0.RES / 65536; //1024*64 (10bit,64回平均)
-}
-
 //微風速の電圧を読み取る
 static float readVelVoltage(void)
 {
@@ -1113,19 +1061,16 @@ inline static void blinkGreenAndRedLED(int iterNum)
 
 inline static void turnOnGreenLED(void)
 {
-	//PORTA.OUTSET = PIN6_bm; //点灯
 	PORTA.OUTSET = PIN7_bm; //点灯
 }
 
 inline static void turnOffGreenLED(void)
 {
-	//PORTA.OUTCLR = PIN6_bm; //消灯
 	PORTA.OUTCLR = PIN7_bm; //消灯
 }
 
 inline static void toggleGreenLED(void)
 {
-	//PORTA.OUTTGL = PIN6_bm; //反転
 	PORTA.OUTTGL = PIN7_bm; //反転
 }
 
@@ -1147,19 +1092,16 @@ inline static void blinkGreenLED(int iterNum)
 
 inline static void turnOnRedLED(void)
 {
-	//PORTA.OUTSET = PIN7_bm; //点灯
 	PORTA.OUTSET = PIN6_bm; //点灯
 }
 
 inline static void turnOffRedLED(void)
 {
-	//PORTA.OUTCLR = PIN7_bm; //消灯
 	PORTA.OUTCLR = PIN6_bm; //消灯
 }
 
 inline static void toggleRedLED(void)
 {
-	//PORTA.OUTTGL = PIN7_bm; //反転
 	PORTA.OUTTGL = PIN6_bm; //反転
 }
 

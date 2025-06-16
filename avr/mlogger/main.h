@@ -21,8 +21,6 @@ static void append_command(void);
 */
 static void solve_command(const char *command);
 
-static float readGlbVoltage(void);
-
 static float readVelVoltage(void);
 
 static float readVoltage(unsigned int adNumber);

@@ -12,6 +12,7 @@
 
 #include "parameters.h"
 #include "my_eeprom.h"
+#include "utilities.h"
 
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;
@@ -43,23 +44,6 @@ MeasurementSettings my_eeprom::mSettings;
 //ロガー名称
 char my_eeprom::mlName[21];
 
-//巡回冗長検査値を生成
-static uint8_t crc8(uint8_t *ptr, uint8_t len)
-{
-	uint8_t crc = 0xFF;
-	for(int i = 0; i < len; i++) {
-		crc ^= *ptr++;
-		for(uint8_t bit = 8; bit > 0; --bit) {
-			if(crc & 0x80) {
-				crc = (crc << 1) ^ 0x31u;
-				} else {
-				crc = (crc << 1);
-			}
-		}
-	}
-	return crc;
-}
-
 void initCFactors(){
 	my_eeprom::cFactors = {
 		1, //バージョン
@@ -77,7 +61,7 @@ void initCFactors(){
 		0 //CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::cFactors.crc = crc8(
+	my_eeprom::cFactors.crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::cFactors,
 		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -92,7 +76,7 @@ void initVCCoefficients(){
 		0		//CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::cFactors.crc = crc8(
+	my_eeprom::cFactors.crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::cFactors,
 		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -124,7 +108,7 @@ void initMSettings(){
 		0		//CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::mSettings.crc = crc8(
+	my_eeprom::mSettings.crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::mSettings,
 		sizeof(MeasurementSettings) - sizeof(my_eeprom::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -342,7 +326,7 @@ void LoadCorrectionFactor()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = my_eeprom::cFactors.crc;
-	uint8_t actual_crc = crc8(
+	uint8_t actual_crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::cFactors,
 		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc)
 	);
@@ -359,7 +343,7 @@ void LoadVelocityCharateristics()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = my_eeprom::vcCoefficients.crc;
-	uint8_t actual_crc = crc8(
+	uint8_t actual_crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::vcCoefficients,
 		sizeof(VelocityCharacteristicCoefficients) - sizeof(my_eeprom::vcCoefficients.crc)
 	);
@@ -376,7 +360,7 @@ void LoadMeasurementSetting()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = my_eeprom::mSettings.crc;
-	uint8_t actual_crc = crc8(
+	uint8_t actual_crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::mSettings,
 		sizeof(MeasurementSettings) - sizeof(my_eeprom::mSettings.crc)
 	);
