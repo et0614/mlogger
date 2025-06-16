@@ -217,6 +217,12 @@
     <Compile Include="i2c\sht4x.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="i2c\stcc4.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="i2c\stcc4.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="i2c\vcnl4030.cpp">
       <SubType>compile</SubType>
     </Compile>

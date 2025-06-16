@@ -50,6 +50,11 @@ class i2c_driver
 		 */
 		static bool WriteRead(uint8_t address, const uint8_t* writeData, uint8_t writeLength, uint8_t* readBuffer, uint8_t readLength);
 
+		/**
+		 * @brief 1バイトを送信し、ACK/NACKを気にせず終了する (特殊な復帰シーケンス用)
+		 */
+		static bool WriteByteAndStop(uint8_t address, uint8_t data);
+
 	private:
 		
 		//書き込み終了を待つ

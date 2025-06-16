@@ -17,9 +17,9 @@ const uint8_t SHT4X_ADX_ADD = 0x44; //BDXとCDXは異なるので注意
 const uint8_t SHT4X_BDX_ADD = 0x45; //ADXとCDXは異なるので注意
 
 // SHT4xのコマンド
-constexpr uint8_t CMD_MEASURE_MEDIUM = 0xF6; // 中精度での測定コマンド
-constexpr uint8_t CMD_SOFT_RESET = 0x94;   // ソフトリセット
-constexpr uint8_t CMD_READ_SERIAL = 0x89; // シリアル番号読み取り
+const uint8_t CMD_MEASURE_MEDIUM = 0xF6; // 中精度での測定コマンド
+const uint8_t CMD_SOFT_RESET = 0x94;   // ソフトリセット
+const uint8_t CMD_READ_SERIAL = 0x89; // シリアル番号読み取り
 
 bool sht4x::Initialize(bool isAD)
 {	
@@ -43,22 +43,21 @@ bool sht4x::ReadValue(float* tempValue, float* humiValue, bool isAD)
 
 	const uint8_t address = isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD;
 	
-	// 1. 測定開始コマンドを送信 (Write APIを使用)
+	// 測定開始コマンドを送信 (Write APIを使用)
 	const uint8_t command = CMD_MEASURE_MEDIUM;
 	if (!i2c_driver::Write(address, &command, 1)) {
-		return 0; // 通信失敗
+		return false; // 通信失敗
 	}
 
-	// 2. センサーの測定完了を待つ (データシート上は4.5ms)
+	// センサーの測定完了を待つ (データシート上は4.5ms)
 	_delay_ms(10);
 
-	// 3. 測定結果（6バイト）を受信 (Read APIを使用)
+	// 測定結果（6バイト）を受信 (Read APIを使用)
 	uint8_t buffer[6];
 	if (!i2c_driver::Read(address, buffer, 6)) {
-		return 0; // 通信失敗
+		return false; // 通信失敗
 	}
 
-	// 4. センサー固有のデータ処理 (この部分は変わらない)
 	// 温度と湿度のデータに分離
 	uint8_t* tBuff = &buffer[0]; // 温度データ (3バイト)
 	uint8_t* hBuff = &buffer[3]; // 湿度データ (3バイト)
@@ -68,7 +67,7 @@ bool sht4x::ReadValue(float* tempValue, float* humiValue, bool isAD)
 		uint16_t raw_t = (tBuff[0] << 8) | tBuff[1];
 		*tempValue = -45.0f + 175.0f * (float)raw_t / 65535.0f;
 	}
-	else return 0; // CRCエラー
+	else return false; // CRCエラー
 
 	// 湿度のCRCチェックと変換
 	if (utilities::crc8(hBuff, 2) == hBuff[2]) {
@@ -78,9 +77,9 @@ bool sht4x::ReadValue(float* tempValue, float* humiValue, bool isAD)
 		if(rh < 0.0f) rh = 0.0f;
 		if(rh > 100.0f) rh = 100.0f;
 		*humiValue = rh;
-	} else return 0; // CRCエラー
+	} else return false; // CRCエラー
 
-	return 1; // 成功
+	return true; // 成功
 }
 
 bool sht4x::ReadSerial(uint32_t* serialNumber, bool isAD)

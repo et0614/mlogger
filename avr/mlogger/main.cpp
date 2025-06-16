@@ -734,7 +734,7 @@ static void execLogging()
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(sht4x::ReadValue(&tmp_f, &hmd_f, false))
+		if(sht4x::ReadValue(&tmp_f, &hmd_f, false)) //‚±‚¿‚ç‚ªSHT4X(A)‚¶‚á‚È‚¢‚Æ‘Ê–Ú
 		{
 			tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
 			hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));

@@ -111,6 +111,20 @@ bool i2c_driver::WriteRead(uint8_t address, const uint8_t* writeData, uint8_t wr
 	return true;
 }
 
+bool i2c_driver::WriteByteAndStop(uint8_t address, uint8_t data)
+{
+	if (_start_writing(address) != I2C_ACKED) {
+		_bus_stop();
+		return false;
+	}
+
+	// ACK/NACKの結果を問わず、次の処理へ
+	_bus_write(data);
+
+	_bus_stop();
+	return true;
+}
+
 //以下はprivateメソッド
 
 //書き込み終了を待つ
