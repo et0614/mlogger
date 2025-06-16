@@ -76,7 +76,7 @@ void initVCCoefficients(){
 		0		//CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::cFactors.crc = utilities::crc8(
+	my_eeprom::vcCoefficients.crc = utilities::crc8(
 		(uint8_t*)&my_eeprom::cFactors,
 		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);

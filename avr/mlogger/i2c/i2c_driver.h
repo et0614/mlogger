@@ -28,6 +28,12 @@ class i2c_driver
 		};
 		
 		/**
+		 * @brief センサーがバス上に存在するかを確認する
+		 * @return センサーが応答すればtrue
+		 */
+		static bool IsConnected(uint8_t address);
+		
+		/**
 		 * @brief I2Cバスを初期化します
 		 */
 		static void Initialize();

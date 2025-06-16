@@ -21,6 +21,10 @@ const uint8_t CMD_MEASURE_MEDIUM = 0xF6; // 中精度での測定コマンド
 const uint8_t CMD_SOFT_RESET = 0x94;   // ソフトリセット
 const uint8_t CMD_READ_SERIAL = 0x89; // シリアル番号読み取り
 
+bool sht4x::IsConnected(bool isAD) {
+	return i2c_driver::IsConnected(isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD);
+}
+
 bool sht4x::Initialize(bool isAD)
 {	
 	const uint8_t address = isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD;

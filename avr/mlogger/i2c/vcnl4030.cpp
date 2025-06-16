@@ -19,6 +19,10 @@ const uint8_t CMD_PS_CONF3   = 0x04; // 近接センサー設定(CONF3, MS)
 const uint8_t CMD_PS_DATA    = 0x08; // 近接センサーデータ
 const uint8_t CMD_ALS_DATA   = 0x0B; // 照度センサーデータ
 
+bool vcnl4030::IsConnected() {
+	return i2c_driver::IsConnected(VCNL_ADD);
+}
+
 bool vcnl4030::Initialize(void){
 	// 照度センサー(ALS)の設定を書き込む
 	const uint8_t als_config[] = {

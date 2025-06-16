@@ -14,6 +14,12 @@
 class vcnl4030{
 	public:
 		/**
+		 * @brief センサーがバス上に存在するかを確認する
+		 * @return センサーが応答すればtrue
+		 */
+		static bool IsConnected();
+		
+		/**
 		 * @fn
 		 * VCNL4030を初期化する
 		 * @return 読取成功でtrue、失敗でfalse

@@ -15,6 +15,13 @@
 class sht4x{
 	public:
 		/**
+		 * @brief センサーがバス上に存在するかを確認する
+		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
+		 * @return センサーが応答すればtrue
+		 */
+		static bool IsConnected(bool isAD);
+		
+		/**
 		 * @fn
 		 * SHT4X-ADを初期化する
 		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）

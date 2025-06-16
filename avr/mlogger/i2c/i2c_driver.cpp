@@ -7,6 +7,12 @@
 
 #include "i2c_driver.h"
 
+bool i2c_driver::IsConnected(uint8_t address) {
+	uint8_t dummy_data;
+	// WriteReadの書き込み長さを0にすることで、アドレス応答の確認だけを行う
+	return i2c_driver::WriteRead(address, &dummy_data, 0, nullptr, 0);
+}
+
 void i2c_driver::Initialize()
 {
 	// TWI通信のPIN設定 : SDA->PF2, SCL->PF3

@@ -54,6 +54,7 @@ extern "C"{
 #include "my_eeprom.h"	//EEPROM処理
 #include "i2c/i2c_driver.h" //I2C通信
 #include "i2c/sht4x.h"      //SHT4X(温湿度センサ)
+#include "i2c/stcc4.h"      //STCC4(CO2センサ)
 #include "i2c/vcnl4030.h"	//VCNL4030(照度センサ)
 #include "my_xbee.h"	//XBee通信
 
@@ -114,8 +115,8 @@ static uint8_t wc_time = 0;
 static uint8_t slp_time = 0;
 
 //Flashメモリ関連
+static FATFS fSystem;
 volatile bool initFM = false; //Flash Memory初期化フラグ
-static FATFS* fSystem;
 static char lineBuff[my_xbee::MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
 static uint8_t buffNumber = 0; //一時保存回数
 static tm lastSavedTime; //最後に保存した日時（UNIX時間）
@@ -123,6 +124,9 @@ static uint8_t blinkCount = 0; //FM書き出し時のLED点滅時間間隔保持変数
 
 //リセット処理用
 volatile static unsigned int resetTime = 0;
+
+//CO2センサ関連
+static bool hasCO2Sensor = false;
 
 //汎用の文字列配列
 static char charBuff[my_xbee::MAX_CMD_CHAR];
@@ -169,6 +173,8 @@ int main(void)
 	
 	//初期化処理
 	i2c_driver::Initialize(); //I2C通信
+	hasCO2Sensor = stcc4::IsConnected();
+	if(hasCO2Sensor) stcc4::Initialize(); //CO2センサ
 	sht4x::Initialize(true); //温湿度センサ
 	sht4x::Initialize(false); //グローブ温度センサ
 	vcnl4030::Initialize(); //照度計
@@ -179,8 +185,6 @@ int main(void)
 		
 	//XBeeスリープ解除
 	wakeup_xbee();
-		
-	fSystem = (FATFS*) malloc(sizeof(FATFS));
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
@@ -204,7 +208,7 @@ int main(void)
     {
 		//マウントできていなければとにかくマウント
 		if(!initFM)
-			initFM = (f_mount(fSystem, "", 1) == FR_OK);
+			initFM = (f_mount(&fSystem, "", 1) == FR_OK);
 		
 		//スリープモード設定
 		if(logging)
@@ -594,8 +598,7 @@ static void solve_command(const char *command)
 	//CO2センサの有無
 	else if(strncmp(command, "HCS", 3) == 0)
 	{
-		//if(my_i2c::HasSTC31C()) my_xbee::bltx_chars("HCS:1\r");
-		//else my_xbee::bltx_chars("HCS:0\r");
+		my_xbee::bltx_chars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
 	}
 	//現在時刻の更新
 	else if (strncmp(command, "UCT", 3) == 0)
@@ -728,29 +731,42 @@ static void execLogging()
 	}
 	
 	//温湿度測定************
-	bool mesCo2 = my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 <= pass_co2; //CO2を計測する場合は温湿度が必要
+	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
 	pass_th++;
-	if(mesCo2 || (my_eeprom::mSettings.measure_th && (int)my_eeprom::mSettings.interval_th <= pass_th))
+	pass_co2++;
+	bool mesCo2m1 = my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 - 1 == pass_co2;
+	bool mesTH = my_eeprom::mSettings.measure_th && (int)my_eeprom::mSettings.interval_th <= pass_th;
+	if(mesCo2m1 || mesTH)
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(sht4x::ReadValue(&tmp_f, &hmd_f, false)) //こちらがSHT4X(A)じゃないと駄目
+		if(sht4x::ReadValue(&tmp_f, &hmd_f, false))
 		{
+			if(mesCo2m1){
+				stcc4::SetRHTCompensation(tmp_f, hmd_f);
+				stcc4::MeasureSingleShot();
+			}
+			
 			tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
 			hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
 			dtostrf(tmp_f,6,2,tmpS);
 			dtostrf(hmd_f,6,2,hmdS);
 		}
-		pass_th = 0;
-		hasNewData = true;
-		
-		//CO2測定
-		if(mesCo2)
+		if(mesTH)
 		{
-			//uint16_t co2_u = 0;
-			//if(my_i2c::ReadSTC31C(tmp_f, hmd_f, &co2_u)) sprintf(co2S, "%u\n", co2_u);
-			pass_co2 = 0;
+			pass_th = 0;
+			hasNewData = true;
 		}
+	}
+	
+	//CO2測定************
+	if(my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 <= pass_co2)
+	{
+		uint16_t co2_u = 0;
+		float tmp_f = 0;
+		float hmd_f = 0;
+		if(stcc4::ReadMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
+		pass_co2 = 0;
 	}
 	
 	//グローブ温度測定************
@@ -778,7 +794,6 @@ static void execLogging()
 		{
 			float ill_d;
 			vcnl4030::ReadPS(&ill_d);
-			//float ill_d = my_i2c::ReadVCNL4030_PS();
 			dtostrf(ill_d,8,2,illS);
 		}
 		//照度計
@@ -787,7 +802,6 @@ static void execLogging()
 			float ill_d;
 			vcnl4030::ReadALS(&ill_d);
 			ill_d /= TRANSMITTANCE;
-			//float ill_d = my_i2c::ReadVCNL4030_ALS() / TRANSMITTANCE;
 			ill_d = max(0,min(99999.99,my_eeprom::cFactors.luxA * ill_d + my_eeprom::cFactors.luxB));
 			dtostrf(ill_d,8,2,illS);
 		}
@@ -905,15 +919,23 @@ static void writeFlashMemory(const tm dtNow, const char write_chars[])
 	myRTC.min=dtNow.tm_min;
 	myRTC.sec=dtNow.tm_sec;
 	
-	FIL* fl = (FIL*)malloc(sizeof(FIL));	
-	if(f_open(fl, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK)
+	// FILオブジェクトローカル変数としてスタックに確保
+	FIL fmFile;
+	if(f_open(&fmFile, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK)
 	{
-		f_puts(write_chars, fl);
-		f_close(fl);
+		f_puts(write_chars, &fmFile);
+		f_close(&fmFile);
 	}
-	else initFM = false; //エラー時は再マウントを試みる
+	else initFM = false; // エラー時は再マウントを試みる
 	
-	free(fl);
+	/*FIL* fmFile = (FIL*)malloc(sizeof(FIL));
+	if(f_open(fmFile, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK)
+	{
+		f_puts(write_chars, fmFile);
+		f_close(fmFile);
+	}
+	else initFM = false; //エラー時は再マウントを試みる	
+	free(fmFile);*/
 }
 
 //PORTA PIN2割り込み（リセットスイッチ押し込み）

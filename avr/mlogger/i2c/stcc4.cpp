@@ -18,6 +18,7 @@ const uint16_t CMD_ENTER_SLEEP= 0x3650;   // スリープ
 const uint8_t CMD_EXIT_SLEEP= 0x00;   // スリープ解除
 const uint16_t CMD_MES_SINGLE_SHOT = 0x219D;   //Single shot測定
 const uint16_t CMD_READ_MEASUREMENT = 0xEC05;   //計測結果読み取り
+const uint16_t CMD_SET_RHT_COMPENSATION = 0xE000;   //補償用温湿度設定
 
 bool stcc4::sendCommand(uint16_t command) {
 	const uint8_t command_bytes[] = {
@@ -25,6 +26,38 @@ bool stcc4::sendCommand(uint16_t command) {
 		(uint8_t)(command & 0xFF)  // 下位バイト
 	};
 	return i2c_driver::Write(ADDRESS, command_bytes, sizeof(command_bytes));
+}
+
+bool stcc4::sendCommandWithArguments(uint16_t command, const uint16_t args[], uint8_t numArgs)
+{
+	// 送信バッファを作成：コマンド(2B) + 引数(2B*N) + CRC(1B*N)
+	uint8_t buffer_size = 2 + numArgs * 3;
+	uint8_t buffer[buffer_size];
+
+	// コマンドをバッファに格納
+	buffer[0] = (uint8_t)(command >> 8);
+	buffer[1] = (uint8_t)(command & 0xFF);
+
+	// 引数とCRCをバッファに格納
+	for (uint8_t i = 0; i < numArgs; i++) {
+		uint16_t arg = args[i];
+		uint8_t arg_msb = (uint8_t)(arg >> 8);
+		uint8_t arg_lsb = (uint8_t)(arg & 0xFF);
+		
+		uint8_t base_index = 2 + i * 3;
+		buffer[base_index] = arg_msb;
+		buffer[base_index + 1] = arg_lsb;
+		
+		// 2バイトの引数データからCRC8を計算
+		buffer[base_index + 2] = utilities::crc8(&buffer[base_index], 2);
+	}
+	
+	// 組み立てたパケット全体を送信
+	return i2c_driver::Write(ADDRESS, buffer, buffer_size);
+}
+
+bool stcc4::IsConnected() {
+	return i2c_driver::IsConnected(ADDRESS);
 }
 
 bool stcc4::Initialize(){
@@ -100,4 +133,18 @@ bool stcc4::ReadMeasurement(uint16_t * co2, float * temperature, float * humidit
 	} else return false; // CRCエラー
 	
 	return true; // 成功
+}
+
+bool stcc4::SetRHTCompensation(float temperature, float humidity){
+	// float値を16bit整数に変換
+	// Temperature: Input = (T[°C] + 45) * (2^16 - 1) / 175
+	uint16_t temp_arg = (uint16_t)((temperature + 45.0f) * 65535.0f / 175.0f);
+	
+	// Humidity: Input = (RH[%RH] + 6) * (2^16 - 1) / 125
+	uint16_t humi_arg = (uint16_t)((humidity + 6.0f) * 65535.0f / 125.0f);
+
+	const uint16_t arguments[] = { temp_arg, humi_arg };
+
+	// コマンドと2つの引数を送信
+	return sendCommandWithArguments(CMD_SET_RHT_COMPENSATION, arguments, 2);
 }
