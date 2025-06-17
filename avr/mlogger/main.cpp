@@ -51,12 +51,12 @@ extern "C"{
 #include <time.h>
 
 #include "main.h"
-#include "my_eeprom.h"	//EEPROM処理
+#include "my_eeprom.h"		//EEPROM処理
 #include "i2c/i2c_driver.h" //I2C通信
 #include "i2c/sht4x.h"      //SHT4X(温湿度センサ)
 #include "i2c/stcc4.h"      //STCC4(CO2センサ)
 #include "i2c/vcnl4030.h"	//VCNL4030(照度センサ)
-#include "my_xbee.h"	//XBee通信
+#include "my_xbee.h"		//XBee通信
 
 //FatFs関連
 #include "ff/ff.h"
@@ -65,6 +65,9 @@ extern "C"{
 
 //定数宣言***********************************************************
 const char VERSION_NUMBER[] = "VER:3.4.0\r";
+
+//コマンドの文字数
+const uint8_t CMD_LENGTH = 3;
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -132,16 +135,7 @@ static bool hasCO2Sensor = false;
 static char charBuff[my_xbee::MAX_CMD_CHAR];
 
 //風速計自動校正処理用
-static bool autCalibratingVSensor= false;
 static bool calibratingVelocityVoltage = false;
-static unsigned int vSensorInitTimer = 0;
-static unsigned long vSensorTuningTime = 300; //5分
-static float vSensorInitVoltage;
-
-//温度計自動校正処理用
-static bool autCalibratingTSensor= false;
-static unsigned int tSensorInitTimer = 0;
-static unsigned long tSensorTuningTime = 86400; //1日
 
 int main(void)
 {	
@@ -375,10 +369,7 @@ static void append_command(void)
 }
 
 static void solve_command(const char *command)
-{		
-	//チューニング中は指令を受け取らない
-	if(autCalibratingVSensor || autCalibratingTSensor) return;
-	
+{	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
 		my_xbee::bltx_chars(VERSION_NUMBER);
@@ -388,7 +379,7 @@ static void solve_command(const char *command)
 		//現在時刻を設定
 		char num[11];
 		num[10] = '\0';
-		strncpy(num, command + 3, 10);
+		strncpy(num, command + CMD_LENGTH, 10);
 		currentTime = atol(num);
 		//最終計測日時=現在時刻とする
 		time_t ct = currentTime - UNIX_OFFSET;
@@ -534,7 +525,7 @@ static void solve_command(const char *command)
 	//Change Logger Name
 	else if(strncmp(command, "CLN", 3) == 0)
 	{
-		strncpy(my_eeprom::mlName, command + 3, 21);
+		strncpy(my_eeprom::mlName, command + CMD_LENGTH, 21);
 		my_eeprom::SaveName();
 		
 		//ACK
@@ -548,38 +539,6 @@ static void solve_command(const char *command)
 		char name[22 + 4];
 		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
 		my_xbee::bltx_chars(name);
-	}
-	//風速計の自動校正
-	else if(strncmp(command, "CBV", 3) == 0)
-	{
-		char buff[11];
-		buff[5] = '\0';
-		strncpy(buff, command + 3, 5);
-		vSensorTuningTime = atol(buff);
-		if(vSensorTuningTime < 60) vSensorTuningTime = 60;
-		if(86400 < vSensorTuningTime)vSensorTuningTime = 3600;
-		sprintf(buff, "CBV:%lo\r", vSensorTuningTime);
-		my_xbee::bltx_chars(buff);
-		
-		autCalibratingVSensor = true;
-		vSensorInitTimer = 0;
-		vSensorInitVoltage = 0;
-		wakeup_anemo();
-	}
-	//温度計の自動校正
-	else if(strncmp(command, "CBT", 3) == 0)
-	{
-		char buff[11];
-		buff[5] = '\0';
-		strncpy(buff, command + 3, 5);
-		tSensorTuningTime = atol(buff);
-		if(tSensorTuningTime < 60) tSensorTuningTime = 60;
-		if(86400 < tSensorTuningTime)tSensorTuningTime = 3600;
-		sprintf(buff, "CBT:%lo\r", tSensorTuningTime);
-		my_xbee::bltx_chars(buff);
-
-		autCalibratingTSensor = true;
-		tSensorInitTimer = 0;
 	}
 	//風速の手動校正開始
 	else if(strncmp(command, "SCV", 3) == 0) 
@@ -606,7 +565,7 @@ static void solve_command(const char *command)
 		//現在時刻を設定
 		char num[11];
 		num[10] = '\0';
-		strncpy(num, command + 3, 10);
+		strncpy(num, command + CMD_LENGTH, 10);
 		currentTime = atol(num);
 		my_xbee::bltx_chars("UCT\r");
 	}
