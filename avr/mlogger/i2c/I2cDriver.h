@@ -1,5 +1,5 @@
 /*
- * i2c_driver.h
+ * I2cDriver.h
  *
  * Created: 2025/06/16 9:33:19
  *  Author: e.togashi
@@ -10,14 +10,14 @@
 
 #include <avr/io.h>
 
-class i2c_driver
+class I2cDriver
 {
 	public:
 	
 		/**
 		 * @brief I2C通信の状態を示す列挙型
 		 */
-		enum I2C_Status
+		enum I2cStatus
 		{
 			I2C_INIT = 0,
 			I2C_ACKED,
@@ -31,35 +31,35 @@ class i2c_driver
 		 * @brief センサーがバス上に存在するかを確認する
 		 * @return センサーが応答すればtrue
 		 */
-		static bool IsConnected(uint8_t address);
+		static bool isConnected(uint8_t address);
 		
 		/**
 		 * @brief I2Cバスを初期化します
 		 */
-		static void Initialize();
+		static void initialize();
 
 		/**
 		 * @brief 指定アドレスにデータを書き込みます
 		 * @return 成功した場合にtrue
 		 */
-		static bool Write(uint8_t address, const uint8_t* data, uint8_t length);
+		static bool write(uint8_t address, const uint8_t* data, uint8_t length);
 
 		/**
 		 * @brief 指定アドレスからデータを読み込みます
 		 * @return 成功した場合にtrue
 		 */
-		static bool Read(uint8_t address, uint8_t* buffer, uint8_t length);
+		static bool read(uint8_t address, uint8_t* buffer, uint8_t length);
 
 		/**
 		 * @brief データを書き込んだ後、続けてデータを読み込みます（Repeated Startを使用）
 		 * @return 成功した場合にtrue
 		 */
-		static bool WriteRead(uint8_t address, const uint8_t* writeData, uint8_t writeLength, uint8_t* readBuffer, uint8_t readLength);
+		static bool writeRead(uint8_t address, const uint8_t* writeData, uint8_t writeLength, uint8_t* readBuffer, uint8_t readLength);
 
 		/**
 		 * @brief 1バイトを送信し、ACK/NACKを気にせず終了する (特殊な復帰シーケンス用)
 		 */
-		static bool WriteByteAndStop(uint8_t address, uint8_t data);
+		static bool writeByteAndStop(uint8_t address, uint8_t data);
 
 	private:
 		

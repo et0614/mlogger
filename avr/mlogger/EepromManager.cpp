@@ -1,5 +1,5 @@
 /**
- * @file my_eeprom.h
+ * @file EepromManager.h
  * @brief AVR(AVRxxDB32)のEEPROMを処理する
  * @author E.Togashi
  * @date 2021/12/19
@@ -11,8 +11,8 @@
 #include <avr/eeprom.h>
 
 #include "parameters.h"
-#include "my_eeprom.h"
-#include "utilities.h"
+#include "EepromManager.h"
+#include "Utilities.h"
 
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;
@@ -33,19 +33,19 @@ static MeasurementSettings EEMEM EEP_MSETTINGS;
 static char EEMEM EEP_NAME[21];
 
 //補正係数
-CorrectionFactors my_eeprom::cFactors;
+CorrectionFactors EepromManager::cFactors;
 
 //風速特性係数
-VelocityCharacteristicCoefficients my_eeprom::vcCoefficients;
+VelocityCharacteristicCoefficients EepromManager::vcCoefficients;
 
 //計測設定
-MeasurementSettings my_eeprom::mSettings;
+MeasurementSettings EepromManager::mSettings;
 
 //ロガー名称
-char my_eeprom::mlName[21];
+char EepromManager::mlName[21];
 
 void initCFactors(){
-	my_eeprom::cFactors = {
+	EepromManager::cFactors = {
 		1, //バージョン
 		DBT_COEF_A, //乾球温度a
 		DBT_COEF_B, //乾球温度b
@@ -61,14 +61,14 @@ void initCFactors(){
 		0 //CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::cFactors.crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::cFactors,
-		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	EepromManager::cFactors.crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::cFactors,
+		sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
 }
 
 void initVCCoefficients(){
-	my_eeprom::vcCoefficients = {
+	EepromManager::vcCoefficients = {
 		1,		//バージョン
 		VEL_COEF_A,		//係数A
 		VEL_COEF_B, //係数B
@@ -76,14 +76,14 @@ void initVCCoefficients(){
 		0		//CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::vcCoefficients.crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::cFactors,
-		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	EepromManager::vcCoefficients.crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::vcCoefficients,
+		sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
 }
 
 void initMSettings(){
-	my_eeprom::mSettings = {
+	EepromManager::mSettings = {
 		1,		//バージョン
 		false, //自動測定開始
 		true, //乾球温度の計測真偽
@@ -108,9 +108,9 @@ void initMSettings(){
 		0		//CRC（一旦0で初期化）
 	};
 	// CRCを計算
-	my_eeprom::mSettings.crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::mSettings,
-		sizeof(MeasurementSettings) - sizeof(my_eeprom::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	EepromManager::mSettings.crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::mSettings,
+		sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
 }
 
@@ -118,21 +118,21 @@ void initMSettings(){
 void writeCFactors()
 {
 	eeprom_busy_wait();
-	eeprom_update_block(&my_eeprom::cFactors, &EEP_CFACTORS, sizeof(CorrectionFactors));
+	eeprom_update_block(&EepromManager::cFactors, &EEP_CFACTORS, sizeof(CorrectionFactors));
 }
 
 //風速特性係数を書き込む
 void writeVCCoefficients()
 {
 	eeprom_busy_wait();
-	eeprom_update_block(&my_eeprom::vcCoefficients, &EEP_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
+	eeprom_update_block(&EepromManager::vcCoefficients, &EEP_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
 }
 
 //計測設定を書き込む
 void writeMSettings()
 {
 	eeprom_busy_wait();
-	eeprom_update_block(&my_eeprom::mSettings, &EEP_MSETTINGS, sizeof(MeasurementSettings));
+	eeprom_update_block(&EepromManager::mSettings, &EEP_MSETTINGS, sizeof(MeasurementSettings));
 }
 
 //メモリを初期化する
@@ -152,7 +152,7 @@ void initMemory()
 	
 	//名前
 	eeprom_busy_wait();
-	eeprom_update_block((const void *)ML_NAME, (void *)EEP_NAME, sizeof(my_eeprom::mlName));
+	eeprom_update_block((const void *)ML_NAME, (void *)EEP_NAME, sizeof(EepromManager::mlName));
 	
 	//XBee初期化フラグ
 	eeprom_busy_wait();
@@ -164,7 +164,7 @@ void initMemory()
 }
 
 //補正係数を設定する
-void my_eeprom::SetCorrectionFactor(const char data[])
+void EepromManager::setCorrectionFactor(const char data[])
 {
 	float buff;
 	char num[5];
@@ -174,93 +174,93 @@ void my_eeprom::SetCorrectionFactor(const char data[])
 	strncpy(num, data + 3, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-		my_eeprom::cFactors.dbtA = buff;
+		EepromManager::cFactors.dbtA = buff;
 	//乾球温度補正係数B
 	strncpy(num, data + 7, 4);
 	buff = 0.01 * atol(num);
 	if(-3.0 <= buff && buff <= 3.0)
-		my_eeprom::cFactors.dbtB = buff;
+		EepromManager::cFactors.dbtB = buff;
 	
 	//相対湿度補正係数A
 	strncpy(num, data + 11, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-		my_eeprom::cFactors.hmdA = buff;
+		EepromManager::cFactors.hmdA = buff;
 	//相対湿度補正係数B
 	strncpy(num, data + 15, 4);
 	buff = 0.01 * atol(num);
 	if(-9.99 <= buff && buff <= 9.99)
-		my_eeprom::cFactors.hmdB = buff;
+		EepromManager::cFactors.hmdB = buff;
 	
 	//グローブ温度補正係数A
 	strncpy(num, data + 19, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-		my_eeprom::cFactors.glbA = buff;
+		EepromManager::cFactors.glbA = buff;
 	//グローブ温度補正係数B
 	strncpy(num, data + 23, 4);
 	buff = 0.01 * atol(num);
 	if(-3.0 <= buff && buff <= 3.0)
-		my_eeprom::cFactors.dbtB = buff;
+		EepromManager::cFactors.glbB = buff;
 	
 	//照度補正係数A
 	strncpy(num, data + 27, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-		my_eeprom::cFactors.luxA = buff;
+		EepromManager::cFactors.luxA = buff;
 	//照度補正係数B
 	strncpy(num, data + 31, 4);
 	buff = atol(num);
 	if(-999 <= buff && buff <= 999)
-		my_eeprom::cFactors.luxB = buff;
+		EepromManager::cFactors.luxB = buff;
 	
 	//風速補正係数A
 	strncpy(num, data + 35, 4);
 	buff = 0.001 * atol(num);
 	if(0.8 <= buff && buff <= 1.2)
-		my_eeprom::cFactors.velA = buff;
+		EepromManager::cFactors.velA = buff;
 	//風速補正係数B
 	strncpy(num, data + 39, 4);
 	buff = 0.001 * atol(num);
 	if(-0.5 <= buff && buff <= 0.5)
-		my_eeprom::cFactors.velB = buff;
+		EepromManager::cFactors.velB = buff;
 	//風速無風電圧
 	strncpy(num, data + 43, 4);
 	buff = 0.001 * atol(num);
 	if(1.40 <= buff && buff <= 1.50)
-		my_eeprom::cFactors.vel0 = buff;
+		EepromManager::cFactors.vel0 = buff;
 	
 	//EEPROMに書き込む
 	writeCFactors();
 }
 
 //補正係数を表す文字列を作成する
-void my_eeprom::MakeCorrectionFactorString(char * txbuff, const char * command)
+void EepromManager::makeCorrectionFactorString(char * txbuff, const char * command)
 {
 	char dbtA[6],dbtB[6],hmdA[6],hmdB[6],glbA[6],glbB[6],luxA[6],luxB[5],velA[6],velB[7],vel0[6];
 	
-	dtostrf(my_eeprom::cFactors.dbtA,5,3,dbtA);
-	dtostrf(my_eeprom::cFactors.dbtB,5,2,dbtB);
+	dtostrf(EepromManager::cFactors.dbtA,5,3,dbtA);
+	dtostrf(EepromManager::cFactors.dbtB,5,2,dbtB);
 	
-	dtostrf(my_eeprom::cFactors.hmdA,5,3,hmdA);
-	dtostrf(my_eeprom::cFactors.hmdB,5,2,hmdB);
+	dtostrf(EepromManager::cFactors.hmdA,5,3,hmdA);
+	dtostrf(EepromManager::cFactors.hmdB,5,2,hmdB);
 	
-	dtostrf(my_eeprom::cFactors.glbA,5,3,glbA);
-	dtostrf(my_eeprom::cFactors.glbB,5,2,glbB);
+	dtostrf(EepromManager::cFactors.glbA,5,3,glbA);
+	dtostrf(EepromManager::cFactors.glbB,5,2,glbB);
 	
-	dtostrf(my_eeprom::cFactors.luxA,5,3,luxA);
-	dtostrf(my_eeprom::cFactors.luxB,4,0,luxB);
+	dtostrf(EepromManager::cFactors.luxA,5,3,luxA);
+	dtostrf(EepromManager::cFactors.luxB,4,0,luxB);
 	
-	dtostrf(my_eeprom::cFactors.velA,5,3,velA);
-	dtostrf(my_eeprom::cFactors.velB,6,3,velB);
-	dtostrf(my_eeprom::cFactors.vel0,5,3,vel0);
+	dtostrf(EepromManager::cFactors.velA,5,3,velA);
+	dtostrf(EepromManager::cFactors.velB,6,3,velB);
+	dtostrf(EepromManager::cFactors.vel0,5,3,vel0);
 	
 	sprintf(txbuff, "%s:%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r",
 		command, dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, vel0);
 }
 
 //風速の特性係数を設定する
-void my_eeprom::SetVelocityCharacteristics(const char data[])
+void EepromManager::setVelocityCharacteristics(const char data[])
 {
 	float buff;
 	char num[8];
@@ -270,65 +270,65 @@ void my_eeprom::SetVelocityCharacteristics(const char data[])
 	strncpy(num, data + 3, 4);
 	buff = 0.001 * atol(num);
 	if(1.40 <= buff && buff <= 1.60)
-	my_eeprom::cFactors.vel0 = buff;
+	EepromManager::cFactors.vel0 = buff;
 	
 	//特性A
 	num[7] = '\0';
 	strncpy(num, data + 7, 7);
 	buff = 0.001 * atol(num);
-	my_eeprom::vcCoefficients.ccA = buff;
+	EepromManager::vcCoefficients.ccA = buff;
 	
 	//特性B
 	strncpy(num, data + 14, 7);
 	buff = 0.001 * atol(num);
-	my_eeprom::vcCoefficients.ccB = buff;
+	EepromManager::vcCoefficients.ccB = buff;
 	
 	//特性C
 	strncpy(num, data + 21, 7);
 	buff = 0.001 * atol(num);
-	my_eeprom::vcCoefficients.ccC = buff;
+	EepromManager::vcCoefficients.ccC = buff;
 
 	writeVCCoefficients();
 }
 
 //風速の特性係数を表す文字列を作成する
-void my_eeprom::MakeVelocityCharateristicsString(char * txbuff, const char * command)
+void EepromManager::makeVelocityCharateristicsString(char * txbuff, const char * command)
 {
 	char vel0[6],vccA[9],vccB[9],vccC[9];
 	
-	dtostrf(my_eeprom::cFactors.vel0,5,3,vel0);
-	dtostrf(my_eeprom::vcCoefficients.ccA,8,3,vccA);
-	dtostrf(my_eeprom::vcCoefficients.ccB,8,3,vccB);
-	dtostrf(my_eeprom::vcCoefficients.ccC,8,3,vccC);
+	dtostrf(EepromManager::cFactors.vel0,5,3,vel0);
+	dtostrf(EepromManager::vcCoefficients.ccA,8,3,vccA);
+	dtostrf(EepromManager::vcCoefficients.ccB,8,3,vccB);
+	dtostrf(EepromManager::vcCoefficients.ccC,8,3,vccC);
 	
 	sprintf(txbuff, "%s:%s,%s,%s,%s\r",
 	command, vel0, vccA, vccB, vccC);
 }
 
 //計測設定を設定する
-void my_eeprom::SetMeasurementSetting()
+void EepromManager::setMeasurementSetting()
 {
 	writeMSettings();	
 }
 
 //名称を書き込む
-void my_eeprom::SaveName()
+void EepromManager::saveName()
 {
 	eeprom_busy_wait();	
-	eeprom_update_block((const void *)mlName, (void *)EEP_NAME, sizeof(my_eeprom::mlName));
+	eeprom_update_block((const void *)mlName, (void *)EEP_NAME, sizeof(EepromManager::mlName));
 }
 
 //補正係数を読み込む
 void LoadCorrectionFactor()
 {
 	eeprom_busy_wait();	
-	eeprom_read_block(&my_eeprom::cFactors, &EEP_CFACTORS, sizeof(CorrectionFactors));
+	eeprom_read_block(&EepromManager::cFactors, &EEP_CFACTORS, sizeof(CorrectionFactors));
 
 	// 読み込んだデータのCRCを検証
-	uint8_t expected_crc = my_eeprom::cFactors.crc;
-	uint8_t actual_crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::cFactors,
-		sizeof(CorrectionFactors) - sizeof(my_eeprom::cFactors.crc)
+	uint8_t expected_crc = EepromManager::cFactors.crc;
+	uint8_t actual_crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::cFactors,
+		sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc)
 	);
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
@@ -339,13 +339,13 @@ void LoadCorrectionFactor()
 void LoadVelocityCharateristics()
 {
 	eeprom_busy_wait();
-	eeprom_read_block(&my_eeprom::vcCoefficients, &EEP_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
+	eeprom_read_block(&EepromManager::vcCoefficients, &EEP_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
 
 	// 読み込んだデータのCRCを検証
-	uint8_t expected_crc = my_eeprom::vcCoefficients.crc;
-	uint8_t actual_crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::vcCoefficients,
-		sizeof(VelocityCharacteristicCoefficients) - sizeof(my_eeprom::vcCoefficients.crc)
+	uint8_t expected_crc = EepromManager::vcCoefficients.crc;
+	uint8_t actual_crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::vcCoefficients,
+		sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc)
 	);
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
@@ -356,13 +356,13 @@ void LoadVelocityCharateristics()
 void LoadMeasurementSetting()
 {
 	eeprom_busy_wait();
-	eeprom_read_block(&my_eeprom::mSettings, &EEP_MSETTINGS, sizeof(MeasurementSettings));
+	eeprom_read_block(&EepromManager::mSettings, &EEP_MSETTINGS, sizeof(MeasurementSettings));
 
 	// 読み込んだデータのCRCを検証
-	uint8_t expected_crc = my_eeprom::mSettings.crc;
-	uint8_t actual_crc = utilities::crc8(
-		(uint8_t*)&my_eeprom::mSettings,
-		sizeof(MeasurementSettings) - sizeof(my_eeprom::mSettings.crc)
+	uint8_t expected_crc = EepromManager::mSettings.crc;
+	uint8_t actual_crc = Utilities::crc8(
+		(uint8_t*)&EepromManager::mSettings,
+		sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc)
 	);
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
@@ -373,11 +373,11 @@ void LoadMeasurementSetting()
 void LoadName()
 {
 	eeprom_busy_wait();
-	eeprom_read_block((void *)my_eeprom::mlName, (const void *)EEP_NAME, sizeof(my_eeprom::mlName));
+	eeprom_read_block((void *)EepromManager::mlName, (const void *)EEP_NAME, sizeof(EepromManager::mlName));
 }
 
 //設定を読み込む
-void my_eeprom::LoadEEPROM()
+void EepromManager::loadEEPROM()
 {
 	//強制初期化処理
 	//eeprom_busy_wait();
@@ -396,13 +396,13 @@ void my_eeprom::LoadEEPROM()
 }
 
 //XBeeが初期化済か否かを取得する
-bool my_eeprom::IsXBeeInitialized(){
+bool EepromManager::isXBeeInitialized(){
 	eeprom_busy_wait(); //EEPROM読み書き可能まで待機
 	return eeprom_read_byte(&EEP_XB_INITFLAG) == 'T';
 }
 
 //XBee初期化を記録する
-void my_eeprom::XBeeInitialized(){
+void EepromManager::xbeeInitialized(){
 	eeprom_busy_wait();
 	eeprom_write_byte(&EEP_XB_INITFLAG,'T');	
 }

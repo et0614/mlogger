@@ -1,5 +1,5 @@
 /*
- * sht4x.h
+ * Sht4x.h
  *
  * Created: 2025/06/16 9:53:19
  *  Author: e.togashi
@@ -10,16 +10,16 @@
 #define SHT4X_H_
 
 #include <stdint.h>
-#include "sht4x.h"
+#include "Sht4x.h"
 
-class sht4x{
+class Sht4x{
 	public:
 		/**
 		 * @brief センサーがバス上に存在するかを確認する
 		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
 		 * @return センサーが応答すればtrue
 		 */
-		static bool IsConnected(bool isAD);
+		static bool isConnected(bool isAD);
 		
 		/**
 		 * @fn
@@ -27,7 +27,7 @@ class sht4x{
 		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
 		 * @return 読取成功でtrue、失敗でfalse
 		 */
-		static bool Initialize(bool isAD);
+		static bool initialize(bool isAD);
 				
 		/**
 		 * @fn
@@ -37,7 +37,7 @@ class sht4x{
 		 * @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
 		 * @return 読取成功でtrue、失敗でfalse
 		 */
-		static bool ReadValue(float * tempValue, float * humiValue, bool isAD);
+		static bool readValue(float * tempValue, float * humiValue, bool isAD);
 		
 		/**
 		* @fn
@@ -46,7 +46,7 @@ class sht4x{
 		* @param (isAD) SHT4X-ADか否か（否の場合にはSHT4X-BD）
 		* @return 読取成功でtrue、失敗でfalse
 		*/
-		static bool ReadSerial(uint32_t* serialNumber, bool isAD);
+		static bool readSerial(uint32_t* serialNumber, bool isAD);
 	
 	};
 

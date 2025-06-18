@@ -1,12 +1,12 @@
 /*
- * stcc4.cpp
+ * Stcc4.cpp
  *
  * Created: 2025/06/16 17:05:59
  *  Author: e.togashi
  */ 
 
-#include "stcc4.h"
-#include "../utilities.h"
+#include "Stcc4.h"
+#include "../Utilities.h"
 #include <util/delay.h>
 
 //アドレス
@@ -20,15 +20,15 @@ const uint16_t CMD_MES_SINGLE_SHOT = 0x219D;   //Single shot測定
 const uint16_t CMD_READ_MEASUREMENT = 0xEC05;   //計測結果読み取り
 const uint16_t CMD_SET_RHT_COMPENSATION = 0xE000;   //補償用温湿度設定
 
-bool stcc4::sendCommand(uint16_t command) {
+bool Stcc4::_sendCommand(uint16_t command) {
 	const uint8_t command_bytes[] = {
 		(uint8_t)(command >> 8),   // 上位バイト
 		(uint8_t)(command & 0xFF)  // 下位バイト
 	};
-	return i2c_driver::Write(ADDRESS, command_bytes, sizeof(command_bytes));
+	return I2cDriver::write(ADDRESS, command_bytes, sizeof(command_bytes));
 }
 
-bool stcc4::sendCommandWithArguments(uint16_t command, const uint16_t args[], uint8_t numArgs)
+bool Stcc4::_sendCommandWithArguments(uint16_t command, const uint16_t args[], uint8_t numArgs)
 {
 	// 送信バッファを作成：コマンド(2B) + 引数(2B*N) + CRC(1B*N)
 	uint8_t buffer_size = 2 + numArgs * 3;
@@ -49,27 +49,27 @@ bool stcc4::sendCommandWithArguments(uint16_t command, const uint16_t args[], ui
 		buffer[base_index + 1] = arg_lsb;
 		
 		// 2バイトの引数データからCRC8を計算
-		buffer[base_index + 2] = utilities::crc8(&buffer[base_index], 2);
+		buffer[base_index + 2] = Utilities::crc8(&buffer[base_index], 2);
 	}
 	
 	// 組み立てたパケット全体を送信
-	return i2c_driver::Write(ADDRESS, buffer, buffer_size);
+	return I2cDriver::write(ADDRESS, buffer, buffer_size);
 }
 
-bool stcc4::IsConnected() {
-	return i2c_driver::IsConnected(ADDRESS);
+bool Stcc4::isConnected() {
+	return I2cDriver::isConnected(ADDRESS);
 }
 
-bool stcc4::Initialize(){
+bool Stcc4::initialize(){
 	const uint8_t command = CMD_SOFT_RESET;
-	i2c_driver::Write(0x00, &command, 1); //初期化はジェネラルコール
+	I2cDriver::write(0x00, &command, 1); //初期化はジェネラルコール
 	_delay_ms(10); //待機
 
 	return true; // 成功
 }
 
-bool stcc4::EnterSleep(){
-	if (!sendCommand(CMD_ENTER_SLEEP)) 
+bool Stcc4::enterSleep(){
+	if (!_sendCommand(CMD_ENTER_SLEEP)) 
 		return false; // 通信失敗
 
 	_delay_ms(1); //待機
@@ -77,9 +77,9 @@ bool stcc4::EnterSleep(){
 	return true; // 成功
 }
 
-bool stcc4::ExitSleep(){
+bool Stcc4::exitSleep(){
 	const uint8_t command = CMD_EXIT_SLEEP;
-	if (!i2c_driver::WriteByteAndStop(ADDRESS, command)) 
+	if (!I2cDriver::writeByteAndStop(ADDRESS, command)) 
 		return false;
 
 	_delay_ms(5); //待機
@@ -87,22 +87,22 @@ bool stcc4::ExitSleep(){
 	return true; // 成功
 }
 
-bool stcc4::MeasureSingleShot(){
-	if (!sendCommand(CMD_MES_SINGLE_SHOT)) 
+bool Stcc4::measureSingleShot(){
+	if (!_sendCommand(CMD_MES_SINGLE_SHOT)) 
 		return false; // 通信失敗
 
 	//計測終了まで500ms必要
 	return true; // 成功
 }
 
-bool stcc4::ReadMeasurement(uint16_t * co2, float * temperature, float * humidity){
-	if (!sendCommand(CMD_READ_MEASUREMENT))
+bool Stcc4::readMeasurement(uint16_t * co2, float * temperature, float * humidity){
+	if (!_sendCommand(CMD_READ_MEASUREMENT))
 		return false; // 通信失敗
 	
 	_delay_ms(2); //待機
 	
 	uint8_t buffer[12];
-	if (!i2c_driver::Read(ADDRESS, buffer, 12)) 
+	if (!I2cDriver::read(ADDRESS, buffer, 12)) 
 		return false; // 通信失敗
 	
 	// データを分離
@@ -111,19 +111,19 @@ bool stcc4::ReadMeasurement(uint16_t * co2, float * temperature, float * humidit
 	uint8_t* hmdBuff = &buffer[6]; // 湿度データ (3バイト)
 	
 	// CO2のCRCチェックと変換
-	if (utilities::crc8(co2Buff, 2) == co2Buff[2]) 
+	if (Utilities::crc8(co2Buff, 2) == co2Buff[2]) 
 		*co2 = (co2Buff[0] << 8) | co2Buff[1];
 	else return false; // CRCエラー
 	
 	// 温度のCRCチェックと変換
-	if (utilities::crc8(dbtBuff, 2) == dbtBuff[2]) {
+	if (Utilities::crc8(dbtBuff, 2) == dbtBuff[2]) {
 		uint16_t raw_t = (dbtBuff[0] << 8) | dbtBuff[1];
 		*temperature = -45.0f + 175.0f * (float)raw_t / 65535.0f;
 	}
 	else return false; // CRCエラー
 	
 	// 湿度のCRCチェックと変換
-	if (utilities::crc8(hmdBuff, 2) == hmdBuff[2]) {
+	if (Utilities::crc8(hmdBuff, 2) == hmdBuff[2]) {
 		uint16_t raw_h = (hmdBuff[0] << 8) | hmdBuff[1];
 		float rh = -6.0f + 125.0f * (float)raw_h / 65535.0f;
 		// 物理的な範囲内に値を収める
@@ -135,7 +135,7 @@ bool stcc4::ReadMeasurement(uint16_t * co2, float * temperature, float * humidit
 	return true; // 成功
 }
 
-bool stcc4::SetRHTCompensation(float temperature, float humidity){
+bool Stcc4::setRHTCompensation(float temperature, float humidity){
 	// float値を16bit整数に変換
 	// Temperature: Input = (T[°C] + 45) * (2^16 - 1) / 175
 	uint16_t temp_arg = (uint16_t)((temperature + 45.0f) * 65535.0f / 175.0f);
@@ -146,5 +146,5 @@ bool stcc4::SetRHTCompensation(float temperature, float humidity){
 	const uint16_t arguments[] = { temp_arg, humi_arg };
 
 	// コマンドと2つの引数を送信
-	return sendCommandWithArguments(CMD_SET_RHT_COMPENSATION, arguments, 2);
+	return _sendCommandWithArguments(CMD_SET_RHT_COMPENSATION, arguments, 2);
 }

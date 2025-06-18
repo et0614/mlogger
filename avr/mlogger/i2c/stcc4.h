@@ -1,65 +1,65 @@
 /*
- * stcc4.h
+ * Stcc4.h
  *
  * Created: 2025/06/16 17:05:49
- *  Author: etoga
+ *  Author: e.togashi
  */ 
 
 
 #ifndef STCC4_H_
 #define STCC4_H_
 
-#include "i2c_driver.h"
+#include "I2cDriver.h"
 
-class stcc4{
+class Stcc4{
 	public:
 		/**
 		 * @brief センサーがバス上に存在するかを確認する
 		 * @return センサーが応答すればtrue
 		 */
-		static bool IsConnected();
+		static bool isConnected();
 	
 		/**
 		 * @fn
 		 * 初期化する
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool Initialize();
+		static bool initialize();
 		
 		/**
 		 * @fn
 		 * スリープさせる
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool EnterSleep();
+		static bool enterSleep();
 		
 		/**
 		 * @fn
 		 * スリープ解除する
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool ExitSleep();
+		static bool exitSleep();
 		
 		/**
 		 * @fn
 		 * 1回測定する
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool MeasureSingleShot();
+		static bool measureSingleShot();
 		
 		/**
 		 * @fn
 		 * 計測結果を読む
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool ReadMeasurement(uint16_t * co2, float * temperature, float * humidity);
+		static bool readMeasurement(uint16_t * co2, float * temperature, float * humidity);
 		
 		/**
 		 * @fn
 		 * 調整用温湿度を設定する
 		 * @return 成功でtrue、失敗でfalse
 		 */
-		static bool SetRHTCompensation(float temperature, float humidity);
+		static bool setRHTCompensation(float temperature, float humidity);
 		
 	private:
 		/**
@@ -67,7 +67,7 @@ class stcc4{
 		 * @param command 送信する16bitコマンド
 		 * @return 成功した場合はtrue
 		 */
-		static bool sendCommand(uint16_t command);
+		static bool _sendCommand(uint16_t command);
 		
 		/**
 		 * @brief 16bitコマンドと複数の引数データを送信する
@@ -77,7 +77,7 @@ class stcc4{
 		 * @param numArgs 引数の数
 		 * @return 成功した場合はtrue
 		 */
-		static bool sendCommandWithArguments(uint16_t command, const uint16_t args[], uint8_t numArgs);
+		static bool _sendCommandWithArguments(uint16_t command, const uint16_t args[], uint8_t numArgs);
 };
 
 

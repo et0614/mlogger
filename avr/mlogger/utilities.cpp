@@ -1,13 +1,13 @@
 /*
- * utilities.cpp
+ * Utilities.cpp
  *
  * Created: 2025/06/16 9:24:16
  *  Author: e.togashi
  */ 
 
-#include "utilities.h"
+#include "Utilities.h"
 
-uint8_t utilities::crc8(uint8_t *ptr, uint8_t len)
+uint8_t Utilities::crc8(uint8_t *ptr, uint8_t len)
 {
 	uint8_t crc = 0xFF;
 	for(int i = 0; i < len; i++) {
@@ -23,7 +23,7 @@ uint8_t utilities::crc8(uint8_t *ptr, uint8_t len)
 	return crc;
 }
 
-uint16_t utilities::crc16(uint8_t *ptr, uint8_t len)
+uint16_t Utilities::crc16(uint8_t *ptr, uint8_t len)
 {
 	uint16_t crc = 0xFFFF;
 	const uint16_t poly = 0x1021;

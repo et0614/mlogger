@@ -1,19 +1,19 @@
 /*
- * i2c_driver.cpp
+ * I2cDriver.cpp
  *
  * Created: 2025/06/16 9:33:33
  *  Author: e.togashi
  */ 
 
-#include "i2c_driver.h"
+#include "I2cDriver.h"
 
-bool i2c_driver::IsConnected(uint8_t address) {
+bool I2cDriver::isConnected(uint8_t address) {
 	uint8_t dummy_data;
 	// WriteReadの書き込み長さを0にすることで、アドレス応答の確認だけを行う
-	return i2c_driver::WriteRead(address, &dummy_data, 0, nullptr, 0);
+	return I2cDriver::writeRead(address, &dummy_data, 0, nullptr, 0);
 }
 
-void i2c_driver::Initialize()
+void I2cDriver::initialize()
 {
 	// TWI通信のPIN設定 : SDA->PF2, SCL->PF3
 	PORTMUX.TWIROUTEA = 0x00;
@@ -48,7 +48,7 @@ void i2c_driver::Initialize()
 	TWI1.MCTRLB |= TWI_FLUSH_bm; //通信状態を初期化
 }
 
-bool i2c_driver::Write(uint8_t address, const uint8_t* data, uint8_t length)
+bool I2cDriver::write(uint8_t address, const uint8_t* data, uint8_t length)
 {
 	if (_start_writing(address) != I2C_ACKED) {
 		_bus_stop();
@@ -66,7 +66,7 @@ bool i2c_driver::Write(uint8_t address, const uint8_t* data, uint8_t length)
 	return true;
 }
 
-bool i2c_driver::Read(uint8_t address, uint8_t* buffer, uint8_t length)
+bool I2cDriver::read(uint8_t address, uint8_t* buffer, uint8_t length)
 {
 	if (length == 0) return true;
 
@@ -92,7 +92,7 @@ bool i2c_driver::Read(uint8_t address, uint8_t* buffer, uint8_t length)
 	return true;
 }
 
-bool i2c_driver::WriteRead(uint8_t address, const uint8_t* writeData, uint8_t writeLength, uint8_t* readBuffer, uint8_t readLength)
+bool I2cDriver::writeRead(uint8_t address, const uint8_t* writeData, uint8_t writeLength, uint8_t* readBuffer, uint8_t readLength)
 {
 	// Write Phase
 	if (_start_writing(address) != I2C_ACKED) {
@@ -109,7 +109,7 @@ bool i2c_driver::WriteRead(uint8_t address, const uint8_t* writeData, uint8_t wr
 
 	// Read Phase (Repeated Start)
 	if (readLength > 0) {
-		return Read(address, readBuffer, readLength);
+		return read(address, readBuffer, readLength);
 	}
 	
 	// Readがない場合はここで終了
@@ -117,7 +117,7 @@ bool i2c_driver::WriteRead(uint8_t address, const uint8_t* writeData, uint8_t wr
 	return true;
 }
 
-bool i2c_driver::WriteByteAndStop(uint8_t address, uint8_t data)
+bool I2cDriver::writeByteAndStop(uint8_t address, uint8_t data)
 {
 	if (_start_writing(address) != I2C_ACKED) {
 		_bus_stop();
@@ -134,7 +134,7 @@ bool i2c_driver::WriteByteAndStop(uint8_t address, uint8_t data)
 //以下はprivateメソッド
 
 //書き込み終了を待つ
-uint8_t i2c_driver::_i2c_WaitW(void)
+uint8_t I2cDriver::_i2c_WaitW(void)
 {
 	uint8_t state = I2C_INIT;
 	do
@@ -156,7 +156,7 @@ uint8_t i2c_driver::_i2c_WaitW(void)
 }
 
 //読み込み終了を待つ
-uint8_t i2c_driver::_i2c_WaitR(void)
+uint8_t I2cDriver::_i2c_WaitR(void)
 {
 	uint8_t state = I2C_INIT;
 	do
@@ -172,7 +172,7 @@ uint8_t i2c_driver::_i2c_WaitR(void)
 }
 
 //I2C通信（書き込み）開始
-uint8_t i2c_driver::_start_writing(uint8_t address_7bit)
+uint8_t I2cDriver::_start_writing(uint8_t address_7bit)
 {
 	TWI1.MADDR = (address_7bit << 1) & ~0x01; //Write動作の場合、1桁目は0
 	
@@ -182,7 +182,7 @@ uint8_t i2c_driver::_start_writing(uint8_t address_7bit)
 }
 
 //I2C通信（読み込み）開始
-uint8_t i2c_driver::_start_reading(uint8_t address_7bit)
+uint8_t I2cDriver::_start_reading(uint8_t address_7bit)
 {
 	TWI1.MADDR = (address_7bit << 1) | 0x01; //Read動作の場合、1桁目は1
 	
@@ -192,20 +192,20 @@ uint8_t i2c_driver::_start_reading(uint8_t address_7bit)
 }
 
 //I2C通信の終了
-void i2c_driver::_bus_stop(void)
+void I2cDriver::_bus_stop(void)
 {
 	TWI1.MCTRLB = TWI_ACKACT_bm | TWI_MCMD_STOP_gc; //NACK
 }
 
 //Write処理（マスタからスレーブへの送信）
-uint8_t i2c_driver::_bus_write(uint8_t data)
+uint8_t I2cDriver::_bus_write(uint8_t data)
 {
 	TWI1.MDATA = data;
 	return _i2c_WaitW();
 }
 
 //Read処理（スレーブからマスタへの送信）
-uint8_t i2c_driver::_bus_read(bool sendAck, bool withStopCondition, uint8_t* data)
+uint8_t I2cDriver::_bus_read(bool sendAck, bool withStopCondition, uint8_t* data)
 {
 	uint8_t rslt = _i2c_WaitR();
 	if(rslt == I2C_READY)

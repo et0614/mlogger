@@ -5,27 +5,40 @@
  * @date 2020/7/14
  */
 
-static void initialize_port(void);
+//計測時間間隔を保持する構造体
+struct MeasurementPassCounters {
+	int th;  //温湿度
+	int glb; //グローブ温度
+	int vel; //微風速
+	int ill; //照度
+	int ad1; //汎用AD
+	int co2; //CO2濃度
+};
 
-static void initialize_timer(void);
+static void initializePort(void);
+
+static void initializeTimer(void);
 
 /**
 * @fn
-* XBeeの受信文字列をコマンドバッファに追加する
+* XBeeのペイロード文字列をコマンド組立バッファに追加し、コマンドを完成させる
+* @param payload XBeeフレームから抽出されたペイロード文字列
 */
-static void append_command(void);
+static void appendCommand(const char* payload);
 
 /**
 * @fn
 * 受信したコマンドを処理する
 */
-static void solve_command(const char *command);
+static void solveCommand(const char *command);
 
 static float readVelVoltage(void);
 
 static float readVoltage(unsigned int adNumber);
 
 static void writeFlashMemory(const tm dtNow, const char write_chars[]);
+
+static void executeSecondlyTask(void);
 
 static void execLogging(void);
 
@@ -41,17 +54,15 @@ static int getNormTime(tm time, unsigned int interval);
 
 //以下はinline関数************************************
 
-inline static void sleep_anemo(void);
+inline static void sleepAnemo(void);
 
-inline static void wakeup_anemo(void);
+inline static void wakeupAnemo(void);
 
-inline static void sleep_xbee(void);
+inline static void sleepXbee(void);
 
-inline static void wakeup_xbee(void);
+inline static void wakeupXbee(void);
 
-inline static void turnOnGreenAndRedLED(void);
-
-inline static void turnOffGreenAndRedLED(void);
+inline static void blinkLED(int iterNum, uint8_t pin_mask);
 
 inline static void blinkGreenAndRedLED(int iterNum);
 
@@ -74,4 +85,5 @@ inline static void blinkRedLED(int iterNum);
 inline static float max(float x, float y);
 
 inline static float min(float x, float y);
+
 

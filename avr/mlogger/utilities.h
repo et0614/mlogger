@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-class utilities
+class Utilities
 {	
 	public:
 		/**

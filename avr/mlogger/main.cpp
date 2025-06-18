@@ -34,8 +34,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
-
 #include <avr/xmega.h>
+#include <util/atomic.h>
 
 #ifdef __cplusplus
 extern "C"{
@@ -51,12 +51,13 @@ extern "C"{
 #include <time.h>
 
 #include "main.h"
-#include "my_eeprom.h"		//EEPROM処理
-#include "i2c/i2c_driver.h" //I2C通信
+#include "EepromManager.h"	//EEPROM処理
+#include "i2c/I2cDriver.h"  //I2C通信
 #include "i2c/sht4x.h"      //SHT4X(温湿度センサ)
 #include "i2c/stcc4.h"      //STCC4(CO2センサ)
 #include "i2c/vcnl4030.h"	//VCNL4030(照度センサ)
-#include "my_xbee.h"		//XBee通信
+#include "UartDriver.h"		//UART通信
+#include "XbeeController.h" //XBee通信
 
 //FatFs関連
 #include "ff/ff.h"
@@ -68,6 +69,9 @@ const char VERSION_NUMBER[] = "VER:3.4.0\r";
 
 //コマンドの文字数
 const uint8_t CMD_LENGTH = 3;
+
+//コマンドの最大文字数
+const int MAX_CMD_CHAR = 150;
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 const uint8_t V_WAKEUP_TIME = 20;
@@ -85,31 +89,24 @@ const bool IS_VEL_FNC2 = true;
 //日時関連
 volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
 
+//1秒毎の処理実行フラグ
+volatile bool process_logging_flag = false;
+
 //計測中か否か
-volatile static bool logging = false;
+static bool logging = false;
 
 //電池は足りているか
-volatile static unsigned int lowBatteryTime = 0;
+static unsigned int lowBatteryTime = 0;
 
-//親機との通信関連
-static bool readingFrame = false; //フレーム読込中か否か
-static uint8_t framePosition = 0; //フレーム読み込み位置
-static uint8_t frameSize = 0; //フレームサイズ
-volatile static char frameBuff[my_xbee::MAX_CMD_CHAR]; //読込中のフレーム
-volatile static char cmdBuff[my_xbee::MAX_CMD_CHAR]; //コマンドバッファ
-static uint8_t xbeeOffset=14; //受信frame typeに応じたオフセット
-volatile static bool outputToBLE=false; //Bluetooth接続に書き出すか否か
-volatile static bool outputToXBee=true; //XBee接続に書き出すか否か
-volatile static bool outputToFM=false; //Flash Memoryに書き出すか否か
+//コマンド
+static char xbee_payload_buffer[MAX_CMD_CHAR]; // process_xbee_byteからペイロードを受け取るための一時的なバッファ
+static char cmdBuff[MAX_CMD_CHAR]; // 複数のペイロードにまたがるコマンドを組み立てるためのバッファ
+static bool outputToBLE=false; //Bluetooth接続に書き出すか否か
+static bool outputToXBee=true; //XBee接続に書き出すか否か
+static bool outputToFM=false; //Flash Memoryに書き出すか否か
 
-//計測の是非と計測時間間隔
-//th:温湿度, glb:グローブ温度, vel:微風速, ill:照度
-volatile static int pass_th = 0;
-volatile static int pass_glb = 0;
-volatile static int pass_vel = 0;
-volatile static int pass_ill = 0;
-volatile static int pass_ad1 = 0;
-volatile static int pass_co2 = 0;
+//計測時間間隔
+static MeasurementPassCounters pass_counters = {0};
 
 //WFCを送信するまでの残り時間[sec]
 static uint8_t wc_time = 0;
@@ -119,20 +116,20 @@ static uint8_t slp_time = 0;
 
 //Flashメモリ関連
 static FATFS fSystem;
-volatile bool initFM = false; //Flash Memory初期化フラグ
-static char lineBuff[my_xbee::MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
+static bool initFM = false; //Flash Memory初期化フラグ
+static char lineBuff[MAX_CMD_CHAR * N_LINE_BUFF + 1]; //一時保存文字配列（末尾にnull文字を追加）
 static uint8_t buffNumber = 0; //一時保存回数
 static tm lastSavedTime; //最後に保存した日時（UNIX時間）
 static uint8_t blinkCount = 0; //FM書き出し時のLED点滅時間間隔保持変数
 
 //リセット処理用
-volatile static unsigned int resetTime = 0;
+static unsigned int resetTime = 0;
 
 //CO2センサ関連
 static bool hasCO2Sensor = false;
 
 //汎用の文字列配列
-static char charBuff[my_xbee::MAX_CMD_CHAR];
+static char charBuff[MAX_CMD_CHAR];
 
 //風速計自動校正処理用
 static bool calibratingVelocityVoltage = false;
@@ -140,10 +137,10 @@ static bool calibratingVelocityVoltage = false;
 int main(void)
 {	
 	//EEPROM
-	my_eeprom::LoadEEPROM();
+	EepromManager::loadEEPROM();
 		
 	//入出力ポートを初期化
-	initialize_port();
+	initializePort();
 
 	//一旦、すべての割り込み禁止
 	cli();
@@ -166,31 +163,31 @@ int main(void)
 	PORTA.PIN2CTRL |= PORT_ISC_BOTHEDGES_gc; //電圧上昇・降下割込
 	
 	//初期化処理
-	i2c_driver::Initialize(); //I2C通信
-	hasCO2Sensor = stcc4::IsConnected();
-	if(hasCO2Sensor) stcc4::Initialize(); //CO2センサ
-	sht4x::Initialize(true); //温湿度センサ
-	sht4x::Initialize(false); //グローブ温度センサ
-	vcnl4030::Initialize(); //照度計
-	my_xbee::Initialize();  //XBee（UART）
+	I2cDriver::initialize(); //I2C通信
+	hasCO2Sensor = Stcc4::isConnected();
+	if(hasCO2Sensor) Stcc4::initialize(); //CO2センサ
+	Sht4x::initialize(true); //温湿度センサ
+	Sht4x::initialize(false); //グローブ温度センサ
+	Vcnl4030::initialize(); //照度計
+	XbeeController::initialize();  //XBee（UART）
 	
 	//タイマ初期化
-	initialize_timer();
+	initializeTimer();
 		
 	//XBeeスリープ解除
-	wakeup_xbee();
+	wakeupXbee();
 	
 	//初期設定が終わったら少し待機
 	_delay_ms(500);
 
 	//XBee設定確認
-	if(!my_xbee::xbee_setting_initialized()) showError(2);
+	if(!XbeeController::xbeeSettingInitialized()) showError(2);
 
 	//割り込み再開
 	sei();
 
 	//通信再開フラグを確認
-	if(my_eeprom::mSettings.start_auto)
+	if(EepromManager::mSettings.start_auto)
 	{
 		logging = true;
 		outputToXBee = true;
@@ -200,30 +197,52 @@ int main(void)
 	//10秒以上電圧不足時間が継続したら終了
     while (lowBatteryTime <= 10)
     {
+		bool work_done_this_cycle = false;
+		
 		//マウントできていなければとにかくマウント
 		if(!initFM)
 			initFM = (f_mount(&fSystem, "", 1) == FR_OK);
-		
-		//スリープモード設定
-		if(logging)
+
+		// UARTリングバッファにデータがあれば、すべて処理する
+		while (UartDriver::uartRingBufferHasData())
 		{
-			//XBee通信時または電源接続常設モード時はIDLEスリープ
-			if(outputToBLE || my_eeprom::mSettings.start_auto) 
-			{
-				set_sleep_mode(SLEEP_MODE_IDLE);
-				wakeup_xbee();
-			}
-			//電池によるZigbee通信時は省エネ重視でパワーダウン
-			else 
-			{
-				set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-				sleep_xbee();
-			}
+			work_done_this_cycle = true;			
+			char received_byte = UartDriver::uartRingBufferGet();
+			
+			// 1バイトずつパーサーに渡し、戻り値がtrueならXbeeフレームの受信が完了
+			if (XbeeController::processXbeeByte(received_byte, xbee_payload_buffer, sizeof(xbee_payload_buffer)))
+				appendCommand(xbee_payload_buffer);
 		}
-		else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
 		
-		//マイコンをスリープさせる
-		sleep_mode();
+		//1秒毎の処理
+		if(process_logging_flag){
+			process_logging_flag = false;
+			executeSecondlyTask();
+		}
+		
+		//処理が無ければスリープさせる
+		if(!work_done_this_cycle){
+			//スリープモード設定
+			if(logging)
+			{
+				//XBee通信時または電源接続常設モード時はIDLEスリープ
+				if(outputToBLE || EepromManager::mSettings.start_auto) 
+				{
+					set_sleep_mode(SLEEP_MODE_IDLE);
+					wakeupXbee();
+				}
+				//電池によるZigbee通信時は省エネ重視でパワーダウン
+				else 
+				{
+					set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+					sleepXbee();
+				}
+			}
+			else set_sleep_mode(SLEEP_MODE_IDLE); //ロギング開始前はUART通信ができるようにIDLEでスリープ
+		
+			//マイコンをスリープさせる
+			sleep_mode();
+		}
     }
 	
 	//電池が不足した場合のみ、ここまでたどり着く
@@ -232,7 +251,7 @@ int main(void)
 	showError(1); //LED表示
 }
 
-static void initialize_port(void)
+static void initializePort(void)
 {
 	//SPI通信のための初期処理はmmc.cのpower_on()関数内
 	//***
@@ -243,7 +262,7 @@ static void initialize_port(void)
 	PORTF.DIRSET = PIN5_bm; //XBeeスリープ制御
 	PORTA.DIRSET = PIN4_bm; //微風速計5V昇圧
 	PORTD.DIRSET = PIN6_bm; //UART RTS（Lowで受信可能）
-	sleep_anemo();   //微風速計は電池を消費するので、すぐにスリープする
+	sleepAnemo();   //微風速計は電池を消費するので、すぐにスリープする
 
 	//入力ポート
 	PORTD.DIRCLR = PIN2_bm; //風速センサAD変換
@@ -261,7 +280,7 @@ static void initialize_port(void)
 }
 
 //タイマ初期化
-static void initialize_timer( void )
+static void initializeTimer( void )
 {
 	//Timer 1 //0.01secタイマ************************
 	TCA0.SINGLE.INTCTRL = TCA_SINGLE_OVF_bm; //タイマ溢れ割り込み有効化
@@ -296,93 +315,54 @@ static void initialize_timer( void )
 	SLPCTRL.CTRLA |= SLPCTRL_SEN_bm;
 }
 
-//UART受信時の割り込み処理
-ISR(USART0_RXC_vect)
+static void appendCommand(const char* payload)
 {
-	char dat = USART0.RXDATAL;	//読み出し
-	
-	//開始コード「~」が来たら初期化。本当はEscape処理がいるが、「~」はコマンドで使わないので良いだろう
-	if(dat == 0x7E)
-	{
-		framePosition = 1;
-		readingFrame = true;
-	}
-	//フレーム読込中
-	else if(readingFrame)
-	{
-		if(framePosition == 1); //データ長上位バイト（パケットの制限から必ず0）
-		else if(framePosition == 2) //データ長下位バイト
-			frameSize = (int)dat + 3;
-		else if(framePosition == 3) //コマンドID
-		{
-			if(dat == 0x90) xbeeOffset = 14; //ZigBee Recieve Packetの場合のオフセット
-			else if(dat == 0xAD) xbeeOffset = 4; //User Data Relay (Bluetooth)の場合のオフセット
-		}
-		else if(framePosition <= xbeeOffset); //受信オプションなどは無視
-		else
-		{
-			if(frameSize <= framePosition) //チェックサムに到達
-			{
-				frameBuff[framePosition - (xbeeOffset + 1)] = '\0';
-				readingFrame = false;
-				frameSize = 0;
-				framePosition = 0;
-				
-				//コマンドへ追加
-				append_command();
-			}
-			else if(framePosition < frameSize) //データをバッファに格納
-				frameBuff[framePosition - (xbeeOffset + 1)] = dat;
-		}
-		
-		framePosition++;
-	}	
-}
-
-static void append_command(void)
-{
-	//以前のパケットで途中までコマンドが届いていた場合に備えてNULLまで進む（現状はこのケースは無いか？）
+	// cmdBuffに追記していくための現在位置(pos1)を探す（フレームをまたいでコマンドが分割されている場合に対応するため）
 	unsigned int pos1 = 0;
-	while(cmdBuff[pos1] != '\0' && pos1 < my_xbee::MAX_CMD_CHAR) pos1++;
-	if(my_xbee::MAX_CMD_CHAR <= pos1) pos1 = 0; //最後までNULLがなければ新規コマンド
-	
-	//改行コードを区切りにして1つずつコマンドを実行していく
+	while(cmdBuff[pos1] != '\0' && pos1 < MAX_CMD_CHAR) pos1++;
+
+	// 新しいペイロード(payload)を1文字ずつ読みながら、cmdBuffに追記していく
 	unsigned int pos2 = 0;
-	while (frameBuff[pos2] != '\0' && pos2 < my_xbee::MAX_CMD_CHAR)
+	while (payload[pos2] != '\0' && pos1 < MAX_CMD_CHAR - 1)
 	{
-		//終端までたどり着いたら終了
-		if(pos2 == my_xbee::MAX_CMD_CHAR - 1) break;
-		
-		char nxtC = frameBuff[pos2];
+		char nxtC = payload[pos2];
 		cmdBuff[pos1] = nxtC;
-		pos1++;
-		pos2++;
-		//改行コードが表れたらコマンド実行
-		if(nxtC == '\r')
+
+		// 改行コード(\r)が見つかったら、コマンドが完成したとみなし処理する
+		if (nxtC == '\r')
 		{
-			cmdBuff[pos1] = '\0';
-			solve_command((char*)cmdBuff); //コマンドを処理
-			cmdBuff[0] = '\0'; //コマンドを削除
-			pos1 = 0;
-		}		
-	}	
+			cmdBuff[pos1 + 1] = '\0';      // 文字列を終端させる
+			solveCommand(cmdBuff);        // コマンド実行
+			cmdBuff[0] = '\0';             // 実行後、組立用バッファをクリア
+			pos1 = 0;                      // 組立用バッファの位置を先頭にリセット
+		}
+		else pos1++; // 次の位置へ
+		
+		pos2++; // ペイロードの次の文字へ
+	}
+
+	// ペイロードの最後に\rが無く、コマンドが中途半端な形で終わった場合
+	// （次のフレームに続く場合）に備えて、cmdBuffをNULL終端しておく
+	cmdBuff[pos1] = '\0';
 }
 
-static void solve_command(const char *command)
+static void solveCommand(const char *command)
 {	
 	//バージョン
 	if (strncmp(command, "VER", 3) == 0) 
-		my_xbee::bltx_chars(VERSION_NUMBER);
+		XbeeController::bltxChars(VERSION_NUMBER);
 	//ロギング開始
 	else if (strncmp(command, "STL", 3) == 0)
 	{
-		//現在時刻を設定
+		//現在時刻を設定（最終計測日時=現在時刻とする）
+		time_t ct; //最終計測日時
 		char num[11];
 		num[10] = '\0';
 		strncpy(num, command + CMD_LENGTH, 10);
-		currentTime = atol(num);
-		//最終計測日時=現在時刻とする
-		time_t ct = currentTime - UNIX_OFFSET;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+			currentTime = atol(num);
+			ct = currentTime - UNIX_OFFSET; //最終計測日時=現在時刻とする
+		}
 		gmtime_r(&ct, &lastSavedTime);
 		
 		//Bluetooth接続か否か(xはxbee,bはbluetooth)
@@ -391,19 +371,19 @@ static void solve_command(const char *command)
 		outputToFM = (command[15]=='t'); //FMに書き出すか否か
 		
 		//きりのよい秒で計測開始
-		pass_th	= getNormTime(lastSavedTime, my_eeprom::mSettings.interval_th);
-		pass_glb = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_glb);
-		pass_vel = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_vel);
-		pass_ill = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_ill);
-		pass_ad1 = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_AD1);
-		pass_co2 = getNormTime(lastSavedTime, my_eeprom::mSettings.interval_co2);
+		pass_counters.th = getNormTime(lastSavedTime, EepromManager::mSettings.interval_th);
+		pass_counters.glb = getNormTime(lastSavedTime, EepromManager::mSettings.interval_glb);
+		pass_counters.vel = getNormTime(lastSavedTime, EepromManager::mSettings.interval_vel);
+		pass_counters.ill = getNormTime(lastSavedTime, EepromManager::mSettings.interval_ill);
+		pass_counters.ad1 = getNormTime(lastSavedTime, EepromManager::mSettings.interval_AD1);
+		pass_counters.co2 = getNormTime(lastSavedTime, EepromManager::mSettings.interval_co2);
 		
 		//ロギング設定をEEPROMに保存
-		my_eeprom::mSettings.start_auto = command[13]=='e'; //Endlessロギング
-		my_eeprom::SetMeasurementSetting();
+		EepromManager::mSettings.start_auto = command[13]=='e'; //Endlessロギング
+		EepromManager::setMeasurementSetting();
 		
 		//ロギング開始
-		my_xbee::bltx_chars("STL\r");
+		XbeeController::bltxChars("STL\r");
 		_delay_ms(100);
 		logging = true;	
 	}
@@ -412,152 +392,152 @@ static void solve_command(const char *command)
 	{
 		//設定を変更する場合にはロギングを停止させる
 		logging = false;
-		
+			
 		//測定の是非
-		my_eeprom::mSettings.measure_th = (command[3] == 't');
-		my_eeprom::mSettings.measure_glb = (command[9] == 't');
-		my_eeprom::mSettings.measure_vel = (command[15] == 't');
-		my_eeprom::mSettings.measure_ill = (command[21] == 't');
-		my_eeprom::mSettings.measure_AD1 = (command[37] == 't');
-		my_eeprom::mSettings.measure_AD2 = (command[43] == 't');
-		my_eeprom::mSettings.measure_AD3 = (command[49] == 't');
-		my_eeprom::mSettings.measure_Prox = (command[55] == 't');
+		EepromManager::mSettings.measure_th = (command[3] == 't');
+		EepromManager::mSettings.measure_glb = (command[9] == 't');
+		EepromManager::mSettings.measure_vel = (command[15] == 't');
+		EepromManager::mSettings.measure_ill = (command[21] == 't');
+		EepromManager::mSettings.measure_AD1 = (command[37] == 't');
+		EepromManager::mSettings.measure_AD2 = (command[43] == 't');
+		EepromManager::mSettings.measure_AD3 = (command[49] == 't');
+		EepromManager::mSettings.measure_Prox = (command[55] == 't');
 		//バージョンが低い場合の処理
-		if(56 < strlen(command)) my_eeprom::mSettings.measure_co2 = (command[56] == 't');
-		else my_eeprom::mSettings.measure_co2 = false;
+		if(56 < strlen(command)) EepromManager::mSettings.measure_co2 = (command[56] == 't');
+		else EepromManager::mSettings.measure_co2 = false;
 		
 		//測定時間間隔
 		char num[6];
 		num[5] = '\0';
 		strncpy(num, command + 4, 5);
-		my_eeprom::mSettings.interval_th = atoi(num);
+		EepromManager::mSettings.interval_th = atoi(num);
 		strncpy(num, command + 10, 5);
-		my_eeprom::mSettings.interval_glb = atoi(num);
+		EepromManager::mSettings.interval_glb = atoi(num);
 		strncpy(num, command + 16, 5);
-		my_eeprom::mSettings.interval_vel = atoi(num);
+		EepromManager::mSettings.interval_vel = atoi(num);
 		strncpy(num, command + 22, 5);
-		my_eeprom::mSettings.interval_ill = atoi(num);
+		EepromManager::mSettings.interval_ill = atoi(num);
 		strncpy(num, command + 38, 5);
-		my_eeprom::mSettings.interval_AD1 = atoi(num);
+		EepromManager::mSettings.interval_AD1 = atoi(num);
 		strncpy(num, command + 44, 5);
-		my_eeprom::mSettings.interval_AD2 = atoi(num);
+		EepromManager::mSettings.interval_AD2 = atoi(num);
 		strncpy(num, command + 50, 5);
-		my_eeprom::mSettings.interval_AD3 = atoi(num);
+		EepromManager::mSettings.interval_AD3 = atoi(num);
 		//バージョンが低い場合の処理
 		if(56 < strlen(command))
 		{
 			strncpy(num, command + 57,5);
-			my_eeprom::mSettings.interval_co2 = atoi(num);
+			EepromManager::mSettings.interval_co2 = atoi(num);
 		}
-		else my_eeprom::mSettings.interval_co2 = 60;
+		else EepromManager::mSettings.interval_co2 = 60;
 
 		//計測開始時刻
 		char num2[11];
 		num2[10] = '\0';
 		strncpy(num2, command + 27, 10);
-		my_eeprom::mSettings.start_dt = atol(num2);
+		EepromManager::mSettings.start_dt = atol(num2);
 		
 		//ロギング設定をEEPROMに保存
-		my_eeprom::SetMeasurementSetting();
+		EepromManager::setMeasurementSetting();
 		
 		//ACK
 		sprintf(charBuff, "CMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
-			my_eeprom::mSettings.measure_th, my_eeprom::mSettings.interval_th, 
-			my_eeprom::mSettings.measure_glb, my_eeprom::mSettings.interval_glb, 
-			my_eeprom::mSettings.measure_vel, my_eeprom::mSettings.interval_vel, 
-			my_eeprom::mSettings.measure_ill, my_eeprom::mSettings.interval_ill, 
-			my_eeprom::mSettings.start_dt,
-			my_eeprom::mSettings.measure_AD1, my_eeprom::mSettings.interval_AD1, 
-			my_eeprom::mSettings.measure_AD2, my_eeprom::mSettings.interval_AD2, 
-			my_eeprom::mSettings.measure_AD3, my_eeprom::mSettings.interval_AD3,
-			my_eeprom::mSettings.measure_Prox,
-			my_eeprom::mSettings.measure_co2, my_eeprom::mSettings.interval_co2);
-		my_xbee::bltx_chars(charBuff);
+			EepromManager::mSettings.measure_th, EepromManager::mSettings.interval_th, 
+			EepromManager::mSettings.measure_glb, EepromManager::mSettings.interval_glb, 
+			EepromManager::mSettings.measure_vel, EepromManager::mSettings.interval_vel, 
+			EepromManager::mSettings.measure_ill, EepromManager::mSettings.interval_ill, 
+			EepromManager::mSettings.start_dt,
+			EepromManager::mSettings.measure_AD1, EepromManager::mSettings.interval_AD1, 
+			EepromManager::mSettings.measure_AD2, EepromManager::mSettings.interval_AD2, 
+			EepromManager::mSettings.measure_AD3, EepromManager::mSettings.interval_AD3,
+			EepromManager::mSettings.measure_Prox,
+			EepromManager::mSettings.measure_co2, EepromManager::mSettings.interval_co2);
+		XbeeController::bltxChars(charBuff);
 	}
 	//Load Measurement Settings
 	else if(strncmp(command, "LMS", 3) == 0)
 	{
 		sprintf(charBuff, "LMS:%d,%u,%d,%u,%d,%u,%d,%u,%ld,%d,%u,%d,%u,%d,%u,%d,%d,%u\r",
-			my_eeprom::mSettings.measure_th, my_eeprom::mSettings.interval_th,
-			my_eeprom::mSettings.measure_glb, my_eeprom::mSettings.interval_glb,
-			my_eeprom::mSettings.measure_vel, my_eeprom::mSettings.interval_vel,
-			my_eeprom::mSettings.measure_ill, my_eeprom::mSettings.interval_ill, 
-			my_eeprom::mSettings.start_dt,
-			my_eeprom::mSettings.measure_AD1, my_eeprom::mSettings.interval_AD1,
-			my_eeprom::mSettings.measure_AD2, my_eeprom::mSettings.interval_AD2,
-			my_eeprom::mSettings.measure_AD3, my_eeprom::mSettings.interval_AD3,
-			my_eeprom::mSettings.measure_Prox,
-			my_eeprom::mSettings.measure_co2, my_eeprom::mSettings.interval_co2);
-		my_xbee::bltx_chars(charBuff);
+			EepromManager::mSettings.measure_th, EepromManager::mSettings.interval_th,
+			EepromManager::mSettings.measure_glb, EepromManager::mSettings.interval_glb,
+			EepromManager::mSettings.measure_vel, EepromManager::mSettings.interval_vel,
+			EepromManager::mSettings.measure_ill, EepromManager::mSettings.interval_ill, 
+			EepromManager::mSettings.start_dt,
+			EepromManager::mSettings.measure_AD1, EepromManager::mSettings.interval_AD1,
+			EepromManager::mSettings.measure_AD2, EepromManager::mSettings.interval_AD2,
+			EepromManager::mSettings.measure_AD3, EepromManager::mSettings.interval_AD3,
+			EepromManager::mSettings.measure_Prox,
+			EepromManager::mSettings.measure_co2, EepromManager::mSettings.interval_co2);
+		XbeeController::bltxChars(charBuff);
 	}
 	//End Logging
 	else if(strncmp(command, "ENL", 3) == 0)
 	{
 		logging = false;
-		my_xbee::bltx_chars("ENL\r");
+		XbeeController::bltxChars("ENL\r");
 	}
 	//Set Correction Factor
 	else if(strncmp(command, "SCF", 3) == 0)
 	{
-		my_eeprom::SetCorrectionFactor(command);
-		my_eeprom::MakeCorrectionFactorString(charBuff, "SCF");
-		my_xbee::bltx_chars(charBuff);
+		EepromManager::setCorrectionFactor(command);
+		EepromManager::makeCorrectionFactorString(charBuff, "SCF");
+		XbeeController::bltxChars(charBuff);
 	}
 	//Load Correction Factor
 	else if(strncmp(command, "LCF", 3) == 0)
 	{
-		my_eeprom::MakeCorrectionFactorString(charBuff, "LCF");
-		my_xbee::bltx_chars(charBuff);
+		EepromManager::makeCorrectionFactorString(charBuff, "LCF");
+		XbeeController::bltxChars(charBuff);
 	}	
 	//Set Velocity Characteristics
 	else if(strncmp(command, "SVC", 3) == 0)
 	{
-		my_eeprom::SetVelocityCharacteristics(command);
-		my_eeprom::MakeVelocityCharateristicsString(charBuff, "SVC");
-		my_xbee::bltx_chars(charBuff);
+		EepromManager::setVelocityCharacteristics(command);
+		EepromManager::makeVelocityCharateristicsString(charBuff, "SVC");
+		XbeeController::bltxChars(charBuff);
 	}
 	//Load Velocity Characteristics
 	else if(strncmp(command, "LVC", 3) == 0)
 	{
-		my_eeprom::MakeVelocityCharateristicsString(charBuff, "LVC");
-		my_xbee::bltx_chars(charBuff);
+		EepromManager::makeVelocityCharateristicsString(charBuff, "LVC");
+		XbeeController::bltxChars(charBuff);
 	}	
 	//Change Logger Name
 	else if(strncmp(command, "CLN", 3) == 0)
 	{
-		strncpy(my_eeprom::mlName, command + CMD_LENGTH, 21);
-		my_eeprom::SaveName();
+		strncpy(EepromManager::mlName, command + CMD_LENGTH, 21);
+		EepromManager::saveName();
 		
 		//ACK
 		char ack[22 + 4];
-		sprintf(ack, "CLN:%s\r", my_eeprom::mlName);		
-		my_xbee::bltx_chars(ack);
+		sprintf(ack, "CLN:%s\r", EepromManager::mlName);		
+		XbeeController::bltxChars(ack);
 	}
 	//Load Logger Name
 	else if(strncmp(command, "LLN", 3) == 0)
 	{
 		char name[22 + 4];
-		sprintf(name, "LLN:%s\r", my_eeprom::mlName);
-		my_xbee::bltx_chars(name);
+		sprintf(name, "LLN:%s\r", EepromManager::mlName);
+		XbeeController::bltxChars(name);
 	}
 	//風速の手動校正開始
 	else if(strncmp(command, "SCV", 3) == 0) 
 	{
-		wakeup_anemo();
+		wakeupAnemo();
 		calibratingVelocityVoltage = true;
 		//以降、毎秒"SCV:電圧"が送信される
 	}
 	//風速の手動校正終了
 	else if(strncmp(command, "ECV", 3) == 0)
 	{
-		sleep_anemo();
+		sleepAnemo();
 		calibratingVelocityVoltage = false;
-		my_xbee::bltx_chars("ECV\r");
+		XbeeController::bltxChars("ECV\r");
 	}
 	//CO2センサの有無
 	else if(strncmp(command, "HCS", 3) == 0)
 	{
-		my_xbee::bltx_chars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
+		XbeeController::bltxChars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
 	}
 	//現在時刻の更新
 	else if (strncmp(command, "UCT", 3) == 0)
@@ -566,8 +546,10 @@ static void solve_command(const char *command)
 		char num[11];
 		num[10] = '\0';
 		strncpy(num, command + CMD_LENGTH, 10);
-		currentTime = atol(num);
-		my_xbee::bltx_chars("UCT\r");
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+			currentTime = atol(num);
+		}
+		XbeeController::bltxChars("UCT\r");
 	}
 }
 
@@ -585,8 +567,15 @@ ISR(RTC_PIT_vect)
 	//割り込み要求フラグ解除
 	RTC.PITINTFLAGS = RTC_PI_bm;
 	
-	currentTime++; //1秒進める
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		currentTime++; //1秒進める
+	}
 	
+	//1秒毎の処理フラグを立てる
+	process_logging_flag = true;
+}
+
+static void executeSecondlyTask(){
 	//電圧確認（限界まで使うとFlashメモリのデータが破損することがある）
 	if(isLowBattery()) lowBatteryTime++;
 	else lowBatteryTime = 0;
@@ -598,12 +587,12 @@ ISR(RTC_PIT_vect)
 		if(resetTime == 3)
 		{
 			//Endlessロギングを解除
-			my_eeprom::mSettings.start_auto = false;
-			my_eeprom::SetMeasurementSetting();
+			EepromManager::mSettings.start_auto = false;
+			EepromManager::setMeasurementSetting();
 			
 			logging=false;	//ロギング停止
 			initFM = false;	//FMを再マウント
-			sleep_anemo();	//風速センサを停止
+			sleepAnemo();	//風速センサを停止
 			blinkRedLED(3);	//赤LED点滅
 			return;
 		}
@@ -612,28 +601,28 @@ ISR(RTC_PIT_vect)
 	
 	//風速計校正処理*******************************************
 	if(calibratingVelocityVoltage) calibrateVelocityVoltage();
-		
+	
 	//ロギング中であれば****************************************
 	else if(logging) execLogging();
 	
 	//待機中であれば****************************************
 	else
 	{
-		sleep_anemo(); //風速計を停止 2023.01.09 Bugfix
-		wakeup_xbee(); //XBeeスリープ解除
+		sleepAnemo(); //風速計を停止 2023.01.09 Bugfix
+		wakeupXbee(); //XBeeスリープ解除
 		_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
 		
 		//定期的にコマンド待受状態を送信
 		if(wc_time <= 0)
 		{
-			my_xbee::bltx_chars("WFC\r"); //Waiting for command.
+			XbeeController::bltxChars("WFC\r"); //Waiting for command.
 			wc_time = 6;
 		}
 		wc_time--;
 		
 		//明滅
 		if((PORTA.IN & PIN2_bm))  //Reset押し込み中は明滅停止
-			blinkGreenLED(initFM ? 2 : 1);
+		blinkGreenLED(initFM ? 2 : 1);
 	}
 }
 
@@ -643,7 +632,11 @@ static void execLogging()
 	if(outputToFM && !initFM) blinkRedLED(1);
 	
 	//自動計測開始がOffで計測開始時刻の前ならば終了
-	if(!my_eeprom::mSettings.start_auto && currentTime < my_eeprom::mSettings.start_dt) return;
+	time_t current_snapshot;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		current_snapshot = currentTime;
+	}
+	if(!EepromManager::mSettings.start_auto && current_snapshot < EepromManager::mSettings.start_dt) return;
 	
 	//ロギング中は5秒ごとに点灯
 	blinkCount++;
@@ -655,7 +648,7 @@ static void execLogging()
 	}
 	
 	//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
-	if(my_eeprom::mSettings.measure_vel && my_eeprom::mSettings.interval_vel - pass_vel < V_WAKEUP_TIME) wakeup_anemo();
+	if(EepromManager::mSettings.measure_vel && EepromManager::mSettings.interval_vel - pass_counters.vel < V_WAKEUP_TIME) wakeupAnemo();
 	
 	bool hasNewData = false;
 	char tmpS[7] = "n/a"; //-10.00 ~ 50.00//6文字+\r
@@ -669,112 +662,112 @@ static void execLogging()
 	char co2S[6] = "n/a"; //0~65535//5文字+\r
 	
 	//微風速測定************
-	pass_vel++;
-	if(my_eeprom::mSettings.measure_vel && (int)my_eeprom::mSettings.interval_vel <= pass_vel)
+	pass_counters.vel++;
+	if(EepromManager::mSettings.measure_vel && (int)EepromManager::mSettings.interval_vel <= pass_counters.vel)
 	{
 		double velV = readVelVoltage(); //AD変換
 		dtostrf(velV,6,4,velVS);
 				
-		float bff = max(0, velV / my_eeprom::cFactors.vel0 - 1.0);
+		float bff = max(0, velV / EepromManager::cFactors.vel0 - 1.0);
 		float vel = 0;
 		if(IS_VEL_FNC2)
-			vel = my_eeprom::vcCoefficients.ccB * pow(bff,my_eeprom::vcCoefficients.ccA);
+			vel = EepromManager::vcCoefficients.ccB * pow(bff,EepromManager::vcCoefficients.ccA);
 		else
-			vel = bff * (my_eeprom::vcCoefficients.ccC + bff * (my_eeprom::vcCoefficients.ccB + bff * my_eeprom::vcCoefficients.ccA)); //電圧-風速換算式
+			vel = bff * (EepromManager::vcCoefficients.ccC + bff * (EepromManager::vcCoefficients.ccB + bff * EepromManager::vcCoefficients.ccA)); //電圧-風速換算式
 		dtostrf(vel,6,4,velS);
 		
-		pass_vel = 0;
+		pass_counters.vel = 0;
 		hasNewData = true;
 		//次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
-		if(V_WAKEUP_TIME <= my_eeprom::mSettings.interval_vel) sleep_anemo();
+		if(V_WAKEUP_TIME <= EepromManager::mSettings.interval_vel) sleepAnemo();
 	}
 	
 	//温湿度測定************
 	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
-	pass_th++;
-	pass_co2++;
-	bool mesCo2m1 = my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 - 1 == pass_co2;
-	bool mesTH = my_eeprom::mSettings.measure_th && (int)my_eeprom::mSettings.interval_th <= pass_th;
+	pass_counters.th++;
+	pass_counters.co2++;
+	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 - 1 == pass_counters.co2;
+	bool mesTH = EepromManager::mSettings.measure_th && (int)EepromManager::mSettings.interval_th <= pass_counters.th;
 	if(mesCo2m1 || mesTH)
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(sht4x::ReadValue(&tmp_f, &hmd_f, false))
+		if(Sht4x::readValue(&tmp_f, &hmd_f, false))
 		{
 			if(mesCo2m1){
-				stcc4::SetRHTCompensation(tmp_f, hmd_f);
-				stcc4::MeasureSingleShot();
+				Stcc4::setRHTCompensation(tmp_f, hmd_f);
+				Stcc4::measureSingleShot();
 			}
-			
-			tmp_f = max(-10,min(50,my_eeprom::cFactors.dbtA *(tmp_f) + my_eeprom::cFactors.dbtB));
-			hmd_f = max(0,min(100,my_eeprom::cFactors.hmdA *(hmd_f) + my_eeprom::cFactors.hmdB));
+
+			tmp_f = max(-10,min(50,EepromManager::cFactors.dbtA *(tmp_f) + EepromManager::cFactors.dbtB));
+			hmd_f = max(0,min(100,EepromManager::cFactors.hmdA *(hmd_f) + EepromManager::cFactors.hmdB));
 			dtostrf(tmp_f,6,2,tmpS);
 			dtostrf(hmd_f,6,2,hmdS);
 		}
 		if(mesTH)
 		{
-			pass_th = 0;
+			pass_counters.th = 0;
 			hasNewData = true;
 		}
 	}
 	
 	//CO2測定************
-	if(my_eeprom::mSettings.measure_co2 && (int)my_eeprom::mSettings.interval_co2 <= pass_co2)
+	if(EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
 	{
 		uint16_t co2_u = 0;
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(stcc4::ReadMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
-		pass_co2 = 0;
+		if(Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
+		pass_counters.co2 = 0;
 	}
 	
 	//グローブ温度測定************
-	pass_glb++;
-	if(my_eeprom::mSettings.measure_glb && (int)my_eeprom::mSettings.interval_glb <= pass_glb)
+	pass_counters.glb++;
+	if(EepromManager::mSettings.measure_glb && (int)EepromManager::mSettings.interval_glb <= pass_counters.glb)
 	{
 		float glbT = 0;
 		float glbH = 0;
-		if(sht4x::ReadValue(&glbT, &glbH, true))
+		if(Sht4x::readValue(&glbT, &glbH, true))
 		{
-			glbT = max(-10,min(50,my_eeprom::cFactors.glbA * glbT + my_eeprom::cFactors.glbB));
+			glbT = max(-10,min(50,EepromManager::cFactors.glbA * glbT + EepromManager::cFactors.glbB));
 			dtostrf(glbT,6,2,glbTS);
 		}
 		
-		pass_glb = 0;
+		pass_counters.glb = 0;
 		hasNewData = true;
 	}
 	
 	//照度センサ測定**************
-	pass_ill++;
-	if(my_eeprom::mSettings.measure_ill && (int)my_eeprom::mSettings.interval_ill <= pass_ill)
+	pass_counters.ill++;
+	if(EepromManager::mSettings.measure_ill && (int)EepromManager::mSettings.interval_ill <= pass_counters.ill)
 	{
 		//近接計
-		if(my_eeprom::mSettings.measure_Prox)
+		if(EepromManager::mSettings.measure_Prox)
 		{
 			float ill_d;
-			vcnl4030::ReadPS(&ill_d);
+			Vcnl4030::readPS(&ill_d);
 			dtostrf(ill_d,8,2,illS);
 		}
 		//照度計
 		else
 		{
 			float ill_d;
-			vcnl4030::ReadALS(&ill_d);
+			Vcnl4030::readALS(&ill_d);
 			ill_d /= TRANSMITTANCE;
-			ill_d = max(0,min(99999.99,my_eeprom::cFactors.luxA * ill_d + my_eeprom::cFactors.luxB));
+			ill_d = max(0,min(99999.99,EepromManager::cFactors.luxA * ill_d + EepromManager::cFactors.luxB));
 			dtostrf(ill_d,8,2,illS);
 		}
-		pass_ill = 0;
+		pass_counters.ill = 0;
 		hasNewData = true;
 	}
 	
 	//汎用AD変換測定1
-	pass_ad1++;
-	if(my_eeprom::mSettings.measure_AD1 && (int)my_eeprom::mSettings.interval_AD1 <= pass_ad1)
+	pass_counters.ad1++;
+	if(EepromManager::mSettings.measure_AD1 && (int)EepromManager::mSettings.interval_AD1 <= pass_counters.ad1)
 	{
 		float adV = readVoltage(1); //AD変換
 		dtostrf(adV,6,4,adV1S);
-		pass_ad1 = 0;
+		pass_counters.ad1 = 0;
 		hasNewData = true;
 	}
 	
@@ -784,7 +777,7 @@ static void execLogging()
 		if(outputToXBee || outputToBLE)
 		{
 			slp_time=0; //空パケットまでの時間を初期化
-			wakeup_xbee(); //XBeeスリープ解除
+			wakeupXbee(); //XBeeスリープ解除
 			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。短すぎるとコンデンサの影響か十分に立ち上がらない。。。
 		}
 		
@@ -799,7 +792,10 @@ static void execLogging()
 		alignLeft(adV1S);
 		
 		//日時を作成
-		time_t ct = currentTime - UNIX_OFFSET;
+		time_t ct;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+			ct = currentTime - UNIX_OFFSET;
+		}
 		tm dtNow;
 		gmtime_r(&ct, &dtNow);
 		
@@ -809,13 +805,13 @@ static void execLogging()
 		tmpS, hmdS, glbTS, velS, illS, "n/a", velVS, adV1S, co2S);
 		
 		//文字列オーバーに備えて最後に終了コード'\r\0'を入れておく
-		charBuff[my_xbee::MAX_CMD_CHAR-2]='\r';
-		charBuff[my_xbee::MAX_CMD_CHAR-1]='\0';
+		charBuff[MAX_CMD_CHAR-2]='\r';
+		charBuff[MAX_CMD_CHAR-1]='\0';
 
 		if(outputToXBee) 
-			my_xbee::tx_chars(charBuff); //XBee Zigbee出力
+			XbeeController::txChars(charBuff); //XBee Zigbee出力
 		if(outputToBLE) 
-			my_xbee::bl_chars(charBuff); //XBee Bluetooth出力
+			XbeeController::blChars(charBuff); //XBee Bluetooth出力
 		if(outputToFM)  //FM出力
 		{
 			//データが十分に溜まるか、1min以上の時間間隔があいたら書き出す。1h間隔の書き出しのために3行目も必要
@@ -838,15 +834,14 @@ static void execLogging()
 	slp_time++;
 	//この処理は意外に電池を消耗するので時間間隔を増やしXBee使用時のみとした（2024.07.22）
 	if(3500 <= slp_time && (outputToXBee || outputToBLE)){
-		wakeup_xbee(); //XBeeスリープ解除
+		wakeupXbee(); //XBeeスリープ解除
 		_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
-		my_xbee::tx_chars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
+		XbeeController::txChars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
 		slp_time = 0;
 	}
 	
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 	//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
-	//while(! my_uart::tx_done());
 	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う	
 }
 
@@ -859,7 +854,7 @@ static void calibrateVelocityVoltage()
 	double velV = readVelVoltage(); //AD変換
 	dtostrf(velV,6,4,velVS);	
 	snprintf(charBuff, sizeof(charBuff), "SCV:%s\r", velVS);
-	my_xbee::bltx_chars(charBuff);
+	XbeeController::bltxChars(charBuff);
 }
 
 static void writeFlashMemory(const tm dtNow, const char write_chars[])
@@ -992,52 +987,46 @@ static int getNormTime(tm time, unsigned int interval)
 
 //以下はinline関数************************************
 
-inline static void sleep_anemo(void)
+inline static void sleepAnemo(void)
 {
 	PORTA.OUTCLR = PIN4_bm; //5V昇圧停止
 }
 
-inline static void wakeup_anemo(void)
+inline static void wakeupAnemo(void)
 {
 	PORTA.OUTSET = PIN4_bm; //5V昇圧開始
 }
 
-inline static void sleep_xbee(void)
+inline static void sleepXbee(void)
 {
 	PORTF.OUTSET = PIN5_bm;
 }
 
-inline static void wakeup_xbee(void)
+inline static void wakeupXbee(void)
 {
 	PORTF.OUTCLR = PIN5_bm;
 }
 
-inline static void turnOnGreenAndRedLED(void)
+inline static void blinkLED(int iterNum, uint8_t pin_mask)
 {
-	turnOnGreenLED();
-	turnOnRedLED();
-}
+	if(iterNum < 1) return;
 
-inline static void turnOffGreenAndRedLED(void)
-{
-	turnOffGreenLED();
-	turnOffRedLED();
+	// 点滅の前に一度消灯
+	PORTA.OUTCLR = pin_mask;
+
+	// 指定回数点滅
+	for(int i=0; i < iterNum; i++)
+	{
+		_delay_ms(100);
+		PORTA.OUTSET = pin_mask; // 点灯
+		_delay_ms(25);
+		PORTA.OUTCLR = pin_mask; // 消灯
+	}
 }
 
 inline static void blinkGreenAndRedLED(int iterNum)
 {
-	if(iterNum < 1) return;
-
-	//初回
-	turnOffGreenAndRedLED(); //一旦必ず消灯して
-	//点滅
-	for(int i=0;i<iterNum;i++)
-	{
-		_delay_ms(100);
-		turnOnGreenAndRedLED(); //点灯
-		_delay_ms(25);
-		turnOffGreenAndRedLED(); //消灯
-	}
+	blinkLED(iterNum, PIN6_bm | PIN7_bm);
 }
 
 inline static void turnOnGreenLED(void)
@@ -1057,18 +1046,7 @@ inline static void toggleGreenLED(void)
 
 inline static void blinkGreenLED(int iterNum)
 {
-	if(iterNum < 1) return;
-
-	//初回
-	turnOffGreenLED(); //一旦必ず消灯して
-	//点滅
-	for(int i=0;i<iterNum;i++)
-	{
-		_delay_ms(100);
-		turnOnGreenLED(); //点灯
-		_delay_ms(25);
-		turnOffGreenLED(); //消灯
-	}
+	blinkLED(iterNum, PIN7_bm);
 }
 
 inline static void turnOnRedLED(void)
@@ -1088,18 +1066,7 @@ inline static void toggleRedLED(void)
 
 inline static void blinkRedLED(int iterNum)
 {
-	if(iterNum < 1) return;
-
-	//初回
-	turnOffRedLED(); //一旦必ず消灯して
-	//点滅
-	for(int i=0;i<iterNum;i++)
-	{
-		_delay_ms(100);
-		turnOnRedLED(); //点灯
-		_delay_ms(25);
-		turnOffRedLED(); //消灯
-	}
+	blinkLED(iterNum, PIN6_bm);
 }
 
 inline static float max(float x, float y)

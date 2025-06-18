@@ -1,12 +1,12 @@
 /**
- * @file my_eeprom.h
+ * @file EepromManager.h
  * @brief AVR(ATMega328)‚ÌEEPROM‚ğˆ—‚·‚é
  * @author E.Togashi
  * @date 2021/12/19
  */
 
-#ifndef MY_EEPROM_H_
-#define MY_EEPROM_H_
+#ifndef EEPROM_MANAGER_H_
+#define EEPROM_MANAGER_H_
 
 // •â³ŒW”
 struct CorrectionFactors {
@@ -60,7 +60,7 @@ struct MeasurementSettings{
 	uint8_t crc; //CRC
 };
 
-class my_eeprom
+class EepromManager
 {
 	public:
 		//•â³ŒW”
@@ -76,37 +76,31 @@ class my_eeprom
 		static char mlName[21];
 
 		//•â³ŒW”‚ğ‘‚«‚Ş
-		static void SetCorrectionFactor(const char * data);
-		
-		//•â³ŒW”‚ğ‘‚«‚Ş
-		static void SetCorrectionFactor();
+		static void setCorrectionFactor(const char * data);
 
 		//•â³ŒW”‚ğ•\‚·•¶š—ñ‚ğì¬‚·‚é
-		static void MakeCorrectionFactorString(char * txbuff, const char * command);
+		static void makeCorrectionFactorString(char * txbuff, const char * command);
 
 		//•—‘¬‚Ì“Á«ŒW”‚ğ‘‚«‚Ş
-		static void SetVelocityCharacteristics(const char * data);
-
-		//•—‘¬‚Ì“Á«ŒW”‚ğ‘‚«‚Ş
-		static void SetVelocityCharacteristics();
+		static void setVelocityCharacteristics(const char * data);
 		
 		//•—‘¬‚Ì“Á«ŒW”‚ğ•\‚·•¶š—ñ‚ğì¬‚·‚é
-		static void MakeVelocityCharateristicsString(char * txbuff, const char * command);
+		static void makeVelocityCharateristicsString(char * txbuff, const char * command);
 		
 		//EEPROM‚ğ“Ç‚İ‚Ş
-		static void LoadEEPROM();
+		static void loadEEPROM();
 		
 		//Œv‘ªİ’è‚ğ‘‚«‚Ş
-		static void SetMeasurementSetting();
+		static void setMeasurementSetting();
 		
 		//–¼Ì‚ğ‘‚«‚Ş
-		static void SaveName();
+		static void saveName();
 		
 		//XBee‚ª‰Šú‰»Ï‚©”Û‚©‚ğæ“¾‚·‚é
-		static bool IsXBeeInitialized();
+		static bool isXBeeInitialized();
 		
 		//XBee‰Šú‰»‚ğ‹L˜^‚·‚é
-		static void XBeeInitialized();
+		static void xbeeInitialized();
 };
 
-#endif /* MY_EEPROM_H_ */
+#endif /* EEPROM_MANAGER_H_ */
