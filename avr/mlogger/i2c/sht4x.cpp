@@ -10,24 +10,18 @@
 #include "I2cDriver.h"
 #include <util/delay.h>
 
-//SHT4X-ADXのアドレス
-const uint8_t SHT4X_ADX_ADD = 0x44; //BDXとCDXは異なるので注意
-
-//SHT4X-BDXのアドレス
-const uint8_t SHT4X_BDX_ADD = 0x45; //ADXとCDXは異なるので注意
-
 // SHT4xのコマンド
 const uint8_t CMD_MEASURE_MEDIUM = 0xF6; // 中精度での測定コマンド
 const uint8_t CMD_SOFT_RESET = 0x94;   // ソフトリセット
 const uint8_t CMD_READ_SERIAL = 0x89; // シリアル番号読み取り
 
-bool Sht4x::isConnected(bool isAD) {
-	return I2cDriver::isConnected(isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD);
+bool Sht4x::isConnected(SHT4XType sht4xType) {
+	return I2cDriver::isConnected(static_cast<uint8_t>(sht4xType));
 }
 
-bool Sht4x::initialize(bool isAD)
-{	
-	const uint8_t address = isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD;
+bool Sht4x::initialize(SHT4XType sht4xType)
+{
+	const uint8_t address = static_cast<uint8_t>(sht4xType);
 	const uint8_t command = CMD_SOFT_RESET;
 
 	// ソフトリセットコマンド(0x94)を送信
@@ -40,12 +34,12 @@ bool Sht4x::initialize(bool isAD)
 	return true; // 成功
 }
 
-bool Sht4x::readValue(float* tempValue, float* humiValue, bool isAD)
+bool Sht4x::readValue(float* tempValue, float* humiValue, SHT4XType sht4xType)
 {
 	*humiValue = -99;
 	*tempValue = -99;
 
-	const uint8_t address = isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD;
+	const uint8_t address = static_cast<uint8_t>(sht4xType);
 	
 	// 測定開始コマンドを送信 (Write APIを使用)
 	const uint8_t command = CMD_MEASURE_MEDIUM;
@@ -86,10 +80,10 @@ bool Sht4x::readValue(float* tempValue, float* humiValue, bool isAD)
 	return true; // 成功
 }
 
-bool Sht4x::readSerial(uint32_t* serialNumber, bool isAD)
+bool Sht4x::readSerial(uint32_t* serialNumber, SHT4XType sht4xType)
 {
 	*serialNumber = 0; // 事前に初期化
-	const uint8_t address = isAD ? SHT4X_ADX_ADD : SHT4X_BDX_ADD;
+	const uint8_t address = static_cast<uint8_t>(sht4xType);
 	const uint8_t command = CMD_READ_SERIAL;
 	uint8_t buffer[6];
 

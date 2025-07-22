@@ -222,6 +222,8 @@ public partial class DeviceSetting : ContentPage
         ent_vel.Text = Logger.Velocity.Interval.ToString();
         cbx_lux.IsToggled = Logger.Illuminance.Measure;
         ent_lux.Text = Logger.Illuminance.Interval.ToString();
+        cbx_co2.IsToggled = Logger.CO2Level.Measure;
+        ent_co2.Text = Logger.CO2Level.Interval.ToString();
         dpck_start.Date = Logger.StartMeasuringDateTime;
         tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
 
@@ -322,8 +324,7 @@ public partial class DeviceSetting : ContentPage
   private void updateMeasurementSetting()
   {
     //入力エラーがあれば終了
-    int thSpan, glbSpan, velSpan, luxSpan;
-    if (!isInputsCorrect(out thSpan, out glbSpan, out velSpan, out luxSpan)) return;
+    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
 
     //設定コマンドを作成
     string sData = MLogger.MakeChangeMeasuringSettingCommand(
@@ -332,7 +333,8 @@ public partial class DeviceSetting : ContentPage
       cbx_glb.IsToggled, glbSpan,
       cbx_vel.IsToggled, velSpan,
       cbx_lux.IsToggled, luxSpan,
-      false, 0, false, 0, false, 0, false, false, 0);
+      false, 0, false, 0, false, 0, false, 
+      Logger.HasCO2LevelSensor && cbx_co2.IsToggled, co2Span); //CO2センサ
 
     Logger.HasMeasurementSettingReceived = false;
     Task.Run(async () =>
@@ -357,7 +359,8 @@ public partial class DeviceSetting : ContentPage
           (MLSResource.DrybulbTemperature + "=" + (Logger.DrybulbTemperature.Measure ? Logger.DrybulbTemperature.Interval + " sec; " : "false; ")) +
           (MLSResource.GlobeTemperature + "=" + (Logger.GlobeTemperature.Measure ? Logger.GlobeTemperature.Interval + " sec; " : "false; ")) +
           (MLSResource.Velocity + "=" + (Logger.Velocity.Measure ? Logger.Velocity.Interval + " sec; " : "false; ")) +
-          (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; "))
+          (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; ")) +
+          (MLSResource.CO2level + "=" + (Logger.CO2Level.Measure ? Logger.CO2Level.Interval + " sec; " : "false; "))
           );
 
         //計測設定
@@ -369,6 +372,8 @@ public partial class DeviceSetting : ContentPage
         ent_vel.Text = Logger.Velocity.Interval.ToString();
         cbx_lux.IsToggled = Logger.Illuminance.Measure;
         ent_lux.Text = Logger.Illuminance.Interval.ToString();
+        cbx_co2.IsToggled = Logger.CO2Level.Measure;
+        ent_co2.Text = Logger.CO2Level.Interval.ToString();
 
         //編集要素の着色をもとに戻す
         resetTextColor();
@@ -401,7 +406,7 @@ public partial class DeviceSetting : ContentPage
   }
 
   private bool isInputsCorrect
-  (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan)
+  (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
   {
     bool hasError = false;
     string alert = "";
@@ -424,6 +429,11 @@ public partial class DeviceSetting : ContentPage
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
+    }
+    if (!int.TryParse(ent_co2.Text, out co2Span))
+    {
+      hasError = true;
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.CO2level + ")\r\n";
     }
 
     if (hasError)
@@ -746,6 +756,7 @@ public partial class DeviceSetting : ContentPage
     else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = Colors.Red;
     else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = Colors.Red;
     else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = Colors.Red;
+    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = Colors.Red;
   }
 
   private void ent_TextChanged(object sender, TextChangedEventArgs e)
@@ -754,6 +765,7 @@ public partial class DeviceSetting : ContentPage
     else if (sender.Equals(ent_glb)) lbl_glb.TextColor = Colors.Red;
     else if (sender.Equals(ent_vel)) lbl_vel.TextColor = Colors.Red;
     else if (sender.Equals(ent_lux)) lbl_lux.TextColor = Colors.Red;
+    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = Colors.Red;
   }
 
   private void dpck_start_DateSelected(object sender, DateChangedEventArgs e)
@@ -779,6 +791,7 @@ public partial class DeviceSetting : ContentPage
       lbl_vel.TextColor =
       lbl_lux.TextColor =
       lbl_stdtime.TextColor =
+      lbl_co2.TextColor =
       Colors.DarkGreen;
   }
 

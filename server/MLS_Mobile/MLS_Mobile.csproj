@@ -41,8 +41,8 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
 	  <ProvisioningType>manual</ProvisioningType>
-	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
-	  <CodesignProvision>mls_dist</CodesignProvision>
+	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">

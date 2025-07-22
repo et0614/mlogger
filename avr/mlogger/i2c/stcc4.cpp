@@ -32,7 +32,9 @@ bool Stcc4::_sendCommandWithArguments(uint16_t command, const uint16_t args[], u
 {
 	// 送信バッファを作成：コマンド(2B) + 引数(2B*N) + CRC(1B*N)
 	uint8_t buffer_size = 2 + numArgs * 3;
-	uint8_t buffer[buffer_size];
+	//uint8_t buffer[buffer_size];
+	const uint8_t MAX_BUFFER_SIZE = 20; // 少し余裕を持たせる
+	uint8_t buffer[MAX_BUFFER_SIZE];	
 
 	// コマンドをバッファに格納
 	buffer[0] = (uint8_t)(command >> 8);

@@ -166,8 +166,8 @@ int main(void)
 	I2cDriver::initialize(); //I2C通信
 	hasCO2Sensor = Stcc4::isConnected();
 	if(hasCO2Sensor) Stcc4::initialize(); //CO2センサ
-	Sht4x::initialize(true); //温湿度センサ
-	Sht4x::initialize(false); //グローブ温度センサ
+	Sht4x::initialize(Sht4x::SHT4_AD); //温湿度センサ
+	Sht4x::initialize(Sht4x::SHT4_BD); //グローブ温度センサ
 	Vcnl4030::initialize(); //照度計
 	XbeeController::initialize();  //XBee（UART）
 	
@@ -403,7 +403,8 @@ static void solveCommand(const char *command)
 		EepromManager::mSettings.measure_AD3 = (command[49] == 't');
 		EepromManager::mSettings.measure_Prox = (command[55] == 't');
 		//バージョンが低い場合の処理
-		if(56 < strlen(command)) EepromManager::mSettings.measure_co2 = (command[56] == 't');
+		if(56 < strlen(command)) 
+			EepromManager::mSettings.measure_co2 = (command[56] == 't');
 		else EepromManager::mSettings.measure_co2 = false;
 		
 		//測定時間間隔
@@ -682,19 +683,31 @@ static void execLogging()
 		if(V_WAKEUP_TIME <= EepromManager::mSettings.interval_vel) sleepAnemo();
 	}
 	
+	//CO2測定************	
+	pass_counters.co2++;	
+	if(EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
+	{
+		uint16_t co2_u = 0;
+		float tmp_f = 0;
+		float hmd_f = 0;
+		if(Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
+		Stcc4::enterSleep(); //スリープ
+		pass_counters.co2 = 0;
+	}
+	
 	//温湿度測定************
-	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
 	pass_counters.th++;
-	pass_counters.co2++;
-	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 - 1 == pass_counters.co2;
+	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
+	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 - 1 <= pass_counters.co2;
 	bool mesTH = EepromManager::mSettings.measure_th && (int)EepromManager::mSettings.interval_th <= pass_counters.th;
 	if(mesCo2m1 || mesTH)
 	{
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(Sht4x::readValue(&tmp_f, &hmd_f, false))
+		if(Sht4x::readValue(&tmp_f, &hmd_f, Sht4x::SHT4_BD))
 		{
 			if(mesCo2m1){
+				Stcc4::exitSleep(); //起こす
 				Stcc4::setRHTCompensation(tmp_f, hmd_f);
 				Stcc4::measureSingleShot();
 			}
@@ -711,23 +724,13 @@ static void execLogging()
 		}
 	}
 	
-	//CO2測定************
-	if(EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
-	{
-		uint16_t co2_u = 0;
-		float tmp_f = 0;
-		float hmd_f = 0;
-		if(Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
-		pass_counters.co2 = 0;
-	}
-	
 	//グローブ温度測定************
 	pass_counters.glb++;
 	if(EepromManager::mSettings.measure_glb && (int)EepromManager::mSettings.interval_glb <= pass_counters.glb)
 	{
 		float glbT = 0;
 		float glbH = 0;
-		if(Sht4x::readValue(&glbT, &glbH, true))
+		if(Sht4x::readValue(&glbT, &glbH, Sht4x::SHT4_AD))
 		{
 			glbT = max(-10,min(50,EepromManager::cFactors.glbA * glbT + EepromManager::cFactors.glbB));
 			dtostrf(glbT,6,2,glbTS);
@@ -881,15 +884,6 @@ static void writeFlashMemory(const tm dtNow, const char write_chars[])
 		f_close(&fmFile);
 	}
 	else initFM = false; // エラー時は再マウントを試みる
-	
-	/*FIL* fmFile = (FIL*)malloc(sizeof(FIL));
-	if(f_open(fmFile, fileName, FA_OPEN_APPEND | FA_WRITE) == FR_OK)
-	{
-		f_puts(write_chars, fmFile);
-		f_close(fmFile);
-	}
-	else initFM = false; //エラー時は再マウントを試みる	
-	free(fmFile);*/
 }
 
 //PORTA PIN2割り込み（リセットスイッチ押し込み）

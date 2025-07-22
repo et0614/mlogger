@@ -605,7 +605,7 @@ namespace MLLib
 
           //CO2濃度センサの有無
           case "HCS":
-            HasCO2LevelSensor = bool.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
+            HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             HasCO2LevelSensorReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasCO2LevelSensorReceived = true;
             break;

@@ -60,11 +60,6 @@ void initCFactors(){
 		VEL_VEL0, //無風時
 		0 //CRC（一旦0で初期化）
 	};
-	// CRCを計算
-	EepromManager::cFactors.crc = Utilities::crc8(
-		(uint8_t*)&EepromManager::cFactors,
-		sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
-	);
 }
 
 void initVCCoefficients(){
@@ -75,11 +70,6 @@ void initVCCoefficients(){
 		0,	//係数C
 		0		//CRC（一旦0で初期化）
 	};
-	// CRCを計算
-	EepromManager::vcCoefficients.crc = Utilities::crc8(
-		(uint8_t*)&EepromManager::vcCoefficients,
-		sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc) //crcメンバー自身のサイズは計算範囲から除外する
-	);
 }
 
 void initMSettings(){
@@ -107,16 +97,17 @@ void initMSettings(){
 		1609459200,	//計測開始日時 (UNIX時間,UTC時差0で2021/1/1 00:00:00)
 		0		//CRC（一旦0で初期化）
 	};
-	// CRCを計算
-	EepromManager::mSettings.crc = Utilities::crc8(
-		(uint8_t*)&EepromManager::mSettings,
-		sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
-	);
 }
 
 //補正係数を書き込む
 void writeCFactors()
 {
+	// CRCを計算
+	EepromManager::cFactors.crc = Utilities::crc8(
+	(uint8_t*)&EepromManager::cFactors,
+	sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	);
+	
 	eeprom_busy_wait();
 	eeprom_update_block(&EepromManager::cFactors, &EEP_CFACTORS, sizeof(CorrectionFactors));
 }
@@ -124,6 +115,12 @@ void writeCFactors()
 //風速特性係数を書き込む
 void writeVCCoefficients()
 {
+	// CRCを計算
+	EepromManager::vcCoefficients.crc = Utilities::crc8(
+	(uint8_t*)&EepromManager::vcCoefficients,
+	sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	);
+	
 	eeprom_busy_wait();
 	eeprom_update_block(&EepromManager::vcCoefficients, &EEP_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
 }
@@ -131,6 +128,12 @@ void writeVCCoefficients()
 //計測設定を書き込む
 void writeMSettings()
 {
+	// CRCを計算
+	EepromManager::mSettings.crc = Utilities::crc8(
+	(uint8_t*)&EepromManager::mSettings,
+	sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
+	);
+	
 	eeprom_busy_wait();
 	eeprom_update_block(&EepromManager::mSettings, &EEP_MSETTINGS, sizeof(MeasurementSettings));
 }
@@ -366,7 +369,8 @@ void LoadMeasurementSetting()
 	);
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
-	if (expected_crc != actual_crc) initMSettings();
+	if (expected_crc != actual_crc) 
+		initMSettings();
 }
 
 //名称を読み込む
