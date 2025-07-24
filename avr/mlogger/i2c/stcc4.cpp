@@ -13,6 +13,8 @@
 const uint8_t ADDRESS = 0x64; //(ADDR==GNDの設定)
 
 //コマンド
+const uint16_t CMD_PERFORM_CONDITIONING = 0x29BC;   //初期化
+const uint16_t CMD_PERFORM_RECALIBRATION = 0x362F;   //強制校正
 const uint8_t CMD_SOFT_RESET = 0x06;   // ソフトリセット
 const uint16_t CMD_ENTER_SLEEP= 0x3650;   // スリープ
 const uint8_t CMD_EXIT_SLEEP= 0x00;   // スリープ解除
@@ -68,6 +70,42 @@ bool Stcc4::initialize(){
 	_delay_ms(10); //待機
 
 	return true; // 成功
+}
+
+bool Stcc4::performConditioning(){
+	if (!_sendCommand(CMD_PERFORM_CONDITIONING))
+		return false; // 通信失敗
+	return true; // 成功（22秒間はコマンドを受け付けなくなる）
+}
+
+bool Stcc4::performForcedRecalibration(uint16_t co2Level, int16_t* correction){
+	const uint16_t arguments[] = { co2Level };
+
+	// コマンドと1つの引数を送信
+	if(!_sendCommandWithArguments(CMD_PERFORM_RECALIBRATION, arguments, 1))
+		return false; //I2C通信の失敗
+	
+	_delay_ms(90); // コマンド実行時間（90ms）待機
+
+	// 応答を読み取る
+	uint8_t buffer[3];
+	if (!I2cDriver::read(ADDRESS, buffer, 3)) {
+		return false; // I2C通信失敗
+	}
+
+	// CRCチェック
+	if (Utilities::crc8(buffer, 2) != buffer[2]) {
+		return false; // CRCエラー
+	}
+
+	uint16_t response = (buffer[0] << 8) | buffer[1];
+ 
+	// FRC失敗を示す
+	if (response == 0xFFFF) *correction = 0xFFFF;
+	// 成功時は補正値を計算 (Output - 32768) [cite: 379]
+	else *correction = (int16_t)(response - 32768);
+
+	return true; // 通信成功
 }
 
 bool Stcc4::enterSleep(){

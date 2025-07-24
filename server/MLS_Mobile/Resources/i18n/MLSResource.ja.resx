@@ -501,4 +501,7 @@
   <data name="LD_SaveFileAlert" xml:space="preserve">
     <value>データ量が大きいため、外部に書き出します</value>
   </data>
+  <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
+    <value>CO2センサを校正する</value>
+  </data>
 </root>

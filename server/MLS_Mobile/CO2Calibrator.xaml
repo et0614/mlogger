@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.CO2Calibrator"
+             Title="CO2 Calibrator">
+    <Grid>
+        <StackLayout Padding="15">
+            <Label HorizontalTextAlignment="Center" Text="Calibration remaining time:" FontSize="20"/>
+            <Label HorizontalTextAlignment="Center" x:Name="lblTime" Text="30" FontSize="40"/>
+            <Label HorizontalTextAlignment="Center" x:Name="lblRslt" Text="" FontSize="20"/>
+        </StackLayout>
+    </Grid>
+</ContentPage>

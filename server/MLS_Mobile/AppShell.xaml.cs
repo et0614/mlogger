@@ -26,6 +26,7 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(VelocityCalibrator2), typeof(VelocityCalibrator2));
     Routing.RegisterRoute(nameof(RelayedDataViewer), typeof(RelayedDataViewer));
     Routing.RegisterRoute(nameof(LogView), typeof(LogView));
+    Routing.RegisterRoute(nameof(CO2Calibrator), typeof(CO2Calibrator));
   }
 
   protected override async void OnNavigating(ShellNavigatingEventArgs args)

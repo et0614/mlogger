@@ -28,6 +28,21 @@ class Stcc4{
 		
 		/**
 		 * @fn
+		 * 3時間以上の不使用時などの初期化処理（22秒かかる）
+		 * @return 成功でtrue、失敗でfalse
+		 */
+		static bool performConditioning();
+		
+		/**
+		 * @fn
+		 * 強制校正処理
+		 * @param correction 補正した濃度[ppm]
+		 * @return 成功でtrue、失敗でfalse
+		 */
+		static bool performForcedRecalibration(uint16_t co2Level, int16_t* correction);
+		
+		/**
+		 * @fn
 		 * スリープさせる
 		 * @return 成功でtrue、失敗でfalse
 		 */

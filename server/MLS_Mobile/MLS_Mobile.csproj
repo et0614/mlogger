@@ -6,8 +6,7 @@
 	</ItemGroup>
 
 	<PropertyGroup>
-		<!-- <TargetFrameworks>net8.0-android;net8.0-ios</TargetFrameworks> -->
-		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
+		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -40,7 +39,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>manual</ProvisioningType>
+	  <ProvisioningType>automatic</ProvisioningType>
 	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
 	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	</PropertyGroup>
@@ -322,7 +321,7 @@
 	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
 	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.1" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.1" />
-	  <PackageReference Include="Popolo" Version="2.3.1.79" />
+	  <PackageReference Include="Popolo" Version="2.3.1.81" />
 	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.30" />
 	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.30" />
 	</ItemGroup>
@@ -400,6 +399,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="ClothingCoordinator.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="CO2Calibrator.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="DataReceive.xaml">

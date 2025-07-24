@@ -85,6 +85,9 @@ const double TRANSMITTANCE = 0.60;
 //風速特性式version2か否か
 const bool IS_VEL_FNC2 = true;
 
+//CO2センサの初期化待機時間（22秒必要）
+const uint8_t CO2_CONDITIONING_SECONDS = 25;
+
 //広域変数定義********************************************************
 //日時関連
 volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
@@ -114,6 +117,9 @@ static uint8_t wc_time = 0;
 //接続維持用空パケット時間[sec]
 static uint8_t slp_time = 0;
 
+//CO2センサの初期化時間
+static uint8_t co2_condition_time = 0;
+
 //Flashメモリ関連
 static FATFS fSystem;
 static bool initFM = false; //Flash Memory初期化フラグ
@@ -133,6 +139,12 @@ static char charBuff[MAX_CMD_CHAR];
 
 //風速計自動校正処理用
 static bool calibratingVelocityVoltage = false;
+
+//CO2校正残時間
+static uint8_t co2CalibratingTime = 0;
+
+//強制校正CO2濃度[ppm]
+static uint16_t reforcedCO2Level = 400;
 
 int main(void)
 {	
@@ -165,7 +177,11 @@ int main(void)
 	//初期化処理
 	I2cDriver::initialize(); //I2C通信
 	hasCO2Sensor = Stcc4::isConnected();
-	if(hasCO2Sensor) Stcc4::initialize(); //CO2センサ
+	if(hasCO2Sensor) {
+		Stcc4::initialize(); //CO2センサ		
+		Stcc4::performConditioning(); //22秒かかる初期化処理
+		co2_condition_time = CO2_CONDITIONING_SECONDS;
+	}
 	Sht4x::initialize(Sht4x::SHT4_AD); //温湿度センサ
 	Sht4x::initialize(Sht4x::SHT4_BD); //グローブ温度センサ
 	Vcnl4030::initialize(); //照度計
@@ -540,6 +556,19 @@ static void solveCommand(const char *command)
 	{
 		XbeeController::bltxChars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
 	}
+	//CO2センサの校正
+	else if(strncmp(command, "CCL", 3) == 0)
+	{
+		if(hasCO2Sensor){			
+			char num[6];
+			num[5] = '\0';
+			strncpy(num, command + CMD_LENGTH, 5);
+			reforcedCO2Level = atoi(num);
+			Stcc4::exitSleep(); //起動			
+			co2CalibratingTime = 30;
+			Stcc4::measureSingleShot(); //初回の計測
+		}
+	}
 	//現在時刻の更新
 	else if (strncmp(command, "UCT", 3) == 0)
 	{
@@ -572,6 +601,9 @@ ISR(RTC_PIT_vect)
 		currentTime++; //1秒進める
 	}
 	
+	//CO2センサの初期化待機時間
+	if(0 < co2_condition_time) co2_condition_time--;
+	
 	//1秒毎の処理フラグを立てる
 	process_logging_flag = true;
 }
@@ -600,8 +632,11 @@ static void executeSecondlyTask(){
 	}
 	else resetTime = 0; //Resetボタン押し込み時間を0に戻す
 	
+	//CO2センサ校正処理****************************************
+	if(0 < co2CalibratingTime) calibrateCO2Level();
+	
 	//風速計校正処理*******************************************
-	if(calibratingVelocityVoltage) calibrateVelocityVoltage();
+	else if(calibratingVelocityVoltage) calibrateVelocityVoltage();
 	
 	//ロギング中であれば****************************************
 	else if(logging) execLogging();
@@ -685,12 +720,12 @@ static void execLogging()
 	
 	//CO2測定************	
 	pass_counters.co2++;	
-	if(EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
+	if(EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
 	{
 		uint16_t co2_u = 0;
 		float tmp_f = 0;
 		float hmd_f = 0;
-		if(Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u\n", co2_u);
+		if(Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f)) sprintf(co2S, "%u", co2_u);
 		Stcc4::enterSleep(); //スリープ
 		pass_counters.co2 = 0;
 	}
@@ -698,7 +733,7 @@ static void execLogging()
 	//温湿度測定************
 	pass_counters.th++;
 	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
-	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && (int)EepromManager::mSettings.interval_co2 - 1 <= pass_counters.co2;
+	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 - 1 <= pass_counters.co2;
 	bool mesTH = EepromManager::mSettings.measure_th && (int)EepromManager::mSettings.interval_th <= pass_counters.th;
 	if(mesCo2m1 || mesTH)
 	{
@@ -846,6 +881,39 @@ static void execLogging()
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 	//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
 	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う	
+}
+
+static void calibrateCO2Level()
+{
+	//LED点灯
+	blinkGreenAndRedLED(1);
+	
+	co2CalibratingTime--;
+	
+	//校正終了
+	if(co2CalibratingTime == 0){
+		int16_t correction_val;
+		if(Stcc4::performForcedRecalibration(reforcedCO2Level, &correction_val))
+		{
+			if (correction_val == (int16_t)0xFFFF) 
+			{
+				XbeeController::bltxChars("CCL:0,fail\r");
+			}
+			else{
+				snprintf(charBuff, sizeof(charBuff), "CCL:0,success,%d\r",correction_val);
+				XbeeController::bltxChars(charBuff);
+			}
+		}
+		else XbeeController::bltxChars("CCL:0,fail\r");
+		Stcc4::enterSleep();
+	}
+	else
+	{
+		//残り時間を出力
+		snprintf(charBuff, sizeof(charBuff), "CCL:%u\r", co2CalibratingTime);
+		XbeeController::bltxChars(charBuff);		
+		Stcc4::measureSingleShot(); //計測実施
+	}
 }
 
 static void calibrateVelocityVoltage()

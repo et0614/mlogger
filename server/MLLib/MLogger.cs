@@ -88,6 +88,9 @@ namespace MLLib
     /// <summary>CO2濃度センサの有無受信イベント</summary>
     public event EventHandler? HasCO2LevelSensorReceivedEvent;
 
+    /// <summary>CO2センサの自動校正受信イベント</summary>
+    public event EventHandler? CalibratingCO2LevelReceivedEvent;
+
     /// <summary>日時更新受信イベント</summary>
     public event EventHandler? UpdateCurrentTimeReceivedEvent;
 
@@ -150,6 +153,10 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>CO2濃度センサの有無を受信したか否かを設定・取得する</summary>
     public bool HasCO2LevelSensorReceived { get; set; } = false;
+
+    [JsonIgnore]
+    /// <summary>CO2センサ校正イベントを受信したか否かを設定・取得する</summary>
+    public bool HasCalibratingCO2LevelReceived { get; set; } = false;
 
     [JsonIgnore]
     /// <summary>現在日時変更イベントを受信したか否かを設定・取得する</summary>
@@ -256,6 +263,10 @@ namespace MLLib
     [JsonIgnore]
     /// <summary>CO2濃度センサの有無を取得する</summary>
     public bool HasCO2LevelSensor { get; private set; }
+
+    [JsonIgnore]
+    /// <summary>CO2センサの自動校正残時間[sec]を取得する</summary>
+    public int CO2CalibrationTime { get; private set; } = 0;
 
     #endregion
 
@@ -608,6 +619,23 @@ namespace MLLib
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             HasCO2LevelSensorReceivedEvent?.Invoke(this, EventArgs.Empty);
             HasCO2LevelSensorReceived = true;
+            break;
+
+          //CO2濃度校正
+          case "CCL":
+            string[] bf = NextCommand.Remove(0, 4).TrimEnd('\r').Split(',');
+            int rmTime = int.Parse(bf[0]);
+            bool success = true;
+            int correction = 0;
+            if (rmTime == 0)
+            {
+              success = bf[1] == "success";
+              correction = int.Parse(bf[2]);
+            }
+
+            HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
+            CalibratingCO2LevelReceivedEvent?.Invoke(this, new CalibratingCO2SensorLevelEventArgs(rmTime, success, correction));
+            HasCalibratingCO2LevelReceived = true;
             break;
 
           //日時更新
@@ -1070,6 +1098,15 @@ namespace MLLib
       return "\rHCS\r";
     }
 
+    /// <summary>CO2濃度校正コマンドをつくる</summary>
+    /// <param name="referenceCO2Level">基準のCO2濃度[ppm]</param>
+    /// <returns>CO2濃度校正コマンド</returns>
+    public static string MakeCalibrateCO2LevelCommand(int referenceCO2Level)
+    {
+      referenceCO2Level = Math.Max(400, Math.Min(10000, referenceCO2Level));
+      return "\rCCL" + referenceCO2Level.ToString("F0") + "\r";
+    }
+
     /// <summary>現在日時更新コマンドをつくる</summary>
     /// <param name="cTime">現在日時</param>
     /// <returns>現在日時更新コマンド</returns>
@@ -1147,6 +1184,25 @@ namespace MLLib
       public double CorrectionFactorB { get; internal set; } = 0.0;
     }
 
+    public class CalibratingCO2SensorLevelEventArgs : EventArgs
+    {
+      /// <summary>残り校正時間[sec]を取得する</summary>
+      public int RemainingTime { get; }
+
+      /// <summary>校正が成功したか否か</summary>
+      public bool CalibrationSucceeded { get; }
+
+      /// <summary>校正幅[ppm]を取得する</summary>
+      public int CorrectionCO2Level { get; }
+
+      public CalibratingCO2SensorLevelEventArgs(int remainingTime, bool calibrationSucceeded, int correctionCO2Level)
+      {
+        RemainingTime = remainingTime;
+        CalibrationSucceeded = calibrationSucceeded;
+        CorrectionCO2Level = correctionCO2Level;
+      }
+    }
+
     #endregion
 
   }
@@ -1195,6 +1251,12 @@ namespace MLLib
 
     /// <summary>温度自動校正受信イベント</summary>
     event EventHandler? TemperatureAutoCalibrationReceivedEvent;
+
+    /// <summary>CO2濃度センサの有無受信イベント</summary>
+    event EventHandler? HasCO2LevelSensorReceivedEvent;
+
+    /// <summary>CO2センサの自動校正受信イベント</summary>
+    event EventHandler? CalibratingCO2LevelReceivedEvent;
 
     /// <summary>日時更新受信イベント</summary>
     event EventHandler? UpdateCurrentTimeReceivedEvent;
@@ -1311,6 +1373,12 @@ namespace MLLib
 
     /// <summary>風速計の特性係数Cを取得する</summary>
     double VelocityCharacteristicsCoefC { get; }
+
+    /// <summary>CO2濃度センサの有無を取得する</summary>
+    bool HasCO2LevelSensor { get; }
+
+    /// <summary>CO2センサの自動校正残時間[sec]を取得する</summary>
+    int CO2CalibrationTime { get; }
 
     #endregion
 

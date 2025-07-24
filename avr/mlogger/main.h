@@ -44,6 +44,8 @@ static void execLogging(void);
 
 static void calibrateVelocityVoltage(void);
 
+static void calibrateCO2Level(void);
+
 static void showError(short int errNum);
 
 static bool isLowBattery(void);

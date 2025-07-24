@@ -439,6 +439,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Calibrate CO2 Sensor に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_CalibrateCO2Sensor {
+            get {
+                return ResourceManager.GetString("DS_CalibrateCO2Sensor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Calibrate Velocity Sensor に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_CalibrateVelocitySensor {

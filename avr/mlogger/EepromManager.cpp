@@ -369,8 +369,7 @@ void LoadMeasurementSetting()
 	);
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
-	if (expected_crc != actual_crc) 
-		initMSettings();
+	if (expected_crc != actual_crc) initMSettings();
 }
 
 //名称を読み込む

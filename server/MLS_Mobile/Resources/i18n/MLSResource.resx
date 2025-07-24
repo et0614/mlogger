@@ -501,4 +501,7 @@
   <data name="LD_SaveFileAlert" xml:space="preserve">
     <value>Large data; exporting to shared folder.</value>
   </data>
+  <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
+    <value>Calibrate CO2 Sensor</value>
+  </data>
 </root>

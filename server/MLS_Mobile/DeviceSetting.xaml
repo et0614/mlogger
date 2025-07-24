@@ -189,6 +189,19 @@
                     </Button.ImageSource>
                 </Button>
 
+                <!--CO2センサの校正-->
+                <HorizontalStackLayout x:Name="calCo2Set" IsVisible="False" Margin="50,5,0,5">
+                <Button x:Name="calCo2Btn" Margin="0,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CalibrateCO2Sensor}" Clicked="CO2CalibrationButton_Clicked" HorizontalOptions="FillAndExpand">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+                    <Border Margin="5,2,5,2">
+                        <Entry x:Name="ent_co2Cal" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="400" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                    </Border>
+                    <Label Text=" PPM" VerticalTextAlignment="Center"/>
+                </HorizontalStackLayout>                
+
             </StackLayout>
         </ScrollView>
 
