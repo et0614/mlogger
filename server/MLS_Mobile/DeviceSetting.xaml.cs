@@ -95,7 +95,7 @@ public partial class DeviceSetting : ContentPage
   private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
     //一般的ではないボタン群の表示・非表示切り替え
-    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Set.IsVisible = !calvBtnA.IsVisible;
+    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = !calvBtnA.IsVisible;
   }
 
   #endregion
@@ -111,7 +111,7 @@ public partial class DeviceSetting : ContentPage
     Accelerometer.Start(SensorSpeed.UI);
 
     //校正ボタンの表示・非表示
-    calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Set.IsVisible = isDeveloperMode;
+    calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = isDeveloperMode;
 
     //基本は測定を停止させる
     isStopLogging = true;
@@ -605,9 +605,76 @@ public partial class DeviceSetting : ContentPage
     });
   }
 
-  private void CO2CalibrationButton_Clicked(object sender, EventArgs e)
+  private async void CO2CalibrationButton_Clicked(object sender, EventArgs e)
   {
-    //インジケータ表示
+    var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
+    var result = await this.ShowPopupAsync(popup);
+    if (result != null)
+    {
+      if (!int.TryParse((string)result, out int refLevel))
+      {
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          DisplayAlert("Alert", "CO2 level is invalid", "OK");
+        });
+        return;
+      }
+
+      //インジケータ表示
+      showIndicator(MLSResource.CR_Connecting);
+
+      _= Task.Run(async () =>
+      {
+        try
+        {
+          int tryNum = 0;
+          Logger.HasCalibratingCO2LevelReceived = false;
+          while (!Logger.HasCalibratingCO2LevelReceived)
+          {
+            //5回失敗したらエラー表示
+            if (5 <= tryNum)
+            {
+              Application.Current.Dispatcher.Dispatch(() =>
+              {
+                DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+              });
+              return;
+            }
+            tryNum++;
+
+            //開始コマンドを送信
+            MLUtility.ConnectedXBee.SendSerialData
+            (Encoding.ASCII.GetBytes(MLogger.MakeCalibrateCO2LevelCommand(refLevel))); //dummy
+
+            await Task.Delay(500);
+          }
+
+          //開始に成功したらページ移動
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            Shell.Current.GoToAsync(nameof(CO2Calibrator),
+              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
+              );
+          });
+        }
+        catch { }
+        finally
+        {
+          //インジケータを隠す
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            hideIndicator();
+          });
+        }
+      });
+    }
+  
+
+
+
+
+
+    /*//インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
     Task.Run(async () =>
@@ -662,7 +729,7 @@ public partial class DeviceSetting : ContentPage
           hideIndicator();
         });
       }
-    });
+    });*/
   }
 
   private async void SetNameButton_Clicked(object sender, EventArgs e)
