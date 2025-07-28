@@ -179,8 +179,8 @@ int main(void)
 	hasCO2Sensor = Stcc4::isConnected();
 	if(hasCO2Sensor) {
 		Stcc4::initialize(); //CO2センサ		
-		Stcc4::performConditioning(); //22秒かかる初期化処理
-		co2_condition_time = CO2_CONDITIONING_SECONDS;
+		//Stcc4::performConditioning(); //22秒かかる初期化処理 //この処理を加えると強制キャリブレーションの効果が弱まるように思われる
+		//co2_condition_time = CO2_CONDITIONING_SECONDS; //この処理を加えると強制キャリブレーションの効果が弱まるように思われる
 	}
 	Sht4x::initialize(Sht4x::SHT4_AD); //温湿度センサ
 	Sht4x::initialize(Sht4x::SHT4_BD); //グローブ温度センサ
@@ -720,7 +720,7 @@ static void execLogging()
 	
 	//CO2測定************	
 	pass_counters.co2++;	
-	if(EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
+	if(hasCO2Sensor && EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 <= pass_counters.co2)
 	{
 		uint16_t co2_u = 0;
 		float tmp_f = 0;
@@ -733,7 +733,7 @@ static void execLogging()
 	//温湿度測定************
 	pass_counters.th++;
 	//CO2計測する場合には1秒前に温湿度を通知して計測指令を出す必要がある
-	bool mesCo2m1 = EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 - 1 <= pass_counters.co2;
+	bool mesCo2m1 = hasCO2Sensor && EepromManager::mSettings.measure_co2 && co2_condition_time == 0 && (int)EepromManager::mSettings.interval_co2 - 1 <= pass_counters.co2;
 	bool mesTH = EepromManager::mSettings.measure_th && (int)EepromManager::mSettings.interval_th <= pass_counters.th;
 	if(mesCo2m1 || mesTH)
 	{
