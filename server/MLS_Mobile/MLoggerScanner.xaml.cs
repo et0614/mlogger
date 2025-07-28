@@ -1,16 +1,15 @@
 namespace MLS_Mobile;
 
-using System;
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
-
+using Microsoft.Extensions.Logging;
+using MLLib;
+using MLS_Mobile.Resources.i18n;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
-
-using MLS_Mobile.Resources.i18n;
-using System.Windows.Input;
-using MLLib;
+using System;
+using System.Collections.ObjectModel;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 public partial class MLoggerScanner : ContentPage
 {
@@ -134,32 +133,43 @@ public partial class MLoggerScanner : ContentPage
     //MLoggerの場合***
     if (MLUtility.ConnectedDevice == MLUtility.MLDevice.MLogger)
     {
+      //イベント待機タスクを作成
+      var tcs = new TaskCompletionSource<bool>();
+
+      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+      EventHandler handler = (s, e) => tcs.TrySetResult(true);
+      MLUtility.Logger.VersionReceivedEvent += handler;
+
       try
       {
-        await Task.Run(async() =>
+        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
         {
-          //バージョンを取得する
-          for (int i = 0; i < 5; i++)
+          try
           {
-            if (MLUtility.Logger.HasVersionReceived) return;
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand()));
-            await Task.Delay(100);
+            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand())));
           }
-        });
+          catch { }
+
+          //イベントが来るか、タイムアウト(100ms)するまで待つ
+          await Task.WhenAny(tcs.Task, Task.Delay(100));
+        }
+
+        //タスクが正常に完了した場合のみ
+        if (tcs.Task.IsCompletedSuccessfully)
+        {
+          await Shell.Current.GoToAsync(nameof(DeviceSetting), new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
+        }
+        else
+        {
+          await DisplayAlert("Alert", "Can't load MLogger version.", "OK");
+          await Task.Run(MLUtility.CloseXbee);
+        }
       }
-      catch (Exception ex)
+      finally
       {
-        await DisplayAlert("Alert", "Can't load MLogger version." + Environment.NewLine + ex.Message, "OK");
-        hideIndicator();
-        return;
-      }
-      //画面遷移
-      if (MLUtility.Logger.HasVersionReceived)
-        await Shell.Current.GoToAsync(nameof(DeviceSetting), new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
-      else
-      {
-        await DisplayAlert("Alert", "Can't load MLogger version.", "OK");
-        await Task.Run(MLUtility.CloseXbee);
+        //ハンドラを解除
+        MLUtility.Logger.VersionReceivedEvent -= handler;
       }
     }
 

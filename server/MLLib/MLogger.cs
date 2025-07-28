@@ -96,74 +96,6 @@ namespace MLLib
 
     #endregion
 
-    #region イベント用プロパティ
-
-    [JsonIgnore]
-    /// <summary>データを受信したか否かを設定・取得する</summary>
-    public bool DataReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>測定値を受信したか否かを設定・取得する</summary>
-    public bool HasMeasuredValueReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>測定設定を受信したか否かを設定・取得する</summary>
-    public bool HasMeasurementSettingReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>バージョンを受信したか否かを設定・取得する</summary>
-    public bool HasVersionReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>補正係数を受信したか否かを設定・取得する</summary>
-    public bool HasCorrectionFactorsReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>風速特性係数を受信したか否かを設定・取得する</summary>
-    public bool HasVelocityCharacteristicsReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>測定開始通知を受信したか否かを設定・取得する</summary>
-    public bool HasStartMeasuringMessageReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>測定終了通知を受信したか否かを設定・取得する</summary>
-    public bool HasEndMeasuringMessageReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>ロガー名称を受信したか否かを設定・取得する</summary>
-    public bool HasLoggerNameReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>風速校正開始イベントを受信したか否かを設定・取得する</summary>
-    public bool HasStartCalibratingVoltageMessageReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>風速校正終了イベントを受信したか否かを設定・取得する</summary>
-    public bool HasEndCalibratingVoltageMessageReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>風速自動校正イベントを受信したか否かを設定・取得する</summary>
-    public bool HasVelocityAutoCalibrationReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>温度自動校正イベントを受信したか否かを設定・取得する</summary>
-    public bool HasTemperatureAutoCalibrationReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>CO2濃度センサの有無を受信したか否かを設定・取得する</summary>
-    public bool HasCO2LevelSensorReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>CO2センサ校正イベントを受信したか否かを設定・取得する</summary>
-    public bool HasCalibratingCO2LevelReceived { get; set; } = false;
-
-    [JsonIgnore]
-    /// <summary>現在日時変更イベントを受信したか否かを設定・取得する</summary>
-    public bool HasUpdateCurrentTimeReceived { get; set; } = false;
-
-    #endregion
-
     #region インスタンス変数・プロパティ
 
     /// <summary>受信データ</summary>
@@ -541,7 +473,6 @@ namespace MLLib
 
             //イベント通知
             StartMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasStartMeasuringMessageReceived = true;
             break;
 
           //バージョン受信
@@ -573,7 +504,6 @@ namespace MLLib
           case "ENL":
             //イベント通知
             EndMeasuringMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasEndMeasuringMessageReceived = true;
             break;
 
           //名称受信
@@ -590,13 +520,11 @@ namespace MLLib
           case "SCV":
             Velocity.LastMeasureTime = DateTime.Now;
             VelocityVoltage = double.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
-            HasStartCalibratingVoltageMessageReceived = true;
             CalibratingVoltageReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
           //風速電圧校正終了
           case "ECV":
-            HasEndCalibratingVoltageMessageReceived = true;
             EndCalibratingVoltageMessageReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
@@ -604,21 +532,18 @@ namespace MLLib
           case "CBV":
             VelocityCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
             VelocityAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasVelocityAutoCalibrationReceived = true;
             break;
 
           //温度自動校正
           case "CBT":
             TemperatureCalibrationTime = int.Parse(NextCommand.Remove(0, 4).TrimEnd('\r'));
             TemperatureAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasTemperatureAutoCalibrationReceived = true;
             break;
 
           //CO2濃度センサの有無
           case "HCS":
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             HasCO2LevelSensorReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasCO2LevelSensorReceived = true;
             break;
 
           //CO2濃度校正
@@ -635,13 +560,11 @@ namespace MLLib
 
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             CalibratingCO2LevelReceivedEvent?.Invoke(this, new CalibratingCO2SensorLevelEventArgs(rmTime, success, correction));
-            HasCalibratingCO2LevelReceived = true;
             break;
 
           //日時更新
           case "UCT":
             UpdateCurrentTimeReceivedEvent?.Invoke(this, EventArgs.Empty);
-            HasUpdateCurrentTimeReceived = true;
             break;
         }
       }
@@ -732,8 +655,6 @@ namespace MLLib
 
         //イベント通知
         MeasuredValueReceivedEvent?.Invoke(this, EventArgs.Empty);
-        HasMeasuredValueReceived = true;
-        HasStartMeasuringMessageReceived = true; //データ受信されたということは開始しているということだからこちらもtrueにする
       }
       //通信の問題で不正な文字が送信されるような場合に備える
       catch (Exception ex)
@@ -777,7 +698,6 @@ namespace MLLib
 
       //イベント通知
       MeasurementSettingReceivedEvent?.Invoke(this, EventArgs.Empty);
-      HasMeasurementSettingReceived = true;
     }
 
     /// <summary>バージョンを処理する</summary>
@@ -795,7 +715,6 @@ namespace MLLib
 
       //イベント通知
       VersionReceivedEvent?.Invoke(this, EventArgs.Empty);
-      HasVersionReceived = true;
     }
 
     /// <summary>補正係数設定コマンド(SCF,LCF)を処理する</summary>
@@ -838,7 +757,6 @@ namespace MLLib
 
       //イベント通知
       CorrectionFactorsReceivedEvent?.Invoke(this, EventArgs.Empty);
-      HasCorrectionFactorsReceived = true;
     }
 
     /// <summary>風速特性係数設定コマンドを処理する</summary>
@@ -860,7 +778,6 @@ namespace MLLib
 
       //イベント通知
       VelocityCharateristicsReceivedEvent?.Invoke(this, EventArgs.Empty);
-      HasVelocityCharacteristicsReceived = true;
     }
 
     /// <summary>ロガー名称設定コマンド()を処理する</summary>
@@ -871,7 +788,6 @@ namespace MLLib
 
       //イベント通知
       LoggerNameReceivedEvent?.Invoke(this, EventArgs.Empty);
-      HasLoggerNameReceived = true;
     }
 
     #endregion
@@ -1260,46 +1176,6 @@ namespace MLLib
 
     /// <summary>日時更新受信イベント</summary>
     event EventHandler? UpdateCurrentTimeReceivedEvent;
-
-    #endregion
-
-    #region イベント用プロパティ
-
-    /// <summary>測定値を受信したか否かを取得する</summary>
-    bool HasMeasuredValueReceived { get; }
-
-    /// <summary>測定設定を受信したか否かを取得する</summary>
-    bool HasMeasurementSettingReceived { get; }
-
-    /// <summary>バージョンを受信したか否かを取得する</summary>
-    bool HasVersionReceived { get; }
-
-    /// <summary>補正係数を受信したか否かを取得する</summary>
-    bool HasCorrectionFactorsReceived { get; }
-
-    /// <summary>測定開始通知を受信したか否かを取得する</summary>
-    bool HasStartMeasuringMessageReceived { get; }
-
-    /// <summary>測定終了通知を受信したか否かを取得する</summary>
-    bool HasEndMeasuringMessageReceived { get; }
-
-    /// <summary>ロガー名称を受信したか否かを取得する</summary>
-    bool HasLoggerNameReceived { get; }
-
-    /// <summary>風速校正開始イベントを受信したか否かを取得する</summary>
-    bool HasStartCalibratingVoltageMessageReceived { get; }
-
-    /// <summary>風速校正終了イベントを受信したか否かを取得する</summary>
-    bool HasEndCalibratingVoltageMessageReceived { get; }
-
-    /// <summary>風速自動校正イベントを受信したか否かを取得する</summary>
-    bool HasVelocityAutoCalibrationReceived { get; }
-
-    /// <summary>温度自動校正イベントを受信したか否かを取得する</summary>
-    bool HasTemperatureAutoCalibrationReceived { get; }
-
-    /// <summary>現在日時変更イベントを受信したか否かを取得する</summary>
-    bool HasUpdateCurrentTimeReceived { get; }
 
     #endregion
 

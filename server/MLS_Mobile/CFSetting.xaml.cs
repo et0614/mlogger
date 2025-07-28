@@ -172,102 +172,57 @@ public partial class CFSetting : ContentPage
           (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, Logger.VelocityMinVoltage));
   }
 
-  private void saveCorrectionFactors(string command)
+  private async Task executeCorrectionFactorCommandAsync(string command)
   {
-    Logger.HasCorrectionFactorsReceived = false;
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.CorrectionFactorsReceivedEvent += handler;
 
     //インジケータ表示
     showIndicator(MLSResource.CF_Setting);
 
-    Task.Run(async () =>
+    try
     {
-      try
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
-        int tryNum = 0;
-        while (!Logger.HasCorrectionFactorsReceived)
+        try
         {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command));
-
-          await Task.Delay(500);
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command)));
         }
+        catch { }
 
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          applyCorrectionFactors();
-        });
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
       }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
+
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
+        applyCorrectionFactors();
+      else
+        await DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.CorrectionFactorsReceivedEvent -= handler;
+
+      //インジケータを隠す
+      hideIndicator();
+    }
   }
 
-  private void loadCorrectionFactors()
+  private async void saveCorrectionFactors(string command)
   {
-    Logger.HasCorrectionFactorsReceived = false;
+    await executeCorrectionFactorCommandAsync(command);
+  }
 
-    //インジケータ表示
-    showIndicator(MLSResource.CF_Setting);
-
-    Task.Run(async () =>
-    {
-      try
-      {
-        int tryNum = 0;
-        while (!Logger.HasCorrectionFactorsReceived)
-        {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
-
-          await Task.Delay(500);
-        }
-
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          applyCorrectionFactors();
-        });
-      }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
+  private async void loadCorrectionFactors()
+  {
+    await executeCorrectionFactorCommandAsync(MLogger.MakeLoadCorrectionFactorsCommand());
   }
 
   private void applyCorrectionFactors()

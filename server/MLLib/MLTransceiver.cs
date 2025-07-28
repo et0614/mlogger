@@ -305,12 +305,11 @@ namespace MLLib
     /// <summary>MLoggerを取得する</summary>
     /// <param name="lowAddress">下位アドレス</param>
     /// <returns>MLogger</returns>
-    public MLogger GetLogger(string lowAddress)
+    public MLogger? GetLogger(string lowAddress)
     {
       if (mLoggers.ContainsKey(lowAddress)) return mLoggers[lowAddress];
       else return null;
     }
-
   }
 
 

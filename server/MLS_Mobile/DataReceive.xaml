@@ -56,8 +56,8 @@
                 </Grid>
 
                 <!--CO2-->
-                <!--<Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40" IsVisible="{ Binding HasCO2LevelSensor }">-->
-                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40" IsVisible="True">
+                <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40" IsVisible="{ Binding HasCO2LevelSensor }">
+                    <!--<Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40" IsVisible="True">-->
                     <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Text ="{x:Static res:MLSResource.CO2level}" VerticalTextAlignment="Start" FontSize="Large"/>
                     <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding LastCommunicated_CO2, FallbackValue='-/-/- -:-:-', StringFormat='{yyyy/MM/dd HH:mm:ss}' }" FontSize="Small" VerticalTextAlignment="Start" HorizontalTextAlignment="End" TextColor="Black"/>
                     <Label Grid.Row="1" Grid.Column="1" Text="{Binding CO2Level, FallbackValue='-'}" HorizontalTextAlignment="End" FontSize="40" TextColor="{StaticResource Dark_G}"/>

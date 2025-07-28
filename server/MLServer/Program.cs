@@ -1,20 +1,19 @@
-﻿using System;
-
-using System.IO;
+﻿using log4net.Repository.Hierarchy;
+using MLLib;
+using MLServer.BACnet;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
-
 using XBeeLibrary.Core;
-
-using MLLib;
-using System.Text.Json;
-using System.Text.Encodings.Web;
-using System.Text.Unicode;
 using XBeeLibrary.Core.Models;
-using System.Collections.Concurrent;
-using MLServer.BACnet;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MLServer
 {
@@ -437,7 +436,7 @@ namespace MLServer
     /// <summary>現在時刻を更新するタスク</summary>
     private static void updateCurrentDateTime()
     {
-      Task dtUpdateTask = Task.Run(() =>
+      Task dtUpdateTask = Task.Run(async () =>
       {
         DateTime prevTime = DateTime.Now;
         while (true)
@@ -448,6 +447,44 @@ namespace MLServer
             foreach (string key in mLoggers.Keys)
             {
               MLogger ml = mLoggers[key];
+
+              //イベント待機タスクを作成
+              var tcs = new TaskCompletionSource<bool>();
+
+              //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+              EventHandler handler = (s, e) => tcs.TrySetResult(true);
+              ml.UpdateCurrentTimeReceivedEvent += handler;
+
+              try
+              {
+                //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+                var command = MLogger.MakeLoadMeasuringSettingCommand();
+                for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
+                {
+                  try
+                  {
+                    await Task.Run(() => sendCommand(ml.LongAddress, MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now)));
+                  }
+                  catch { }
+
+                  //イベントが来るか、タイムアウト(500ms)するまで待つ
+                  await Task.WhenAny(tcs.Task, Task.Delay(500));
+                }
+
+                //タスクが正常に完了した場合のみUIを更新
+                if (tcs.Task.IsCompletedSuccessfully)
+                {
+                  
+                }
+              }
+              finally
+              {
+                //ハンドラを解除
+                ml.UpdateCurrentTimeReceivedEvent -= handler;
+              }
+
+
+              /*
               ml.HasUpdateCurrentTimeReceived = false;
               int num = 0;
               //情報が更新されるまで命令を繰り返す
@@ -464,6 +501,7 @@ namespace MLServer
                 num++;
                 if (3 < num) break;
               }
+              */
             }
           }
           prevTime = DateTime.Now;

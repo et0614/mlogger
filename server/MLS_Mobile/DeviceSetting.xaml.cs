@@ -1,13 +1,13 @@
 namespace MLS_Mobile;
 
-using System;
-using System.Text;
-
-using MLLib;
-using MLS_Mobile.Resources.i18n;
+using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Devices.Sensors;
-using CommunityToolkit.Maui.Views;
+using MLLib;
+using MLS_Mobile.Resources.i18n;
+using System;
+using System.Text;
+using System.Threading.Tasks;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 public partial class DeviceSetting : ContentPage
@@ -116,6 +116,7 @@ public partial class DeviceSetting : ContentPage
     //基本は測定を停止させる
     isStopLogging = true;
   }
+
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
@@ -123,32 +124,50 @@ public partial class DeviceSetting : ContentPage
     //シェイクイベント解除
     Accelerometer.Stop();
     Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
+
+    if (Logger != null)
+      Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
-  private void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
+  private async void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
   {
     //計測開始中でなければ停止させる
     if (isStopLogging)
     {
-      Logger.HasEndMeasuringMessageReceived = false;
+      //イベント待機タスクを作成
+      var tcs = new TaskCompletionSource<bool>();
 
-      Task.Run(async () =>
+      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+      EventHandler handler = (s, e) => tcs.TrySetResult(true);
+      Logger.EndMeasuringMessageReceivedEvent += handler;
+
+      try
       {
-        //情報が更新されるまで命令を繰り返す
-        while (!Logger.HasEndMeasuringMessageReceived)
+        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+        var command = MLogger.MakeLoadMeasuringSettingCommand();
+        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
         {
           try
           {
-            //停止コマンドを送信
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand()));
-            await Task.Delay(500);
+            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand())));
           }
           catch { }
+
+          //イベントが来るか、タイムアウト(500ms)するまで待つ
+          await Task.WhenAny(tcs.Task, Task.Delay(500));
         }
 
-        //ログ
-        MLUtility.WriteLog(Logger.XBeeName + "; End logging; ");
-      });
+        //タスクが正常に完了した場合のみUIを更新
+        if (tcs.Task.IsCompletedSuccessfully)
+        {
+          MLUtility.WriteLog(Logger.XBeeName + "; End logging; ");
+        }
+      }
+      finally
+      {
+        //ハンドラを解除
+        Logger.EndMeasuringMessageReceivedEvent -= handler;
+      }
     }
   }
 
@@ -156,7 +175,7 @@ public partial class DeviceSetting : ContentPage
 
   #region 初期化処理
 
-  private void initInfo()
+  private async void initInfo()
   {
     spc_name.Text = MLSResource.DS_SpecName + ": -";
     spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
@@ -191,137 +210,194 @@ public partial class DeviceSetting : ContentPage
   #region MLogger情報更新処理
 
   /// <summary>測定設定を読み込む</summary>
-  private void loadMeasurementSetting()
+  private async void loadMeasurementSetting()
   {
-    Logger.HasMeasurementSettingReceived = false;
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
 
-    Task.Run(async () =>
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.MeasurementSettingReceivedEvent += handler;
+
+    try
     {
-      //情報が更新されるまで命令を繰り返す
-      while (!Logger.HasMeasurementSettingReceived)
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      var command = MLogger.MakeLoadMeasuringSettingCommand();
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
         try
         {
-          //設定設定取得コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadMeasuringSettingCommand()));
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command)));
         }
         catch { }
-        await Task.Delay(500);
-        if (Logger == null) return; //接続解除時には終了
+
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
       }
 
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
       {
-        //計測設定
-        cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
-        ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
-        cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
-        ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
-        cbx_vel.IsToggled = Logger.Velocity.Measure;
-        ent_vel.Text = Logger.Velocity.Interval.ToString();
-        cbx_lux.IsToggled = Logger.Illuminance.Measure;
-        ent_lux.Text = Logger.Illuminance.Interval.ToString();
-        cbx_co2.IsToggled = Logger.CO2Level.Measure;
-        ent_co2.Text = Logger.CO2Level.Interval.ToString();
-        dpck_start.Date = Logger.StartMeasuringDateTime;
-        tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          //計測設定
+          cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
+          ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
+          cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
+          ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
+          cbx_vel.IsToggled = Logger.Velocity.Measure;
+          ent_vel.Text = Logger.Velocity.Interval.ToString();
+          cbx_lux.IsToggled = Logger.Illuminance.Measure;
+          ent_lux.Text = Logger.Illuminance.Interval.ToString();
+          cbx_co2.IsToggled = Logger.CO2Level.Measure;
+          ent_co2.Text = Logger.CO2Level.Interval.ToString();
+          dpck_start.Date = Logger.StartMeasuringDateTime;
+          tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
 
-        //編集要素の着色をもとに戻す
-        resetTextColor();
-      });
-    });
+          //編集要素の着色をもとに戻す
+          resetTextColor();
+        });
+      }
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.MeasurementSettingReceivedEvent -= handler;
+    }
   }
 
   /// <summary>名称を読み込む</summary>
-  private void loadName()
+  private async void loadName()
   {
-    Logger.HasLoggerNameReceived = false;
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.LoggerNameReceivedEvent += handler;
+
+    try
     {
-      while (!Logger.HasLoggerNameReceived)
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
         try
         {
-          //名称取得コマンドを送信
-          if (MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand()));
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand())));
         }
         catch { }
-        await Task.Delay(500);
-        if (Logger == null) return; //接続解除時には終了
+
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
       }
 
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
       {
-        spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
-      });
-    });
-  }
-
-  private void loadCO2SensorInfo()
-  {
-    Logger.HasCO2LevelSensorReceived = false;
-    Task.Run(async () =>
-    {
-      int tryNum = 0;
-      while (!Logger.HasCO2LevelSensorReceived)
-      {
-        try
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
         {
-          //CO2濃度センサの有無取得コマンドを送信
-          if (MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeHasCO2LevelSensorCommand()));
-        }
-        catch { }
-        await Task.Delay(500);
-        if (Logger == null) return; //接続解除時には終了
-        tryNum++;
-        if (5 < tryNum) return; //5回であきらめる（旧機種には本機能は無いため）
+          spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
+        });
       }
-
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
-      {
-        co2LevelGird.IsVisible = Logger.HasCO2LevelSensor;
-      });
-    });
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.LoggerNameReceivedEvent -= handler;
+    }
   }
 
   /// <summary>名称を設定する</summary>
   /// <param name="name">名称</param>
-  private void updateName(string name)
+  private async void updateName(string name)
   {
-    Logger.HasLoggerNameReceived = false;
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.LoggerNameReceivedEvent += handler;
+
+    try
     {
-      if (Logger == null) return; //接続解除時には終了
-      while (!Logger.HasLoggerNameReceived)
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
         try
         {
-          //名称取得コマンドを送信
-          if (MLUtility.ConnectedXBee.IsConnected)
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name)));
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name))));
         }
         catch { }
-        await Task.Delay(500);
+
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
       }
 
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
       {
-        //ロギング
-        MLUtility.WriteLog(Logger.XBeeName + "; Name changed; " + Logger.Name + "; ");
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          //ロギング
+          MLUtility.WriteLog(Logger.XBeeName + "; Name changed; " + Logger.Name + "; ");
 
-        spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
-      });
-    });
+          spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
+        });
+      }
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.LoggerNameReceivedEvent -= handler;
+    }
+  }
+
+  private async void loadCO2SensorInfo()
+  {
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.HasCO2LevelSensorReceivedEvent += handler;
+
+    try
+    {
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
+      {
+        try
+        {
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeHasCO2LevelSensorCommand())));
+        }
+        catch { }
+
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
+      }
+
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
+      {
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          co2LevelGrid.IsVisible = Logger.HasCO2LevelSensor;
+        });
+      }
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.HasCO2LevelSensorReceivedEvent -= handler;
+    }
   }
 
   /// <summary>測定設定を設定する</summary>
-  private void updateMeasurementSetting()
+  private async void updateMeasurementSetting()
   {
     //入力エラーがあれば終了
     if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
@@ -333,52 +409,70 @@ public partial class DeviceSetting : ContentPage
       cbx_glb.IsToggled, glbSpan,
       cbx_vel.IsToggled, velSpan,
       cbx_lux.IsToggled, luxSpan,
-      false, 0, false, 0, false, 0, false, 
+      false, 0, false, 0, false, 0, false,
       Logger.HasCO2LevelSensor && cbx_co2.IsToggled, co2Span); //CO2センサ
 
-    Logger.HasMeasurementSettingReceived = false;
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.MeasurementSettingReceivedEvent += handler;
+
+    try
     {
-      //情報が更新されるまで命令を繰り返す
-      while (!Logger.HasMeasurementSettingReceived)
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
         try
         {
-          //設定設定取得コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(sData));
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(sData)));
         }
         catch { }
-        await Task.Delay(500);
+
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
       }
 
-      //更新された情報を反映
-      Application.Current.Dispatcher.Dispatch(() =>
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
       {
-        //ロギング
-        MLUtility.WriteLog(Logger.XBeeName + ": Measurement setting changed; " +
-          (MLSResource.DrybulbTemperature + "=" + (Logger.DrybulbTemperature.Measure ? Logger.DrybulbTemperature.Interval + " sec; " : "false; ")) +
-          (MLSResource.GlobeTemperature + "=" + (Logger.GlobeTemperature.Measure ? Logger.GlobeTemperature.Interval + " sec; " : "false; ")) +
-          (MLSResource.Velocity + "=" + (Logger.Velocity.Measure ? Logger.Velocity.Interval + " sec; " : "false; ")) +
-          (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; ")) +
-          (MLSResource.CO2level + "=" + (Logger.CO2Level.Measure ? Logger.CO2Level.Interval + " sec; " : "false; "))
-          );
+        //更新された情報を反映
+        Application.Current.Dispatcher.Dispatch(() =>
+        {
+          //ロギング
+          MLUtility.WriteLog(Logger.XBeeName + ": Measurement setting changed; " +
+            (MLSResource.DrybulbTemperature + "=" + (Logger.DrybulbTemperature.Measure ? Logger.DrybulbTemperature.Interval + " sec; " : "false; ")) +
+            (MLSResource.GlobeTemperature + "=" + (Logger.GlobeTemperature.Measure ? Logger.GlobeTemperature.Interval + " sec; " : "false; ")) +
+            (MLSResource.Velocity + "=" + (Logger.Velocity.Measure ? Logger.Velocity.Interval + " sec; " : "false; ")) +
+            (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; ")) +
+            (MLSResource.CO2level + "=" + (Logger.CO2Level.Measure ? Logger.CO2Level.Interval + " sec; " : "false; "))
+            );
 
-        //計測設定
-        cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
-        ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
-        cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
-        ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
-        cbx_vel.IsToggled = Logger.Velocity.Measure;
-        ent_vel.Text = Logger.Velocity.Interval.ToString();
-        cbx_lux.IsToggled = Logger.Illuminance.Measure;
-        ent_lux.Text = Logger.Illuminance.Interval.ToString();
-        cbx_co2.IsToggled = Logger.CO2Level.Measure;
-        ent_co2.Text = Logger.CO2Level.Interval.ToString();
+          //計測設定
+          cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
+          ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
+          cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
+          ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
+          cbx_vel.IsToggled = Logger.Velocity.Measure;
+          ent_vel.Text = Logger.Velocity.Interval.ToString();
+          cbx_lux.IsToggled = Logger.Illuminance.Measure;
+          ent_lux.Text = Logger.Illuminance.Interval.ToString();
+          cbx_co2.IsToggled = Logger.CO2Level.Measure;
+          ent_co2.Text = Logger.CO2Level.Interval.ToString();
+          dpck_start.Date = Logger.StartMeasuringDateTime;
+          tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
 
-        //編集要素の着色をもとに戻す
-        resetTextColor();
-      });
-    });
+          //編集要素の着色をもとに戻す
+          resetTextColor();
+        });
+      }
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.MeasurementSettingReceivedEvent -= handler;
+    }
   }
 
   /// <summary>Zigbee通信LED表示状態を読み込む</summary>
@@ -461,37 +555,36 @@ public partial class DeviceSetting : ContentPage
     loadMeasurementSetting();
   }
 
-  private void CFButton_Clicked(object sender, EventArgs e)
+  private async void CFButton_Clicked(object sender, EventArgs e)
   {
     //インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.CorrectionFactorsReceivedEvent += handler;
+
+    try
     {
-      try
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
-        int tryNum = 0;
-        Logger.HasCorrectionFactorsReceived = false;
-        while (!Logger.HasCorrectionFactorsReceived)
+        try
         {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand()));
-
-          await Task.Delay(500);
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand())));
         }
+        catch { }
 
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
+      }
+
+      //タスクが正常に完了した場合のみ
+      if (tcs.Task.IsCompletedSuccessfully)
+      {
         //開始に成功したらページ移動
         Application.Current.Dispatcher.Dispatch(() =>
         {
@@ -500,74 +593,47 @@ public partial class DeviceSetting : ContentPage
             );
         });
       }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.CorrectionFactorsReceivedEvent -= handler;
+
+      //インジケータを隠す
+      Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
   }
 
-  private void VelocityCalibrationButton_Clicked(object sender, EventArgs e)
+  private async void VelocityCalibrationButton_Clicked(object sender, EventArgs e)
   {
     //インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.VelocityCharateristicsReceivedEvent += handler;
+
+    try
     {
-      try
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
-        //風速補正係数取得
-        int tryNum = 0;
-        Logger.HasVelocityCharacteristicsReceived = false;
-        while (!Logger.HasVelocityCharacteristicsReceived)
+        try
         {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeLoadVelocityCharateristicsCommand()));
-
-          await Task.Delay(500);
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadVelocityCharateristicsCommand())));
         }
-        double[] minVandCoefs = new double[] { Logger.VelocityMinVoltage, Logger.VelocityCharacteristicsCoefA, Logger.VelocityCharacteristicsCoefB, Logger.VelocityCharacteristicsCoefC };
+        catch { }
 
-        //風速校正開始
-        tryNum = 0;
-        Logger.HasStartCalibratingVoltageMessageReceived = false;
-        while (!Logger.HasStartCalibratingVoltageMessageReceived)
-        {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-            });
-            return;
-          }
-          tryNum++;
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
+      }
 
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeStartCalibratingVoltageCommand()));
-
-          await Task.Delay(500);
-        }
-
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
+      {
         //バージョンによって近似方法が異なるのでバージョン読み込み確認
         if (!MLUtility.Logger.VersionLoaded)
         {
@@ -578,31 +644,72 @@ public partial class DeviceSetting : ContentPage
           return;
         }
 
-        //開始に成功したらページ移動
-        Application.Current.Dispatcher.Dispatch(() =>
+        double[] minVandCoefs = new double[] { Logger.VelocityMinVoltage, Logger.VelocityCharacteristicsCoefA, Logger.VelocityCharacteristicsCoefB, Logger.VelocityCharacteristicsCoefC };
+
+        //ここから電圧取得処理*******
+        //イベント待機タスクを作成
+        var tcs2 = new TaskCompletionSource<bool>();
+
+        //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+        EventHandler handler2 = (s, e) => tcs2.TrySetResult(true);
+        Logger.CalibratingVoltageReceivedEvent += handler2;
+
+        try
         {
-          //新風速近似式
-          if (3 < MLUtility.Logger.Version_Major || 3 < MLUtility.Logger.Version_Minor || 19 < MLUtility.Logger.Version_Revision)
-            Shell.Current.GoToAsync(nameof(VelocityCalibrator2),
-              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
-              );
-          //旧風速近似式
-          else
-            Shell.Current.GoToAsync(nameof(VelocityCalibrator),
-              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
-              );
-        });
+          //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+          for (int i = 0; i < 5 && !tcs2.Task.IsCompleted; i++)
+          {
+            try
+            {
+              await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeStartCalibratingVoltageCommand())));
+            }
+            catch { }
+
+            //イベントが来るか、タイムアウト(500ms)するまで待つ
+            await Task.WhenAny(tcs.Task, Task.Delay(500));
+          }
+
+          //タスクが正常に完了した場合のみUIを更新
+          if (tcs.Task.IsCompletedSuccessfully)
+          {
+            //開始に成功したらページ移動
+            Application.Current.Dispatcher.Dispatch(() =>
+            {
+              //新風速近似式
+              if (3 < MLUtility.Logger.Version_Major || 3 < MLUtility.Logger.Version_Minor || 19 < MLUtility.Logger.Version_Revision)
+                Shell.Current.GoToAsync(nameof(VelocityCalibrator2),
+                  new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
+                  );
+              //旧風速近似式
+              else
+                Shell.Current.GoToAsync(nameof(VelocityCalibrator),
+                  new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
+                  );
+            });
+          }
+        }
+        finally
+        {
+          //ハンドラを解除
+          Logger.CalibratingVoltageReceivedEvent -= handler2;
+        }        
       }
-      catch { }
-      finally
+      else
       {
-        //インジケータを隠す
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          hideIndicator();
+          DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
         });
       }
-    });
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.VelocityCharateristicsReceivedEvent -= handler;
+
+      //インジケータを隠す
+      Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
   }
 
   private async void CO2CalibrationButton_Clicked(object sender, EventArgs e)
@@ -620,36 +727,35 @@ public partial class DeviceSetting : ContentPage
         return;
       }
 
+      //イベント待機タスクを作成
+      var tcs = new TaskCompletionSource<bool>();
+
+      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+      EventHandler handler = (s, e) => tcs.TrySetResult(true);
+      Logger.CalibratingCO2LevelReceivedEvent += handler;
+
       //インジケータ表示
       showIndicator(MLSResource.CR_Connecting);
 
-      _= Task.Run(async () =>
+      try
       {
-        try
+        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
         {
-          int tryNum = 0;
-          Logger.HasCalibratingCO2LevelReceived = false;
-          while (!Logger.HasCalibratingCO2LevelReceived)
+          try
           {
-            //5回失敗したらエラー表示
-            if (5 <= tryNum)
-            {
-              Application.Current.Dispatcher.Dispatch(() =>
-              {
-                DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-              });
-              return;
-            }
-            tryNum++;
-
-            //開始コマンドを送信
-            MLUtility.ConnectedXBee.SendSerialData
-            (Encoding.ASCII.GetBytes(MLogger.MakeCalibrateCO2LevelCommand(refLevel))); //dummy
-
-            await Task.Delay(500);
+            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeCalibrateCO2LevelCommand(refLevel))));
           }
+          catch { }
 
-          //開始に成功したらページ移動
+          //イベントが来るか、タイムアウト(500ms)するまで待つ
+          await Task.WhenAny(tcs.Task, Task.Delay(500));
+        }
+
+        //タスクが正常に完了した場合のみUIを更新
+        if (tcs.Task.IsCompletedSuccessfully)
+        {
+          //更新された情報を反映
           Application.Current.Dispatcher.Dispatch(() =>
           {
             Shell.Current.GoToAsync(nameof(CO2Calibrator),
@@ -657,79 +763,23 @@ public partial class DeviceSetting : ContentPage
               );
           });
         }
-        catch { }
-        finally
-        {
-          //インジケータを隠す
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            hideIndicator();
-          });
-        }
-      });
-    }
-  
-
-
-
-
-
-    /*//インジケータ表示
-    showIndicator(MLSResource.CR_Connecting);
-
-    Task.Run(async () =>
-    {
-      try
-      {
-        if (!int.TryParse(ent_co2Cal.Text, out int refLevel))
+        else
         {
           Application.Current.Dispatcher.Dispatch(() =>
           {
-            DisplayAlert("Alert", "CO2 level is invalid", "OK");
+            DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
           });
-          return;
         }
-
-        int tryNum = 0;
-        Logger.HasCalibratingCO2LevelReceived = false;
-        while (!Logger.HasCalibratingCO2LevelReceived)
-        {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(MLogger.MakeCalibrateCO2LevelCommand(refLevel))); //dummy
-
-          await Task.Delay(500);
-        }
-
-        //開始に成功したらページ移動
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          Shell.Current.GoToAsync(nameof(CO2Calibrator),
-            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-            );
-        });
       }
-      catch { }
       finally
       {
+        //ハンドラを解除
+        Logger.CalibratingCO2LevelReceivedEvent -= handler;
+
         //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
+        Application.Current.Dispatcher.Dispatch(hideIndicator);
       }
-    });*/
+    }
   }
 
   private async void SetNameButton_Clicked(object sender, EventArgs e)
@@ -790,58 +840,64 @@ public partial class DeviceSetting : ContentPage
     });
   }
 
-  private void startLogging(loggingMode lMode)
+  private async void startLogging(loggingMode lMode)
   {
     //計測停止フラグを解除
     isStopLogging = false;
 
-    Logger.HasStartMeasuringMessageReceived = false;
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.MeasuredValueReceivedEvent += handler;
 
     //インジケータ表示
     showIndicator(MLSResource.DR_StartLogging);
 
-    Task.Run(async () =>
+    try
     {
-      try
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      string cmd = "";
+      switch (lMode)
       {
-        int tryNum = 0;
-        while (!Logger.HasStartMeasuringMessageReceived)
+        case loggingMode.bluetooth:
+          cmd = MLogger.MakeStartMeasuringCommand(false, true, false);
+          break;
+        case loggingMode.mfcard:
+          cmd = MLogger.MakeStartMeasuringCommand(false, false, true);
+          break;
+        case loggingMode.pc:
+          cmd = MLogger.MakeStartMeasuringCommand(true, false, false);
+          break;
+        case loggingMode.permanent:
+          cmd = MLogger.MakeStartMeasuringCommand(true, false, false, true);
+          break;
+      }
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
+      {
+        try
         {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.DR_FailStarting, "OK");
-            });
-            return;
-          }
-          tryNum++;
-
-          string cmd = "";
-          switch (lMode)
-          {
-            case loggingMode.bluetooth:
-              cmd = MLogger.MakeStartMeasuringCommand(false, true, false);
-              break;
-            case loggingMode.mfcard:
-              cmd = MLogger.MakeStartMeasuringCommand(false, false, true);
-              break;
-            case loggingMode.pc:
-              cmd = MLogger.MakeStartMeasuringCommand(true, false, false);
-              break;
-            case loggingMode.permanent:
-              cmd = MLogger.MakeStartMeasuringCommand(true, false, false, true);
-              break;
-          }
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd));
-
-          await Task.Delay(500);
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd)));
         }
+        catch { }
 
-        //開始に成功したらページ移動
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
+      }
+
+      //タスクが正常に完了した場合のみ
+      if (tcs.Task.IsCompletedSuccessfully)
+      {
+        //ログ
+        if (lMode == loggingMode.bluetooth)
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging by smart phone; ");
+        else if (lMode == loggingMode.mfcard)
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to flash memory; ");
+        else
+          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to PC; ");
+
+        //更新された情報を反映
         Application.Current.Dispatcher.Dispatch(() =>
         {
           //Bluetoothの場合にはスマートフォンでデータ表示
@@ -852,25 +908,16 @@ public partial class DeviceSetting : ContentPage
           //フラッシュメモリまたはPCへの保存の場合にはスタートページへ戻る
           else Shell.Current.GoToAsync("..");
         });
+      }
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.MeasuredValueReceivedEvent -= handler;
 
-        //ログ
-        if (lMode == loggingMode.bluetooth)
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging by smart phone; ");
-        else if (lMode == loggingMode.mfcard)
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to flash memory; ");
-        else
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to PC; ");
-      }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
+      //インジケータを隠す
+      Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
   }
 
   #endregion

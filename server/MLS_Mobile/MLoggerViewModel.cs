@@ -392,6 +392,7 @@ namespace MLS_Mobile
           _mLogger.DataReceivedEvent += _mLogger_DataReceivedEvent;
           XBeeLowAddress = _mLogger.LowAddress;
           XBeeName = _mLogger.XBeeName;
+          HasCO2LevelSensor = _mLogger.HasCO2LevelSensor;
         }
       }
     }

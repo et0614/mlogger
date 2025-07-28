@@ -130,39 +130,54 @@ public partial class VelocityCalibrator2 : ContentPage
     Shell.Current.Navigated += Current_Navigated;
   }
 
-  private void Current_Navigated(object sender, ShellNavigatedEventArgs e)
+  private async void Current_Navigated(object sender, ShellNavigatedEventArgs e)
   {
     if (e.Source == ShellNavigationSource.Pop)
     {
-      Task.Run(async () =>
+      //イベント待機タスクを作成
+      var tcs = new TaskCompletionSource<bool>();
+
+      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+      EventHandler handler = (s, e) => tcs.TrySetResult(true);
+      Logger.EndCalibratingVoltageMessageReceivedEvent += handler;
+
+      try
       {
-        try
+        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
         {
-          //風速校正終了コマンド送信
-          int tryNum = 0;
-          Logger.HasEndCalibratingVoltageMessageReceived = false;
-          while (!Logger.HasEndCalibratingVoltageMessageReceived)
+          try
           {
-            //5回失敗したらエラー表示
-            if (5 <= tryNum)
-            {
-              Application.Current.Dispatcher.Dispatch(() =>
-              {
-                DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-              });
-              return;
-            }
-            tryNum++;
-
-            //終了コマンドを送信
-            MLUtility.ConnectedXBee.SendSerialData
-            (Encoding.ASCII.GetBytes(MLogger.MakeEndCalibratingVoltageCommand()));
-
-            await Task.Delay(500);
+            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
+              MLogger.MakeEndCalibratingVoltageCommand())));
           }
+          catch { }
+
+          //イベントが来るか、タイムアウト(500ms)するまで待つ
+          await Task.WhenAny(tcs.Task, Task.Delay(500));
         }
-        catch { }
-      });
+
+        //タスク正常完了
+        if (tcs.Task.IsCompletedSuccessfully)
+        {
+
+        }
+        else
+        {
+          Application.Current.Dispatcher.Dispatch(() =>
+          {
+            DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+          });
+        }
+      }
+      finally
+      {
+        //ハンドラを解除
+        Logger.EndCalibratingVoltageMessageReceivedEvent -= handler;
+
+        //インジケータを隠す
+        Application.Current.Dispatcher.Dispatch(hideIndicator);
+      }
 
       Logger.CalibratingVoltageReceivedEvent -= Logger_CalibratingVoltageReceivedEvent;
       Shell.Current.Navigated -= Current_Navigated; //イベント解除
@@ -477,7 +492,7 @@ public partial class VelocityCalibrator2 : ContentPage
 
   #endregion
 
-  private void UpdateCoefficientButton_Clicked(object sender, EventArgs e)
+  private async void UpdateCoefficientButton_Clicked(object sender, EventArgs e)
   {
     if (!double.TryParse(eVolRef.Text, out double volRef)) return;
     if (!double.TryParse(coefA.Text, out double cfA)) return;
@@ -486,34 +501,32 @@ public partial class VelocityCalibrator2 : ContentPage
     //インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
-    Task.Run(async () =>
+    //イベント待機タスクを作成
+    var tcs = new TaskCompletionSource<bool>();
+
+    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+    EventHandler handler = (s, e) => tcs.TrySetResult(true);
+    Logger.VelocityCharateristicsReceivedEvent += handler;
+
+    try
     {
-      try
+      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
       {
-        int tryNum = 0;
-        Logger.HasVelocityCharacteristicsReceived = false;
-        while (!Logger.HasVelocityCharacteristicsReceived)
+        try
         {
-          //5回失敗したらエラー表示
-          if (5 <= tryNum)
-          {
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-              return;
-            });
-          }
-          tryNum++;
-
-          //開始コマンドを送信
-          MLUtility.ConnectedXBee.SendSerialData
-          (Encoding.ASCII.GetBytes(
-            MLogger.MakeVelocityCharateristicsSettingCommand(volRef, cfA, cfB, 0.0)));
-
-          await Task.Delay(500);
+          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(
+            MLogger.MakeVelocityCharateristicsSettingCommand(volRef, cfA, cfB, 0.0))));
         }
+        catch { }
 
-        //開始に成功したら反映
+        //イベントが来るか、タイムアウト(500ms)するまで待つ
+        await Task.WhenAny(tcs.Task, Task.Delay(500));
+      }
+
+      //タスクが正常に完了した場合のみUIを更新
+      if (tcs.Task.IsCompletedSuccessfully)
+      {
         Application.Current.Dispatcher.Dispatch(() =>
         {
           //ロギング
@@ -532,17 +545,22 @@ public partial class VelocityCalibrator2 : ContentPage
           stopUpdatingChart = false;
         });
       }
-      catch { }
-      finally
+      else
       {
-        //インジケータを隠す
         Application.Current.Dispatcher.Dispatch(() =>
         {
-          hideIndicator();
+          DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
         });
       }
-    });
+    }
+    finally
+    {
+      //ハンドラを解除
+      Logger.VelocityCharateristicsReceivedEvent -= handler;
 
+      //インジケータを隠す
+      Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
   }
 
   /// <summary>計測値3点から風量と電圧の関係式の係数を計算する</summary>
@@ -558,7 +576,6 @@ public partial class VelocityCalibrator2 : ContentPage
   /// <param name="vtg2">風速2に対する電圧[V]</param>
   /// <param name="vtg3">風速3に対する電圧[V]</param>
   /// <param name="cfB">出力:係数B</param>
-  /// <param name="cfC">出力:係数C</param>
   /// <returns>係数推定が成功したか否か</returns>
   public static bool EstimateCoefs(
     double vel1, double vel2, double vel3,
