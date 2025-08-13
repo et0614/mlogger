@@ -4,6 +4,7 @@ using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 using MLLib;
 using CommunityToolkit.Maui.Views;
+using CommunityToolkit.Maui.Extensions;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 [QueryProperty(nameof(CloValue), "CloValue")]
@@ -169,7 +170,7 @@ public partial class DataReceive : ContentPage
   private async void TapGestureRecognizer_ShortMemo_Tapped(object sender, TappedEventArgs e)
   {
     var popup = new DescriptionPopup(DescriptionText.ShortMemo);
-    var result = await this.ShowPopupAsync(popup);
+    var result = await this.ShowPopupAsync<string>(popup);
   }
 
   #endregion

@@ -4,7 +4,8 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MLS_Mobile.TextInputPopup"
              xmlns:model="clr-namespace:MLS_Mobile"
-             x:DataType="model:TextInputPopup">
+             x:DataType="model:TextInputPopup"
+             x:TypeArguments="x:String">
     <VerticalStackLayout>
         <Border WidthRequest="300" HeightRequest="160" Padding="10"
                 Stroke="{StaticResource Dark_G}" BackgroundColor="{StaticResource Lightest_G}"

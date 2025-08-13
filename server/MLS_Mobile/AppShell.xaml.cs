@@ -36,7 +36,7 @@ public partial class AppShell : Shell
     //DataReceiveからpopするとき、計測を中止するか警告を発する
     if (args.Current != null && args.Current.Location.OriginalString.Contains(nameof(DataReceive)))
     {
-      var currentpage = (App.Current.MainPage as AppShell).CurrentPage as DataReceive;
+      var currentpage = this.CurrentPage as DataReceive;
       if (currentpage is DataReceive && args.Source == ShellNavigationSource.Pop)
       {
         ShellNavigatingDeferral token = args.GetDeferral();
@@ -49,7 +49,7 @@ public partial class AppShell : Shell
     //RelayedDataViewerからpopするとき、Bluetoothを転送停止する
     if (args.Current != null && args.Current.Location.OriginalString.Contains(nameof(RelayedDataViewer)))
     {
-      var currentpage = (App.Current.MainPage as AppShell).CurrentPage as RelayedDataViewer;
+      var currentpage = this.CurrentPage as RelayedDataViewer;
       if (currentpage is RelayedDataViewer && args.Source == ShellNavigationSource.PopToRoot)
       {
         ShellNavigatingDeferral token = args.GetDeferral();

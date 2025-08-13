@@ -4,8 +4,9 @@
              x:Class="MLS_Mobile.MoistAirCalculator"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n" 
              Title="{x:Static res:MLSResource.MS_Title}"
-             xmlns:model="clr-namespace:MLS_Mobile"
-             x:DataType="model:MoistAirCalculator">
+             xmlns:local="clr-namespace:MLS_Mobile"
+             x:DataType="local:MoistAirCalculator">
+    
     <StackLayout BackgroundColor="{StaticResource Lightest_G}">
         <Picker x:Name="pairList" Margin="20" SelectedIndexChanged="pairList_SelectedIndexChanged"/>
 

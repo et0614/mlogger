@@ -25,7 +25,7 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>		
@@ -35,6 +35,7 @@
 		<CodesignProvision></CodesignProvision>
 		<ProvisioningType>automatic</ProvisioningType>
 		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Nullable>enable</Nullable>
 
 	</PropertyGroup>
 
@@ -317,13 +318,13 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Maui" Version="11.0.0" />
+	  <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
-	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.1" />
-	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.1" />
+	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.4" />
+	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.8" />
 	  <PackageReference Include="Popolo" Version="2.3.1.81" />
-	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.30" />
-	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.30" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.90" />
+	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.90" />
 	</ItemGroup>
 
 	<ItemGroup>

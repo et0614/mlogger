@@ -164,35 +164,35 @@ public partial class ClothingCoordinator : ContentPage
 
   #endregion
 
-  #region CollectionView用のインナークラス定義
-
-  public class Cloth
-  {
-    public Cloth(string name, double cloValue, ImageSource appearance)
-    {
-      Name = name;
-      CloValue = cloValue;
-      Appearance = appearance;
-    }
-
-    public ImageSource Appearance { get; set; }
-
-    public string Name { get; set; }
-
-    public double CloValue { get; set; }
-  }
-
-  public class ClothGroup : List<Cloth>
-  {
-    public string Name { get; private set; }
-
-    public ClothGroup(string name, List<Cloth> clothes) : base(clothes)
-    {
-      Name = name;
-    }
-  }
-
-
-  #endregion
-
 }
+
+#region CollectionView用のクラス定義
+
+public class Cloth
+{
+  public Cloth(string name, double cloValue, ImageSource appearance)
+  {
+    Name = name;
+    CloValue = cloValue;
+    Appearance = appearance;
+  }
+
+  public ImageSource Appearance { get; set; }
+
+  public string Name { get; set; }
+
+  public double CloValue { get; set; }
+}
+
+public class ClothGroup : List<Cloth>
+{
+  public string Name { get; private set; }
+
+  public ClothGroup(string name, List<Cloth> clothes) : base(clothes)
+  {
+    Name = name;
+  }
+}
+
+
+#endregion

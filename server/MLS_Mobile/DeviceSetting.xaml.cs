@@ -1,6 +1,6 @@
 namespace MLS_Mobile;
 
-using CommunityToolkit.Maui.Views;
+using CommunityToolkit.Maui.Extensions;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Devices.Sensors;
 using MLLib;
@@ -715,10 +715,10 @@ public partial class DeviceSetting : ContentPage
   private async void CO2CalibrationButton_Clicked(object sender, EventArgs e)
   {
     var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
-    var result = await this.ShowPopupAsync(popup);
+    var result = await this.ShowPopupAsync<string>(popup);
     if (result != null)
     {
-      if (!int.TryParse((string)result, out int refLevel))
+      if (!int.TryParse(result.Result, out int refLevel))
       {
         Application.Current.Dispatcher.Dispatch(() =>
         {

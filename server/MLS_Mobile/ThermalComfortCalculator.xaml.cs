@@ -1,6 +1,6 @@
 namespace MLS_Mobile;
 
-using CommunityToolkit.Maui.Views;
+using CommunityToolkit.Maui.Extensions;
 using MLS_Mobile.Resources.i18n;
 using Popolo.HumanBody;
 
@@ -145,7 +145,7 @@ public partial class ThermalComfortCalculator : ContentPage
     }
 
     if (popup == null) return;
-    if (await this.ShowPopupAsync(popup) != null)
+    if (await this.ShowPopupAsync<string>(popup) != null)
       if (double.TryParse(popup.EntryValue, out double val))
         sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }

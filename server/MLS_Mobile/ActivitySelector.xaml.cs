@@ -124,34 +124,34 @@ public partial class ActivitySelector : ContentPage
 
   #endregion
 
-  #region CollectionView用のインナークラス定義
-
-  public class Activity
-  {
-    public Activity(string name, double metValue, ImageSource appearance)
-    {
-      Name = name;
-      MetValue = metValue;
-      Appearance = appearance;
-    }
-
-    public ImageSource Appearance { get; set; }
-
-    public string Name { get; set; }
-
-    public double MetValue { get; set; }
-  }
-
-  public class ActivityGroup : List<Activity>
-  {
-    public string Name { get; private set; }
-
-    public ActivityGroup(string name, List<Activity> activities) : base(activities)
-    {
-      Name = name;
-    }
-  }
-
-  #endregion
-
 }
+
+#region CollectionView用のクラス定義
+
+public class Activity
+{
+  public Activity(string name, double metValue, ImageSource appearance)
+  {
+    Name = name;
+    MetValue = metValue;
+    Appearance = appearance;
+  }
+
+  public ImageSource Appearance { get; set; }
+
+  public string Name { get; set; }
+
+  public double MetValue { get; set; }
+}
+
+public class ActivityGroup : List<Activity>
+{
+  public string Name { get; private set; }
+
+  public ActivityGroup(string name, List<Activity> activities) : base(activities)
+  {
+    Name = name;
+  }
+}
+
+#endregion

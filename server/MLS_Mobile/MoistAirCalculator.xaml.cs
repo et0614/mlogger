@@ -3,7 +3,7 @@ namespace MLS_Mobile;
 using System.Collections.ObjectModel;
 using Popolo.ThermophysicalProperty;
 using MLS_Mobile.Resources.i18n;
-using CommunityToolkit.Maui.Views;
+using CommunityToolkit.Maui.Extensions;
 
 public partial class MoistAirCalculator : ContentPage
 {
@@ -301,7 +301,7 @@ public partial class MoistAirCalculator : ContentPage
     if (popup == null) return;
     if (!sld.IsEnabled) return;
 
-    if (await this.ShowPopupAsync(popup) != null)
+    if (await this.ShowPopupAsync<string>(popup) != null)
       if (double.TryParse(popup.EntryValue, out double val))
         sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }

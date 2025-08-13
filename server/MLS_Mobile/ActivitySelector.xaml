@@ -4,6 +4,8 @@
              x:Class="MLS_Mobile.ActivitySelector"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:TCResource.SelectActivity}"
+             xmlns:local="clr-namespace:MLS_Mobile"
+             x:DataType="local:ActivitySelector"
              >
 
     <Grid>
@@ -11,7 +13,7 @@
                         ItemsSource="{Binding Activities}" IsGrouped="true" SelectionMode="Single" 
                         SelectionChanged="OnCollectionViewSelectionChanged">
             <CollectionView.ItemTemplate>
-                <DataTemplate>
+                <DataTemplate x:DataType="local:Activity">
                     <Grid
                         Padding="5" 
                         RowDefinitions="Auto, Auto"
@@ -53,7 +55,7 @@
                 </DataTemplate>
             </CollectionView.ItemTemplate>
             <CollectionView.GroupHeaderTemplate>
-                <DataTemplate>
+                <DataTemplate x:DataType="local:ActivityGroup">
                     <Label Text="{Binding Name}"
                            TextColor="White"
                            BackgroundColor="{StaticResource Dark_G}"
