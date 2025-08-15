@@ -1,10 +1,11 @@
 namespace MLS_Mobile;
 
-using MLS_Mobile.Resources.i18n;
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
 using MLLib;
-using CommunityToolkit.Maui.Views;
-using CommunityToolkit.Maui.Extensions;
+using MLS_Mobile.Resources.i18n;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
 [QueryProperty(nameof(CloValue), "CloValue")]
@@ -168,9 +169,9 @@ public partial class DataReceive : ContentPage
   #region ヘルプタップ時の処理
 
   private async void TapGestureRecognizer_ShortMemo_Tapped(object sender, TappedEventArgs e)
-  {
+  {    
     var popup = new DescriptionPopup(DescriptionText.ShortMemo);
-    var result = await this.ShowPopupAsync<string>(popup);
+    var result = await this.ShowPopupAsync(popup);
   }
 
   #endregion

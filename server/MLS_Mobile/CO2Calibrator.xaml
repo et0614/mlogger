@@ -3,11 +3,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.CO2Calibrator"
              Title="CO2 Calibrator">
-    <Grid>
-        <StackLayout Padding="15">
-            <Label HorizontalTextAlignment="Center" Text="Calibration remaining time:" FontSize="20"/>
-            <Label HorizontalTextAlignment="Center" x:Name="lblTime" Text="30" FontSize="40"/>
-            <Label HorizontalTextAlignment="Center" x:Name="lblRslt" Text="" FontSize="20"/>
-        </StackLayout>
+    <Grid RowSpacing="0" ColumnSpacing="0" Padding="0">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="Calibration remaining time:" FontSize="20"
+               HorizontalTextAlignment="Center"
+               Padding="20"/>
+
+        <Label Grid.Row="1" Grid.Column="0"
+               x:Name="lblTime" Text="30" FontSize="40"
+               HorizontalTextAlignment="End"
+               Padding="20"/>
+
+        <Label Grid.Row="1" Grid.Column="1"
+               Text="sec" FontSize="20"
+               HorizontalTextAlignment="Start" VerticalTextAlignment="Center"
+               Padding="20"/>
+
+        <Label Grid.Row="2" Grid.Column="0"
+               x:Name="lblPPM" Text="*" FontSize="40"
+               HorizontalTextAlignment="End"
+               Padding="20"/>
+
+        <Label Grid.Row="2" Grid.Column="1"
+               Text="ppm" FontSize="20"
+               HorizontalTextAlignment="Start" VerticalTextAlignment="Center"
+               Padding="20"/>
+
+        <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+               x:Name="lblRslt" Text="" FontSize="20"
+               HorizontalTextAlignment="Center"
+               Padding="20"/>
     </Grid>
 </ContentPage>

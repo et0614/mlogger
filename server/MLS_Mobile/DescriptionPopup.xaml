@@ -5,7 +5,8 @@
              x:Class="MLS_Mobile.DescriptionPopup"
              xmlns:model="clr-namespace:MLS_Mobile"
              x:DataType="model:DescriptionPopup"
-             CanBeDismissedByTappingOutsideOfPopup="True">
+             CanBeDismissedByTappingOutsideOfPopup="True"
+             Padding="0" Margin="0">
 
     <Grid BackgroundColor="White"
           HeightRequest="400"

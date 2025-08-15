@@ -5,13 +5,15 @@
              x:Class="MLS_Mobile.TextInputPopup"
              xmlns:model="clr-namespace:MLS_Mobile"
              x:DataType="model:TextInputPopup"
-             x:TypeArguments="x:String">
+             x:TypeArguments="x:String"
+             Padding="0" Margin="0">
+    
     <VerticalStackLayout>
         <Border WidthRequest="300" HeightRequest="160" Padding="10"
                 Stroke="{StaticResource Dark_G}" BackgroundColor="{StaticResource Lightest_G}"
                 HorizontalOptions="Center" StrokeThickness="1">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="10"/>
+                <RoundRectangle CornerRadius="20"/>
             </Border.StrokeShape>
             <VerticalStackLayout>
                 <Label x:Name="lblMessage" Text="{Binding LabelText}" Margin="5"/>

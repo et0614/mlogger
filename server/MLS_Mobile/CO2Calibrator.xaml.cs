@@ -45,6 +45,7 @@ public partial class CO2Calibrator : ContentPage
     Application.Current.Dispatcher.Dispatch(() =>
     {
       lblTime.Text = ceArgs.RemainingTime.ToString("F0");
+      lblPPM.Text = ceArgs.CurrentCO2Level.ToString("F0");
 
       if (ceArgs.RemainingTime == 0)
       {

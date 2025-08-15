@@ -45,17 +45,6 @@ public partial class LoggingDataList : ContentPage
     UpdateLogFiles();
   }
 
-  private void fileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-  {
-    if (e.CurrentSelection == null || e.CurrentSelection.Count == 0) return;
-
-    var navigationParameter = new Dictionary<string, object>
-    {
-        { "FileName", ((LogFile)e.CurrentSelection[0]).FileName }
-    };
-    Shell.Current.GoToAsync($"LoggingData", navigationParameter);
-  }
-
   /// <summary>ログデータ閲覧ボタンクリック時の処理</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
@@ -92,6 +81,7 @@ public partial class LoggingDataList : ContentPage
 
       DeleteCommand = new Command<LogFile>(OnDeleteCommand);
       ShareCommand = new Command<LogFile>(OnShareCommand);
+      NavigateCommand = new Command<LogFile>(OnNavigateCommand);
     }
 
     #region プロパティ
@@ -107,6 +97,8 @@ public partial class LoggingDataList : ContentPage
     public Command<LogFile> DeleteCommand { get; private set; }
 
     public Command<LogFile> ShareCommand { get; private set; }
+
+    public Command<LogFile> NavigateCommand { get; private set; }
 
     /// <summary>計測機器名称を取得する</summary>
     public string MLoggerName { get; private set; }
@@ -132,6 +124,16 @@ public partial class LoggingDataList : ContentPage
         Subject = logFile.FileName
       });
     }
+
+    private async void OnNavigateCommand(LogFile logFile)
+    {
+      var navigationParameter = new Dictionary<string, object>
+        {
+            { "FileName", logFile.FileName }
+        };
+      await Shell.Current.GoToAsync($"LoggingData", navigationParameter);
+    }
+
   }
 
   #endregion

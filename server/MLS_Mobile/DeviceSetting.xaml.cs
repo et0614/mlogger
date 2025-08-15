@@ -851,6 +851,7 @@ public partial class DeviceSetting : ContentPage
     //イベントが発生したらタスクを完了させるハンドラを一時的に登録
     EventHandler handler = (s, e) => tcs.TrySetResult(true);
     Logger.MeasuredValueReceivedEvent += handler;
+    Logger.StartMeasuringMessageReceivedEvent += handler;
 
     //インジケータ表示
     showIndicator(MLSResource.DR_StartLogging);
@@ -914,6 +915,7 @@ public partial class DeviceSetting : ContentPage
     {
       //ハンドラを解除
       Logger.MeasuredValueReceivedEvent -= handler;
+      Logger.StartMeasuringMessageReceivedEvent -= handler;
 
       //インジケータを隠す
       Application.Current.Dispatcher.Dispatch(hideIndicator);

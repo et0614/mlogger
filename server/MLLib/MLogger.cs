@@ -550,16 +550,17 @@ namespace MLLib
           case "CCL":
             string[] bf = NextCommand.Remove(0, 4).TrimEnd('\r').Split(',');
             int rmTime = int.Parse(bf[0]);
+            int co2Level = int.Parse(bf[3]);
             bool success = true;
             int correction = 0;
             if (rmTime == 0)
             {
-              success = bf[1] == "success";
+              success = bf[1] == "pass";
               correction = int.Parse(bf[2]);
             }
 
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
-            CalibratingCO2LevelReceivedEvent?.Invoke(this, new CalibratingCO2SensorLevelEventArgs(rmTime, success, correction));
+            CalibratingCO2LevelReceivedEvent?.Invoke(this, new CalibratingCO2SensorLevelEventArgs(rmTime, success, correction, co2Level));
             break;
 
           //日時更新
@@ -1043,6 +1044,9 @@ namespace MLLib
     public static long GetUnixTime(DateTime dTime)
     {
       DateTime dtNow = new DateTime(dTime.Year, dTime.Month, dTime.Day, dTime.Hour, dTime.Minute, dTime.Second, DateTimeKind.Utc);
+      long a1 = (long)(dtNow - UNIX_EPOCH).TotalSeconds;
+      long a2 = new DateTimeOffset(dTime).ToUnixTimeSeconds();
+
       return (long)(dtNow - UNIX_EPOCH).TotalSeconds;
     }
 
@@ -1053,6 +1057,9 @@ namespace MLLib
     public static DateTime GetDateTimeFromUTime(long unixTime)
     {
       DateTime dtNow = UNIX_EPOCH.AddSeconds(unixTime);
+      DateTime d1 = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, dtNow.Hour, dtNow.Minute, dtNow.Second, DateTimeKind.Local);
+      DateTime d2 = DateTimeOffset.FromUnixTimeSeconds(unixTime).LocalDateTime;
+
       return new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, dtNow.Hour, dtNow.Minute, dtNow.Second, DateTimeKind.Local);
     }
 
@@ -1111,11 +1118,15 @@ namespace MLLib
       /// <summary>校正幅[ppm]を取得する</summary>
       public int CorrectionCO2Level { get; }
 
-      public CalibratingCO2SensorLevelEventArgs(int remainingTime, bool calibrationSucceeded, int correctionCO2Level)
+      /// <summary>現在のCO2濃度[ppm]を取得する</summary>
+      public int CurrentCO2Level { get; }
+
+      public CalibratingCO2SensorLevelEventArgs(int remainingTime, bool calibrationSucceeded, int correctionCO2Level, int currentCO2Level)
       {
         RemainingTime = remainingTime;
         CalibrationSucceeded = calibrationSucceeded;
         CorrectionCO2Level = correctionCO2Level;
+        CurrentCO2Level = currentCO2Level;
       }
     }
 

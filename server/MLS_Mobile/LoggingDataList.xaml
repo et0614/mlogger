@@ -10,7 +10,7 @@
         
         <!--スクロールする計測データリスト-->
         <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}" Margin="0,0,0,0"
-                        SelectionMode="Single" SelectionChanged="fileList_SelectionChanged" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
+                        SelectionMode="None" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <SwipeView Margin="0,2,0,2" BackgroundColor="{StaticResource Lightest_G}">
@@ -36,6 +36,9 @@
                         </SwipeView.RightItems>
 
                         <Border Margin="20,0,20,0" Stroke="{StaticResource Dark_G}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="{Binding .}"/>
+                            </Border.GestureRecognizers>
                             <Grid Padding="5"
                               RowDefinitions="Auto"
                               ColumnDefinitions="Auto, Auto" 
