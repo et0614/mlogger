@@ -88,6 +88,9 @@ const bool IS_VEL_FNC2 = true;
 //CO2センサの初期化待機時間（22秒必要）
 const uint8_t CO2_CONDITIONING_SECONDS = 25;
 
+//CO2センサの接続確認時間間隔[sec]
+const uint8_t CO2_CHECK_INTERVAL = 10;
+
 //広域変数定義********************************************************
 //日時関連
 volatile static time_t currentTime = UNIX_OFFSET; //現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
@@ -119,6 +122,9 @@ static uint8_t slp_time = 0;
 
 //CO2センサの初期化時間
 static uint8_t co2_condition_time = 0;
+
+//CO2センサの接続確認用タイマ
+static uint8_t co2_connection_check_timer = 0;
 
 //Flashメモリ関連
 static FATFS fSystem;
@@ -612,6 +618,29 @@ static void executeSecondlyTask(){
 	//電圧確認（限界まで使うとFlashメモリのデータが破損することがある）
 	if(isLowBattery()) lowBatteryTime++;
 	else lowBatteryTime = 0;
+	
+	//CO2センサ接続確認タイマ
+	co2_connection_check_timer++;
+	if (CO2_CHECK_INTERVAL <= co2_connection_check_timer) {
+		co2_connection_check_timer = 0; // タイマーをリセット
+
+		// センサーが接続されているか定期的に確認
+		bool is_currently_connected = Stcc4::isConnected();
+
+		//接続状態が変わった場合
+		if(is_currently_connected != hasCO2Sensor){
+			hasCO2Sensor = is_currently_connected;
+			//再接続の場合には初期化処理
+			if(is_currently_connected) Stcc4::initialize();
+			//イベント通知
+			if(isXbeeSleeping()){
+				wakeupXbee();
+				XbeeController::bltxChars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
+				sleepXbee();
+			}
+			else XbeeController::bltxChars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
+		}
+	}	
 
 	//リセットボタン押し込み確認********************************
 	if(!(PORTA.IN & PIN2_bm))
@@ -646,7 +675,7 @@ static void executeSecondlyTask(){
 	{
 		sleepAnemo(); //風速計を停止 2023.01.09 Bugfix
 		wakeupXbee(); //XBeeスリープ解除
-		_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
+		//_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
 		
 		//定期的にコマンド待受状態を送信
 		if(wc_time <= 0)
@@ -816,7 +845,7 @@ static void execLogging()
 		{
 			slp_time=0; //空パケットまでの時間を初期化
 			wakeupXbee(); //XBeeスリープ解除
-			_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。短すぎるとコンデンサの影響か十分に立ち上がらない。。。
+			//_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。短すぎるとコンデンサの影響か十分に立ち上がらない。。。
 		}
 		
 		//空白削除して左詰め
@@ -873,7 +902,7 @@ static void execLogging()
 	//この処理は意外に電池を消耗するので時間間隔を増やしXBee使用時のみとした（2024.07.22）
 	if(3500 <= slp_time && (outputToXBee || outputToBLE)){
 		wakeupXbee(); //XBeeスリープ解除
-		_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
+		//_delay_ms(1);  //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい。
 		XbeeController::txChars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
 		slp_time = 0;
 	}
@@ -890,27 +919,31 @@ static void calibrateCO2Level()
 	
 	co2CalibratingTime--;
 	
+	//現在のCO2濃度を取得
+	uint16_t co2_u = 0;
+	float tmp_f = 0;
+	float hmd_f = 0;
+	Stcc4::readMeasurement(&co2_u, &tmp_f, &hmd_f);
+	
 	//校正終了
 	if(co2CalibratingTime == 0){
 		int16_t correction_val;
 		if(Stcc4::performForcedRecalibration(reforcedCO2Level, &correction_val))
 		{
 			if (correction_val == (int16_t)0xFFFF) 
-			{
-				XbeeController::bltxChars("CCL:0,fail\r");
-			}
-			else{
-				snprintf(charBuff, sizeof(charBuff), "CCL:0,success,%d\r",correction_val);
-				XbeeController::bltxChars(charBuff);
-			}
+				snprintf(charBuff, sizeof(charBuff), "CCL:0,fail,0,%u\r", co2_u);
+			else
+				snprintf(charBuff, sizeof(charBuff), "CCL:0,pass,%d,%u\r",correction_val, co2_u);
 		}
-		else XbeeController::bltxChars("CCL:0,fail\r");
+		else
+			snprintf(charBuff, sizeof(charBuff), "CCL:0,fail,0,%u\r", co2_u);
+		XbeeController::bltxChars(charBuff);
 		Stcc4::enterSleep();
 	}
 	else
 	{
 		//残り時間を出力
-		snprintf(charBuff, sizeof(charBuff), "CCL:%u\r", co2CalibratingTime);
+		snprintf(charBuff, sizeof(charBuff), "CCL:%u,measuring,0,%u\r", co2CalibratingTime, co2_u);
 		XbeeController::bltxChars(charBuff);		
 		Stcc4::measureSingleShot(); //計測実施
 	}
@@ -1067,6 +1100,12 @@ inline static void sleepXbee(void)
 inline static void wakeupXbee(void)
 {
 	PORTF.OUTCLR = PIN5_bm;
+	_delay_ms(1); //スリープ解除時の立ち上げは50us=0.05ms程度かかるらしい
+}
+
+inline static bool isXbeeSleeping(void)
+{
+	return (PORTF.OUT & PIN5_bm) != 0;
 }
 
 inline static void blinkLED(int iterNum, uint8_t pin_mask)

@@ -64,6 +64,8 @@ inline static void sleepXbee(void);
 
 inline static void wakeupXbee(void);
 
+inline static bool isXbeeSleeping(void);
+
 inline static void blinkLED(int iterNum, uint8_t pin_mask);
 
 inline static void blinkGreenAndRedLED(int iterNum);
