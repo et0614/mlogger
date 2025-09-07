@@ -2391,6 +2391,906 @@
 #define VEL_COEF_A	2.895
 #define VEL_COEF_B	214.914
 
+#elif	MLPARAM_1301
+#define ML_NAME	"MLogger_1301"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.082
+#define HMD_COEF_B	-2.26
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.11
+
+#elif	MLPARAM_1302
+#define ML_NAME	"MLogger_1302"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.21
+#define HMD_COEF_A	1.087
+#define HMD_COEF_B	-2.23
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.18
+
+#elif	MLPARAM_1303
+#define ML_NAME	"MLogger_1303"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.24
+#define GLB_COEF_A	1.022
+#define GLB_COEF_B	0.02
+
+#elif	MLPARAM_1304
+#define ML_NAME	"MLogger_1304"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.14
+#define HMD_COEF_A	1.072
+#define HMD_COEF_B	-2.27
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.10
+
+#elif	MLPARAM_1305
+#define ML_NAME	"MLogger_1305"
+#define DBT_COEF_A	1.019
+#define DBT_COEF_B	0.13
+#define HMD_COEF_A	1.081
+#define HMD_COEF_B	-2.08
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.14
+
+#elif	MLPARAM_1306
+#define ML_NAME	"MLogger_1306"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.087
+#define HMD_COEF_B	-2.22
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.25
+
+#elif	MLPARAM_1307
+#define ML_NAME	"MLogger_1307"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.15
+#define HMD_COEF_A	1.071
+#define HMD_COEF_B	-2.34
+#define GLB_COEF_A	1.022
+#define GLB_COEF_B	0.16
+
+#elif	MLPARAM_1308
+#define ML_NAME	"MLogger_1308"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.083
+#define HMD_COEF_B	-2.39
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.18
+
+#elif	MLPARAM_1309
+#define ML_NAME	"MLogger_1309"
+#define DBT_COEF_A	1.019
+#define DBT_COEF_B	0.02
+#define HMD_COEF_A	1.077
+#define HMD_COEF_B	-2.42
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.19
+
+#elif	MLPARAM_1310
+#define ML_NAME	"MLogger_1310"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.15
+#define HMD_COEF_A	1.086
+#define HMD_COEF_B	-2.44
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.13
+
+#elif	MLPARAM_1311
+#define ML_NAME	"MLogger_1311"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.10
+#define HMD_COEF_A	1.089
+#define HMD_COEF_B	-2.73
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.09
+
+#elif	MLPARAM_1312
+#define ML_NAME	"MLogger_1312"
+#define DBT_COEF_A	1.020
+#define DBT_COEF_B	0.03
+#define HMD_COEF_A	1.091
+#define HMD_COEF_B	-2.46
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.12
+
+#elif	MLPARAM_1313
+#define ML_NAME	"MLogger_1313"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.077
+#define HMD_COEF_B	-2.40
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.24
+
+#elif	MLPARAM_1314
+#define ML_NAME	"MLogger_1314"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.081
+#define HMD_COEF_B	-2.78
+#define GLB_COEF_A	1.015
+#define GLB_COEF_B	0.28
+
+#elif	MLPARAM_1315
+#define ML_NAME	"MLogger_1315"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.073
+#define HMD_COEF_B	-2.31
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.24
+
+#elif	MLPARAM_1316
+#define ML_NAME	"MLogger_1316"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.076
+#define HMD_COEF_B	-1.91
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.24
+
+#elif	MLPARAM_1317
+#define ML_NAME	"MLogger_1317"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.49
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.24
+
+#elif	MLPARAM_1318
+#define ML_NAME	"MLogger_1318"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.18
+#define HMD_COEF_A	1.092
+#define HMD_COEF_B	-2.47
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1319
+#define ML_NAME	"MLogger_1319"
+#define DBT_COEF_A	1.013
+#define DBT_COEF_B	0.25
+#define HMD_COEF_A	1.066
+#define HMD_COEF_B	-2.22
+#define GLB_COEF_A	1.013
+#define GLB_COEF_B	0.34
+
+#elif	MLPARAM_1320
+#define ML_NAME	"MLogger_1320"
+#define DBT_COEF_A	1.013
+#define DBT_COEF_B	0.23
+#define HMD_COEF_A	1.081
+#define HMD_COEF_B	-2.43
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.26
+
+#elif	MLPARAM_1321
+#define ML_NAME	"MLogger_1321"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.13
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.41
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.08
+
+#elif	MLPARAM_1322
+#define ML_NAME	"MLogger_1322"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.087
+#define HMD_COEF_B	-2.69
+#define GLB_COEF_A	1.015
+#define GLB_COEF_B	0.28
+
+#elif	MLPARAM_1323
+#define ML_NAME	"MLogger_1323"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.070
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1324
+#define ML_NAME	"MLogger_1324"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.09
+#define HMD_COEF_A	1.086
+#define HMD_COEF_B	-2.44
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.10
+
+#elif	MLPARAM_1325
+#define ML_NAME	"MLogger_1325"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.49
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.19
+
+#elif	MLPARAM_1326
+#define ML_NAME	"MLogger_1326"
+#define DBT_COEF_A	1.019
+#define DBT_COEF_B	0.10
+#define HMD_COEF_A	1.079
+#define HMD_COEF_B	-2.31
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.21
+
+#elif	MLPARAM_1327
+#define ML_NAME	"MLogger_1327"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.15
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.91
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1328
+#define ML_NAME	"MLogger_1328"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.16
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.46
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.16
+
+#elif	MLPARAM_1329
+#define ML_NAME	"MLogger_1329"
+#define DBT_COEF_A	1.018
+#define DBT_COEF_B	0.13
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.21
+
+#elif	MLPARAM_1330
+#define ML_NAME	"MLogger_1330"
+#define DBT_COEF_A	1.018
+#define DBT_COEF_B	0.10
+#define HMD_COEF_A	1.091
+#define HMD_COEF_B	-2.61
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1331
+#define ML_NAME	"MLogger_1331"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.22
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.34
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.25
+
+#elif	MLPARAM_1332
+#define ML_NAME	"MLogger_1332"
+#define DBT_COEF_A	1.018
+#define DBT_COEF_B	0.14
+#define HMD_COEF_A	1.083
+#define HMD_COEF_B	-2.63
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.19
+
+#elif	MLPARAM_1333
+#define ML_NAME	"MLogger_1333"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.076
+#define HMD_COEF_B	-2.45
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1334
+#define ML_NAME	"MLogger_1334"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.18
+#define HMD_COEF_A	1.079
+#define HMD_COEF_B	-2.45
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.20
+
+#elif	MLPARAM_1335
+#define ML_NAME	"MLogger_1335"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.48
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1336
+#define ML_NAME	"MLogger_1336"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.085
+#define HMD_COEF_B	-2.44
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.26
+
+#elif	MLPARAM_1337
+#define ML_NAME	"MLogger_1337"
+#define DBT_COEF_A	1.026
+#define DBT_COEF_B	-0.03
+#define HMD_COEF_A	1.104
+#define HMD_COEF_B	-2.22
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.12
+
+#elif	MLPARAM_1338
+#define ML_NAME	"MLogger_1338"
+#define DBT_COEF_A	1.025
+#define DBT_COEF_B	-0.02
+#define HMD_COEF_A	1.089
+#define HMD_COEF_B	-2.33
+#define GLB_COEF_A	1.026
+#define GLB_COEF_B	0.02
+
+#elif	MLPARAM_1339
+#define ML_NAME	"MLogger_1339"
+#define DBT_COEF_A	1.024
+#define DBT_COEF_B	-0.02
+#define HMD_COEF_A	1.099
+#define HMD_COEF_B	-2.28
+#define GLB_COEF_A	1.025
+#define GLB_COEF_B	0.06
+
+#elif	MLPARAM_1340
+#define ML_NAME	"MLogger_1340"
+#define DBT_COEF_A	1.024
+#define DBT_COEF_B	0.01
+#define HMD_COEF_A	1.096
+#define HMD_COEF_B	-2.25
+#define GLB_COEF_A	1.023
+#define GLB_COEF_B	0.13
+
+#elif	MLPARAM_1341
+#define ML_NAME	"MLogger_1341"
+#define DBT_COEF_A	1.024
+#define DBT_COEF_B	-0.02
+#define HMD_COEF_A	1.090
+#define HMD_COEF_B	-2.31
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.10
+
+#elif	MLPARAM_1342
+#define ML_NAME	"MLogger_1342"
+#define DBT_COEF_A	1.023
+#define DBT_COEF_B	0.02
+#define HMD_COEF_A	1.103
+#define HMD_COEF_B	-2.40
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.11
+
+#elif	MLPARAM_1343
+#define ML_NAME	"MLogger_1343"
+#define DBT_COEF_A	1.023
+#define DBT_COEF_B	0.04
+#define HMD_COEF_A	1.092
+#define HMD_COEF_B	-2.39
+#define GLB_COEF_A	1.025
+#define GLB_COEF_B	0.04
+
+#elif	MLPARAM_1344
+#define ML_NAME	"MLogger_1344"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.03
+#define HMD_COEF_A	1.086
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.19
+
+#elif	MLPARAM_1345
+#define ML_NAME	"MLogger_1345"
+#define DBT_COEF_A	1.021
+#define DBT_COEF_B	0.09
+#define HMD_COEF_A	1.088
+#define HMD_COEF_B	-2.35
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1346
+#define ML_NAME	"MLogger_1346"
+#define DBT_COEF_A	1.021
+#define DBT_COEF_B	0.06
+#define HMD_COEF_A	1.083
+#define HMD_COEF_B	-2.08
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.15
+
+#elif	MLPARAM_1347
+#define ML_NAME	"MLogger_1347"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.06
+#define HMD_COEF_A	1.092
+#define HMD_COEF_B	-2.58
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.18
+
+#elif	MLPARAM_1348
+#define ML_NAME	"MLogger_1348"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.01
+#define HMD_COEF_A	1.093
+#define HMD_COEF_B	-2.35
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.13
+
+#elif	MLPARAM_1349
+#define ML_NAME	"MLogger_1349"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.076
+#define HMD_COEF_B	-2.41
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.25
+
+#elif	MLPARAM_1350
+#define ML_NAME	"MLogger_1350"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.081
+#define HMD_COEF_B	-2.41
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1351
+#define ML_NAME	"MLogger_1351"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.080
+#define HMD_COEF_B	-2.10
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.21
+
+#elif	MLPARAM_1352
+#define ML_NAME	"MLogger_1352"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.085
+#define HMD_COEF_B	-2.43
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.18
+
+#elif	MLPARAM_1353
+#define ML_NAME	"MLogger_1353"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.19
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.11
+
+#elif	MLPARAM_1354
+#define ML_NAME	"MLogger_1354"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.08
+#define HMD_COEF_A	1.080
+#define HMD_COEF_B	-2.30
+#define GLB_COEF_A	1.015
+#define GLB_COEF_B	0.26
+
+#elif	MLPARAM_1355
+#define ML_NAME	"MLogger_1355"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.18
+#define HMD_COEF_A	1.078
+#define HMD_COEF_B	-2.36
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.15
+
+#elif	MLPARAM_1356
+#define ML_NAME	"MLogger_1356"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.072
+#define HMD_COEF_B	-2.23
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1357
+#define ML_NAME	"MLogger_1357"
+#define DBT_COEF_A	1.013
+#define DBT_COEF_B	0.21
+#define HMD_COEF_A	1.073
+#define HMD_COEF_B	-2.36
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1358
+#define ML_NAME	"MLogger_1358"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.11
+#define HMD_COEF_A	1.081
+#define HMD_COEF_B	-2.47
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.08
+
+#elif	MLPARAM_1359
+#define ML_NAME	"MLogger_1359"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.11
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.15
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.08
+
+#elif	MLPARAM_1360
+#define ML_NAME	"MLogger_1360"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.10
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.44
+#define GLB_COEF_A	1.023
+#define GLB_COEF_B	0.02
+
+#elif	MLPARAM_1361
+#define ML_NAME	"MLogger_1361"
+#define DBT_COEF_A	1.018
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.42
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.21
+
+#elif	MLPARAM_1362
+#define ML_NAME	"MLogger_1362"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.083
+#define HMD_COEF_B	-2.45
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1363
+#define ML_NAME	"MLogger_1363"
+#define DBT_COEF_A	1.020
+#define DBT_COEF_B	0.09
+#define HMD_COEF_A	1.085
+#define HMD_COEF_B	-2.47
+#define GLB_COEF_A	1.019
+#define GLB_COEF_B	0.25
+
+#elif	MLPARAM_1364
+#define ML_NAME	"MLogger_1364"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.18
+#define HMD_COEF_A	1.074
+#define HMD_COEF_B	-2.07
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.22
+
+#elif	MLPARAM_1365
+#define ML_NAME	"MLogger_1365"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.17
+#define HMD_COEF_A	1.088
+#define HMD_COEF_B	-2.45
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1366
+#define ML_NAME	"MLogger_1366"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.19
+#define HMD_COEF_A	1.080
+#define HMD_COEF_B	-2.37
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.27
+
+#elif	MLPARAM_1367
+#define ML_NAME	"MLogger_1367"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.30
+#define HMD_COEF_A	1.083
+#define HMD_COEF_B	-2.41
+#define GLB_COEF_A	1.016
+#define GLB_COEF_B	0.23
+
+#elif	MLPARAM_1368
+#define ML_NAME	"MLogger_1368"
+#define DBT_COEF_A	1.017
+#define DBT_COEF_B	0.15
+#define HMD_COEF_A	1.071
+#define HMD_COEF_B	-2.30
+#define GLB_COEF_A	1.021
+#define GLB_COEF_B	0.20
+
+#elif	MLPARAM_1369
+#define ML_NAME	"MLogger_1369"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.072
+#define HMD_COEF_B	-2.26
+#define GLB_COEF_A	1.018
+#define GLB_COEF_B	0.25
+
+#elif	MLPARAM_1370
+#define ML_NAME	"MLogger_1370"
+#define DBT_COEF_A	1.016
+#define DBT_COEF_B	0.24
+#define HMD_COEF_A	1.075
+#define HMD_COEF_B	-2.26
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.29
+
+#elif	MLPARAM_1371
+#define ML_NAME	"MLogger_1371"
+#define DBT_COEF_A	1.015
+#define DBT_COEF_B	0.16
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.29
+#define GLB_COEF_A	1.020
+#define GLB_COEF_B	0.20
+
+#elif	MLPARAM_1372
+#define ML_NAME	"MLogger_1372"
+#define DBT_COEF_A	1.014
+#define DBT_COEF_B	0.20
+#define HMD_COEF_A	1.084
+#define HMD_COEF_B	-2.37
+#define GLB_COEF_A	1.017
+#define GLB_COEF_B	0.27
+
+#elif	MLPARAM_1373
+#define ML_NAME	"MLogger_1373"
+#define DBT_COEF_A	1.025
+#define DBT_COEF_B	0.04
+#define HMD_COEF_A	1.099
+#define HMD_COEF_B	-2.22
+#define GLB_COEF_A	1.027
+#define GLB_COEF_B	0.02
+
+#elif	MLPARAM_1374
+#define ML_NAME	"MLogger_1374"
+#define DBT_COEF_A	1.023
+#define DBT_COEF_B	0.04
+#define HMD_COEF_A	1.088
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.027
+#define GLB_COEF_B	0.02
+
+#elif	MLPARAM_1375
+#define ML_NAME	"MLogger_1375"
+#define DBT_COEF_A	1.027
+#define DBT_COEF_B	-0.09
+#define HMD_COEF_A	1.099
+#define HMD_COEF_B	-2.12
+#define GLB_COEF_A	1.026
+#define GLB_COEF_B	0.06
+
+#elif	MLPARAM_1376
+#define ML_NAME	"MLogger_1376"
+#define DBT_COEF_A	1.023
+#define DBT_COEF_B	0.03
+#define HMD_COEF_A	1.098
+#define HMD_COEF_B	-2.42
+#define GLB_COEF_A	1.029
+#define GLB_COEF_B	-0.05
+
+#elif	MLPARAM_1377
+#define ML_NAME	"MLogger_1377"
+#define DBT_COEF_A	1.024
+#define DBT_COEF_B	0.00
+#define HMD_COEF_A	1.097
+#define HMD_COEF_B	-2.45
+#define GLB_COEF_A	1.026
+#define GLB_COEF_B	0.06
+
+#elif	MLPARAM_1378
+#define ML_NAME	"MLogger_1378"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.06
+#define HMD_COEF_A	1.099
+#define HMD_COEF_B	-2.35
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.10
+
+#elif	MLPARAM_1379
+#define ML_NAME	"MLogger_1379"
+#define DBT_COEF_A	1.024
+#define DBT_COEF_B	-0.01
+#define HMD_COEF_A	1.101
+#define HMD_COEF_B	-2.53
+#define GLB_COEF_A	1.028
+#define GLB_COEF_B	0.01
+
+#elif	MLPARAM_1380
+#define ML_NAME	"MLogger_1380"
+#define DBT_COEF_A	1.021
+#define DBT_COEF_B	0.11
+#define HMD_COEF_A	1.096
+#define HMD_COEF_B	-2.21
+#define GLB_COEF_A	1.025
+#define GLB_COEF_B	0.07
+
+#elif	MLPARAM_1381
+#define ML_NAME	"MLogger_1381"
+#define DBT_COEF_A	1.023
+#define DBT_COEF_B	0.04
+#define HMD_COEF_A	1.096
+#define HMD_COEF_B	-2.33
+#define GLB_COEF_A	1.025
+#define GLB_COEF_B	0.08
+
+#elif	MLPARAM_1382
+#define ML_NAME	"MLogger_1382"
+#define DBT_COEF_A	1.021
+#define DBT_COEF_B	0.08
+#define HMD_COEF_A	1.094
+#define HMD_COEF_B	-2.08
+#define GLB_COEF_A	1.024
+#define GLB_COEF_B	0.15
+
+#elif	MLPARAM_1383
+#define ML_NAME	"MLogger_1383"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.07
+#define HMD_COEF_A	1.091
+#define HMD_COEF_B	-2.31
+#define GLB_COEF_A	1.025
+#define GLB_COEF_B	0.07
+
+#elif	MLPARAM_1384
+#define ML_NAME	"MLogger_1384"
+#define DBT_COEF_A	1.022
+#define DBT_COEF_B	0.06
+#define HMD_COEF_A	1.092
+#define HMD_COEF_B	-2.36
+#define GLB_COEF_A	1.023
+#define GLB_COEF_B	0.13
+
+#elif	MLPARAM_1385
+#define ML_NAME	"MLogger_1385"
+#define DBT_COEF_A	1.045
+#define DBT_COEF_B	-0.57
+#define HMD_COEF_A	1.134
+#define HMD_COEF_B	-2.33
+#define GLB_COEF_A	1.047
+#define GLB_COEF_B	-0.51
+
+#elif	MLPARAM_1386
+#define ML_NAME	"MLogger_1386"
+#define DBT_COEF_A	1.044
+#define DBT_COEF_B	-0.54
+#define HMD_COEF_A	1.132
+#define HMD_COEF_B	-2.17
+#define GLB_COEF_A	1.045
+#define GLB_COEF_B	-0.44
+
+#elif	MLPARAM_1387
+#define ML_NAME	"MLogger_1387"
+#define DBT_COEF_A	1.048
+#define DBT_COEF_B	-0.68
+#define HMD_COEF_A	1.140
+#define HMD_COEF_B	-2.43
+#define GLB_COEF_A	1.044
+#define GLB_COEF_B	-0.41
+
+#elif	MLPARAM_1388
+#define ML_NAME	"MLogger_1388"
+#define DBT_COEF_A	1.044
+#define DBT_COEF_B	-0.51
+#define HMD_COEF_A	1.130
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.043
+#define GLB_COEF_B	-0.41
+
+#elif	MLPARAM_1389
+#define ML_NAME	"MLogger_1389"
+#define DBT_COEF_A	1.043
+#define DBT_COEF_B	-0.49
+#define HMD_COEF_A	1.135
+#define HMD_COEF_B	-2.38
+#define GLB_COEF_A	1.044
+#define GLB_COEF_B	-0.41
+
+#elif	MLPARAM_1390
+#define ML_NAME	"MLogger_1390"
+#define DBT_COEF_A	1.042
+#define DBT_COEF_B	-0.51
+#define HMD_COEF_A	1.134
+#define HMD_COEF_B	-2.17
+#define GLB_COEF_A	1.041
+#define GLB_COEF_B	-0.34
+
+#elif	MLPARAM_1391
+#define ML_NAME	"MLogger_1391"
+#define DBT_COEF_A	1.042
+#define DBT_COEF_B	-0.47
+#define HMD_COEF_A	1.121
+#define HMD_COEF_B	-2.33
+#define GLB_COEF_A	1.045
+#define GLB_COEF_B	-0.48
+
+#elif	MLPARAM_1392
+#define ML_NAME	"MLogger_1392"
+#define DBT_COEF_A	1.039
+#define DBT_COEF_B	-0.39
+#define HMD_COEF_A	1.128
+#define HMD_COEF_B	-2.32
+#define GLB_COEF_A	1.043
+#define GLB_COEF_B	-0.38
+
+#elif	MLPARAM_1393
+#define ML_NAME	"MLogger_1393"
+#define DBT_COEF_A	1.038
+#define DBT_COEF_B	-0.33
+#define HMD_COEF_A	1.110
+#define HMD_COEF_B	-2.20
+#define GLB_COEF_A	1.043
+#define GLB_COEF_B	-0.41
+
+#elif	MLPARAM_1394
+#define ML_NAME	"MLogger_1394"
+#define DBT_COEF_A	1.035
+#define DBT_COEF_B	-0.28
+#define HMD_COEF_A	1.117
+#define HMD_COEF_B	-2.29
+#define GLB_COEF_A	1.036
+#define GLB_COEF_B	-0.18
+
+#elif	MLPARAM_1395
+#define ML_NAME	"MLogger_1395"
+#define DBT_COEF_A	1.034
+#define DBT_COEF_B	-0.28
+#define HMD_COEF_A	1.124
+#define HMD_COEF_B	-2.28
+#define GLB_COEF_A	1.035
+#define GLB_COEF_B	-0.22
+
+#elif	MLPARAM_1396
+#define ML_NAME	"MLogger_1396"
+#define DBT_COEF_A	1.035
+#define DBT_COEF_B	-0.28
+#define HMD_COEF_A	1.119
+#define HMD_COEF_B	-2.29
+#define GLB_COEF_A	1.039
+#define GLB_COEF_B	-0.33
+
+#elif	MLPARAM_1397
+#define ML_NAME	"MLogger_1397"
+#define DBT_COEF_A	1.051
+#define DBT_COEF_B	-0.71
+#define HMD_COEF_A	1.104
+#define HMD_COEF_B	-2.23
+#define GLB_COEF_A	1.044
+#define GLB_COEF_B	-0.44
+
+#elif	MLPARAM_1398
+#define ML_NAME	"MLogger_1398"
+#define DBT_COEF_A	1.048
+#define DBT_COEF_B	-0.64
+#define HMD_COEF_A	1.098
+#define HMD_COEF_B	-2.30
+#define GLB_COEF_A	1.041
+#define GLB_COEF_B	-0.38
+
+#elif	MLPARAM_1399
+#define ML_NAME	"MLogger_1399"
+#define DBT_COEF_A	1.045
+#define DBT_COEF_B	-0.56
+#define HMD_COEF_A	1.100
+#define HMD_COEF_B	-2.16
+#define GLB_COEF_A	1.040
+#define GLB_COEF_B	-0.33
+
+#elif	MLPARAM_1400
+#define ML_NAME	"MLogger_1400"
+#define DBT_COEF_A	1.044
+#define DBT_COEF_B	-0.57
+#define HMD_COEF_A	1.106
+#define HMD_COEF_B	-2.26
+#define GLB_COEF_A	1.039
+#define GLB_COEF_B	-0.31
+
 #elif	MLPARAM_0531
 #define ML_NAME	"MLogger_0531"
 #define DBT_COEF_A	1.017

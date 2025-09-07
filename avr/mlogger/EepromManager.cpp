@@ -12,7 +12,7 @@
 
 #include "parameters.h"
 #include "EepromManager.h"
-#include "Utilities.h"
+#include "Crc.h"
 
 //EEPROMの初期化フラグ。コンパイル後最初の呼び出しのみ初期化する
 static uint8_t EEMEM EEP_INITFLAG;
@@ -103,7 +103,7 @@ void initMSettings(){
 void writeCFactors()
 {
 	// CRCを計算
-	EepromManager::cFactors.crc = Utilities::crc8(
+	EepromManager::cFactors.crc = crc::crc8(
 	(uint8_t*)&EepromManager::cFactors,
 	sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -116,7 +116,7 @@ void writeCFactors()
 void writeVCCoefficients()
 {
 	// CRCを計算
-	EepromManager::vcCoefficients.crc = Utilities::crc8(
+	EepromManager::vcCoefficients.crc = crc::crc8(
 	(uint8_t*)&EepromManager::vcCoefficients,
 	sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -129,7 +129,7 @@ void writeVCCoefficients()
 void writeMSettings()
 {
 	// CRCを計算
-	EepromManager::mSettings.crc = Utilities::crc8(
+	EepromManager::mSettings.crc = crc::crc8(
 	(uint8_t*)&EepromManager::mSettings,
 	sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc) //crcメンバー自身のサイズは計算範囲から除外する
 	);
@@ -329,7 +329,7 @@ void LoadCorrectionFactor()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = EepromManager::cFactors.crc;
-	uint8_t actual_crc = Utilities::crc8(
+	uint8_t actual_crc = crc::crc8(
 		(uint8_t*)&EepromManager::cFactors,
 		sizeof(CorrectionFactors) - sizeof(EepromManager::cFactors.crc)
 	);
@@ -346,7 +346,7 @@ void LoadVelocityCharateristics()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = EepromManager::vcCoefficients.crc;
-	uint8_t actual_crc = Utilities::crc8(
+	uint8_t actual_crc = crc::crc8(
 		(uint8_t*)&EepromManager::vcCoefficients,
 		sizeof(VelocityCharacteristicCoefficients) - sizeof(EepromManager::vcCoefficients.crc)
 	);
@@ -363,7 +363,7 @@ void LoadMeasurementSetting()
 
 	// 読み込んだデータのCRCを検証
 	uint8_t expected_crc = EepromManager::mSettings.crc;
-	uint8_t actual_crc = Utilities::crc8(
+	uint8_t actual_crc = crc::crc8(
 		(uint8_t*)&EepromManager::mSettings,
 		sizeof(MeasurementSettings) - sizeof(EepromManager::mSettings.crc)
 	);

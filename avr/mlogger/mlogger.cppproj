@@ -90,7 +90,7 @@
     <ListValues>
       <Value>F_CPU=4000000UL</Value>
       <Value>NDEBUG</Value>
-      <Value>MLPARAM_0000</Value>
+      <Value>MLPARAM_1395</Value>
     </ListValues>
   </avrgcccpp.compiler.symbols.DefSymbols>
   <avrgcccpp.compiler.directories.IncludePaths>
@@ -256,10 +256,10 @@
     <Compile Include="parameters.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Utilities.cpp">
+    <Compile Include="Crc.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Utilities.h">
+    <Compile Include="Crc.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

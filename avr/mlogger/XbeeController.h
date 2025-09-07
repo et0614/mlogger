@@ -18,10 +18,12 @@ namespace XbeeApi {
 
 	// フレームタイプID
 	namespace FrameType {
-		constexpr uint8_t ZIGBEE_TX_REQUEST   = 0x10;
-		constexpr uint8_t USER_DATA_RELAY     = 0x2D;
+		constexpr uint8_t AT_COMMAND            = 0x08;
+		constexpr uint8_t ZIGBEE_TX_REQUEST		= 0x10;
+		constexpr uint8_t USER_DATA_RELAY		= 0x2D;
+		constexpr uint8_t AT_COMMAND_RESPONSE   = 0x88;
 		constexpr uint8_t ZIGBEE_RECEIVE_PACKET = 0x90;
-		constexpr uint8_t USER_DATA_RELAY_IN  = 0xAD; // 受信時のフレームタイプ
+		constexpr uint8_t USER_DATA_RELAY_IN	= 0xAD; // 受信時のフレームタイプ
 	}
 
 	// フレーム構造に関する定数
@@ -47,6 +49,15 @@ namespace XbeeApi {
 		constexpr uint8_t USER_DATA_RELAY_IN  = 4;
 	}
 } // namespace XbeeApi
+
+// ATコマンドの応答を格納する構造体
+struct AtCommandResponse {
+	uint8_t frame_id;
+	char command[2];
+	uint8_t status;
+	uint8_t value[16]; // 応答データ（可変長だが、十分なサイズを確保）
+	uint8_t value_len;
+};
 
 class XbeeController
 {
@@ -128,6 +139,9 @@ class XbeeController
 		static int addCsum(int csum, char nbyte);
 	
 		static void receiveMessage(char message[]);
+		
+		//ATコマンドAPI関連のプライベート関数
+		static void sendAtCommandApiFrame(const char at_command[2], uint8_t frame_id, const uint8_t* param = nullptr, uint8_t param_len = 0);
 };
 
 #endif /* XBEE_CONTROLLER_H_ */

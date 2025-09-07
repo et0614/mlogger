@@ -6,7 +6,7 @@
  */ 
 
 #include "Stcc4.h"
-#include "../Utilities.h"
+#include "../Crc.h"
 #include <util/delay.h>
 
 //アドレス
@@ -53,7 +53,7 @@ bool Stcc4::_sendCommandWithArguments(uint16_t command, const uint16_t args[], u
 		buffer[base_index + 1] = arg_lsb;
 		
 		// 2バイトの引数データからCRC8を計算
-		buffer[base_index + 2] = Utilities::crc8(&buffer[base_index], 2);
+		buffer[base_index + 2] = crc::crc8(&buffer[base_index], 2);
 	}
 	
 	// 組み立てたパケット全体を送信
@@ -94,7 +94,7 @@ bool Stcc4::performForcedRecalibration(uint16_t co2Level, int16_t* correction){
 	}
 
 	// CRCチェック
-	if (Utilities::crc8(buffer, 2) != buffer[2]) {
+	if (crc::crc8(buffer, 2) != buffer[2]) {
 		return false; // CRCエラー
 	}
 
@@ -151,19 +151,19 @@ bool Stcc4::readMeasurement(uint16_t * co2, float * temperature, float * humidit
 	uint8_t* hmdBuff = &buffer[6]; // 湿度データ (3バイト)
 	
 	// CO2のCRCチェックと変換
-	if (Utilities::crc8(co2Buff, 2) == co2Buff[2]) 
+	if (crc::crc8(co2Buff, 2) == co2Buff[2]) 
 		*co2 = (co2Buff[0] << 8) | co2Buff[1];
 	else return false; // CRCエラー
 	
 	// 温度のCRCチェックと変換
-	if (Utilities::crc8(dbtBuff, 2) == dbtBuff[2]) {
+	if (crc::crc8(dbtBuff, 2) == dbtBuff[2]) {
 		uint16_t raw_t = (dbtBuff[0] << 8) | dbtBuff[1];
 		*temperature = -45.0f + 175.0f * (float)raw_t / 65535.0f;
 	}
 	else return false; // CRCエラー
 	
 	// 湿度のCRCチェックと変換
-	if (Utilities::crc8(hmdBuff, 2) == hmdBuff[2]) {
+	if (crc::crc8(hmdBuff, 2) == hmdBuff[2]) {
 		uint16_t raw_h = (hmdBuff[0] << 8) | hmdBuff[1];
 		float rh = -6.0f + 125.0f * (float)raw_h / 65535.0f;
 		// 物理的な範囲内に値を収める

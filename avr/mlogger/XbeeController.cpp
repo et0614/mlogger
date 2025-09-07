@@ -134,7 +134,8 @@ void XbeeController::sendAtCmd(const char data[]){
 
 bool XbeeController::xbeeSettingInitialized(){
 	//XBeeが初期化済みならばスキップ
-	if(EepromManager::isXBeeInitialized()) return 1;
+	if(EepromManager::isXBeeInitialized()) 
+		return 1;
 	
 	bool hasChanged = false;
 	char message[MBUFF_LENGTH];
@@ -145,122 +146,162 @@ bool XbeeController::xbeeSettingInitialized(){
 	UartDriver::sendChars("+++");
 	_delay_ms(1100); // ガードタイム
 	XbeeController::receiveMessage(message);
-	//ATモードへ行けない場合にはすでにAPI Enabledになっている。
-	//この場合には別途、初期化済なので初期化不要
-	if(strcmp(message, "OK") != 0) {
-		EepromManager::xbeeInitialized();
-		return 1;
+	bool apiEnabled = strcmp(message, "OK") != 0;
+	
+	//APIモードでの初期設定********************
+	if(apiEnabled){
+		const uint8_t frameIdNoAck = 0x00; // 応答を要求しないフレームID
+
+		// 1. SP (Cyclic Sleep Period) を 0x64 (1000 ms) に設定
+		const uint8_t sp_param[] = {0x64};
+		sendAtCommandApiFrame("SP", frameIdNoAck, sp_param, sizeof(sp_param));
+		_delay_ms(100);
+
+		// 2. SN (Number of Cyclic Sleep Periods) を 3600 に設定
+		const uint8_t sn_param[] = {0x0E, 0x10}; // 3600 = 0x0E10
+		sendAtCommandApiFrame("SN", frameIdNoAck, sn_param, sizeof(sn_param));
+		_delay_ms(100);
+
+		// 3. CE (Coordinator Enable) を 0 (End Device) に設定
+		const uint8_t ce_param[] = {0};
+		sendAtCommandApiFrame("CE", frameIdNoAck, ce_param, sizeof(ce_param));
+		_delay_ms(100);
+
+		// 4. SM (Sleep Mode) を 1 (Pin Hibernate) に設定
+		const uint8_t sm_param[] = {1};
+		sendAtCommandApiFrame("SM", frameIdNoAck, sm_param, sizeof(sm_param));
+		_delay_ms(100);
+
+		// 5. BT (Bluetooth Enable) を 1 (Enabled) に設定
+		const uint8_t bt_param[] = {1};
+		sendAtCommandApiFrame("BT", frameIdNoAck, bt_param, sizeof(bt_param));
+		_delay_ms(100);
+
+		// 6. D5（Zigbee通信LED）を 4 (OFF/Low) に設定
+		const uint8_t d5_param[] = {4};
+		sendAtCommandApiFrame("D5", frameIdNoAck, d5_param, sizeof(d5_param));
+		_delay_ms(100);
+
+		// 7. BI（Bluetooth Identifier）をロガー名に設定
+		sendAtCommandApiFrame("BI", frameIdNoAck, (const uint8_t*)ML_NAME, strlen(ML_NAME));
+		_delay_ms(100);
+
+		// 8. 全ての設定を不揮発性メモリに書き込み (重要)
+		sendAtCommandApiFrame("WR", frameIdNoAck, nullptr, 0);
+		_delay_ms(100);
+	}
+	
+	//ATモードでの初期設定********************
+	else{
+		//SPは1000msec=0x64
+		UartDriver::sendChars("atsp\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "64") != 0) {
+			UartDriver::sendChars("atsp64\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//SNは3600sec
+		UartDriver::sendChars("atsn\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "3600") != 0) {
+			UartDriver::sendChars("atsn3600\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//CEはend device(0)
+		UartDriver::sendChars("atce\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "0") != 0) {
+			UartDriver::sendChars("atce0\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//SMはPin Hibernate(1)
+		UartDriver::sendChars("atsm\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "1") != 0) {
+			UartDriver::sendChars("atsm1\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//d5はZigbee通信状況のLED表示をOff（Out low:4)に設定。
+		UartDriver::sendChars("atd5\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "0") != 0) {
+			UartDriver::sendChars("atd54\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//Bluetooth有効/無効+password(ml_pass)
+		UartDriver::sendChars("atbt\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "0") == 0) {
+			UartDriver::sendChars("at$S28513497\r"); //salt
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			UartDriver::sendChars("at$V6567694B0CA9ADCED8D5B2B0015718D1E2637B86E3E178E029936A078926C2B0\r"); //$V
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			UartDriver::sendChars("at$W259F6833E1E1932E4485F48865FB6B76EC6E847A7272C77A8C27DD7DF94E44DC\r"); //$W
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			UartDriver::sendChars("at$XA99A6E3937FBB8D05BBB4E4A8C4CB221C14D15CD004139C77B6FE0C8AF2932D8\r"); //$X
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			UartDriver::sendChars("at$Y6D4411D507FC52AFD5877D6E8529AEE7FB931F10944BC0D058FB246D0DE071DB\r"); //$Y
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			UartDriver::sendChars("atbt1\r"); //Bluetooth 有効化
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//biはBluetooth identifier
+		UartDriver::sendChars("atbi\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, ML_NAME) != 0) {
+			UartDriver::sendChars("atbi");
+			UartDriver::sendChars(ML_NAME);
+			UartDriver::sendChars("\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//AP
+		UartDriver::sendChars("atap\r");
+		XbeeController::receiveMessage(message);
+		if(strcmp(message, "1") != 0) {
+			UartDriver::sendChars("atap1\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+			hasChanged = true;
+		}
+		
+		//変更があった場合にはメモリに書き込む
+		if(hasChanged){
+			UartDriver::sendChars("atwr\r");
+			XbeeController::receiveMessage(message);
+			if(strcmp(message, "OK") != 0) return 0;
+		}
 	}
 		
-	//SPは1000msec=0x64
-	UartDriver::sendChars("atsp\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "64") != 0) {
-		UartDriver::sendChars("atsp64\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//SNは3600sec
-	UartDriver::sendChars("atsn\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "3600") != 0) {
-		UartDriver::sendChars("atsn3600\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//CEはend device(0)
-	UartDriver::sendChars("atce\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "0") != 0) {
-		UartDriver::sendChars("atce0\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//SMはPin Hibernate(1)
-	UartDriver::sendChars("atsm\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "1") != 0) {
-		UartDriver::sendChars("atsm1\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//d5はZigbee通信状況のLED表示をOff（Out low:4)に設定。
-	UartDriver::sendChars("atd5\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "0") != 0) {
-		UartDriver::sendChars("atd54\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//Bluetooth有効/無効+password
-	UartDriver::sendChars("atbt\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "0") == 0) {		
-		UartDriver::sendChars("at$S28513497\r"); //salt
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		UartDriver::sendChars("at$V6567694B0CA9ADCED8D5B2B0015718D1E2637B86E3E178E029936A078926C2B0\r"); //$V
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		UartDriver::sendChars("at$W259F6833E1E1932E4485F48865FB6B76EC6E847A7272C77A8C27DD7DF94E44DC\r"); //$W
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		UartDriver::sendChars("at$XA99A6E3937FBB8D05BBB4E4A8C4CB221C14D15CD004139C77B6FE0C8AF2932D8\r"); //$X
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		UartDriver::sendChars("at$Y6D4411D507FC52AFD5877D6E8529AEE7FB931F10944BC0D058FB246D0DE071DB\r"); //$Y
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		UartDriver::sendChars("atbt1\r"); //Bluetooth 有効化
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-	
-	//biはBluetooth identifier
-	UartDriver::sendChars("atbi\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, ML_NAME) != 0) {
-		UartDriver::sendChars("atbi");
-		UartDriver::sendChars(ML_NAME);
-		UartDriver::sendChars("\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-				
-	//AP
-	UartDriver::sendChars("atap\r");
-	XbeeController::receiveMessage(message);
-	if(strcmp(message, "1") != 0) {
-		UartDriver::sendChars("atap1\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-		hasChanged = true;
-	}
-		
-	//変更があった場合にはメモリに書き込む
-	if(hasChanged){
-		UartDriver::sendChars("atwr\r");
-		XbeeController::receiveMessage(message);
-		if(strcmp(message, "OK") != 0) return 0;
-	}
-	
 	//XBee初期化フラグを記録
 	EepromManager::xbeeInitialized();
 	return 1;
 }
-
 
 bool XbeeController::processXbeeByte(char dat,  char* output_buffer, int buffer_size)
 {
@@ -377,4 +418,41 @@ void XbeeController::receiveMessage(char message[]){
 		_delay_ms(1);
 		timeout_counter++;
 	}
+}
+
+/**
+ * @brief ATコマンドをAPIフレームとして送信する
+ * @param at_command 2文字のATコマンド (例: "SP")
+ * @param frame_id 応答を識別するためのフレームID (0は応答不要)
+ * @param param 設定するパラメータ（問い合わせの場合はnullptr）
+ * @param param_len パラメータの長さ
+ */
+void XbeeController::sendAtCommandApiFrame(const char at_command[2], uint8_t frame_id, const uint8_t* param, uint8_t param_len)
+{
+    uint8_t checksum = 0;
+    uint8_t payload_len = 4 + param_len; // FrameType + FrameID + AT Command + Param
+
+    UartDriver::sendChar(XbeeApi::START_DELIMITER);
+    UartDriver::sendChar(0x00); // Length MSB
+    UartDriver::sendChar(payload_len); // Length LSB
+
+    // --- Checksum対象 ---
+    UartDriver::sendChar(XbeeApi::FrameType::AT_COMMAND);
+    checksum += XbeeApi::FrameType::AT_COMMAND;
+
+    UartDriver::sendChar(frame_id);
+    checksum += frame_id;
+
+    UartDriver::sendChar(at_command[0]);
+    checksum += at_command[0];
+    UartDriver::sendChar(at_command[1]);
+    checksum += at_command[1];
+
+    for (uint8_t i = 0; i < param_len; i++) {
+        UartDriver::sendChar(param[i]);
+        checksum += param[i];
+    }
+    // --------------------
+
+    UartDriver::sendChar(0xFF - checksum);
 }

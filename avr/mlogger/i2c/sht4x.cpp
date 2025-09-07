@@ -6,7 +6,7 @@
  */ 
 
 #include "Sht4x.h"
-#include "../Utilities.h"
+#include "../Crc.h"
 #include "I2cDriver.h"
 #include <util/delay.h>
 
@@ -61,14 +61,14 @@ bool Sht4x::readValue(float* tempValue, float* humiValue, SHT4XType sht4xType)
 	uint8_t* hBuff = &buffer[3]; // 湿度データ (3バイト)
 
 	// 温度のCRCチェックと変換
-	if (Utilities::crc8(tBuff, 2) == tBuff[2]) {
+	if (crc::crc8(tBuff, 2) == tBuff[2]) {
 		uint16_t raw_t = (tBuff[0] << 8) | tBuff[1];
 		*tempValue = -45.0f + 175.0f * (float)raw_t / 65535.0f;
 	}
 	else return false; // CRCエラー
 
 	// 湿度のCRCチェックと変換
-	if (Utilities::crc8(hBuff, 2) == hBuff[2]) {
+	if (crc::crc8(hBuff, 2) == hBuff[2]) {
 		uint16_t raw_h = (hBuff[0] << 8) | hBuff[1];
 		float rh = -6.0f + 125.0f * (float)raw_h / 65535.0f;
 		// 物理的な範囲内に値を収める
@@ -93,8 +93,8 @@ bool Sht4x::readSerial(uint32_t* serialNumber, SHT4XType sht4xType)
 
 	// 受信したデータのCRCチェック
 	// データは2バイトのデータと1バイトのCRCが2セット
-	uint8_t crc_word1 = Utilities::crc8(&buffer[0], 2);
-	uint8_t crc_word2 = Utilities::crc8(&buffer[3], 2);
+	uint8_t crc_word1 = crc::crc8(&buffer[0], 2);
+	uint8_t crc_word2 = crc::crc8(&buffer[3], 2);
 	if (crc_word1 != buffer[2] || crc_word2 != buffer[5]) 
 		return false; // CRCエラー
 

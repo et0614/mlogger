@@ -1,6 +1,6 @@
 /**
  * @file UartDriver.cpp
- * @brief AVR(ATMega328)でUART通信を行う
+ * @brief AVR128DB32でUART通信を行う
  * @author E.Togashi
  * @date 2020/8/4
  */
@@ -38,7 +38,7 @@ void UartDriver::initialize(void)
 	//ボーレートの設定
 	USART0.BAUD = (uint16_t)BAUD_CALC(9600);
 	
-	USART0_CTRLA |= USART_RXCIF_bm; //受信完了イベント有効化
+	USART0_CTRLA |= USART_RXCIE_bm; //受信完了イベント有効化
 	USART0.CTRLB |= (USART_RXEN_bm | USART_TXEN_bm); //送受信有効化
 	USART0.CTRLC = 0b00000011;//00 00 0 11: Asynchronous, noparity, stopbit=1, 8bit
 	

@@ -188,8 +188,8 @@ int main(void)
 		//Stcc4::performConditioning(); //22秒かかる初期化処理 //この処理を加えると強制キャリブレーションの効果が弱まるように思われる
 		//co2_condition_time = CO2_CONDITIONING_SECONDS; //この処理を加えると強制キャリブレーションの効果が弱まるように思われる
 	}
-	Sht4x::initialize(Sht4x::SHT4_AD); //温湿度センサ
-	Sht4x::initialize(Sht4x::SHT4_BD); //グローブ温度センサ
+	Sht4x::initialize(Sht4x::SHT4_BD); //温湿度センサ
+	Sht4x::initialize(Sht4x::SHT4_AD); //グローブ温度センサ
 	Vcnl4030::initialize(); //照度計
 	XbeeController::initialize();  //XBee（UART）
 	

@@ -1,6 +1,6 @@
 /**
- * @file UartDriver.h
- * @brief AVR(ATMega328)でUART通信を行う
+ * @file UartDriver.cpp
+ * @brief AVR128DB32でUART通信を行う
  * @author E.Togashi
  * @date 2020/8/4
  */
