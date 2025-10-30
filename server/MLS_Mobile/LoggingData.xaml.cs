@@ -1,11 +1,10 @@
 namespace MLS_Mobile;
 
-using System.Text;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
-
-using CommunityToolkit.Maui.Storage;
-
 using MLS_Mobile.Resources.i18n;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 [QueryProperty(nameof(FileName), "FileName")]
 public partial class LoggingData : ContentPage
@@ -74,6 +73,17 @@ public partial class LoggingData : ContentPage
   /// <returns>クリップボード用データ</returns>
   public static string MakeClipData(string fileName, int maxLines)
   {
+    string data = MLUtility.LoadDataFile(fileName, maxLines);
+    // CO2があるデータと無いデータがあるので、1行目のカンマの数で判定する//当面の処理。いつか消したい。
+    int commaCount = 0;
+    using (var reader = new StringReader(data))
+    {
+      string firstLine = reader.ReadLine();
+      if (firstLine != null) commaCount = firstLine.Count(c => c == ',');
+    }
+    bool hasCO2 = commaCount == 10;
+    string co2Header = hasCO2 ? ("," + MLSResource.CO2level) : "";
+
     return MLSResource.Date + "," + 
       MLSResource.Time + "," +
       MLSResource.DrybulbTemperature + "," +
@@ -82,7 +92,10 @@ public partial class LoggingData : ContentPage
       MLSResource.Velocity + "," +
       MLSResource.Illuminance + "," +
       MLSResource.GlobeTemperatureVoltage + "," +
-      MLSResource.VelocityVoltage + Environment.NewLine +
+      MLSResource.VelocityVoltage + 
+      co2Header + 
+      ",note" + 
+      Environment.NewLine +
       MLUtility.LoadDataFile(fileName, maxLines);
   }
 
@@ -101,35 +114,39 @@ public partial class LoggingData : ContentPage
 
     //タイトル行
     string[] bf = lines[0].Split(',');
+    int rowNum = bf.Length;
     int col = 0;
-    for (int j = 1; j < 9; j++)
+    for (int j = 1; j < rowNum; j++)
     {
-      Label lbl = new Label
+      if (j != 7 && j != 10) //GlobeTemperatureVoltageとnote列は表示しない
       {
-        Text = bf[j],
-        BackgroundColor = Colors.White,
-        HorizontalTextAlignment = TextAlignment.Center,
-        VerticalTextAlignment = TextAlignment.Center,
-        HorizontalOptions = LayoutOptions.Fill,
-        VerticalOptions = LayoutOptions.Fill,
-        Margin = new Thickness(1),
-        Padding = new Thickness(2),
-        LineBreakMode = LineBreakMode.CharacterWrap
-      };
-      if (j != 7) tableGrid.Add(lbl, col++, 0);
+        Label lbl = new Label
+        {
+          Text = bf[j],
+          BackgroundColor = Colors.White,
+          HorizontalTextAlignment = TextAlignment.Center,
+          VerticalTextAlignment = TextAlignment.Center,
+          HorizontalOptions = LayoutOptions.Fill,
+          VerticalOptions = LayoutOptions.Fill,
+          Margin = new Thickness(1),
+          Padding = new Thickness(2),
+          LineBreakMode = LineBreakMode.CharacterWrap
+        };
+        tableGrid.Add(lbl, col++, 0);
+      }
     }
 
     //データ行
-    StringBuilder[] sBuilds = new StringBuilder[7];
+    StringBuilder[] sBuilds = new StringBuilder[rowNum - 2];
     for (int i = 1; i < lines.Length; i++)
     {
       if (lines[i] != "")
       {
         bf = lines[i].Split(',');
         col = 0;
-        for (int j = 1; j < 9; j++)
+        for (int j = 1; j < rowNum; j++)
         {
-          if (j != 7)
+          if (j != 7 && j != 10) //GlobeTemperatureVoltageとnote列は表示しない
           {
             if (i == 1) sBuilds[col] = new StringBuilder("");
             if (i == lines.Length - 1) sBuilds[col].Append(bf[j]);
@@ -174,7 +191,7 @@ public partial class LoggingData : ContentPage
         Margin = new Thickness(1)
       };
       tableGrid.Add(iv, 0, 2);
-      tableGrid.SetColumnSpan(iv, 8);
+      tableGrid.SetColumnSpan(iv, rowNum - 2);
     }
   }
 

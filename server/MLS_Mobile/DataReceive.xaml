@@ -7,11 +7,11 @@
              Title="{x:Static res:MLSResource.DR_Title}"
              xmlns:model="clr-namespace:MLS_Mobile"
              x:DataType="model:MLoggerViewModel">
-
+    
     <ContentPage.BindingContext>
         <local:MLoggerViewModel />
     </ContentPage.BindingContext>
-    
+
     <Grid BackgroundColor="{StaticResource Lightest_G}">
         <ScrollView Orientation="Vertical" VerticalScrollBarVisibility="Never">
             <StackLayout Margin="20,20,20,0">

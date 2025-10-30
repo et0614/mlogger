@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ActiveDebugFramework>net9.0-ios</ActiveDebugFramework>
+    <ActiveDebugFramework>net9.0-android</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>リモート デバイス</ActiveDebugProfile>
-    <SelectedPlatformGroup>RemoteDevice</SelectedPlatformGroup>
+    <ActiveDebugProfile>Pixel 5 - API 34 (Android 14.0 - API 34)</ActiveDebugProfile>
+    <SelectedPlatformGroup>Emulator</SelectedPlatformGroup>
     <DefaultDevice>pixel_5_-_api_34</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
@@ -24,6 +24,8 @@
 &lt;/dict&gt;
 &lt;/plist&gt;
 </TargetiOSDevice>
+    <DeveloperId>MQDW8P86K5</DeveloperId>
+    <DevelopmentTeamId>MQDW8P86K5</DevelopmentTeamId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0-android|AnyCPU'">
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>

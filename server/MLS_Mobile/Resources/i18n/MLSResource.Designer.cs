@@ -493,6 +493,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Initialize CO2 Sensor に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_InitializeCO2Sensor {
+            get {
+                return ResourceManager.GetString("DS_InitializeCO2Sensor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Invalid number に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_InvalidNumber {

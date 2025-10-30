@@ -565,7 +565,7 @@ public partial class VelocityCalibrator2 : ContentPage
 
   /// <summary>計測値3点から風量と電圧の関係式の係数を計算する</summary>
   /// <remarks>
-  /// vel = B * vtg_n^2 + C * vtg_n
+  /// vel = B * vtg_n^A
   /// vtg_n = vtg / refVtg - 1.0
   /// </remarks>
   /// <param name="vel1">風速1[m/s]</param>

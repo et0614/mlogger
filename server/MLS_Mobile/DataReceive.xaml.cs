@@ -82,7 +82,7 @@ public partial class DataReceive : ContentPage
     BindingContext = MLVModel;
 
     cloTitle.Text = MLSResource.ClothingUnit + " [clo]";
-    metTitle.Text = MLSResource.MetabolicUnit + " [met]";  
+    metTitle.Text = MLSResource.MetabolicUnit + " [met]";
   }
 
   /// <summary>デコンストラクタ</summary>
@@ -158,7 +158,9 @@ public partial class DataReceive : ContentPage
       Logger.Velocity.LastValue.ToString("F3") + "," +
       Logger.Illuminance.LastValue.ToString("F2") + "," +
       Logger.GlobeTemperatureVoltage.ToString("F3") + "," +
-      Logger.VelocityVoltage.ToString("F3") + "," + memo + Environment.NewLine;
+      Logger.VelocityVoltage.ToString("F3") + "," +
+      Logger.CO2Level.LastValue.ToString("F0") + "," +
+      memo + Environment.NewLine;
 
     string fileName = Logger.LocalName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
     MLUtility.AppendData(fileName, line);

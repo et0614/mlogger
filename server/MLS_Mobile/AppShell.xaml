@@ -76,7 +76,12 @@
 
     <TabBar>
         <Tab Title="ML Scanner" Style="{StaticResource BLTab}">
-            <!--<ShellContent ContentTemplate="{DataTemplate local:VelocityCalibrator}"/>-->
+            <!--
+            ここで個別ページのレイアウトをデバッグ
+            <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
+            <ShellContent ContentTemplate="{DataTemplate local:DataReceive}"/>
+            <ShellContent ContentTemplate="{DataTemplate local:VelocityCalibrator}"/>
+            -->
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
         </Tab>
         <Tab Title="Data Files" Style="{StaticResource DFTab}">

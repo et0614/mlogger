@@ -504,4 +504,7 @@
   <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
     <value>Calibrate CO2 Sensor</value>
   </data>
+  <data name="DS_InitializeCO2Sensor" xml:space="preserve">
+    <value>Initialize CO2 Sensor</value>
+  </data>
 </root>

@@ -95,7 +95,7 @@ public partial class DeviceSetting : ContentPage
   private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
     //一般的ではないボタン群の表示・非表示切り替え
-    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = !calvBtnA.IsVisible;
+    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = !calvBtnA.IsVisible;
   }
 
   #endregion
@@ -111,7 +111,7 @@ public partial class DeviceSetting : ContentPage
     Accelerometer.Start(SensorSpeed.UI);
 
     //校正ボタンの表示・非表示
-    calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = isDeveloperMode;
+    calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = isDeveloperMode;
 
     //基本は測定を停止させる
     isStopLogging = true;
@@ -756,7 +756,7 @@ public partial class DeviceSetting : ContentPage
         if (tcs.Task.IsCompletedSuccessfully)
         {
           //更新された情報を反映
-          Application.Current.Dispatcher.Dispatch(() =>
+          Application.Current?.Dispatcher.Dispatch(() =>
           {
             Shell.Current.GoToAsync(nameof(CO2Calibrator),
               new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
@@ -765,7 +765,7 @@ public partial class DeviceSetting : ContentPage
         }
         else
         {
-          Application.Current.Dispatcher.Dispatch(() =>
+          Application.Current?.Dispatcher.Dispatch(() =>
           {
             DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
           });
@@ -777,7 +777,75 @@ public partial class DeviceSetting : ContentPage
         Logger.CalibratingCO2LevelReceivedEvent -= handler;
 
         //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(hideIndicator);
+        Application.Current?.Dispatcher.Dispatch(hideIndicator);
+      }
+    }
+  }
+
+  private async void CO2InitializeButton_Clicked(object sender, EventArgs e)
+  {
+    var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
+    var result = await this.ShowPopupAsync<string>(popup);
+    if (result != null)
+    {
+      if (!int.TryParse(result.Result, out int refLevel))
+      {
+        Application.Current?.Dispatcher.Dispatch(() =>
+        {
+          DisplayAlert("Alert", "CO2 level is invalid", "OK");
+        });
+        return;
+      }
+
+      //イベント待機タスクを作成
+      var tcs = new TaskCompletionSource<bool>();
+
+      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
+      EventHandler handler = (s, e) => tcs.TrySetResult(true);
+      Logger.InitializingCO2LevelReceivedEvent += handler;
+
+      //インジケータ表示
+      showIndicator(MLSResource.CR_Connecting);
+
+      try
+      {
+        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
+        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
+        {
+          try
+          {
+            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeInitializeCO2LevelCommand(refLevel))));
+          }
+          catch { }
+
+          //イベントが来るか、タイムアウト(500ms)するまで待つ
+          await Task.WhenAny(tcs.Task, Task.Delay(500));
+        }
+
+        //タスクが正常に完了した場合のみUIを更新
+        if (tcs.Task.IsCompletedSuccessfully)
+        {
+          //成功したらスタートページに戻る（計測器は12hの連続初期化処理に入る）
+          Application.Current?.Dispatcher.Dispatch(() =>
+          {
+            Shell.Current.GoToAsync("..");
+          });
+        }
+        else
+        {
+          Application.Current?.Dispatcher.Dispatch(() =>
+          {
+            DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
+          });
+        }
+      }
+      finally
+      {
+        //ハンドラを解除
+        Logger.InitializingCO2LevelReceivedEvent -= handler;
+
+        //インジケータを隠す
+        Application.Current?.Dispatcher.Dispatch(hideIndicator);
       }
     }
   }
@@ -806,7 +874,7 @@ public partial class DeviceSetting : ContentPage
         byte[] id = MLUtility.ConnectedXBee.GetParameter("ID");
         string panID = BitConverter.ToString(id).Replace("-", "").TrimStart('0');
 
-        Application.Current.Dispatcher.Dispatch(async () =>
+        Application.Current?.Dispatcher.Dispatch(async () =>
         {
           var popup = new TextInputPopup(MLSResource.DS_ChangePANID, panID, Keyboard.Numeric);
           var result = await this.ShowPopupAsync(popup);
@@ -832,7 +900,7 @@ public partial class DeviceSetting : ContentPage
       finally
       {
         //インジケータを隠す
-        Application.Current.Dispatcher.Dispatch(() =>
+        Application.Current?.Dispatcher.Dispatch(() =>
         {
           hideIndicator();
         });

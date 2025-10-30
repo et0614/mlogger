@@ -23,7 +23,7 @@
 
         <!--データテーブル表示-->
         <ScrollView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" Orientation="Both" HorizontalScrollBarVisibility="Always" VerticalScrollBarVisibility="Always">
-            <Grid Padding="1" x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80"/>
+            <Grid Padding="1" x:Name="tableGrid" RowDefinitions="60,Auto" BackgroundColor="{StaticResource Dark_G}" ColumnDefinitions="80,80,80,80,80,80,80,80"/>
         </ScrollView>
 
         <!--インジケータ-->

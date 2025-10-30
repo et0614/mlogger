@@ -504,4 +504,7 @@
   <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
     <value>CO2センサを校正する</value>
   </data>
+  <data name="DS_InitializeCO2Sensor" xml:space="preserve">
+    <value>CO2センサを初期化する</value>
+  </data>
 </root>

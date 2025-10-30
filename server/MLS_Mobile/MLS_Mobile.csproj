@@ -39,36 +39,38 @@
 
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>manual</ProvisioningType>
-	  <CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
-	  <CodesignProvision>mls_dist</CodesignProvision>
-	</PropertyGroup>
-
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.49</ApplicationDisplayVersion>
-	  <ApplicationVersion>52</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.51</ApplicationDisplayVersion>
+	  <ApplicationVersion>54</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.49</ApplicationDisplayVersion>
-	  <ApplicationVersion>52</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.51</ApplicationDisplayVersion>
+	  <ApplicationVersion>54</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.49</ApplicationDisplayVersion>
-	  <ApplicationVersion>52</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2.51</ApplicationDisplayVersion>
+	  <ApplicationVersion>54</ApplicationVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
-		<ApplicationDisplayVersion>1.2.49</ApplicationDisplayVersion>
-		<ApplicationVersion>52</ApplicationVersion>
+		<ApplicationDisplayVersion>1.2.51</ApplicationDisplayVersion>
+		<ApplicationVersion>54</ApplicationVersion>
+		<ProvisioningType>manual</ProvisioningType>
+		<CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
+		<CodesignProvision>mls_dist</CodesignProvision>
 		<!--ここから-->
 		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
 		<MtouchLink>SdkOnly</MtouchLink>
 		<UseInterpreter>true</UseInterpreter>
 		<MtouchExtraArgs>--optimize:-static-block-to-delegate-lookup</MtouchExtraArgs>
 		<!--ここまで-->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
+	  <CodesignKey>Apple Development: Created via API (MQDW8P86K5)</CodesignKey>
+	  <CodesignProvision>VS: net.hvacsimulator.mls Development</CodesignProvision>
 	</PropertyGroup>
 	
 	<ItemGroup>

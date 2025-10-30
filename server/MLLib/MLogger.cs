@@ -91,6 +91,9 @@ namespace MLLib
     /// <summary>CO2センサの自動校正受信イベント</summary>
     public event EventHandler? CalibratingCO2LevelReceivedEvent;
 
+    /// <summary>CO2センサの初期化処理受信イベント</summary>
+    public event EventHandler? InitializingCO2LevelReceivedEvent;
+
     /// <summary>日時更新受信イベント</summary>
     public event EventHandler? UpdateCurrentTimeReceivedEvent;
 
@@ -540,13 +543,13 @@ namespace MLLib
             TemperatureAutoCalibrationReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
-          //CO2濃度センサの有無
+          //CO2センサの有無
           case "HCS":
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             HasCO2LevelSensorReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
-          //CO2濃度校正
+          //CO2センサ校正
           case "CCL":
             string[] bf = NextCommand.Remove(0, 4).TrimEnd('\r').Split(',');
             int rmTime = int.Parse(bf[0]);
@@ -561,6 +564,11 @@ namespace MLLib
 
             HasCO2LevelSensor = NextCommand.Remove(0, 4).TrimEnd('\r') == "1";
             CalibratingCO2LevelReceivedEvent?.Invoke(this, new CalibratingCO2SensorLevelEventArgs(rmTime, success, correction, co2Level));
+            break;
+
+          //CO2センサ初期化
+          case "IC2":
+            InitializingCO2LevelReceivedEvent?.Invoke(this, EventArgs.Empty);
             break;
 
           //日時更新
@@ -1008,20 +1016,29 @@ namespace MLLib
       return MakeUpdateCurrentTimeCommand(DateTime.Now);
     }
 
-    /// <summary>CO2濃度計の有無確認コマンドをつくる</summary>
-    /// <returns>CO2濃度計の有無確認コマンド</returns>
+    /// <summary>CO2センサの有無確認コマンドをつくる</summary>
+    /// <returns>CO2センサの有無確認コマンド</returns>
     public static string MakeHasCO2LevelSensorCommand()
     {
       return "\rHCS\r";
     }
 
-    /// <summary>CO2濃度校正コマンドをつくる</summary>
+    /// <summary>CO2センサ校正コマンドをつくる</summary>
     /// <param name="referenceCO2Level">基準のCO2濃度[ppm]</param>
-    /// <returns>CO2濃度校正コマンド</returns>
+    /// <returns>CO2センサ校正コマンド</returns>
     public static string MakeCalibrateCO2LevelCommand(int referenceCO2Level)
     {
       referenceCO2Level = Math.Max(400, Math.Min(10000, referenceCO2Level));
       return "\rCCL" + referenceCO2Level.ToString("F0") + "\r";
+    }
+
+    /// <summary>CO2センサ初期化コマンドをつくる</summary>
+    /// <param name="referenceCO2Level">基準のCO2濃度[ppm]</param>
+    /// <returns>CO2センサ初期化コマンド</returns>
+    public static string MakeInitializeCO2LevelCommand(int referenceCO2Level = 400)
+    {
+      referenceCO2Level = Math.Max(400, Math.Min(10000, referenceCO2Level));
+      return "\rIC2" + referenceCO2Level.ToString("F0") + "\r";
     }
 
     /// <summary>現在日時更新コマンドをつくる</summary>
