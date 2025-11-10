@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ActiveDebugFramework>net9.0-ios</ActiveDebugFramework>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
-    <ActiveDebugProfile>リモート デバイス</ActiveDebugProfile>
+    <ActiveDebugProfile>et_red - ネットワーク経由で接続</ActiveDebugProfile>
     <SelectedPlatformGroup>RemoteDevice</SelectedPlatformGroup>
     <DefaultDevice>pixel_5_-_api_34</DefaultDevice>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;

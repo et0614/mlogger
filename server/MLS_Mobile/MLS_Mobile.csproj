@@ -32,33 +32,25 @@
 
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net9.0-android'">
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net9.0-android'">
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net9.0-ios'">
 		<ProvisioningType>manual</ProvisioningType>
 		<CodesignKey>Apple Development: Eisuke Togashi (R647HTNPZK)</CodesignKey>
 		<CodesignProvision>mls_develop_2026</CodesignProvision>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net9.0-ios'">
 		<ProvisioningType>manual</ProvisioningType>
 		<CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
 		<CodesignProvision>mls_dist_2026</CodesignProvision>
-		<!--ここから-->
-		<!--MAUIでDebugで動くがReleaseで動かない問題。https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt-->
-		<MtouchLink>SdkOnly</MtouchLink>
-		<UseInterpreter>true</UseInterpreter>
-		<MtouchExtraArgs>--optimize:-static-block-to-delegate-lookup</MtouchExtraArgs>
-		<!--ここまで-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <CodesignKey>Apple Development: Eisuke Togashi (R647HTNPZK)</CodesignKey>
-	  <CodesignProvision>mls_develop_2026</CodesignProvision>
+		<!--MAUIでDebugで動くがReleaseで動かない場合は次を参照して追記
+		https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt
+		-->
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -100,19 +92,6 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <None Remove="Platforms\Android\Resources\values\attrs.xml" />
-	  <None Remove="Resources\AppIcon\appicon.svg" />
-	  <None Remove="Resources\Fonts\Brands-Regular-400.otf" />
-	  <None Remove="Resources\Fonts\Free-Regular-400.otf" />
-	  <None Remove="Resources\Fonts\Free-Solid-900.otf" />
-	  <None Remove="Resources\Images\flash_memory.svg" />
-	  <None Remove="Resources\Images\laptop.svg" />
-	  <None Remove="Resources\Images\smart_phone.svg" />
-	  <None Remove="Resources\Images\trans.png" />
-	  <None Remove="Resources\Splash\splash.svg" />
-	</ItemGroup>
-	
-	<ItemGroup>
 	  <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
 	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
 	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.4" />
@@ -122,126 +101,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
-	</ItemGroup>
-
-	<!--<ItemGroup>
-	  <Reference Include="SRP">
-	    <HintPath>..\xbeelibrary.xamarin\SRP.dll</HintPath>
-	  </Reference>
-	</ItemGroup>-->
-
-	<ItemGroup>
-	  <Compile Update="Resources\i18n\DescriptionText.Designer.cs">
-	    <DesignTime>True</DesignTime>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>DescriptionText.resx</DependentUpon>
-	  </Compile>
-	  <Compile Update="Resources\i18n\MLSResource.Designer.cs">
-	    <DesignTime>True</DesignTime>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>MLSResource.resx</DependentUpon>
-	  </Compile>
-	  <Compile Update="Resources\i18n\TCResource.Designer.cs">
-	    <DesignTime>True</DesignTime>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>TCResource.resx</DependentUpon>
-	  </Compile>
-	  <Compile Update="DescriptionPopup.xaml.cs">
-	    <DependentUpon>DescriptionPopup.xaml</DependentUpon>
-	  </Compile>
-	  <Compile Update="VelocityCalibrator2.xaml.cs">
-	    <DependentUpon>VelocityCalibrator2.xaml</DependentUpon>
-	  </Compile>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <EmbeddedResource Update="Resources\i18n\DescriptionText.ja.resx">
-	    <Generator>ResXFileCodeGenerator</Generator>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resources\i18n\DescriptionText.resx">
-	    <Generator>ResXFileCodeGenerator</Generator>
-	    <LastGenOutput>DescriptionText.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resources\i18n\MLSResource.resx">
-	    <Generator>ResXFileCodeGenerator</Generator>
-	    <LastGenOutput>MLSResource.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resources\i18n\TCResource.resx">
-	    <Generator>ResXFileCodeGenerator</Generator>
-	    <LastGenOutput>TCResource.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <MauiImage Update="Resources\Images\flash_memory.svg">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	  </MauiImage>
-	  <MauiImage Update="Resources\Images\laptop.svg">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	  </MauiImage>
-	  <MauiImage Update="Resources\Images\smart_phone.svg">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	  </MauiImage>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <MauiXaml Update="ActivitySelector.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="CFSetting.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="ClothingCoordinator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="CO2Calibrator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="DataReceive.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="DeviceSetting.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="IDeviceView.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="LoggingData.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="LoggingDataList.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="LogView.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="MLoggerScanner.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="MLoggerView.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="MoistAirCalculator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="RelayedDataViewer.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="DescriptionPopup.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="TextInputPopup.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="ThermalComfortCalculator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="VelocityCalibrator2.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="VelocityCalibrator.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
 	</ItemGroup>
 
 </Project>
