@@ -34,96 +34,96 @@ public partial class ClothingCoordinator : ContentPage
 
     List<Cloth> clt_Title_Underwear = new List<Cloth>
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Bra, 0.01,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Bra.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Panties, 0.03,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Panties.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_MensBriefs, 0.04, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_MensBriefs.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_TShirt, 0.08,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_TShirt.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_HalfSlip, 0.14,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_HalfSlip.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongUnderwearBottoms, 0.15,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongUnderwearBottoms.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_FullSlip, 0.16,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_FullSlip.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongUnderwearTop, 0.20,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongUnderwearTop.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Bra, 0.01,  "clo_bra.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Panties, 0.03,  "clo_panties.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_MensBriefs, 0.04, "clo_mens_briefs.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_TShirt, 0.08,  "clo_tshirt.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_HalfSlip, 0.14,  "clo_half_slip.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongUnderwearBottoms, 0.15,  "clo_long_underwear_bottoms.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_FullSlip, 0.16,  "clo_full_slip.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongUnderwearTop, 0.20,  "clo_long_underwear_top.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_Underwear, clt_Title_Underwear));
 
     List<Cloth> clt_Clo_Title_Footwear = new List<Cloth>
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_AnkleLengthAthleticSocks, 0.02, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_AnkleLengthAthleticSocks.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Pantyhose_Stockings, 0.02, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Pantyhose_Stockings.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sandals_Thongs, 0.02, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Sandals_Thongs.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Shoes, 0.02, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Shoes.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Slippers, 0.03, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Slippers.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_CalfLengthSocks, 0.03, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_CalfLengthSocks.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_KneeSocks_Thick, 0.06, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_KneeSocks_Thick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Boots, 0.10, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Boots.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_AnkleLengthAthleticSocks, 0.02, "clo_ankle_length_athletic_socks.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Pantyhose_Stockings, 0.02, "clo_pantyhose_stockings.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sandals_Thongs, 0.02, "clo_sandals_thongs.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Shoes, 0.02, "clo_shoes.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Slippers, 0.03, "clo_slippers.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_CalfLengthSocks, 0.03, "clo_calf_length_socks.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_KneeSocks_Thick, 0.06, "clo_knee_socks_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Boots, 0.10, "clo_boots.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_Footwear, clt_Clo_Title_Footwear));
 
     List<Cloth> clt_Title_ShirtsAndBlouses = new List<Cloth>
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sleeveless, 0.13,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Sleeveless.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveKnit, 0.17, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleeveKnit.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveDressShirt, 0.19, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleeveDressShirt.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveDressShirt, 0.25, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveDressShirt.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveFlannel, 0.34, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveFlannel.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveSweatShirt, 0.34, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveSweatShirt.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sleeveless, 0.13,  "clo_sleeveless.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveKnit, 0.17, "clo_short_sleeve_knit.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveDressShirt, 0.19, "clo_short_sleeve_dress_shirt.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveDressShirt, 0.25, "clo_long_sleeve_dress_shirt.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveFlannel, 0.34, "clo_long_sleeve_flannel.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveSweatShirt, 0.34, "clo_long_sleeve_sweat_shirt.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_ShirtsAndBlouses, clt_Title_ShirtsAndBlouses));
 
     List<Cloth> clt_Clo_Title_TrousersAndCoveralls = new List<Cloth>
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortShorts, 0.06,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortShorts.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_WalkingShorts, 0.08,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_WalkingShorts.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_StraightTrousersThin, 0.15,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_StraightTrousersThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_StraightTrousersThick, 0.24,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_StraightTrousersThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sweatpants, 0.28,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Sweatpants.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Overalls, 0.30,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Overalls.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Coveralls, 0.49,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_Coveralls.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortShorts, 0.06,  "clo_short_shorts.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_WalkingShorts, 0.08,  "clo_walking_shorts.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_StraightTrousersThin, 0.15,  "clo_straight_trousers_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_StraightTrousersThick, 0.24,  "clo_straight_trousers_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Sweatpants, 0.28,  "clo_sweatpants.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Overalls, 0.30,  "clo_overalls.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_Coveralls, 0.49,  "clo_coveralls.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_TrousersAndCoveralls, clt_Clo_Title_TrousersAndCoveralls));
 
     List<Cloth> clt_Title_DressAndSkirts = new List<Cloth>()
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SkirtThin, 0.14,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SkirtThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SkirtThick, 0.23,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SkirtThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessThin, 0.23,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessThick, 0.27, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveShirtDressThin, 0.29, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleeveShirtDressThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShirtDressThin, 0.33,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveShirtDressThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShirtDressThick, 0.47,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveShirtDressThick.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SkirtThin, 0.14,  "clo_skirt_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SkirtThick, 0.23,  "clo_skirt_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessThin, 0.23,  "clo_sleeveless_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessThick, 0.27, "clo_sleeveless_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveShirtDressThin, 0.29, "clo_short_sleeve_shirt_dress_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShirtDressThin, 0.33,  "clo_long_sleeve_shirt_dress_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShirtDressThick, 0.47,  "clo_long_sleeve_shirt_dress_thick.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_DressAndSkirts, clt_Title_DressAndSkirts));
 
     List<Cloth> clt_Title_Sweaters = new List<Cloth>()
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessSweatVestThin, 0.13,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessSweatVestThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessSweatVestThick, 0.22, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessSweatVestThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveThin, 0.25,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveThick, 0.35,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveThick.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessSweatVestThin, 0.13,  "clo_sleeveless_sweat_vest_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessSweatVestThick, 0.22, "clo_sleeveless_sweat_vest_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveThin, 0.25,  "clo_long_sleeve_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveThick, 0.35,  "clo_long_sleeve_thick.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_Sweaters, clt_Title_Sweaters));
 
     List<Cloth> clt_Title_SuitJacketsAndVests = new List<Cloth>()
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessVestThin, 0.10,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessVestThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessVestThick, 0.17,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessVestThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SingleBreastedThin, 0.36,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SingleBreastedThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SingleBreastedThick, 0.42,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SingleBreastedThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_DoubleBreastedThin, 0.44,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_DoubleBreastedThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_DoubleBreastedThick, 0.48,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_DoubleBreastedThick.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessVestThin, 0.10,  "clo_sleeveless_vest_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessVestThick, 0.17,  "clo_sleeveless_vest_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SingleBreastedThin, 0.36,  "clo_single_breasted_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SingleBreastedThick, 0.42,  "clo_single_breasted_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_DoubleBreastedThin, 0.44,  "clo_double_breasted_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_DoubleBreastedThick, 0.48,  "clo_double_breasted_thick.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_SuitJacketsAndVests, clt_Title_SuitJacketsAndVests));
 
     List<Cloth> clt_Title_SleepwearAndRobes = new List<Cloth>()
     {
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessShortGownThin, 0.18,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessShortGownThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessLongGownThin, 0.20,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_SleevelessLongGownThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveHospitalGown, 0.31, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleeveHospitalGown.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveShortRobeThin, 0.34,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleeveShortRobeThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleevePajamasThin, 0.42, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_ShortSleevePajamasThin.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveLongGownThick, 0.46,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveLongGownThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShortWrapRobeThick, 0.48, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveShortWrapRobeThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleevePajamasThick, 0.57,  ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleevePajamasThick.png")),
-      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveLongWrapRobeThick, 0.69, ImageSource.FromResource("MLS_Mobile.Resources.Clothes.Clo_LongSleeveLongWrapRobeThick.png"))
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessShortGownThin, 0.18,  "clo_sleeveless_short_gown_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_SleevelessLongGownThin, 0.20,  "clo_sleeveless_long_gown_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveHospitalGown, 0.31, "clo_short_sleeve_hospital_gown.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleeveShortRobeThin, 0.34,  "clo_short_sleeve_short_robe_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_ShortSleevePajamasThin, 0.42, "clo_short_sleeve_pajamas_thin.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveLongGownThick, 0.46,  "clo_long_sleeve_long_gown_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveShortWrapRobeThick, 0.48, "clo_long_sleeve_short_wrap_robe_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleevePajamasThick, 0.57,  "clo_long_sleeve_pajamas_thick.png"),
+      new Cloth(MLS_Mobile.Resources.i18n.TCResource.Clo_LongSleeveLongWrapRobeThick, 0.69, "clo_long_sleeve_long_wrap_robe_thick.png")
     };
     Clothes.Add(new ClothGroup(MLS_Mobile.Resources.i18n.TCResource.Clo_Title_SleepwearAndRobes, clt_Title_SleepwearAndRobes));
   }

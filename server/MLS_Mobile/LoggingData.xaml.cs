@@ -116,9 +116,9 @@ public partial class LoggingData : ContentPage
     string[] bf = lines[0].Split(',');
     int rowNum = bf.Length;
     int col = 0;
-    for (int j = 1; j < rowNum; j++)
+    for (int j = 1; j < rowNum - 1; j++) //日付（開始列）とnote（最終列）は表示しない
     {
-      if (j != 7 && j != 10) //GlobeTemperatureVoltageとnote列は表示しない
+      if (j != 7) //GlobeTemperatureVoltage列は表示しない
       {
         Label lbl = new Label
         {
@@ -137,16 +137,16 @@ public partial class LoggingData : ContentPage
     }
 
     //データ行
-    StringBuilder[] sBuilds = new StringBuilder[rowNum - 2];
+    StringBuilder[] sBuilds = new StringBuilder[rowNum - 3];
     for (int i = 1; i < lines.Length; i++)
     {
       if (lines[i] != "")
       {
         bf = lines[i].Split(',');
         col = 0;
-        for (int j = 1; j < rowNum; j++)
+        for (int j = 1; j < rowNum - 1; j++) //日付（開始列）とnote（最終列）は表示しない
         {
-          if (j != 7 && j != 10) //GlobeTemperatureVoltageとnote列は表示しない
+          if (j != 7) //GlobeTemperatureVoltage列は表示しない
           {
             if (i == 1) sBuilds[col] = new StringBuilder("");
             if (i == lines.Length - 1) sBuilds[col].Append(bf[j]);
@@ -191,7 +191,7 @@ public partial class LoggingData : ContentPage
         Margin = new Thickness(1)
       };
       tableGrid.Add(iv, 0, 2);
-      tableGrid.SetColumnSpan(iv, rowNum - 2);
+      tableGrid.SetColumnSpan(iv, rowNum - 3);
     }
   }
 

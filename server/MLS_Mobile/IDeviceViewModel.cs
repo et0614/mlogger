@@ -27,7 +27,7 @@ namespace MLS_Mobile
     private IDevice _device;
     private string _name = "";
     private int _rssi = -100;
-    private ImageSource _img = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr0.png");
+    private ImageSource _img = "signals_pwr0.png";
 
     public IDevice Device
     {
@@ -69,12 +69,12 @@ namespace MLS_Mobile
           _rssi = value;
           OnPropertyChanged();
           //以下の6段階分割には特に根拠は無い
-          if (_rssi < -95) Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr0.png");
-          else if (_rssi < -85) Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr1.png");
-          else if (_rssi < -75) Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr2.png");
-          else if (_rssi < -65) Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr3.png");
-          else if (_rssi < -50) Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr4.png");
-          else Signal = ImageSource.FromResource("MLS_Mobile.Resources.Signals.pwr5.png");
+          if (_rssi < -95) Signal = "signals_pwr0.png";
+          else if (_rssi < -85) Signal = "signals_pwr1.png";
+          else if (_rssi < -75) Signal = "signals_pwr2.png";
+          else if (_rssi < -65) Signal = "signals_pwr3.png";
+          else if (_rssi < -50) Signal = "signals_pwr4.png";
+          else Signal = "signals_pwr5.png";
         }
       }
     }
