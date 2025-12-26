@@ -6,7 +6,7 @@
 	</ItemGroup>
 
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-ios;net10.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>MLS_Mobile</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -32,25 +32,45 @@
 
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net9.0-android'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net10.0-android'">
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net9.0-android'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net10.0-android'">
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net9.0-ios'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net10.0-ios'">
 		<ProvisioningType>manual</ProvisioningType>
 		<CodesignKey>Apple Development: Eisuke Togashi (R647HTNPZK)</CodesignKey>
 		<CodesignProvision>mls_develop_2026</CodesignProvision>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net9.0-ios'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Release|net10.0-ios'">
 		<ProvisioningType>manual</ProvisioningType>
 		<CodesignKey>Apple Distribution: Eisuke Togashi (CREDLZ9YUL)</CodesignKey>
 		<CodesignProvision>mls_dist_2026</CodesignProvision>
 		<!--MAUIでDebugで動くがReleaseで動かない場合は次を参照して追記
 		https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt
 		-->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.53</ApplicationDisplayVersion>
+	  <ApplicationVersion>56</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.53</ApplicationDisplayVersion>
+	  <ApplicationVersion>56</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-ios|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.53</ApplicationDisplayVersion>
+	  <ApplicationVersion>56</ApplicationVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
+	  <ApplicationDisplayVersion>1.2.53</ApplicationDisplayVersion>
+	  <ApplicationVersion>56</ApplicationVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -96,9 +116,9 @@
 	  <PackageReference Include="DigiIoT.Maui" Version="1.1.0" />
 	  <PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" Version="2.0.0-rc5.4" />
 	  <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.8" />
-	  <PackageReference Include="Popolo" Version="2.3.1.81" />
+	  <PackageReference Include="Popolo" Version="2.3.1.85" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
 	  <ProjectReference Include="..\MLLib\MLLib.csproj" />
 	</ItemGroup>

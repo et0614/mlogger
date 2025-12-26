@@ -32,21 +32,6 @@ namespace MLS_Mobile
 
     #endregion
 
-    #region 列挙型定義
-
-    /// <summary>接続先のデバイス</summary>
-    public enum MLDevice
-    {
-      /// <summary>接続なし</summary>
-      None,
-      /// <summary>MLogger</summary>
-      MLogger,
-      /// <summary>MLTransciever</summary>
-      MLTransciever
-    }
-
-    #endregion
-
     #region static変数・プロパティ
 
     /// <summary>MLoggerのLowAddressと名称の対応リスト</summary>

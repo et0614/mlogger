@@ -131,7 +131,7 @@ public partial class MLoggerScanner : ContentPage
     }
 
     //MLoggerの場合***
-    if (MLUtility.ConnectedDevice == MLUtility.MLDevice.MLogger)
+    if (MLUtility.ConnectedDevice == MLDevice.MLogger)
     {
       //イベント待機タスクを作成
       var tcs = new TaskCompletionSource<bool>();
@@ -174,7 +174,7 @@ public partial class MLoggerScanner : ContentPage
     }
 
     //Transcieverの場合***
-    else if (MLUtility.ConnectedDevice == MLUtility.MLDevice.MLTransciever)
+    else if (MLUtility.ConnectedDevice == MLDevice.MLTransciever)
     {
       //Bluetooth転送モード有効化
       try

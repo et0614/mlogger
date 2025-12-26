@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- 2025.12.15 iOS26クラッシュ対策で追加 -->
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
+	<!-- 2025.12.15 iOS26クラッシュ対策で追加。ここまで -->
+	
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIDeviceFamily</key>
@@ -33,6 +38,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
+		<string>fetch</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Uses location to communicate with Bluetooth devices.</string>

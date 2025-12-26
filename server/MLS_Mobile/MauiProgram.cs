@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using LiveChartsCore.SkiaSharpView.Maui;
+using Microsoft.Maui.LifecycleEvents;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MLS_Mobile;
@@ -12,7 +13,7 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
     builder
       .UseMauiApp<App>()
-			.UseMauiCommunityToolkit()
+      .UseMauiCommunityToolkit()
       .UseSkiaSharp()
       .UseLiveCharts()
       .ConfigureFonts(fonts =>
