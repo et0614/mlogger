@@ -138,6 +138,10 @@ public partial class DataReceive : ContentPage
 
     //スリープ解除
     DeviceDisplay.Current.KeepScreenOn = false;
+
+    //MLoggerイベント解除
+    if (Logger != null)
+      Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
   }
 
   #endregion
