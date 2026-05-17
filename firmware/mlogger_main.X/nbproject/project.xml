@@ -3,7 +3,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>MLogger4_0</name>
+            <name>mlogger_main</name>
             <creation-uuid>a3319a3a-7c8d-4f0f-bb5f-585d70ad1075</creation-uuid>
             <make-project-type>0</make-project-type>
             <sourceEncoding>UTF-8</sourceEncoding>
