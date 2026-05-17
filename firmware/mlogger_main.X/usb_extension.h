@@ -45,9 +45,23 @@ uint16_t USB_CDC_SendString(const char *str);
 void USB_Stream_Task(void);
 
 /**
- * @brief 内蔵メモリからデータを全出力
+ * @brief 内蔵メモリからデータを全出力 (v3 DMP: 先頭4byteで件数LE送信 + 以降レコードストリーム)
  */
 void USB_DumpData(void);
+
+/**
+ * @brief 内蔵メモリのレコードストリーム送信を開始する (v4 dump 用: 件数prefix無し)
+ *        ヘッダは呼び出し側で別途送信すること。
+ *        実際の転送は USB_Stream_Task() が非同期に行う。
+ */
+void USB_StartRecordStream(void);
+
+/**
+ * @brief USB CDC 送信バッファの中身を強制 flush する (TX完了まで待機)
+ *        スリープ移行直前 等で ACK が確実に送出されてほしい時に呼ぶ。
+ *        タイムアウト約500ms。
+ */
+void USB_Flush(void);
 
 #ifdef	__cplusplus
 }

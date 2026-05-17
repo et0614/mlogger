@@ -3,6 +3,7 @@
 #include "eeprom_manager.h"
 #include "logger_control.h"
 #include "usb_extension.h"
+#include "protocol_dispatch.h"   // v4 JSON ディスパッチャ
 
 #include <string.h>
 #include <stdio.h>
@@ -47,6 +48,11 @@ static void reply(const char *msg, CommandSource_t src) {
     }
 }
 
+// v4 プロトコルハンドラから呼ばれる公開ラッパ
+void CH_Reply(const char *msg, CommandSource_t src) {
+    reply(msg, src);
+}
+
 // --- 内部関数: 1文字をバッファに追加し、完成したら実行する ---
 static void append_char_internal(char c, CommandSource_t src) {
     CommandBuffer_t *b = (src == SRC_USB) ? &usb_buffer : &xbee_buffer;
@@ -81,8 +87,15 @@ void CH_AppendString(const char *str, CommandSource_t src) {
 // <editor-fold defaultstate="collapsed" desc="コマンド処理">
 
 void CH_ProcessCommand(const char *command, CommandSource_t src) {
+    // v4 JSON protocol: '{' 始まりは新ディスパッチャへルーティング
+    if (command[0] == '{') {
+        pd_dispatch(command, strlen(command), src);
+        return;
+    }
+
+    // --- 以下、旧 v3 protocol (3文字コマンド) ---
     //接続先
-	if (strncmp(command, "WHO", 3) == 0) 
+	if (strncmp(command, "WHO", 3) == 0)
         reply("M_LOGGER", src);
     
     //バージョン

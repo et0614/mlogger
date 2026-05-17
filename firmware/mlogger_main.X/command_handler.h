@@ -40,6 +40,13 @@ void CH_AppendString(const char *str, CommandSource_t src);
  */
 void CH_ProcessCommand(const char *cmd, CommandSource_t src);
 
+/**
+ * @brief 応答を送信元 transport へ送り返す (v4 プロトコルハンドラ用に公開)
+ * @param msg 送信文字列 (改行終端済み)
+ * @param src 送信先 transport
+ */
+void CH_Reply(const char *msg, CommandSource_t src);
+
 #ifdef	__cplusplus
 }
 #endif

@@ -1,5 +1,6 @@
 #include "mcc_generated_files/usb/usb_cdc/usb_cdc_virtual_serial_port.h"
 #include "mcc_generated_files/usb/usb_cdc/usb_cdc.h"
+#include "mcc_generated_files/timer/delay.h"   // DELAY_milliseconds
 #include "usb_extension.h"
 #include "w25q512.h" // Flash読み出し用
 #include "eeprom_manager.h" //EEPROM
@@ -153,4 +154,30 @@ void USB_DumpData(void)
     // データ送信中に状態遷移
     streamState = STREAM_SENDING;
     currentReadIdx = 0;
+}
+
+// v4 dump 用: 件数prefix無しでレコードストリーム送信を開始
+// (ヘッダJSON送信は呼び出し側の責任)
+void USB_StartRecordStream(void)
+{
+    streamState = STREAM_SENDING;
+    currentReadIdx = 0;
+}
+
+// USB CDC 送信バッファを強制 flush (スリープ移行直前用)
+void USB_Flush(void)
+{
+    // バッファが空になるまで USB スタックを駆動 (タイムアウト ~500ms)
+    int timeout_ms = 500;
+    uint16_t max = usbCDCTransmitBuffer.maxLength;
+    while (timeout_ms-- > 0) {
+        USB_CDCVirtualSerialPortHandler();
+        // 全送信完了 = バッファに最大空き = データ無し
+        if (CIRCBUF_FreeSpace(&usbCDCTransmitBuffer) >= max && !USB_CDCTxBusy()) {
+            // ホストへ最終パケットが渡るまでもう少しスタックを回す
+            for (int i = 0; i < 10; i++) USB_CDCVirtualSerialPortHandler();
+            return;
+        }
+        DELAY_milliseconds(1);
+    }
 }

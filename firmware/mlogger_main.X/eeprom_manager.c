@@ -519,6 +519,12 @@ void EM_saveName()
 	write_eep_block((const void *)EM_mlName, ADDR_NAME, sizeof(EM_mlName));
 }
 
+//補正係数を保存する (v4 set_correction 用)
+void EM_saveCorrectionFactor()
+{
+	writeCFactors();
+}
+
 //データ世代番号を書き込む
 void EM_saveGenerationNumber()
 {

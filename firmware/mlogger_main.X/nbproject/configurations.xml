@@ -9,6 +9,11 @@
         <itemPath>parameters.h</itemPath>
         <itemPath>logger_control.h</itemPath>
         <itemPath>command_handler.h</itemPath>
+        <itemPath>jsmn.h</itemPath>
+        <itemPath>protocol_codec.h</itemPath>
+        <itemPath>protocol_dispatch.h</itemPath>
+        <itemPath>protocol_handlers.h</itemPath>
+        <itemPath>version.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Drivers" projectFiles="true">
         <itemPath>eeprom_manager.h</itemPath>
@@ -127,6 +132,7 @@
                    displayName="Important Files"
                    projectFiles="true">
       <itemPath>Makefile</itemPath>
+      <itemPath>MLogger.mc3</itemPath>
       <itemPath>mlogger_main.mc3</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
@@ -140,6 +146,9 @@
         <itemPath>main.c</itemPath>
         <itemPath>logger_control.c</itemPath>
         <itemPath>command_handler.c</itemPath>
+        <itemPath>protocol_codec.c</itemPath>
+        <itemPath>protocol_dispatch.c</itemPath>
+        <itemPath>protocol_handlers.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="Drivers" projectFiles="true">
         <itemPath>w25q512.c</itemPath>
@@ -252,7 +261,7 @@
         <targetDevice>AVR64DU32</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>AtmelIceTool</platformTool>
+        <platformTool>PK5Tool</platformTool>
         <languageToolchain>XC8</languageToolchain>
         <languageToolchainVersion>3.10</languageToolchainVersion>
         <platform>3</platform>

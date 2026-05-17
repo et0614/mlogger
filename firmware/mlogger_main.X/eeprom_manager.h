@@ -110,6 +110,9 @@ void EM_saveMeasurementSetting();
 //名称を書き込む
 void EM_saveName();
 
+//補正係数を保存する (v4 set_correction 用)
+void EM_saveCorrectionFactor();
+
 //データ世代番号を書き込む
 void EM_saveGenerationNumber();
 
