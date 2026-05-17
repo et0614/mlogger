@@ -119,9 +119,8 @@ void LC_ProcessSensingTask(void);
 
 void LC_Update_Anemometer();
 
-void LC_StartVelocityCalibration(void);
-
-void LC_EndVelocityCalibration(void);
+// (LC_StartVelocityCalibration / LC_EndVelocityCalibration は v4 で削除:
+//  風速校正は風速プローブ側 MCU に移管)
 
 // </editor-fold>
 

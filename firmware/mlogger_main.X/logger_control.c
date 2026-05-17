@@ -14,7 +14,6 @@
 
 #include <util/atomic.h>
 #include <time.h>
-#include <stdio.h>
 
 //</editor-fold>
 
@@ -33,14 +32,6 @@ typedef struct {
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="定数宣言">
-
-#define VERSION_NUMBER  "VER:3.4.1\r"
-
-//コマンドの文字数
-#define CMD_LENGTH  3
-
-//コマンドの最大文字数
-#define MAX_CMD_CHAR  256
 
 //熱線式風速計の立ち上げに必要な時間[sec]
 #define V_WAKEUP_TIME  20
@@ -85,15 +76,8 @@ static uint8_t co2CalibratingTime = 0;   //CO2校正残時間
 static uint16_t reforcedCO2Level = 400;  //強制校正CO2濃度[ppm]
 static SmAverage smaCO2; // 60秒平均を計算するインスタンス
 
-//風速センサ関連
-static bool calibratingVelocityVoltage = false; //風速計自動校正処理用
+//風速センサ
 Anemometer_t anemometer;
-
-//接続維持用空パケット時間[sec]
-static uint8_t slp_time = 0;
-
-//汎用の文字列配列
-static char charBuff[MAX_CMD_CHAR];
 
 static bool hasTask = false;
 
@@ -122,68 +106,7 @@ inline static float min(float x, float y)
 
 // <editor-fold defaultstate="collapsed" desc="内部関数の定義">
 
-static void create_sensor_string(char *charBuff, size_t buffSize, SensorData_t *data) {
-    char tmp_val_buff[20]; // 文字列処理用配列
-    charBuff[0] = '\0'; //クリア
-
-    // 日時などの共通部分
-    time_t raw_time = (time_t)data->timestamp;
-    struct tm *dtNow = localtime(&raw_time);
-    snprintf(charBuff, buffSize, "DTT:%04d,%02d/%02d,%02d:%02d:%02d,",
-        dtNow->tm_year + 1900, dtNow->tm_mon + 1, dtNow->tm_mday,
-        dtNow->tm_hour, dtNow->tm_min, dtNow->tm_sec);
-
-    // --- 乾球温度 (Temp Dry) : 単位 0.01℃ ---
-    if (data->valid_flags & FLAG_TEMP_DRY) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d.%02d,", data->temp_dry / 100, abs(data->temp_dry) % 100);
-    else strcpy(tmp_val_buff, "n/a,");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1); 
-
-    // --- 相対湿度 (Humidity) : 単位 0.01% ---
-    if (data->valid_flags & FLAG_HUMIDITY) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d.%02d,", data->humidity / 100, data->humidity % 100);
-    else strcpy(tmp_val_buff, "n/a,");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-    
-    // --- グローブ温度 (Temp Globe) : 単位 0.01℃ ---
-    if (data->valid_flags & FLAG_TEMP_GLOBE) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d.%02d,", data->temp_globe / 100, abs(data->temp_globe) % 100);
-    else strcpy(tmp_val_buff, "n/a,");    
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-
-    // --- 風速 (Wind Speed) : 単位 0.0001 m/s ---
-    if (data->valid_flags & FLAG_WIND_SPEED) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d.%04d,", data->wind_speed / 10000, data->wind_speed % 10000);
-    else strcpy(tmp_val_buff, "n/a,");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-
-    // --- 照度 (Illuminance) : 単位 0.1 Lux ---
-    if (data->valid_flags & FLAG_ILLUMINANCE) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%lu.%d,", data->illuminance / 10, (int)(data->illuminance % 10));
-    else strcpy(tmp_val_buff, "n/a,");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-
-    // ダミーを挿入
-    strncat(charBuff, "n/a,", buffSize - strlen(charBuff) - 1);
-    
-    // --- 電圧 (Voltage) : 単位 0.001 V ---
-    if (data->valid_flags & FLAG_VOLTAGE)
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d.%03d,", data->voltage / 1000, data->voltage % 1000);
-    else strcpy(tmp_val_buff, "n/a,");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-
-    // ダミーを挿入
-    strncat(charBuff, "n/a,n/a,n/a,", buffSize - strlen(charBuff) - 1);
-    
-    // --- CO2濃度 : 単位 ppm ---
-    if (data->valid_flags & FLAG_CO2_PPM) 
-        snprintf(tmp_val_buff, sizeof(tmp_val_buff), "%d", data->co2_ppm);
-    else strcpy(tmp_val_buff, "n/a");
-    strncat(charBuff, tmp_val_buff, buffSize - strlen(charBuff) - 1);
-    
-    // --- 終端文字 ---
-    strncat(charBuff, "\r", buffSize - strlen(charBuff) - 1);
-}
+// (旧 create_sensor_string は v4 移行で削除。protocol_events.c の pe_emit_smp が JSON で送出)
 
 //きりの良い時刻になるように最初の計測時間間隔を調整する
 static int getNormTime(struct tm time, unsigned int interval)
@@ -195,24 +118,7 @@ static int getNormTime(struct tm time, unsigned int interval)
 	else return interval - (60 - time.tm_sec % 60);
 }
 
-static void calibrateVelocityVoltage()
-{
-	// LED点灯
-	blinkGreenAndRedLED(1);
-	
-    // 風速電圧をmVで取得して整数部と小数部に分離
-    LC_Update_Anemometer();
-    uint16_t mv_val = anemometer.adc_value;
-    uint16_t val_int = mv_val / 1000; 
-    uint16_t val_dec = mv_val % 1000;
-    
-    Anemometer_Init(&anemometer);
-
-    // 文字列化 (浮動小数点を使わず整形)
-    snprintf(charBuff, sizeof(charBuff), "SCV:%d.%03d\r", val_int, val_dec);
-    
-	Xbee_BlTxChars(charBuff);
-}
+// (旧 calibrateVelocityVoltage は v4 移行で削除: 風速校正は風速プローブ側 MCU に移管)
 
 static void calibrateCO2Level()
 {
@@ -404,7 +310,6 @@ void execLogging(void)
         //無線/USB出力 (v4 smp イベント)
 		if(outputToZigbee || outputToBLE || outputToUSB)
         {
-            slp_time=0; //接続維持用の空パケット送信までの時間を初期化
             pe_emit_smp(&data, outputToZigbee, outputToBLE, outputToUSB);
         }
 
@@ -419,14 +324,6 @@ void execLogging(void)
             }
 		}
 	}
-	slp_time++;
-    
-	//この処理は意外に電池を消耗するので時間間隔を増やしXBee使用時のみとした（2024.07.22）
-	if(3500 <= slp_time && (outputToZigbee || outputToBLE)){
-		Xbee_TxChars("\r"); //ネットワーク切断回避用の空パケットを送信（この処理は悪い）
-		slp_time = 0;
-	}
-	
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 	//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
 	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う
@@ -526,8 +423,7 @@ void LC_CheckCO2Connection(void){
 				STCC4_performConditioning();
 				co2_condition_time = CO2_CONDITIONING_SECONDS;
 			}
-			//イベント通知
-            Xbee_BlTxChars(hasCO2Sensor ? "HCS:1\r" : "HCS:0\r");
+			// (v3 では HCS:0/1 を自発送信していたが v4 では削除: CO2 センサは仕様上固定実装)
 		}
 	}
 }
@@ -587,11 +483,9 @@ void LC_ProcessSensingTask(void){
     
     hasTask = true;
     //CO2センサ校正処理
-	if(0 < co2CalibratingTime) calibrateCO2Level();	
+	if(0 < co2CalibratingTime) calibrateCO2Level();
 	//CO2センサ初期化処理
-	else if(co2InitializingTime) performCO2InitializationProcess();	
-	//風速計校正処理
-	else if(calibratingVelocityVoltage) calibrateVelocityVoltage();	
+	else if(co2InitializingTime) performCO2InitializationProcess();
 	//ロギング処理
 	else if(logging) execLogging();
     //タスクなし
@@ -607,17 +501,8 @@ void LC_Update_Anemometer()
     Anemometer_Update(&anemometer);
 }
 
-void LC_StartVelocityCalibration(void)
-{
-    Anemometer_Wakeup();
-    calibratingVelocityVoltage = true;
-}
-
-void LC_EndVelocityCalibration(void)
-{
-    Anemometer_Sleep();
-	calibratingVelocityVoltage = false;
-}
+// (LC_StartVelocityCalibration / LC_EndVelocityCalibration は v4 で削除:
+//  風速校正は風速プローブ側 MCU に移管)
 
 // </editor-fold>
 

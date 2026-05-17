@@ -44,6 +44,7 @@
 #include "eeprom_manager.h" //EEPROM
 #include "xbee_controller.h" //XBee通信
 #include "anemometer.h" //風速計
+#include "protocol_events.h" //v4 ready ハートビート
 
 #include "sht4x.h" //debug
 
@@ -60,8 +61,11 @@ volatile bool process_logging_flag = false;
 //風速の電圧計測フラグ
 volatile bool velocity_adc_flag = false;
 
-//WFCを送信用タイマ[sec]
-static uint8_t wfc_timer = 0;
+//ready ハートビート送信用タイマ[sec]
+static uint8_t ready_timer = 0;
+
+//稼働秒数 (ready イベント の uptime_s)
+static uint32_t uptime_s = 0;
 
 //電池不足継続タイマ[sec]
 static uint8_t lowBattery_timer = 0;
@@ -219,22 +223,24 @@ void executeSecondlyTask(void)
 	}
 	else reset_timer = 0; //Resetボタン押し込み時間を0に戻す
 	
+    //稼働秒数を進める
+    uptime_s++;
+
     //センシングタスクを実施
     LC_ProcessSensingTask();
     //センシングタスクがない場合
     if(!LC_HasTask())
     {
         Anemometer_Sleep(); //風速計を停止
-		
-		//定期的にコマンド待受状態を送信
-		if(wfc_timer <= 0)
+
+		//ハートビート: 60秒毎に ready イベントを XBee+BLE に送出 (旧 WFC + 接続維持空パケット 統合)
+		if(ready_timer == 0)
 		{
-            //Waiting for command.
-			Xbee_BlTxChars("WFC\r");
-			wfc_timer = 6;
+			pe_emit_ready(uptime_s, false, true, true);
+			ready_timer = 60;
 		}
-		wfc_timer--;
-		
+		ready_timer--;
+
 		// Reset押し込み中でなければ明滅
 		if(RST_GetValue()) blinkGreenLED(1);
     }

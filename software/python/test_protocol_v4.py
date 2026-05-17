@@ -26,11 +26,10 @@ TIMEOUT_SEC = 2.0
 
 
 def find_device_port():
-    """利用可能なCOMポートを走査し、旧v3 WHOコマンドでM-Loggerを探す。
-    (新ファームでも v3 コマンドはサポート継続のため検出に流用)
-    """
+    """利用可能なCOMポートを走査し、v4 hello JSON コマンドで M-Logger を探す。"""
     print("Scanning ports...")
     ports = list(serial.tools.list_ports.comports())
+    probe = (json.dumps({"v": 1, "id": 1, "command": "hello"}) + '\n').encode('utf-8')
 
     for p in ports:
         try:
@@ -43,14 +42,17 @@ def find_device_port():
             with serial.Serial(p.device, BAUD_RATE, timeout=1.5) as ser:
                 time.sleep(1.5)
                 ser.reset_input_buffer()
-                ser.write(b'WHO\n')
+                ser.write(probe)
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
-
-                if "M_LOGGER" in line:
-                    print(" Found!")
-                    return p.device
-                else:
-                    print(" No response or wrong ID.")
+                try:
+                    resp = json.loads(line)
+                    if (isinstance(resp, dict)
+                            and resp.get("result", {}).get("device") == "M-Logger"):
+                        print(" Found!")
+                        return p.device
+                    print(" Not M-Logger.")
+                except json.JSONDecodeError:
+                    print(" No JSON response.")
 
         except (OSError, serial.SerialException):
             print(" Failed to open.")
@@ -177,19 +179,19 @@ def test_invalid_json(ser):
     return True
 
 
-def test_legacy_v3_who(ser):
-    """旧v3コマンドが共存していることを確認"""
-    print("\n--- Test 4: legacy v3 WHO (should still work) ---")
+def test_legacy_v3_removed(ser):
+    """旧 v3 コマンドが応答しないことを確認 (Phase E で廃止)"""
+    print("\n--- Test 4: legacy v3 WHO must NOT respond ---")
     ser.reset_input_buffer()
     ser.write(b'WHO\n')
     print(">>> Sent: b'WHO\\n'")
+    # ファームは応答せず破棄する想定 → readline がタイムアウト
     line = ser.readline().decode('utf-8', errors='ignore').strip()
-    print(f"<<< Received: {line!r}")
-    if "M_LOGGER" in line:
-        print("    [OK] v3 protocol coexists")
+    if not line:
+        print("    [OK] no response as expected (v3 removed)")
         return True
     else:
-        print("    [FAIL] v3 protocol broken")
+        print(f"    [FAIL] unexpected response: {line!r}")
         return False
 
 
@@ -640,7 +642,7 @@ def run_test(com_port):
             results.append(("hello",           test_hello(ser)))
             results.append(("unknown_command", test_unknown_command(ser)))
             results.append(("invalid_json",    test_invalid_json(ser)))
-            results.append(("legacy_v3_who",   test_legacy_v3_who(ser)))
+            results.append(("legacy_v3_removed", test_legacy_v3_removed(ser)))
             # Phase B
             results.append(("get_settings",                 test_get_settings(ser)))
             results.append(("set_settings PATCH",           test_set_settings_patch(ser)))

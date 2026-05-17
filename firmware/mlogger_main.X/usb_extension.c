@@ -143,24 +143,7 @@ void USB_Stream_Task(void)
     }
 }
 
-void USB_DumpData(void)
-{
-    // 送信予定のレコード数を4バイトのバイナリとして送信 (Little Endian)
-    // 変数のアドレスを uint8_t* にキャストして、1バイトずつ4回送る
-    uint8_t *p = (uint8_t *)&rec_latest;
-
-    for (int i = 0; i < 4; i++)
-    {
-        // 送信バッファが空くまで待機して送信
-        while (USB_CDCWrite(*p) != CDC_SUCCESS)
-            USB_CDCVirtualSerialPortHandler();
-        p++; // 次のバイトへ
-    }
-
-    // データ送信中に状態遷移
-    streamState = STREAM_SENDING;
-    currentReadIdx = 0;
-}
+// (旧 USB_DumpData は v4 移行で削除: v3 の DMP コマンド廃止に伴い不要)
 
 // v4 dump 用: 件数prefix無しでレコードストリーム送信を開始
 // (ヘッダJSON送信は呼び出し側の責任)

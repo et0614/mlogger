@@ -83,26 +83,8 @@ extern MeasurementSettings EM_mSettings;
 //名称
 extern char EM_mlName[21];
 
-//補正係数を書き込む
-void EM_applySetCorrectionFactorCommand(const char * data);
-
-//補正係数を表す文字列を作成する
-void EM_makeSetCorrectionFactorResponse(char * txbuff, const char * command);
-
-//風速の特性係数を書き込む
-void EM_applySetVelocityCharacteristicsCommand(const char * data);
-
-//風速の特性係数を表す文字列を作成する
-void EM_makeSetVelocityCharateristicsResponse(char * txbuff, const char * command);
-
 //EEPROMを読み込む
 void EM_loadEEPROM();
-
-//計測設定を書き込む
-void EM_applyChangeMeasurementSettingsCommand(const char * data);
-
-//計測設定に対する応答文字列を作成する
-void EM_makeMeasurementSettingsResponse(char * txbuff, const char * command);
 
 //計測設定を保存する
 void EM_saveMeasurementSetting();
