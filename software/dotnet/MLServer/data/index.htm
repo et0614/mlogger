@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <title>Language Redirect</title>
+    <script>
+        // Function to detect browser language and redirect
+        function redirectBasedOnLanguage() {
+            var userLang = navigator.language || navigator.userLanguage; 
+            // Extract the primary language code (e.g., "en", "ja")
+            var langCode = userLang.split('-')[0];
+
+            if (langCode === "ja") {
+                window.location.href = "./ja/index.htm"; // Redirect to Japanese page
+            } else {
+                window.location.href = "./en/index.htm"; // Default to English page
+            }
+        }
+    </script>
+</head>
+<body onload="redirectBasedOnLanguage()">
+    <h1>Redirecting based on your browser language...</h1>
+</body>
+</html>

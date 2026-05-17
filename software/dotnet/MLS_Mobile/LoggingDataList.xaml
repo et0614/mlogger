@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MLS_Mobile.LoggingDataList"
+             xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             Title="{x:Static res:MLSResource.LD_List}"
+             >
+
+    <StackLayout>
+        
+        <!--スクロールする計測データリスト-->
+        <CollectionView Grid.Row="0" Grid.Column="0" x:Name="fileList" IsGrouped="true" ItemsSource="{Binding LogFiles}" Margin="0,0,0,0"
+                        SelectionMode="None" VerticalScrollBarVisibility="Always" VerticalOptions="FillAndExpand">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <SwipeView Margin="0,2,0,2" BackgroundColor="{StaticResource Lightest_G}">
+                        <SwipeView.RightItems>
+                            <SwipeItems Mode="Reveal">
+                                <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}" 
+                                           BackgroundColor="{StaticResource Light_O}"
+                                           Command="{Binding DeleteCommand}"
+                                           CommandParameter="{Binding .}">
+                                    <SwipeItem.IconImageSource>
+                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="20" Color="Black"/>
+                                    </SwipeItem.IconImageSource>
+                                </SwipeItem>
+                                <SwipeItem Text="{x:Static res:MLSResource.LD_Share}" 
+                                           BackgroundColor="{StaticResource Light_G}"
+                                           Command="{Binding ShareCommand}"
+                                           CommandParameter="{Binding .}">
+                                    <SwipeItem.IconImageSource>
+                                        <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="20" Color="Black"/>
+                                    </SwipeItem.IconImageSource>
+                                </SwipeItem>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+
+                        <Border Margin="20,0,20,0" Stroke="{StaticResource Dark_G}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding NavigateCommand}" CommandParameter="{Binding .}"/>
+                            </Border.GestureRecognizers>
+                            <Grid Padding="5"
+                              RowDefinitions="Auto"
+                              ColumnDefinitions="Auto, Auto" 
+                              RowSpacing="5"
+                              ColumnSpacing="5"
+                              BackgroundColor="White">
+
+                                <Label Grid.Row="0" Grid.Column="0"
+                               Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
+                               FontSize="18" Padding="10,5"
+                               HorizontalOptions="Start" VerticalOptions="Center"/>
+                                <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Path=FileSize, StringFormat='{0} bytes'}" 
+                               FontSize="16" Padding="10,5"
+                               HorizontalTextAlignment="Start"
+                               HorizontalOptions="FillAndExpand" VerticalOptions="Center"
+                               TextColor="Gray"/>
+                            </Grid>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout>
+                        <Label Text="{Binding MLoggerName}"
+                           TextColor="{StaticResource Darkest_G}"
+                           BackgroundColor="Transparent"
+                           FontSize="20"
+                           FontAttributes="Bold" Padding="10,15,10,5" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
+
+            <CollectionView.EmptyView>
+                <Grid 
+                    Padding="5" 
+                    RowDefinitions="Auto, *"
+                    ColumnDefinitions="*" 
+                    RowSpacing="5"
+                    ColumnSpacing="5">
+                    <Label 
+                        Grid.Row="0" Grid.Column="0"
+                        Text="{x:Static res:MLSResource.LD_NoData}" 
+                        FontSize="18"
+                        HorizontalOptions="Start"
+                        VerticalOptions="Center" Padding="5"/>
+                </Grid>
+            </CollectionView.EmptyView>
+        </CollectionView>
+        
+        <!--ログデータ閲覧ボタン-->
+        <BoxView HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
+        <Button Text="{x:Static res:MLSResource.LD_ViewLog}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="log_Clicked"/>
+
+    </StackLayout>
+
+</ContentPage>

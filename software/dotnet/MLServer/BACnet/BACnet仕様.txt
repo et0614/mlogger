@@ -1,0 +1,59 @@
+BACnetを有効にする場合には初期設定ファイル（setting.ini）のbacnetパラメータをtrueにする。ポートは同ファイルのbacportで設定する。
+Device Objectの仕様を変更したい場合にはプログラムと同階層にある「MLServerDeviceStorage.xml」を編集する。
+標準のDevice IDは614。
+
+MLoggerから計測値が届くたびに内部の値は書き換えられる。
+新たなMLoggerから計測値が届いた場合には、当該MLoggerの情報を保持するためのBACnet Objectが動的に追加される。
+現在、どれだけのMLoggerが登録されているかを知りたい場合には1番のインスタンス番号を持つCharacterString Value Objectを参照する。
+ここにMLoggerのXBee low address一覧がCSV形式で保存されている。
+このCSVに記載された順位にもとづいてBACnet Objectは作成される。ただし数は最大で1000台まで。
+掲載順位がn番のとき、以下の通りとなる。
+
+最終計測日時（DateTime Value Object Type）：
+　乾球温度および相対湿度：1000+n
+　グローブ温度：2000+n
+　風速：3000+n
+　照度：4000+n
+
+現在値（Analog Input Object Type）：
+　乾球温度：1000+n
+　相対湿度：5000+n
+　グローブ温度：2000+n
+　風速：3000+n
+　照度：4000+n
+　MRT：6000+n
+　PMV：7000+n
+　SET*：8000+n
+　WGBT(Indoor)：9000+n
+　WGBT(Outdoor)：10000+n
+
+
+
+To enable BACnet, set the 'bacnet' parameter in the initial configuration file (setting.ini) to true. The port is set via the 'bacport' parameter in the same file.
+If you wish to modify the specifications of the Device Object, edit the "MLServerDeviceStorage.xml" file located in the same directory as the program.
+The default Device ID is 614.
+
+Each time a measurement value is received from the MLogger, the internal values are updated.
+When measurement values are received from a new MLogger, a BACnet Object to store the information of the corresponding MLogger is dynamically added.
+To check how many MLoggers are currently registered, refer to the CharacterString Value Object with instance number 1.
+This object stores a list of XBee low addresses of the MLoggers in CSV format.
+BACnet Objects are created based on the order listed in this CSV, with a maximum of 1000 devices.
+When the rank in the list is n, the objects are as follows:
+
+Last Measurement Date (DateTime Value Object Type):
+	Dry-bulb temperature and relative humidity: 1000+n
+	Globe temperature: 2000+n
+	Velocity: 3000+n
+	Illuminance: 4000+n
+
+Current Value (Analog Input Object Type):
+	Dry-bulb temperature: 1000+n
+	Relative humidity: 5000+n
+	Globe temperature: 2000+n
+	Velocity: 3000+n
+	Illuminance: 4000+n
+	MRT: 6000+n
+	PMV: 7000+n
+	SET*: 8000+n
+	WGBT (Indoor): 9000+n
+	WGBT (Outdoor): 10000+n
