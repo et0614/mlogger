@@ -15,8 +15,8 @@
 //コマンドの文字数
 #define CMD_LENGTH  3
 
-//コマンド全体の最大文字数
-#define MAX_CMD_CHAR  256
+//コマンド全体の最大文字数 (v4 set_settings の全6センサ指定で ~330B になるため 512 に拡大)
+#define MAX_CMD_CHAR  512
 
 // ソースごとの受信状態を管理する構造体
 typedef struct {

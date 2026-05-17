@@ -10,6 +10,7 @@
 #include "anemometer.h"
 #include "adc0_extension.h" //AD変換拡張
 #include "command_handler.h" //コマンド処理
+#include "protocol_events.h" //v4 自発イベント送出
 
 #include <util/atomic.h>
 #include <time.h>
@@ -230,26 +231,26 @@ static void calibrateCO2Level()
 	if(co2CalibratingTime == 0){
 		STCC4_stopContinuousMeasurement();
 		_delay_ms(1500); //連続計測の停止まで1200msecの待機が必要
-		
-		int16_t correction_val;
+
+		int16_t correction_val = 0;
+		const char *state = "fail";
 		if(STCC4_performForcedRecalibration(reforcedCO2Level, &correction_val))
 		{
-			if (correction_val == (int16_t)0xFFFF) 
-				snprintf(charBuff, sizeof(charBuff), "CCL:0,fail,0,%u\r", co2_u);
-			else
-				snprintf(charBuff, sizeof(charBuff), "CCL:0,pass,%d,%u\r",correction_val, co2_u);
+			if (correction_val == (int16_t)0xFFFF) {
+				state = "fail";
+				correction_val = 0;
+			} else {
+				state = "pass";
+			}
 		}
-		else
-			snprintf(charBuff, sizeof(charBuff), "CCL:0,fail,0,%u\r", co2_u);
-			
+
 		STCC4_startContinuousMeasurement(); //連続計測再開
-		Xbee_BlTxChars(charBuff);
+		pe_emit_co2_calibration_progress(0, state, correction_val, co2_u);
 	}
 	else
 	{
 		//残り時間を出力
-		snprintf(charBuff, sizeof(charBuff), "CCL:%u,measuring,0,%u\r", co2CalibratingTime, co2_u);
-		Xbee_BlTxChars(charBuff);
+		pe_emit_co2_calibration_progress(co2CalibratingTime, "measuring", 0, co2_u);
 	}
 }
 
@@ -400,17 +401,13 @@ void execLogging(void)
 	//新規データがある場合は送信
 	if(send_needed)
 	{
-        //無線出力
-		if(outputToZigbee || outputToBLE) 
+        //無線/USB出力 (v4 smp イベント)
+		if(outputToZigbee || outputToBLE || outputToUSB)
         {
-            //書き出し文字列を作成
-            create_sensor_string(charBuff, sizeof(charBuff), &data);
-            
             slp_time=0; //接続維持用の空パケット送信までの時間を初期化
-            if(outputToZigbee) Xbee_TxChars(charBuff); //XBee Zigbee出力
-            if(outputToBLE) Xbee_BlChars(charBuff); //XBee Bluetooth出力
+            pe_emit_smp(&data, outputToZigbee, outputToBLE, outputToUSB);
         }
-		
+
         //FM出力
 		if(outputToFM)
 		{
@@ -501,6 +498,10 @@ bool LC_UseBLEConnection(void)
 
 bool LC_IsLogging(void){
     return logging;
+}
+
+bool LC_OutputToUSB(void){
+    return outputToUSB;
 }
 
 bool LC_HasTask(void){

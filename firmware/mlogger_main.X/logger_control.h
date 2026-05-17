@@ -74,6 +74,12 @@ bool LC_UseBLEConnection(void);
 bool LC_IsLogging(void);
 
 /**
+ * @brief USB-CDC を計測値の出力先としているか否か
+ * @return true: USB 出力有効、main 側はスリープせず USB タスクを駆動すべき
+ */
+bool LC_OutputToUSB(void);
+
+/**
  * @brief タスクがあるか否か
  * @return true:タスクあり, false:タスクなし
  */

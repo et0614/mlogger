@@ -417,31 +417,91 @@ def test_stop_logging_when_idle(ser):
     return True
 
 
-def test_start_logging_ack_only(ser):
-    """start_logging の ACK 受信だけ確認。
-    その後デバイスは計測モード(スリープ含む)に入り USB が応答しなくなる可能性がある
-    ため、これはテストスイートの **最後** に実行する。"""
-    print("\n--- Test FINAL: start_logging (ACK only, device will sleep after) ---")
+def test_smp_event_stream(ser):
+    """start_logging で smp イベントが USB-CDC 経由で定期的に流れることを確認 (Phase D)。
+    USB 出力を有効にすると USB は接続を維持できる想定。
+    数秒受信後に stop_logging。"""
+    print("\n--- Test FINAL: smp event stream (Phase D) ---")
+
+    # ロギング設定の interval を 1 秒に揃えておく (PATCH)
+    send_json(ser, {"v": 1, "id": 300, "command": "set_settings",
+                    "params": {"t_dry":       {"enabled": True, "interval": 1},
+                               "humidity":    {"enabled": True, "interval": 1},
+                               "t_glb":       {"enabled": True, "interval": 1},
+                               "velocity":    {"enabled": True, "interval": 1},
+                               "illuminance": {"enabled": True, "interval": 1},
+                               "co2":         {"enabled": False, "interval": 1}}})
+    time.sleep(0.2)
+
     try:
         resp = send_json(ser, {"v": 1, "id": 99, "command": "start_logging",
                                "params": {"transports": {"zigbee": False, "ble": False,
                                                          "flash": False, "usb": True},
                                           "mode": "once"}},
-                         "Test FINAL: start_logging")
+                         "Test FINAL: start_logging with usb=true")
     except serial.SerialException as e:
-        print(f"    [SKIP] write failed (device may have slept): {e}")
-        return True
-
-    if resp is None:
-        print(f"    [FAIL] no ACK (USB flush may have failed)")
-        return False
-    if "result" not in resp:
-        print(f"    [FAIL] {resp}")
+        print(f"    [SKIP] write failed: {e}")
         return False
 
-    print(f"    [OK] ACK received.")
-    print(f"    NOTE: device is now in logging mode. USB may disconnect.")
-    print(f"    To run tests again, power-cycle the device (or hold Reset 3 sec to exit auto_restart).")
+    if resp is None or "result" not in resp:
+        print(f"    [FAIL] no ACK: {resp}")
+        return False
+
+    # smp イベントを数秒間収集
+    print("    Collecting smp events for 4 seconds...")
+    end_time = time.time() + 4.0
+    smp_events = []
+    other_lines = []
+    while time.time() < end_time:
+        try:
+            line_bytes = ser.readline()
+            if not line_bytes:
+                continue
+            line = line_bytes.decode('utf-8', errors='ignore').strip()
+            if not line:
+                continue
+            try:
+                ev = json.loads(line)
+                if ev.get("event") == "smp":
+                    smp_events.append(ev)
+                    if len(smp_events) <= 3:
+                        print(f"    [{len(smp_events)}] smp: ts={ev.get('ts')}, data={ev.get('data')}")
+                else:
+                    other_lines.append(ev)
+            except json.JSONDecodeError:
+                other_lines.append(line)
+        except serial.SerialException as e:
+            print(f"    [WARN] read failed: {e}")
+            break
+
+    # stop_logging
+    try:
+        ser.reset_input_buffer()
+        stop = send_json(ser, {"v": 1, "id": 51, "command": "stop_logging"})
+        if stop and "result" in stop:
+            print(f"    stop_logging: OK")
+        else:
+            print(f"    [WARN] stop_logging response: {stop}")
+    except serial.SerialException as e:
+        print(f"    [WARN] stop_logging failed: {e}")
+        print(f"    NOTE: device may still be logging — power-cycle to recover.")
+
+    if len(smp_events) == 0:
+        print(f"    [FAIL] no smp events received (other lines: {len(other_lines)})")
+        return False
+
+    # 内容バリデーション
+    first = smp_events[0]
+    if "data" not in first or not isinstance(first["data"], dict):
+        print(f"    [FAIL] malformed smp: {first}")
+        return False
+    expected_keys = {"t", "h", "g", "vel", "l"}  # co2 disabled, may be absent
+    got_keys = set(first["data"].keys())
+    common = expected_keys & got_keys
+    if len(common) < 3:
+        print(f"    [WARN] expected short keys {expected_keys}, got {got_keys}")
+
+    print(f"    [OK] {len(smp_events)} smp events received over ~4s")
     return True
 
 
@@ -535,18 +595,27 @@ def test_dump(ser):
     # バイナリストリーム
     total = count * rec_size
     print(f"    expecting {total} bytes of binary records...")
-    if total == 0:
-        print(f"    [OK] no records to dump (fresh device)")
-        return True
+    if total > 0:
+        data = ser.read(total)
+        print(f"    received {len(data)} bytes")
+        if len(data) != total:
+            print(f"    [WARN] expected {total}, got {len(data)} (timeout?)")
+        if data[:rec_size]:
+            print(f"    first record (hex): {data[:rec_size].hex()}")
+    else:
+        print(f"    no records to dump (fresh device)")
 
-    # 読み出し (タイムアウトに依存)
-    data = ser.read(total)
-    print(f"    received {len(data)} bytes")
-    if len(data) != total:
-        print(f"    [WARN] expected {total}, got {len(data)} (timeout?)")
-        # 部分受信でも fail にはしない (USB バッファ事情で時間がかかる場合あり)
-    if data[:rec_size]:
-        print(f"    first record (hex): {data[:rec_size].hex()}")
+    # dump_end イベントを消費 (Phase D)
+    end_line = ser.readline().decode('utf-8', errors='ignore').strip()
+    try:
+        end_ev = json.loads(end_line)
+        if end_ev.get("event") == "dump_end":
+            print(f"    dump_end: data={end_ev.get('data')}")
+        else:
+            print(f"    [WARN] expected dump_end event, got: {end_ev}")
+    except json.JSONDecodeError:
+        print(f"    [WARN] dump_end not received: {end_line!r}")
+
     print(f"    [OK]")
     return True
 
@@ -587,8 +656,8 @@ def run_test(com_port):
             results.append(("calibrate_co2 validation",     test_calibrate_co2_validation(ser)))
             results.append(("dump",                          test_dump(ser)))
             results.append(("dump non-USB (skipped)",       test_dump_xbee_rejection_offline(ser)))
-            # **最後**: 実際の start_logging。デバイスが眠るので以降のテスト不可
-            results.append(("start_logging ACK",            test_start_logging_ack_only(ser)))
+            # **最後**: 実際の start_logging + smp event stream 受信 (Phase D)
+            results.append(("smp event stream",             test_smp_event_stream(ser)))
 
             print("\n" + "=" * 40)
             print("Summary:")

@@ -20,6 +20,9 @@ typedef enum {
 static StreamState_t streamState = STREAM_IDLE;
 static uint32_t currentReadIdx = 0;
 
+// ストリーム完了コールバック (dump_end イベント送出用)
+static USB_StreamDoneFn s_stream_done_cb = NULL;
+
 // リングバッファにFlashから直接データを流し込む関数
 static uint16_t directLoadFromFlash(uint32_t flashAddr, uint16_t length)
 {
@@ -101,7 +104,10 @@ void USB_Stream_Task(void)
             {
                 // 終了判定：最新位置に到達
                 if (rec_latest <= currentReadIdx) {
+                    uint32_t sent = currentReadIdx;
                     streamState = STREAM_IDLE;
+                    // 完了コールバック (dump_end イベント送出に使用)
+                    if (s_stream_done_cb) s_stream_done_cb(sent);
                     return;
                 }
                 
@@ -162,6 +168,12 @@ void USB_StartRecordStream(void)
 {
     streamState = STREAM_SENDING;
     currentReadIdx = 0;
+}
+
+// レコードストリーム完了コールバックの登録
+void USB_SetStreamDoneCallback(USB_StreamDoneFn cb)
+{
+    s_stream_done_cb = cb;
 }
 
 // USB CDC 送信バッファを強制 flush (スリープ移行直前用)

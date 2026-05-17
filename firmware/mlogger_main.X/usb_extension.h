@@ -63,6 +63,18 @@ void USB_StartRecordStream(void);
  */
 void USB_Flush(void);
 
+/**
+ * @brief レコードストリーム送信完了時に呼ばれるコールバック型
+ * @param records_sent 送信完了したレコード数
+ */
+typedef void (*USB_StreamDoneFn)(uint32_t records_sent);
+
+/**
+ * @brief レコードストリーム完了コールバックを登録 (NULL でクリア)
+ *        USB_Stream_Task が STREAM_SENDING → STREAM_IDLE 遷移時に呼ぶ。
+ */
+void USB_SetStreamDoneCallback(USB_StreamDoneFn cb);
+
 #ifdef	__cplusplus
 }
 #endif

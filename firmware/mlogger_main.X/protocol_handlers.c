@@ -1,10 +1,11 @@
 #include "protocol_handlers.h"
 #include "protocol_codec.h"
+#include "protocol_events.h"   // pe_emit_dump_end
 #include "command_handler.h"   // CH_Reply
 #include "version.h"
 #include "logger_control.h"    // LC_IsLogging, LC_SetCurrentTime, LC_GetCurrentTime, LC_StartLoggingTask, LC_EndLoggingTask, LC_ClearData, LC_FactoryResetCO2, LC_CalibrateCO2
 #include "eeprom_manager.h"    // EM_mlName, EM_cFactors, EM_mSettings, EM_save*
-#include "usb_extension.h"     // USB_StartRecordStream, rec_latest
+#include "usb_extension.h"     // USB_StartRecordStream, USB_SetStreamDoneCallback, rec_latest
 
 #include <avr/io.h>            // SIGROW
 #include <stdio.h>
@@ -461,6 +462,9 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
     pc_key(&w, "format");      pc_str(&w, "<BIBIhhHHHH>");
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+
+    // 完了時に dump_end イベントを送出するよう登録
+    USB_SetStreamDoneCallback(pe_emit_dump_end);
 
     // バイナリストリーム開始 (USB_Stream_Task が非同期にレコードを送出)
     USB_StartRecordStream();

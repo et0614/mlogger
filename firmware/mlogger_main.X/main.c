@@ -143,8 +143,18 @@ int main(void)
         //ロギング中は状態に応じてスリープ
         if(LC_IsLogging())
         {
-            set_sleep_mode((!Xbee_IsSleeping() || EM_mSettings.start_auto) ? SLEEP_MODE_IDLE : SLEEP_MODE_PWR_DOWN);
-            sleep_mode();
+            // USB を出力 transport に指定した場合はスリープせず USB タスクを駆動 (smp/dump_end 等を流す)
+            if(LC_OutputToUSB())
+            {
+                USBDevice_Handle();
+                USB_CDCVirtualSerialPortHandler();
+                if (USB_DescriptorActiveConfigurationValueGet() == 1) USB_Stream_Task();
+            }
+            else
+            {
+                set_sleep_mode((!Xbee_IsSleeping() || EM_mSettings.start_auto) ? SLEEP_MODE_IDLE : SLEEP_MODE_PWR_DOWN);
+                sleep_mode();
+            }
         }
         else
         {
