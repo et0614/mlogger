@@ -4,6 +4,7 @@ using CommunityToolkit.Maui.Extensions;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Devices.Sensors;
 using MLLib;
+using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
 using System;
 using System.Text;
@@ -115,7 +116,22 @@ public partial class DeviceSetting : ContentPage
 
     //基本は測定を停止させる
     isStopLogging = true;
+
+    // v4: protocol level stop_logging (best-effort, fire-and-forget).
+    // v3 uses event-driven ENL via Logger_MeasuredValueReceivedEvent.
+    if (IsV4Protocol)
+    {
+      _ = Task.Run(async () =>
+      {
+        try { await MLUtility.Protocol.StopLoggingAsync(); }
+        catch { /* not currently logging is fine */ }
+      });
+    }
   }
+
+  /// <summary>v4 (JSON-RPC) protocol is detected and available.</summary>
+  private static bool IsV4Protocol
+    => MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1;
 
   protected override void OnDisappearing()
   {
@@ -731,6 +747,13 @@ public partial class DeviceSetting : ContentPage
     //計測停止フラグを解除
     isStopLogging = false;
 
+    // v4 path: call IMLProtocol.StartLoggingAsync directly and skip the v3 STL flow.
+    if (IsV4Protocol)
+    {
+      await startLoggingV4(lMode);
+      return;
+    }
+
     //イベント待機タスクを作成
     var tcs = new TaskCompletionSource<bool>();
 
@@ -804,6 +827,48 @@ public partial class DeviceSetting : ContentPage
       Logger.StartMeasuringMessageReceivedEvent -= handler;
 
       //インジケータを隠す
+      Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
+  }
+
+  /// <summary>v4 path of startLogging - calls IMLProtocol.StartLoggingAsync.</summary>
+  private async Task startLoggingV4(loggingMode lMode)
+  {
+    var (transports, mode) = lMode switch
+    {
+      loggingMode.bluetooth => (new Transports(false, true, false, false), LoggingMode.Once),
+      loggingMode.mfcard    => (new Transports(false, false, true, false), LoggingMode.Once),
+      loggingMode.pc        => (new Transports(true, false, false, false), LoggingMode.Once),
+      loggingMode.permanent => (new Transports(true, false, false, false), LoggingMode.AutoRestart),
+      _ => (new Transports(false, true, false, false), LoggingMode.Once),
+    };
+
+    showIndicator(MLSResource.DR_StartLogging);
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      await MLUtility.Protocol.StartLoggingAsync(new LoggingConfig(transports, mode), cts.Token);
+
+      MLUtility.WriteLog(Logger.XBeeName + "; Start logging (v4); mode=" + lMode);
+
+      Application.Current.Dispatcher.Dispatch(() =>
+      {
+        if (lMode == loggingMode.bluetooth)
+          Shell.Current.GoToAsync(nameof(DataReceive),
+            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
+        else
+          Shell.Current.GoToAsync("..");
+      });
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        DisplayAlert("Alert", "Failed to start logging." + Environment.NewLine + ex.Message, "OK");
+      });
+    }
+    finally
+    {
       Application.Current.Dispatcher.Dispatch(hideIndicator);
     }
   }
