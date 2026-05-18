@@ -523,48 +523,64 @@ void Xbee_TxChars(const char *data)
     g_communicating = false;
 }
 
-void Xbee_BlChars(const char *data)
+// 1 つの USER_DATA_RELAY フレーム (BLE 宛) を送信するヘルパ。
+// data: 送信バイト先頭, len: 送信バイト数 (この呼び出しで送るバイト数のみ)。
+// 呼び出し側で Wakeup/Sleep/g_communicating の管理を行う。
+static void xbee_bl_send_chunk(const char *data, int len)
 {
-    g_communicating = true;
-    //Sleepの場合には一旦起こす
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping) 
-    {
-        Xbee_Wakeup();
-        DELAY_microseconds(150); //XBee立ち上げに0.05ms程度必要:3倍
-    }
-    
     int chkSum = 0;
-    int cl = getCharLength(data);
-    
+
     USART0_Write(XB_START_DELIMITER);
-    USART0_Write((uint8_t)(((cl + XB_UDR_HEADER_LENGTH) >> 8) & 0xff));
-    USART0_Write((uint8_t)((cl + XB_UDR_HEADER_LENGTH) & 0xff));
-    
-    // Checksum start
+    USART0_Write((uint8_t)(((len + XB_UDR_HEADER_LENGTH) >> 8) & 0xff));
+    USART0_Write((uint8_t)((len + XB_UDR_HEADER_LENGTH) & 0xff));
+
     USART0_Write(XB_FRAME_USER_DATA_RELAY);
     chkSum = addCsum(chkSum, XB_FRAME_USER_DATA_RELAY);
-    
-    // 2026.01.1 送信完了ACKチェック機能を追加
-    g_txStatusReceived = false; // フラグをリセット
+
+    g_txStatusReceived = false;
     g_lastFrameId++;
-    if(g_lastFrameId == 0) g_lastFrameId = 0x01; // 0はNoACKなのでスキップ
+    if(g_lastFrameId == 0) g_lastFrameId = 0x01;
     USART0_Write(g_lastFrameId);
     chkSum = addCsum(chkSum, g_lastFrameId);
-    
+
     USART0_Write(XB_UDR_INTERFACE_BLUETOOTH);
     chkSum = addCsum(chkSum, XB_UDR_INTERFACE_BLUETOOTH);
-    
-    for(int i=0; i<cl; i++) {
+
+    for(int i = 0; i < len; i++) {
         USART0_Write((uint8_t)data[i]);
         chkSum = addCsum(chkSum, data[i]);
     }
-    
+
     USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
-    
-    //送信完了を待つ
+
     waitTxCompletion(200);
-    //Sleep状態だったもしくはSleep指令が来た場合には再びSleep
+}
+
+// XBee 3 の BLE GATT notification MTU (~244B) を超える単一フレームは
+// モジュールが silently drop してしまうため、安全側で 150B/chunk に分割して
+// 複数の USER_DATA_RELAY フレームで送る。受信側 (MAUI LineBuffer 等) は \n
+// まで連結するので分割は透過的。
+#define XB_BL_MAX_CHUNK_BYTES 150
+
+void Xbee_BlChars(const char *data)
+{
+    g_communicating = true;
+    bool wasSleeping = Xbee_IsSleeping();
+    if(wasSleeping)
+    {
+        Xbee_Wakeup();
+        DELAY_microseconds(150);
+    }
+
+    int total = getCharLength(data);
+    int offset = 0;
+    while (offset < total) {
+        int chunk = total - offset;
+        if (chunk > XB_BL_MAX_CHUNK_BYTES) chunk = XB_BL_MAX_CHUNK_BYTES;
+        xbee_bl_send_chunk(data + offset, chunk);
+        offset += chunk;
+    }
+
     if(wasSleeping || g_shouldSleep) sleepXBee();
     g_communicating = false;
 }
