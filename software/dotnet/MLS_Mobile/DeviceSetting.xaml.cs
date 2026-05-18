@@ -193,6 +193,8 @@ public partial class DeviceSetting : ContentPage
 
   private async void initInfo()
   {
+    if (IsV4Protocol) { await initInfoV4(); return; }
+
     spc_name.Text = MLSResource.DS_SpecName + ": -";
     spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
     spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + Logger.LowAddress;
@@ -325,6 +327,8 @@ public partial class DeviceSetting : ContentPage
   /// <param name="name">名称</param>
   private async void updateName(string name)
   {
+    if (IsV4Protocol) { await updateNameV4(name); return; }
+
     //イベント待機タスクを作成
     var tcs = new TaskCompletionSource<bool>();
 
@@ -411,6 +415,8 @@ public partial class DeviceSetting : ContentPage
   /// <summary>測定設定を設定する</summary>
   private async void updateMeasurementSetting()
   {
+    if (IsV4Protocol) { await updateMeasurementSettingV4(); return; }
+
     //入力エラーがあれば終了
     if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
 
@@ -545,6 +551,8 @@ public partial class DeviceSetting : ContentPage
 
   private async void CFButton_Clicked(object sender, EventArgs e)
   {
+    if (IsV4Protocol) { await openCFSettingV4(); return; }
+
     //インジケータ表示
     showIndicator(MLSResource.CR_Connecting);
 
@@ -594,6 +602,8 @@ public partial class DeviceSetting : ContentPage
 
   private async void CO2CalibrationButton_Clicked(object sender, EventArgs e)
   {
+    if (IsV4Protocol) { await calibrateCo2V4ForcedAsync(); return; }
+
     var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
     var result = await this.ShowPopupAsync<string>(popup);
     if (result != null)
@@ -664,6 +674,8 @@ public partial class DeviceSetting : ContentPage
 
   private async void CO2InitializeButton_Clicked(object sender, EventArgs e)
   {
+    if (IsV4Protocol) { await calibrateCo2V4FactoryAsync(); return; }
+
     var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
     var result = await this.ShowPopupAsync<string>(popup);
     if (result != null)
@@ -870,6 +882,203 @@ public partial class DeviceSetting : ContentPage
     finally
     {
       Application.Current.Dispatcher.Dispatch(hideIndicator);
+    }
+  }
+
+  /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
+  private async Task initInfoV4()
+  {
+    var dev = MLUtility.Protocol.Device;
+    Application.Current?.Dispatcher.Dispatch(() =>
+    {
+      spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
+      spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
+      spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
+      spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
+      btn_pmntMode.IsEnabled = true;        // v4 firmware always supports permanent mode
+      co2LevelGrid.IsVisible = true;        // assume CO2 sensor present (toggle handles real state)
+    });
+
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var s = await MLUtility.Protocol.GetSettingsAsync(cts.Token);
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        applySettingsToUI(s);
+        resetTextColor();
+      });
+    }
+    catch
+    {
+      // best-effort; leave UI defaults
+    }
+  }
+
+  /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>
+  private async Task updateMeasurementSettingV4()
+  {
+    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
+
+    var thSetting  = new SensorSettingPatch(cbx_th.IsToggled,  (uint)thSpan);
+    var patch = new SettingsPatch
+    {
+      DrybulbTemperature = thSetting,
+      RelativeHumidity   = thSetting,                                              // RH shares with DBT in current UI
+      GlobeTemperature   = new SensorSettingPatch(cbx_glb.IsToggled, (uint)glbSpan),
+      Velocity           = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
+      Illuminance        = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
+      Co2                = new SensorSettingPatch(cbx_co2.IsToggled, (uint)co2Span),
+      StartTime          = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
+    };
+
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var s = await MLUtility.Protocol.SetSettingsAsync(patch, cts.Token);
+
+      MLUtility.WriteLog(Logger.XBeeName + ": Measurement setting changed (v4)");
+
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        applySettingsToUI(s);
+        resetTextColor();
+      });
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        DisplayAlert("Alert", "Failed to save settings." + Environment.NewLine + ex.Message, "OK");
+      });
+    }
+  }
+
+  /// <summary>v4 path of updateName - calls SetNameAsync and reflects the returned name.</summary>
+  private async Task updateNameV4(string name)
+  {
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var newName = await MLUtility.Protocol.SetNameAsync(name, cts.Token);
+
+      MLUtility.WriteLog(Logger.XBeeName + "; Name changed (v4); " + newName + "; ");
+
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        spc_name.Text = MLSResource.DS_SpecName + ": " + newName;
+      });
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        DisplayAlert("Alert", "Failed to set name." + Environment.NewLine + ex.Message, "OK");
+      });
+    }
+  }
+
+  /// <summary>Copy Settings (server response) into the UI controls.</summary>
+  private void applySettingsToUI(Settings s)
+  {
+    cbx_th.IsToggled  = s.DrybulbTemperature.Enabled;
+    ent_th.Text       = s.DrybulbTemperature.Interval.ToString();
+    cbx_glb.IsToggled = s.GlobeTemperature.Enabled;
+    ent_glb.Text      = s.GlobeTemperature.Interval.ToString();
+    cbx_vel.IsToggled = s.Velocity.Enabled;
+    ent_vel.Text      = s.Velocity.Interval.ToString();
+    cbx_lux.IsToggled = s.Illuminance.Enabled;
+    ent_lux.Text      = s.Illuminance.Interval.ToString();
+    cbx_co2.IsToggled = s.Co2.Enabled;
+    ent_co2.Text      = s.Co2.Interval.ToString();
+    var local         = s.StartTime.LocalDateTime;
+    dpck_start.Date   = local.Date;
+    tpck_start.Time   = local.TimeOfDay;
+  }
+
+  /// <summary>v4 path of CFButton_Clicked - pre-fetches correction factors then navigates.</summary>
+  private async Task openCFSettingV4()
+  {
+    showIndicator(MLSResource.CR_Connecting);
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      await MLUtility.Protocol.GetCorrectionAsync(cts.Token);
+
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        Shell.Current.GoToAsync(nameof(CFSetting),
+          new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
+      });
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        DisplayAlert("Alert", "Failed to load correction." + Environment.NewLine + ex.Message, "OK");
+      });
+    }
+    finally
+    {
+      Application.Current?.Dispatcher.Dispatch(hideIndicator);
+    }
+  }
+
+  /// <summary>v4 path of CO2CalibrationButton_Clicked (forced calibration).</summary>
+  private async Task calibrateCo2V4ForcedAsync()
+  {
+    var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
+    var result = await this.ShowPopupAsync<string>(popup);
+    if (result == null) return;
+    if (!int.TryParse(result.Result, out int refLevel))
+    {
+      Application.Current?.Dispatcher.Dispatch(() => { DisplayAlert("Alert", "CO2 level is invalid", "OK"); });
+      return;
+    }
+    await calibrateCo2V4(Co2CalibrationMode.Forced, refLevel, navigateToCalibrator: true);
+  }
+
+  /// <summary>v4 path of CO2InitializeButton_Clicked (factory reset).</summary>
+  private async Task calibrateCo2V4FactoryAsync()
+  {
+    var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
+    var result = await this.ShowPopupAsync<string>(popup);
+    if (result == null) return;
+    if (!int.TryParse(result.Result, out int refLevel))
+    {
+      Application.Current?.Dispatcher.Dispatch(() => { DisplayAlert("Alert", "CO2 level is invalid", "OK"); });
+      return;
+    }
+    await calibrateCo2V4(Co2CalibrationMode.Factory, refLevel, navigateToCalibrator: false);
+  }
+
+  private async Task calibrateCo2V4(Co2CalibrationMode mode, int refLevel, bool navigateToCalibrator)
+  {
+    showIndicator(MLSResource.CR_Connecting);
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      await MLUtility.Protocol.CalibrateCo2Async(mode, refLevel, cts.Token);
+
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        if (navigateToCalibrator)
+          Shell.Current.GoToAsync(nameof(CO2Calibrator),
+            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
+        else
+          Shell.Current.GoToAsync("..");
+      });
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        DisplayAlert("Alert", "Failed to start CO2 calibration." + Environment.NewLine + ex.Message, "OK");
+      });
+    }
+    finally
+    {
+      Application.Current?.Dispatcher.Dispatch(hideIndicator);
     }
   }
 
