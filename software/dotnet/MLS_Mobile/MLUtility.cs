@@ -144,6 +144,13 @@ namespace MLS_Mobile
       // v4 protocol の TX/RX を LogView で見えるようにする (診断用)
       MLLib.Protocol.Protocols.JsonRpcV4Protocol.DiagnosticSink = msg => WriteLog("[v4] " + msg);
 
+      // BLE バイトレベル RX を LogView に出す (chunked 応答の chunk1/chunk2 到着状況を見る)
+      BleXBeeTransport.DiagnosticRxSink = (len, data) =>
+      {
+        int preview = Math.Min(48, len);
+        WriteLog("[ble-rx] " + len + "B: " + Convert.ToHexString(data, 0, preview) + (len > preview ? "..." : ""));
+      };
+
       //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
       //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため
       //意図的に遅延を入れない。

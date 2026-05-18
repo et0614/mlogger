@@ -54,11 +54,20 @@ public sealed class BleXBeeTransport : ISerialTransport
     /// XBeeBLEDevice.SerialDataReceived の発火元 (MLUtility 静的コールバック等) から
     /// 受信バイト列を本メソッドに渡してもらう。
     /// </summary>
+    /// <summary>
+    /// FeedReceived 毎に生バイト情報を吐く診断シンク。
+    /// MAUI 側から MLUtility.WriteLog にバインドして LogView で観察。
+    /// </summary>
+    public static Action<int, byte[]>? DiagnosticRxSink { get; set; }
+
     public void FeedReceived(byte[] data)
     {
         if (_disposed) return;
         if (data is { Length: > 0 })
+        {
+            DiagnosticRxSink?.Invoke(data.Length, data);
             _received.OnNext(data.AsMemory());
+        }
     }
 
     public bool IsConnected => _device.IsConnected;

@@ -918,6 +918,30 @@ public partial class DeviceSetting : ContentPage
     {
       // best-effort; leave UI defaults
     }
+
+    // BLE 経路診断: 5回連続で echo(size=300) を投げて LogView で観察。
+    // USB では同じパターンが全部 OK なので、ここで FAIL したら bug は BLE 経路。
+    // 各 EchoAsync の TX/RX は JsonRpcV4Protocol の DiagnosticSink で全部記録される。
+    _ = Task.Run(async () =>
+    {
+      var jp = MLUtility.Protocol as MLLib.Protocol.Protocols.JsonRpcV4Protocol;
+      if (jp == null) return;
+      MLUtility.WriteLog("=== BLE echo burst diagnostic start (5x size=300) ===");
+      for (int i = 1; i <= 5; i++)
+      {
+        try
+        {
+          using var ects = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+          int returned = await jp.EchoAsync(300, ects.Token);
+          MLUtility.WriteLog("echo #" + i + " OK returned=" + returned);
+        }
+        catch (Exception ex)
+        {
+          MLUtility.WriteLog("echo #" + i + " FAIL " + ex.GetType().Name + ": " + ex.Message);
+        }
+      }
+      MLUtility.WriteLog("=== BLE echo burst diagnostic end ===");
+    });
   }
 
   /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>

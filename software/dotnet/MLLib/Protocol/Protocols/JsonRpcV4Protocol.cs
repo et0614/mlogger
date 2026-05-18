@@ -304,6 +304,17 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     public async Task StopLoggingAsync(CancellationToken ct = default)
         => await CallAsync("stop_logging", null, ct);
 
+    /// <summary>
+    /// 診断用 echo (firmware ph_echo を直叩き)。size 文字の 'x' を含む応答を返させ、
+    /// 返却された size を返す。BLE 経路の chunked 応答バグの切り分けに使う。
+    /// </summary>
+    public async Task<int> EchoAsync(int size, CancellationToken ct = default)
+    {
+        var p = new JsonObject { ["size"] = size };
+        var result = RequireResult<JsonObject>(await CallAsync("echo", p, ct));
+        return result["size"]?.GetValue<int>() ?? -1;
+    }
+
     public async Task ClearDataAsync(CancellationToken ct = default)
         => await CallAsync("clear_data", null, ct);
 
