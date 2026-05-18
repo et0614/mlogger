@@ -12,6 +12,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLS_Mobile", "MLS_Mobile\ML
 		{7D045F55-2D56-46FF-97C4-470E2023520E} = {7D045F55-2D56-46FF-97C4-470E2023520E}
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLProtocolTest", "MLProtocolTest\MLProtocolTest.csproj", "{5E2B3C4D-8F9A-4B1C-A6D7-8E9F1A2B3C4D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7D045F55-2D56-46FF-97C4-470E2023520E} = {7D045F55-2D56-46FF-97C4-470E2023520E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +37,10 @@ Global
 		{39406D1B-C80E-4C2A-A4CF-906E86486D36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39406D1B-C80E-4C2A-A4CF-906E86486D36}.Release|Any CPU.Build.0 = Release|Any CPU
 		{39406D1B-C80E-4C2A-A4CF-906E86486D36}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{5E2B3C4D-8F9A-4B1C-A6D7-8E9F1A2B3C4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E2B3C4D-8F9A-4B1C-A6D7-8E9F1A2B3C4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E2B3C4D-8F9A-4B1C-A6D7-8E9F1A2B3C4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E2B3C4D-8F9A-4B1C-A6D7-8E9F1A2B3C4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
