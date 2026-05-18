@@ -34,12 +34,11 @@ public sealed class BleXBeeTransport : ISerialTransport
     /// <summary>
     /// 連続 SendAsync の最小間隔 [ms]。
     /// 実機実験で複数 RPC を 1 秒以内に連続送信すると firmware から応答が一切返らない
-    /// ことが判明。さらに最初の multi-chunk 応答の直後に MAUI が即時 TX を投げると
-    /// 当該 TX が消失する (echo #1 → echo #2 の失敗パターン)。BLE link parameter
-    /// renegotiation 中もしくは XBee 内部キューの整理に必要な時間と推定し、安全側で
-    /// 500ms に拡大して様子を見る (実験 A)。
+    /// ことが判明。150ms で 5回中 1回失敗、500ms で 5回中 3回失敗 (悪化) のため
+    /// 150ms に戻す。根本原因は別 (連続 BLE notification 受信後の write degradation
+    /// と推定) なので、別の経路から attack する。
     /// </summary>
-    private const int MinSendIntervalMs = 500;
+    private const int MinSendIntervalMs = 150;
 
     public BleXBeeTransport(XBeeBLEDevice device)
     {

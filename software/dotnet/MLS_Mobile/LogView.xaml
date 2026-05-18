@@ -6,13 +6,14 @@
              Title="LogView">
     <StackLayout>
         <ScrollView Orientation="Both" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
-            <Label 
+            <Label
                 x:Name="logLabel"
                 Text=""
                 HorizontalTextAlignment="Start"
                 VerticalTextAlignment="Start"
                 VerticalOptions="FillAndExpand"
                 BackgroundColor="White"
+                TextColor="Black"
                 Padding="10"
                 FontSize="Medium"
             />
