@@ -26,6 +26,7 @@ static const pd_command_t s_commands[] = {
     { "clear_data",     ph_clear_data     },
     { "calibrate_co2",  ph_calibrate_co2  },
     { "dump",           ph_dump           },
+    { "echo",           ph_echo           },
     { NULL,             NULL              }
 };
 

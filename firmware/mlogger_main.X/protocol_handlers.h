@@ -31,6 +31,11 @@ void ph_clear_data     (int32_t id, const char *json, const jsmntok_t *tokens, i
 void ph_calibrate_co2  (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_dump           (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 
+// 診断用: 副作用なしで任意サイズの応答を生成
+//   params: {"size": N}  → result.data に N 文字の 'x' を含めて返す (N の上限は s_tx_buf - envelope)
+//   params 省略時は data 無し
+void ph_echo           (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
+
 #ifdef __cplusplus
 }
 #endif

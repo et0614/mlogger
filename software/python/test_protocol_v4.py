@@ -179,6 +179,94 @@ def test_invalid_json(ser):
     return True
 
 
+# ============================================================
+# echo diagnostic tests (USB)
+#   ph_echo is a side-effect-free handler that returns N 'x' characters in
+#   result.data. Used to isolate bugs:
+#     - USB pass + BLE fail  → bug is in Xbee_BlChars / chunking / reentry
+#     - USB fail             → bug is in pd_dispatch / ph_echo / CH_Reply / dispatch state
+# ============================================================
+
+def _do_echo(ser, id_, size, verbose=False):
+    """単発 echo, 応答が正しいか検証して bool を返す。verbose=False で出力簡略。"""
+    msg = json.dumps({"v": 1, "id": id_, "command": "echo", "params": {"size": size}}) + '\n'
+    ser.reset_input_buffer()
+    ser.write(msg.encode('utf-8'))
+    line = ser.readline().decode('utf-8', errors='ignore').strip()
+    if not line:
+        if verbose: print(f"    id={id_} size={size}: NO RESPONSE")
+        return False
+    try:
+        resp = json.loads(line)
+    except json.JSONDecodeError as e:
+        if verbose: print(f"    id={id_} size={size}: PARSE FAIL ({e}) — got {len(line)}B: {line[:80]!r}")
+        return False
+    if resp.get("id") != id_:
+        if verbose: print(f"    id={id_} size={size}: ID MISMATCH (got {resp.get('id')})")
+        return False
+    r = resp.get("result") or {}
+    if r.get("size") != size:
+        if verbose: print(f"    id={id_} size={size}: size mismatch {r.get('size')}")
+        return False
+    data = r.get("data") or ""
+    if len(data) != size or any(c != 'x' for c in data):
+        if verbose: print(f"    id={id_} size={size}: data wrong (len={len(data)})")
+        return False
+    if verbose: print(f"    id={id_} size={size}: OK ({len(line)}B response)")
+    return True
+
+
+def test_echo_single_small(ser):
+    print("\n--- Echo 1: single small (size=10) ---")
+    ok = _do_echo(ser, 200, 10, verbose=True)
+    print(f"    [{'OK' if ok else 'FAIL'}]")
+    return ok
+
+
+def test_echo_single_large(ser):
+    print("\n--- Echo 2: single large (size=300, response ~370B) ---")
+    ok = _do_echo(ser, 201, 300, verbose=True)
+    print(f"    [{'OK' if ok else 'FAIL'}]")
+    return ok
+
+
+def test_echo_burst_small(ser):
+    """連続 5 回の小さい echo - ディスパッチ/状態のサンプル"""
+    print("\n--- Echo 3: burst of 5 small (size=20) ---")
+    all_ok = True
+    for i in range(5):
+        ok = _do_echo(ser, 210 + i, 20, verbose=True)
+        if not ok: all_ok = False
+    print(f"    [{'OK' if all_ok else 'FAIL'}]  (passed {sum(1 for i in range(5) if True)})")
+    return all_ok
+
+
+def test_echo_burst_large(ser):
+    """連続 5 回の大きい echo - 実機 BLE で出ている 'first ok, second fails' を USB で再現するか"""
+    print("\n--- Echo 4: burst of 5 large (size=300, response ~370B each) ---")
+    results = []
+    for i in range(5):
+        ok = _do_echo(ser, 220 + i, 300, verbose=True)
+        results.append(ok)
+    print(f"    individual: {results}")
+    all_ok = all(results)
+    print(f"    [{'OK' if all_ok else 'FAIL'}]")
+    return all_ok
+
+
+def test_echo_size_sweep(ser):
+    """サイズスイープ - 応答が壊れ始めるしきい値を見る"""
+    print("\n--- Echo 5: size sweep [10, 50, 100, 200, 250, 300, 350, 400, 440] ---")
+    results = {}
+    for size in [10, 50, 100, 200, 250, 300, 350, 400, 440]:
+        ok = _do_echo(ser, 230 + size, size, verbose=False)
+        results[size] = ok
+        print(f"    size={size:>4}: {'OK' if ok else 'FAIL'}")
+    all_ok = all(results.values())
+    print(f"    [{'OK' if all_ok else 'FAIL'}]")
+    return all_ok
+
+
 def test_legacy_v3_removed(ser):
     """旧 v3 コマンドが応答しないことを確認 (Phase E で廃止)"""
     print("\n--- Test 4: legacy v3 WHO must NOT respond ---")
@@ -643,6 +731,12 @@ def run_test(com_port):
             results.append(("unknown_command", test_unknown_command(ser)))
             results.append(("invalid_json",    test_invalid_json(ser)))
             results.append(("legacy_v3_removed", test_legacy_v3_removed(ser)))
+            # echo diagnostic (副作用なし、bug isolation 用)
+            results.append(("echo single small", test_echo_single_small(ser)))
+            results.append(("echo single large", test_echo_single_large(ser)))
+            results.append(("echo burst small",  test_echo_burst_small(ser)))
+            results.append(("echo burst large",  test_echo_burst_large(ser)))
+            results.append(("echo size sweep",   test_echo_size_sweep(ser)))
             # Phase B
             results.append(("get_settings",                 test_get_settings(ser)))
             results.append(("set_settings PATCH",           test_set_settings_patch(ser)))

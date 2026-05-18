@@ -469,3 +469,35 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
     // バイナリストリーム開始 (USB_Stream_Task が非同期にレコードを送出)
     USB_StartRecordStream();
 }
+
+// ============================================================
+// echo (diagnostic, no side effects)
+//   request:  { "command":"echo", "params":{"size":N} }
+//   response: { "result":{"size":N,"data":"xxx...x"} }   (N 文字の 'x')
+//   size 省略時は data 無しで {"size":0}
+// 応答サイズを自由に制御できるため chunk 分割・連続送信のバグ切り分けに使う。
+// ============================================================
+void ph_echo(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    int32_t size = 0;
+    if (params_tok >= 0) {
+        int sz_tok = pc_obj_get(json, tokens, ntokens, params_tok, "size");
+        if (sz_tok >= 0 && tokens[sz_tok].type == JSMN_PRIMITIVE) {
+            int32_t v = pc_tok_int(json, &tokens[sz_tok]);
+            if (v > 0) size = v;
+        }
+    }
+    // s_tx_buf は 512B。envelope `{"v":1,"id":XXXXX,"result":{"size":XXX,"data":""}}\n` で
+    // 60B 程度消費するため、安全マージンを取って data 上限を 440B に。
+    if (size > 440) size = 440;
+
+    char filler[441];
+    for (int i = 0; i < size; i++) filler[i] = 'x';
+    filler[size] = '\0';
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    pc_key(&w, "size"); pc_int(&w, size);
+    pc_key(&w, "data"); pc_str(&w, filler);
+    pc_end_result(&w);
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+}
