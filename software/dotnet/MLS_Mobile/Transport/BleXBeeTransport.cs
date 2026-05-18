@@ -39,15 +39,35 @@ public sealed class BleXBeeTransport : ISerialTransport
 
     public IObservable<ReadOnlyMemory<byte>> Received => _received.AsObservable();
 
-    public Task SendAsync(ReadOnlyMemory<byte> data, CancellationToken ct = default)
+    public async Task SendAsync(ReadOnlyMemory<byte> data, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (!_device.IsConnected)
             throw new InvalidOperationException("XBeeBLEDevice is not connected");
 
-        // XBeeBLEDevice.SendSerialData は同期 API
-        _device.SendSerialData(data.ToArray());
-        return Task.CompletedTask;
+        // DigiIoT.Maui の SendSerialData は接続直後や BLE 状態によって
+        // "Timeout writing in the TX Characteristic" を投げることがある。
+        // 旧コード (MLoggerScanner) では 5回 × 100ms のリトライで吸収していたので、
+        // transport 層でも同等のリトライを行う。
+        const int MaxAttempts = 5;
+        var payload = data.ToArray();
+        Exception? lastError = null;
+        for (int i = 0; i < MaxAttempts; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                _device.SendSerialData(payload);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                if (i < MaxAttempts - 1)
+                    await Task.Delay(150, ct).ConfigureAwait(false);
+            }
+        }
+        throw lastError ?? new InvalidOperationException("SendSerialData failed after retries");
     }
 
     private void OnSerialDataReceived(object? sender, SerialDataReceivedEventArgs e)

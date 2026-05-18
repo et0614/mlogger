@@ -28,6 +28,7 @@ public static class ProtocolFactory
     public static async Task<IMLProtocol> DetectAsync(ISerialTransport transport, CancellationToken ct = default)
     {
         // --- 1. v4 hello probe ---
+        Exception? v4Error = null;
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -40,20 +41,29 @@ public static class ProtocolFactory
             // 想定外: JSON 応答だったが v4 ではない
             v4.Dispose();
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // タイムアウト → v3 にフォールバック
+            // 呼び出し元キャンセル: そのまま再 throw
+            throw;
         }
-        catch (JsonException)
+        catch (Exception ex)
         {
-            // 非 JSON → v3 にフォールバック
-        }
-        catch (InvalidDataException)
-        {
-            // JSON だが v4 スキーマでない → v3 にフォールバック
+            // タイムアウト / 非JSON / 通信エラー (BLE TX タイムアウト等) / その他
+            // → v3 フォールバックを試す
+            v4Error = ex;
         }
 
         // --- 2. v3 VER で再試行 ---
-        return await LegacyV3Protocol.CreateAsync(transport, ct).ConfigureAwait(false);
+        try
+        {
+            return await LegacyV3Protocol.CreateAsync(transport, ct).ConfigureAwait(false);
+        }
+        catch (Exception v3Ex) when (v4Error is not null)
+        {
+            // v4/v3 両方失敗 → 両方の情報を含む AggregateException
+            throw new AggregateException(
+                "Failed to detect protocol (both v4 hello and v3 VER probes failed)",
+                v4Error, v3Ex);
+        }
     }
 }
