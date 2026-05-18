@@ -2,7 +2,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using DigiIoT.Maui.Devices.XBee;
 using MLLib.Protocol.Transport;
-using XBeeLibrary.Core.Events.Relay;
 
 namespace MLS_Mobile.Transport;
 
@@ -28,9 +27,22 @@ public sealed class BleXBeeTransport : ISerialTransport
     {
         ArgumentNullException.ThrowIfNull(device);
         _device = device;
-        _device.SerialDataReceived += OnSerialDataReceived;
-        // 構築時点で既に接続済の前提
+        // 注: DigiIoT.Maui の SerialDataReceived は他 (MLUtility 静的コールバック等) からも
+        // 購読されている。マルチ subscriber の挙動が信頼できないため、ここでは直接購読せず
+        // 受信データは外部 (MLUtility) から FeedReceived() で流し込んでもらう。
         _connectionState.OnNext(_device.IsConnected);
+    }
+
+    /// <summary>
+    /// 外部からの受信データ供給口。
+    /// XBeeBLEDevice.SerialDataReceived の発火元 (MLUtility 静的コールバック等) から
+    /// 受信バイト列を本メソッドに渡してもらう。
+    /// </summary>
+    public void FeedReceived(byte[] data)
+    {
+        if (_disposed) return;
+        if (data is { Length: > 0 })
+            _received.OnNext(data.AsMemory());
     }
 
     public bool IsConnected => _device.IsConnected;
@@ -55,22 +67,10 @@ public sealed class BleXBeeTransport : ISerialTransport
         await Task.Run(() => _device.SendSerialData(payload)).WaitAsync(ct).ConfigureAwait(false);
     }
 
-    private void OnSerialDataReceived(object? sender, SerialDataReceivedEventArgs e)
-    {
-        if (_disposed) return;
-        if (e.Data is { Length: > 0 } d)
-            _received.OnNext(d.AsMemory());
-    }
-
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        try
-        {
-            _device.SerialDataReceived -= OnSerialDataReceived;
-        }
-        catch { /* ignore */ }
         _received.OnCompleted();
         _received.Dispose();
         _connectionState.OnCompleted();
