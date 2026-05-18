@@ -116,9 +116,13 @@ public sealed class BleXBeeTransport : ISerialTransport
         }
     }
 
+    /// <summary>診断: 誰が Dispose を呼んだか log するためのシンク</summary>
+    public static Action<string>? DisposeTraceSink { get; set; }
+
     public void Dispose()
     {
         if (_disposed) return;
+        DisposeTraceSink?.Invoke("BleXBeeTransport.Dispose stack: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
         _disposed = true;
         _received.OnCompleted();
         _received.Dispose();

@@ -3,8 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.LogView"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
+             BackgroundColor="White"
              Title="LogView">
-    <StackLayout>
+    <StackLayout BackgroundColor="White">
         <ScrollView Orientation="Both" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
             <Label
                 x:Name="logLabel"

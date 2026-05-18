@@ -98,6 +98,9 @@ namespace MLS_Mobile
 
     public static void CloseXbee()
     {
+      // 診断: 誰が CloseXbee を呼んだか stack trace を log
+      WriteLog("[diag] CloseXbee called from: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
+
       //v4/v3 protocol 破棄 (XBee 切断より前に行う)
       try { Protocol?.Dispose(); } catch { }
       Protocol = null;
@@ -150,6 +153,10 @@ namespace MLS_Mobile
         int preview = Math.Min(48, len);
         WriteLog("[ble-rx] " + len + "B: " + Convert.ToHexString(data, 0, preview) + (len > preview ? "..." : ""));
       };
+
+      // BleXBeeTransport.Dispose 呼び出し元を log (誰が disposed しているかの追跡用)
+      BleXBeeTransport.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
+      MLLib.Protocol.Protocols.JsonRpcV4Protocol.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
 
       //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
       //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため

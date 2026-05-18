@@ -62,8 +62,12 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         }
     }
 
+    /// <summary>診断: 誰が Dispose を呼んだか log</summary>
+    public static Action<string>? DisposeTraceSink { get; set; }
+
     public void Dispose()
     {
+        DisposeTraceSink?.Invoke("JsonRpcV4Protocol.Dispose stack: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
         _rxSubscription.Dispose();
 
         // 保留中の応答を全てキャンセル
