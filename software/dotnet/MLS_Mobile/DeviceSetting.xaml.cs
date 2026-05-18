@@ -919,28 +919,48 @@ public partial class DeviceSetting : ContentPage
       // best-effort; leave UI defaults
     }
 
-    // BLE 経路診断: 5回連続で echo(size=300) を投げて LogView で観察。
-    // USB では同じパターンが全部 OK なので、ここで FAIL したら bug は BLE 経路。
-    // 各 EchoAsync の TX/RX は JsonRpcV4Protocol の DiagnosticSink で全部記録される。
+    // BLE 経路診断 (実験 B): chunk 数依存性をプロファイル。
+    //   Phase 1: 5x size=80 (応答 ~150B = 1 chunk) -- 単一チャンクなら安定するか
+    //   Phase 2: mixed [20, 80, 200, 300, 80, 20] -- サイズを変えながら失敗パターン観察
     _ = Task.Run(async () =>
     {
       var jp = MLUtility.Protocol as MLLib.Protocol.Protocols.JsonRpcV4Protocol;
       if (jp == null) return;
-      MLUtility.WriteLog("=== BLE echo burst diagnostic start (5x size=300) ===");
+
+      MLUtility.WriteLog("=== BLE diag start ===");
+
+      MLUtility.WriteLog("--- Phase 1: 5x size=80 (1-chunk responses) ---");
       for (int i = 1; i <= 5; i++)
       {
         try
         {
           using var ects = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-          int returned = await jp.EchoAsync(300, ects.Token);
-          MLUtility.WriteLog("echo #" + i + " OK returned=" + returned);
+          int returned = await jp.EchoAsync(80, ects.Token);
+          MLUtility.WriteLog("P1 echo #" + i + " OK returned=" + returned);
         }
         catch (Exception ex)
         {
-          MLUtility.WriteLog("echo #" + i + " FAIL " + ex.GetType().Name + ": " + ex.Message);
+          MLUtility.WriteLog("P1 echo #" + i + " FAIL " + ex.GetType().Name + ": " + ex.Message);
         }
       }
-      MLUtility.WriteLog("=== BLE echo burst diagnostic end ===");
+
+      MLUtility.WriteLog("--- Phase 2: mixed sizes [20, 80, 200, 300, 80, 20] ---");
+      int[] sizes = new int[] { 20, 80, 200, 300, 80, 20 };
+      for (int i = 0; i < sizes.Length; i++)
+      {
+        try
+        {
+          using var ects = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+          int returned = await jp.EchoAsync(sizes[i], ects.Token);
+          MLUtility.WriteLog("P2 echo #" + (i+1) + " size=" + sizes[i] + " OK returned=" + returned);
+        }
+        catch (Exception ex)
+        {
+          MLUtility.WriteLog("P2 echo #" + (i+1) + " size=" + sizes[i] + " FAIL " + ex.GetType().Name + ": " + ex.Message);
+        }
+      }
+
+      MLUtility.WriteLog("=== BLE diag end ===");
     });
   }
 
