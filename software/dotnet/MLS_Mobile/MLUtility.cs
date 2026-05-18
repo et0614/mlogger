@@ -141,15 +141,17 @@ namespace MLS_Mobile
 
       _bleTransport = new BleXBeeTransport(ConnectedXBee);
 
-      //BLE 接続直後は TX Characteristic が即時書込みできない場合がある (DigiIoT.Maui の
-      //SendSerialData が "Timeout writing in the TX Characteristic" を投げる)。旧 Scanner
-      //コードが catch + 100ms 待ち + リトライで吸収していた振る舞いを置換するため、
-      //BleXBeeTransport 構築後に固定の warmup を入れる。
+      //BLE 接続直後は TX Characteristic が即時書込みできない場合があるため warmup。
       await Task.Delay(500, ct);
+
+      //ProtocolFactory.DetectAsync は内部で v4 hello (~2秒) → v3 VER の順に試す。
+      //BLE 通信が完全に死んでいる場合に永久ハングしないよう全体に 10秒のハードリミット。
+      using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+      cts.CancelAfter(TimeSpan.FromSeconds(10));
 
       try
       {
-        Protocol = await ProtocolFactory.DetectAsync(_bleTransport, ct);
+        Protocol = await ProtocolFactory.DetectAsync(_bleTransport, cts.Token);
       }
       catch
       {
