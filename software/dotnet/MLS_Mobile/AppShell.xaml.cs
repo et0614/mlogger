@@ -22,8 +22,6 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(DeviceSetting), typeof(DeviceSetting));
     Routing.RegisterRoute(nameof(CFSetting), typeof(CFSetting));
     Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
-    Routing.RegisterRoute(nameof(VelocityCalibrator), typeof(VelocityCalibrator));
-    Routing.RegisterRoute(nameof(VelocityCalibrator2), typeof(VelocityCalibrator2));
     Routing.RegisterRoute(nameof(RelayedDataViewer), typeof(RelayedDataViewer));
     Routing.RegisterRoute(nameof(LogView), typeof(LogView));
     Routing.RegisterRoute(nameof(CO2Calibrator), typeof(CO2Calibrator));

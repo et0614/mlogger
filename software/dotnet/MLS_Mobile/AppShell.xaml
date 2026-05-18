@@ -81,7 +81,6 @@
             ここで個別ページのレイアウトをデバッグ
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
             <ShellContent ContentTemplate="{DataTemplate local:DataReceive}"/>
-            <ShellContent ContentTemplate="{DataTemplate local:VelocityCalibrator}"/>
             -->
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>
         </Tab>

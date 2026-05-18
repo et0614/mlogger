@@ -95,7 +95,7 @@ public partial class DeviceSetting : ContentPage
   private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
     //一般的ではないボタン群の表示・非表示切り替え
-    isDeveloperMode = calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = !calvBtnA.IsVisible;
+    isDeveloperMode = calvBtnA.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = !calvBtnA.IsVisible;
   }
 
   #endregion
@@ -111,7 +111,7 @@ public partial class DeviceSetting : ContentPage
     Accelerometer.Start(SensorSpeed.UI);
 
     //校正ボタンの表示・非表示
-    calvBtnA.IsVisible = calvBtnB.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = isDeveloperMode;
+    calvBtnA.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = isDeveloperMode;
 
     //基本は測定を停止させる
     isStopLogging = true;
@@ -184,9 +184,6 @@ public partial class DeviceSetting : ContentPage
       Logger.Version_Major + "." + Logger.Version_Minor + "." + Logger.Version_Revision;
 
     //バージョンに応じた処理
-    //Zigbee LEDの有効無効ボタンの有効化
-    btn_zigled.IsEnabled = 3 <= Logger.Version_Minor;
-
     //常設設置モードボタンの有効化
     btn_pmntMode.IsEnabled =
       (3 <= Logger.Version_Minor) ||
@@ -199,7 +196,6 @@ public partial class DeviceSetting : ContentPage
     loadMeasurementSetting();
 
     //Zigbee LED状態を更新
-    loadZigbeeLEDStatus();
 
     //CO2濃度センサの有無を反映
     loadCO2SensorInfo();
@@ -475,30 +471,6 @@ public partial class DeviceSetting : ContentPage
     }
   }
 
-  /// <summary>Zigbee通信LED表示状態を読み込む</summary>
-  private void loadZigbeeLEDStatus()
-  {
-    Task.Run(async () =>
-    {
-      //情報が更新されるまで命令を繰り返す
-      while (true)
-      {
-        try
-        {
-          byte[] rslt = MLUtility.ConnectedXBee.GetParameter("D5");
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            btn_zigled.Text =
-            (rslt[0] == 1) ? MLSResource.DS_DisableZigLED : MLSResource.DS_EnableZigLED;
-          });
-          return;
-        }
-        catch { }
-        await Task.Delay(500);
-      }
-    });
-  }
-
   private bool isInputsCorrect
   (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
   {
@@ -598,114 +570,6 @@ public partial class DeviceSetting : ContentPage
     {
       //ハンドラを解除
       Logger.CorrectionFactorsReceivedEvent -= handler;
-
-      //インジケータを隠す
-      Application.Current.Dispatcher.Dispatch(hideIndicator);
-    }
-  }
-
-  private async void VelocityCalibrationButton_Clicked(object sender, EventArgs e)
-  {
-    //インジケータ表示
-    showIndicator(MLSResource.CR_Connecting);
-
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.VelocityCharateristicsReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadVelocityCharateristicsCommand())));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //バージョンによって近似方法が異なるのでバージョン読み込み確認
-        if (!MLUtility.Logger.VersionLoaded)
-        {
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            DisplayAlert("Alert", "Version number has not loaded.", "OK");
-          });
-          return;
-        }
-
-        double[] minVandCoefs = new double[] { Logger.VelocityMinVoltage, Logger.VelocityCharacteristicsCoefA, Logger.VelocityCharacteristicsCoefB, Logger.VelocityCharacteristicsCoefC };
-
-        //ここから電圧取得処理*******
-        //イベント待機タスクを作成
-        var tcs2 = new TaskCompletionSource<bool>();
-
-        //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-        EventHandler handler2 = (s, e) => tcs2.TrySetResult(true);
-        Logger.CalibratingVoltageReceivedEvent += handler2;
-
-        try
-        {
-          //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-          for (int i = 0; i < 5 && !tcs2.Task.IsCompleted; i++)
-          {
-            try
-            {
-              await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeStartCalibratingVoltageCommand())));
-            }
-            catch { }
-
-            //イベントが来るか、タイムアウト(500ms)するまで待つ
-            await Task.WhenAny(tcs.Task, Task.Delay(500));
-          }
-
-          //タスクが正常に完了した場合のみUIを更新
-          if (tcs.Task.IsCompletedSuccessfully)
-          {
-            //開始に成功したらページ移動
-            Application.Current.Dispatcher.Dispatch(() =>
-            {
-              //新風速近似式
-              if (3 < MLUtility.Logger.Version_Major || 3 < MLUtility.Logger.Version_Minor || 19 < MLUtility.Logger.Version_Revision)
-                Shell.Current.GoToAsync(nameof(VelocityCalibrator2),
-                  new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
-                  );
-              //旧風速近似式
-              else
-                Shell.Current.GoToAsync(nameof(VelocityCalibrator),
-                  new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress }, { "minVandCoefs", minVandCoefs } }
-                  );
-            });
-          }
-        }
-        finally
-        {
-          //ハンドラを解除
-          Logger.CalibratingVoltageReceivedEvent -= handler2;
-        }        
-      }
-      else
-      {
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.VelocityCharateristicsReceivedEvent -= handler;
 
       //インジケータを隠す
       Application.Current.Dispatcher.Dispatch(hideIndicator);
@@ -860,52 +724,6 @@ public partial class DeviceSetting : ContentPage
   private void SDButton_Clicked(object sender, EventArgs e)
   {
     startLogging(loggingMode.mfcard);
-  }
-
-  private void PANButton_Clicked(object sender, EventArgs e)
-  {
-    //インジケータ表示
-    showIndicator(MLSResource.DR_StartLogging);
-
-    Task.Run(() =>
-    {
-      try
-      {
-        byte[] id = MLUtility.ConnectedXBee.GetParameter("ID");
-        string panID = BitConverter.ToString(id).Replace("-", "").TrimStart('0');
-
-        Application.Current?.Dispatcher.Dispatch(async () =>
-        {
-          var popup = new TextInputPopup(MLSResource.DS_ChangePANID, panID, Keyboard.Numeric);
-          var result = await this.ShowPopupAsync(popup);
-          if (result != null)
-          {
-            try
-            {
-              int panID = Convert.ToInt32(popup.EntryValue, 16);
-              byte[] ar = BitConverter.GetBytes(panID);
-              Array.Reverse(ar);
-
-              await Task.Run(() =>
-              {
-                MLUtility.ConnectedXBee.SetParameter("ID", ar);
-                MLUtility.ConnectedXBee.WriteChanges();
-              });
-            }
-            catch { }
-          }
-        });
-      }
-      catch { }
-      finally
-      {
-        //インジケータを隠す
-        Application.Current?.Dispatcher.Dispatch(() =>
-        {
-          hideIndicator();
-        });
-      }
-    });
   }
 
   private async void startLogging(loggingMode lMode)
@@ -1080,36 +898,6 @@ public partial class DeviceSetting : ContentPage
   private void PermanentModeButton_Clicked(object sender, EventArgs e)
   {
     startLogging(loggingMode.permanent);
-  }
-
-  /// <summary>Zigbee通信LED表示の有効化・無効化を変更ボタンタップ時の処理</summary>
-  /// <param name="sender"></param>
-  /// <param name="e"></param>
-  private void LEDButton_Clicked(object sender, EventArgs e)
-  {
-    //設定読み込み中は無視
-    if (btn_zigled.Text == MLSResource.DS_LoadingZigLED) return;
-    bool ledEnabled = (btn_zigled.Text == MLSResource.DS_DisableZigLED);
-
-    Task.Run(async () =>
-    {
-      //成功するまで3回は繰り返す
-      for (int i = 0; i < 3; i++)
-      {
-        try
-        {
-          MLUtility.ConnectedXBee.SetParameter("D5", ledEnabled ? new byte[] { 4 } : new byte[] { 1 });
-          MLUtility.ConnectedXBee.WriteChanges(); //設定を反映
-          Application.Current.Dispatcher.Dispatch(() =>
-          {
-            btn_zigled.Text = ledEnabled ? MLSResource.DS_EnableZigLED : MLSResource.DS_DisableZigLED;
-          });
-          return;
-        }
-        catch { }
-        await Task.Delay(500);
-      }
-    });
   }
 
   #endregion
