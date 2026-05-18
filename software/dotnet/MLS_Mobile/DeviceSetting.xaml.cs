@@ -748,8 +748,10 @@ public partial class DeviceSetting : ContentPage
     // hello でキャッシュした Protocol.Device.Name を popup の初期値に使う。
     string currentName = IsV4Protocol ? MLUtility.Protocol.Device.Name : Logger.Name;
     var popup = new TextInputPopup(MLSResource.DS_SetName, currentName, Keyboard.Text);
-    var result = await this.ShowPopupAsync(popup);
-    if (result != null) updateName(popup.EntryValue);
+    // Popup<string>.CloseAsync(null) は IPopupResult を non-null で返してくる。
+    // 真の Cancel 判定は Result が null かどうかで行う。
+    var result = await this.ShowPopupAsync<string>(popup);
+    if (result?.Result is string newName) updateName(newName);
   }
 
   private void SDButton_Clicked(object sender, EventArgs e)
@@ -960,12 +962,13 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of updateName - calls SetNameAsync and reflects the returned name.</summary>
   private async Task updateNameV4(string name)
   {
+    MLUtility.WriteLog("v4 set_name START name='" + (name ?? "<null>") + "' len=" + (name?.Length ?? -1));
     try
     {
-      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
       var newName = await MLUtility.Protocol.SetNameAsync(name, cts.Token);
 
-      MLUtility.WriteLog(Logger.XBeeName + "; Name changed (v4); " + newName + "; ");
+      MLUtility.WriteLog("v4 set_name OK returned='" + newName + "'");
 
       Application.Current?.Dispatcher.Dispatch(() =>
       {
@@ -974,6 +977,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
+      MLUtility.WriteLog("v4 set_name FAIL " + ex.GetType().Name + ": " + ex.Message);
       Application.Current?.Dispatcher.Dispatch(() =>
       {
         DisplayAlert("Alert", "Failed to set name." + Environment.NewLine + ex.Message, "OK");

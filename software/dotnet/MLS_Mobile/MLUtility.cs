@@ -141,6 +141,9 @@ namespace MLS_Mobile
 
       _bleTransport = new BleXBeeTransport(ConnectedXBee);
 
+      // v4 protocol の TX/RX を LogView で見えるようにする (診断用)
+      MLLib.Protocol.Protocols.JsonRpcV4Protocol.DiagnosticSink = msg => WriteLog("[v4] " + msg);
+
       //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
       //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため
       //意図的に遅延を入れない。

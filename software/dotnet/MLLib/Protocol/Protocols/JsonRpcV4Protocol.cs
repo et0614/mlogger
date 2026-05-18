@@ -93,6 +93,12 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     // ============================================================
     // コマンド送信の共通基盤
     // ============================================================
+    /// <summary>
+    /// Optional diagnostic sink for sent/received JSON lines. Set by the host app
+    /// (e.g. MLUtility.WriteLog) to capture RPC traffic into the in-app log.
+    /// </summary>
+    public static Action<string>? DiagnosticSink { get; set; }
+
     private async Task<JsonNode?> CallAsync(string command, JsonNode? @params, CancellationToken ct)
     {
         int id = Interlocked.Increment(ref _nextId);
@@ -112,7 +118,9 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         };
         if (@params is not null) envelope["params"] = @params;
 
-        var bytes = Encoding.UTF8.GetBytes(envelope.ToJsonString() + "\n");
+        var json = envelope.ToJsonString();
+        DiagnosticSink?.Invoke($"TX id={id} cmd={command} len={json.Length}: {json}");
+        var bytes = Encoding.UTF8.GetBytes(json + "\n");
         await _transport.SendAsync(bytes, ct).ConfigureAwait(false);
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -147,9 +155,14 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
 
     private void OnLine(string line)
     {
+        DiagnosticSink?.Invoke($"RX len={line.Length}: {line}");
         JsonNode? root;
         try { root = JsonNode.Parse(line); }
-        catch { return; }
+        catch (Exception ex)
+        {
+            DiagnosticSink?.Invoke($"RX parse FAIL: {ex.Message}");
+            return;
+        }
         if (root is not JsonObject obj) return;
 
         // 応答 (id 有り)
