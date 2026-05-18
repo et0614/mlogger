@@ -34,14 +34,6 @@ static char xbee_payload_buffer[XB_RX_BUFFER_SIZE];
 static bool g_communicating = false; // 通信中か否か
 static bool g_shouldSleep = false; // 通信終了後にスリープすべきかのフラグ
 
-// BLE 経由でコマンドを受信したらこの秒数だけ XBee を起こしっぱなしにする。
-// LC_StartLoggingTask で outputToBLE=true にされない限り Xbee_MaintainTask は
-// Zigbee 経路扱いで XBee を sleep させてしまうため、DeviceSetting 等の単発
-// RPC が間に合わずロストする問題への対策。Xbee_MaintainTask が 1秒毎に
-// デクリメントし、> 0 の間は sleep しない。
-static uint16_t g_ble_keepalive_seconds = 0;
-#define BLE_KEEPALIVE_PERIOD_SEC 120
-
 static uint8_t g_association_status = 0xFF; // 0xFFは不明状態
 static uint16_t g_join_timer = 0;
 static uint16_t g_ai_request_timer = 0;
@@ -479,10 +471,7 @@ void Xbee_LoadUART(void)
             // (MAUI 側でユーザが retry する)。TX status (0x8B) は processXbeeByte
             // 内部で消費済 (返り値 false) なのでここまで来ない。
             if (g_communicating) continue;
-            CommandSource_t src = (g_lastApiId == XB_FRAME_ZIGBEE_RECEIVE_PACKET) ? SRC_XBEE : SRC_BLE;
-            // BLE 経由のコマンドを受けたら keepalive をリセット
-            if (src == SRC_BLE) g_ble_keepalive_seconds = BLE_KEEPALIVE_PERIOD_SEC;
-            CH_AppendString(xbee_payload_buffer, src);
+            CH_AppendString(xbee_payload_buffer, g_lastApiId == XB_FRAME_ZIGBEE_RECEIVE_PACKET ? SRC_XBEE : SRC_BLE);
         }
     }
 }
@@ -622,14 +611,6 @@ void Xbee_SendAtCmd(const char *data)
 // <editor-fold defaultstate="collapsed" desc="公開関数：スリープ">
 
 void Xbee_MaintainTask(Xbee_InterfaceConfig_t config) {
-    // BLE keepalive: 最近 BLE コマンドを受けたなら sleep 禁止
-    if (g_ble_keepalive_seconds > 0) {
-        g_ble_keepalive_seconds--;
-        Xbee_Wakeup();
-        g_ai_request_timer = 0;
-        return;
-    }
-
     // BLEが有効な場合にはスリープ不可
     if (config.ble_enabled) {
         Xbee_Wakeup();
