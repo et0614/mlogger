@@ -42,31 +42,55 @@ public sealed class BleXBeeTransport : ISerialTransport
     public async Task SendAsync(ReadOnlyMemory<byte> data, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!_device.IsConnected)
-            throw new InvalidOperationException("XBeeBLEDevice is not connected");
 
-        // DigiIoT.Maui の SendSerialData は接続直後や BLE 状態によって
-        // "Timeout writing in the TX Characteristic" を投げることがある。
-        // 旧コード (MLoggerScanner) では 5回 × 100ms のリトライで吸収していたので、
-        // transport 層でも同等のリトライを行う。
-        const int MaxAttempts = 5;
+        // DigiIoT.Maui の SendSerialData は同期 API で、内部の TX timeout
+        // (実測で数十秒) が満了するまでブロックすることがある。これを UI スレッドで
+        // 直接呼ぶと体感的にフリーズするため:
+        //   (1) Task.Run で threadpool に逃がして UI 応答性を確保
+        //   (2) Task.WhenAny + Task.Delay でアプリ側の 1.5秒 ハードタイムアウトを強制
+        //   (3) 3回まで自動リトライ (合計 max ~5秒)
+        const int MaxAttempts          = 3;
+        const int AttemptTimeoutMs     = 1500;
+        const int RetryBackoffMs       = 200;
+
         var payload = data.ToArray();
         Exception? lastError = null;
+
         for (int i = 0; i < MaxAttempts; i++)
         {
             ct.ThrowIfCancellationRequested();
+            if (!_device.IsConnected)
+                throw new InvalidOperationException("XBeeBLEDevice is not connected");
+
             try
             {
-                _device.SendSerialData(payload);
-                return;
+                var sendTask = Task.Run(() => _device.SendSerialData(payload));
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var timeoutTask = Task.Delay(AttemptTimeoutMs, timeoutCts.Token);
+
+                var done = await Task.WhenAny(sendTask, timeoutTask).ConfigureAwait(false);
+                timeoutCts.Cancel(); // 不要側を解放
+
+                if (done == sendTask)
+                {
+                    await sendTask.ConfigureAwait(false); // 例外があれば観測
+                    return; // 成功
+                }
+                // タイムアウト: sendTask は背景で継続中 (回収できない) が、本試行は失敗扱い
+                throw new TimeoutException($"SendSerialData did not return within {AttemptTimeoutMs}ms");
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 lastError = ex;
                 if (i < MaxAttempts - 1)
-                    await Task.Delay(150, ct).ConfigureAwait(false);
+                    await Task.Delay(RetryBackoffMs, ct).ConfigureAwait(false);
             }
         }
+
         throw lastError ?? new InvalidOperationException("SendSerialData failed after retries");
     }
 
