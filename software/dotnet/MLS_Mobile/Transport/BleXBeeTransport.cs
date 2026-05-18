@@ -21,7 +21,15 @@ public sealed class BleXBeeTransport : ISerialTransport
     private readonly XBeeBLEDevice _device;
     private readonly Subject<ReadOnlyMemory<byte>> _received = new();
     private readonly Subject<bool> _connectionState = new();
+    private readonly SemaphoreSlim _sendLock = new(1, 1);
     private bool _disposed;
+
+    /// <summary>
+    /// XBee BLE characteristic の単一 write 上限 (DigiIoT.Maui SendSerialData が
+    /// "Data length cannot be greater than 255 bytes" を throw する) を回避するための
+    /// 1 チャンクあたりの最大バイト数。マージンを取って 200B。
+    /// </summary>
+    private const int MaxBleChunkBytes = 200;
 
     public BleXBeeTransport(XBeeBLEDevice device)
     {
@@ -58,13 +66,32 @@ public sealed class BleXBeeTransport : ISerialTransport
             throw new InvalidOperationException("XBeeBLEDevice is not connected");
         ct.ThrowIfCancellationRequested();
 
-        // DigiIoT.Maui の SendSerialData は同期 API。
-        // (1) Task.Run で threadpool に逃がして UI を凍結させない
-        // (2) WaitAsync(ct) で ct がキャンセルされたら即座に OperationCanceledException
-        //     を投げて呼び出し元に制御を返す。背景の SendSerialData は zombie として
-        //     継続するが、UI 経路は確実に解放される
-        var payload = data.ToArray();
-        await Task.Run(() => _device.SendSerialData(payload)).WaitAsync(ct).ConfigureAwait(false);
+        // _sendLock で SendAsync 呼び出し全体をシリアライズする。複数の RPC を並行発火
+        // した場合 (例: OnAppearing で StopLoggingAsync と GetSettingsAsync を同時に呼ぶ)
+        // 1 つの JSON line が他のバイト列に分断される (firmware が parse 失敗 → 応答返らず
+        // → クライアント側 timeout) のを防ぐ。
+        await _sendLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            // DigiIoT.Maui の SendSerialData は同期 API かつ 255 バイト超を弾く。
+            // 大きい JSON (例: set_settings ~280B) を ≤200B のチャンクに分割して
+            // 順次送信し、firmware 側で UART/BLE バイトストリームとして連結させる。
+            // SendSerialData 自体は (1) Task.Run で threadpool に逃がして UI 凍結回避、
+            // (2) WaitAsync(ct) で ct キャンセル時に即制御を返す。
+            var payload = data.ToArray();
+            for (int offset = 0; offset < payload.Length; offset += MaxBleChunkBytes)
+            {
+                ct.ThrowIfCancellationRequested();
+                int len = Math.Min(MaxBleChunkBytes, payload.Length - offset);
+                var chunk = new byte[len];
+                Buffer.BlockCopy(payload, offset, chunk, 0, len);
+                await Task.Run(() => _device.SendSerialData(chunk)).WaitAsync(ct).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
     }
 
     public void Dispose()
@@ -75,5 +102,6 @@ public sealed class BleXBeeTransport : ISerialTransport
         _received.Dispose();
         _connectionState.OnCompleted();
         _connectionState.Dispose();
+        _sendLock.Dispose();
     }
 }
