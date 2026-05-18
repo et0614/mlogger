@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MLLib;
+using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
 using Microsoft.Maui.Controls;
 
@@ -57,8 +58,13 @@ public partial class CFSetting : ContentPage
   {
     base.OnAppearing();
 
-    applyCorrectionFactors();
+    if (IsV4Protocol) loadCorrectionFactorsV4();
+    else              applyCorrectionFactors();
   }
+
+  /// <summary>v4 (JSON-RPC) protocol is detected and available.</summary>
+  private static bool IsV4Protocol
+    => MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1;
 
   #endregion
 
@@ -100,7 +106,8 @@ public partial class CFSetting : ContentPage
 
   private void Load_Clicked(object sender, EventArgs e)
   {
-    loadCorrectionFactors();
+    if (IsV4Protocol) loadCorrectionFactorsV4();
+    else              loadCorrectionFactors();
   }
 
   private void Save_Clicked(object sender, EventArgs e)
@@ -167,7 +174,14 @@ public partial class CFSetting : ContentPage
     }
 
     if (hasError) DisplayAlert("Alert", errMsg, "OK");
-    else 
+    else if (IsV4Protocol)
+      saveCorrectionFactorsV4(
+        (float)dbtA, (float)dbtB,
+        (float)hmdA, (float)hmdB,
+        (float)glbA, (float)glbB,
+        (float)luxA, (float)luxB,
+        (float)velA, (float)velB);
+    else
       saveCorrectionFactors(MLogger.MakeCorrectionFactorsSettingCommand
           (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, Logger.VelocityMinVoltage));
   }
@@ -258,6 +272,77 @@ public partial class CFSetting : ContentPage
   }
 
   #endregion
+
+  /// <summary>v4 path of loadCorrectionFactors - calls GetCorrectionAsync.</summary>
+  private async void loadCorrectionFactorsV4()
+  {
+    showIndicator(MLSResource.CF_Setting);
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var cf = await MLUtility.Protocol.GetCorrectionAsync(cts.Token);
+      Application.Current?.Dispatcher.Dispatch(() => applyCorrectionFactorsV4(cf));
+    }
+    catch (Exception ex)
+    {
+      await DisplayAlert("Alert", MLSResource.CF_FailSetting + Environment.NewLine + ex.Message, "OK");
+    }
+    finally
+    {
+      hideIndicator();
+    }
+  }
+
+  /// <summary>v4 path of saveCorrectionFactors - builds a CorrectionFactorsPatch and calls SetCorrectionAsync.</summary>
+  private async void saveCorrectionFactorsV4(
+    float dbtA, float dbtB,
+    float hmdA, float hmdB,
+    float glbA, float glbB,
+    float luxA, float luxB,
+    float velA, float velB)
+  {
+    var patch = new CorrectionFactorsPatch
+    {
+      DrybulbTemperature = new CorrectionCoefficientsPatch(dbtA, dbtB),
+      RelativeHumidity   = new CorrectionCoefficientsPatch(hmdA, hmdB),
+      GlobeTemperature   = new CorrectionCoefficientsPatch(glbA, glbB),
+      Illuminance        = new CorrectionCoefficientsPatch(luxA, luxB),
+      Velocity           = new CorrectionCoefficientsPatch(velA, velB),
+    };
+    showIndicator(MLSResource.CF_Setting);
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var cf = await MLUtility.Protocol.SetCorrectionAsync(patch, cts.Token);
+      Application.Current?.Dispatcher.Dispatch(() => applyCorrectionFactorsV4(cf));
+    }
+    catch (Exception ex)
+    {
+      await DisplayAlert("Alert", MLSResource.CF_FailSetting + Environment.NewLine + ex.Message, "OK");
+    }
+    finally
+    {
+      hideIndicator();
+    }
+  }
+
+  /// <summary>Populate UI from a CorrectionFactors record (v4 response).</summary>
+  private void applyCorrectionFactorsV4(CorrectionFactors cf)
+  {
+    cA_dbt.Text = cf.DrybulbTemperature.A.ToString("F3");
+    cB_dbt.Text = cf.DrybulbTemperature.B.ToString("F2");
+    cA_hmd.Text = cf.RelativeHumidity.A.ToString("F3");
+    cB_hmd.Text = cf.RelativeHumidity.B.ToString("F2");
+    cA_glb.Text = cf.GlobeTemperature.A.ToString("F3");
+    cB_glb.Text = cf.GlobeTemperature.B.ToString("F2");
+    cA_vel.Text = cf.Velocity.A.ToString("F3");
+    cB_vel.Text = cf.Velocity.B.ToString("F3");
+    cA_lux.Text = cf.Illuminance.A.ToString("F3");
+    cB_lux.Text = cf.Illuminance.B.ToString("F0");
+    resetLabelColor();
+    isEdited = false;
+    hideIndicator();
+  }
 
   #region インジケータの操作
 
