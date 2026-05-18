@@ -141,11 +141,12 @@ namespace MLS_Mobile
 
       _bleTransport = new BleXBeeTransport(ConnectedXBee);
 
-      //BLE 接続直後は TX Characteristic が即時書込みできない場合があるため warmup。
-      await Task.Delay(500, ct);
+      //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
+      //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため
+      //意図的に遅延を入れない。
 
-      //ProtocolFactory.DetectAsync は内部で v4 hello (~2秒) → v3 VER の順に試す。
-      //BLE 通信が完全に死んでいる場合に永久ハングしないよう全体に 10秒のハードリミット。
+      //ProtocolFactory.DetectAsync は v3 VER → v4 hello の順に試す。
+      //BLE 通信が完全に死んでいる場合の永久ハング保護として全体に 10秒のハードリミット。
       using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
       cts.CancelAfter(TimeSpan.FromSeconds(10));
 

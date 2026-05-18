@@ -103,6 +103,10 @@ public sealed class LegacyV3Protocol : IMLProtocol
     // ============================================================
     /// <summary>
     /// ASCII コマンドを送り、指定プレフィックスで始まる行が到着するまで待つ。
+    ///
+    /// 注: v3 firmware は受信バッファに以前の garbage (v4 hello probe の残骸など) が
+    /// あると新コマンドを認識しないため、旧 MLogger.Make*Command パターンに倣って
+    /// 自動で先頭に \r を付加し、受信バッファを flush させる。
     /// </summary>
     private async Task<string> SendAsync(string cmd, string expectedPrefix, CancellationToken ct)
     {
@@ -114,18 +118,18 @@ public sealed class LegacyV3Protocol : IMLProtocol
             _pendingResponse = tcs;
 
             using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-            await _transport.SendAsync(Ascii.GetBytes(cmd), ct).ConfigureAwait(false);
+            await _transport.SendAsync(Ascii.GetBytes("\r" + cmd), ct).ConfigureAwait(false);
             try { return await tcs.Task.ConfigureAwait(false); }
             finally { _pendingResponse = null; _pendingPrefix = null; }
         }
         finally { _commandLock.Release(); }
     }
 
-    /// <summary>応答を期待しないコマンド送信。</summary>
+    /// <summary>応答を期待しないコマンド送信 (leading \r は SendAsync と同様に自動付加)。</summary>
     private async Task SendNoReplyAsync(string cmd, CancellationToken ct)
     {
         await _commandLock.WaitAsync(ct).ConfigureAwait(false);
-        try { await _transport.SendAsync(Ascii.GetBytes(cmd), ct).ConfigureAwait(false); }
+        try { await _transport.SendAsync(Ascii.GetBytes("\r" + cmd), ct).ConfigureAwait(false); }
         finally { _commandLock.Release(); }
     }
 
