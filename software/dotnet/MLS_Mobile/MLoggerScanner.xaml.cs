@@ -133,43 +133,19 @@ public partial class MLoggerScanner : ContentPage
     //MLoggerの場合***
     if (MLUtility.ConnectedDevice == MLDevice.MLogger)
     {
-      //イベント待機タスクを作成
-      var tcs = new TaskCompletionSource<bool>();
-
-      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-      EventHandler handler = (s, e) => tcs.TrySetResult(true);
-      MLUtility.Logger.VersionReceivedEvent += handler;
-
+      //v4 hello probe → v3 VER フォールバックで IMLProtocol を自動判定。
+      //v3 端末では ProtocolFactory が内部送信する VER の応答が既存の SerialDataReceived
+      //静的コールバック経由でも Logger に流れるため、Logger.Version_* は副作用で更新される
+      //(D6c で LegacyMLoggerAdapter 導入後はこの副作用依存を解消する予定)。
       try
       {
-        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-        {
-          try
-          {
-            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeGetVersionCommand())));
-          }
-          catch { }
-
-          //イベントが来るか、タイムアウト(100ms)するまで待つ
-          await Task.WhenAny(tcs.Task, Task.Delay(100));
-        }
-
-        //タスクが正常に完了した場合のみ
-        if (tcs.Task.IsCompletedSuccessfully)
-        {
-          await Shell.Current.GoToAsync(nameof(DeviceSetting), new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
-        }
-        else
-        {
-          await DisplayAlert("Alert", "Can't load MLogger version.", "OK");
-          await Task.Run(MLUtility.CloseXbee);
-        }
+        await MLUtility.DetectProtocolAsync();
+        await Shell.Current.GoToAsync(nameof(DeviceSetting), new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
       }
-      finally
+      catch (Exception ex)
       {
-        //ハンドラを解除
-        MLUtility.Logger.VersionReceivedEvent -= handler;
+        await DisplayAlert("Alert", "Can't detect protocol." + Environment.NewLine + ex.Message, "OK");
+        await Task.Run(MLUtility.CloseXbee);
       }
     }
 

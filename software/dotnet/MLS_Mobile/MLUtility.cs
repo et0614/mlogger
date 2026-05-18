@@ -3,6 +3,8 @@ using System.Text;
 
 using Plugin.BLE.Abstractions.Contracts;
 using DigiIoT.Maui.Devices.XBee;
+using MLLib.Protocol;
+using MLS_Mobile.Transport;
 
 namespace MLS_Mobile
 {
@@ -49,6 +51,15 @@ namespace MLS_Mobile
     /// <summary>接続されたMLoggerを取得する</summary>
     public static MLogger Logger { get; private set; }
 
+    /// <summary>
+    /// 接続済子機の v4/v3 IMLProtocol。<see cref="DetectProtocolAsync"/> 呼び出し後に
+    /// 利用可能になる。CloseXbee で破棄される。
+    /// </summary>
+    public static IMLProtocol Protocol { get; private set; }
+
+    /// <summary>Protocol の裏で IMLProtocol が使う transport (生成時に保持、CloseXbee で破棄)。</summary>
+    private static BleXBeeTransport _bleTransport;
+
     #endregion
 
     #region XBee接続切断処理
@@ -58,7 +69,7 @@ namespace MLS_Mobile
       //通信中のXBeeがある場合は接続を閉じる
       CloseXbee();
 
-      if (DeviceInfo.Current.Platform == DevicePlatform.Android)
+      if (Microsoft.Maui.Devices.DeviceInfo.Current.Platform == DevicePlatform.Android)
         ConnectedXBee = new XBeeBLEDevice(device.Id.ToString(), ML_PASS);
       else ConnectedXBee = new XBeeBLEDevice(device, ML_PASS);
 
@@ -87,6 +98,12 @@ namespace MLS_Mobile
 
     public static void CloseXbee()
     {
+      //v4/v3 protocol 破棄 (XBee 切断より前に行う)
+      try { Protocol?.Dispose(); } catch { }
+      Protocol = null;
+      try { _bleTransport?.Dispose(); } catch { }
+      _bleTransport = null;
+
       //通信中のXBeeがある場合は接続を閉じる
       if (ConnectedXBee != null && ConnectedXBee.IsConnected)
       {
@@ -105,6 +122,34 @@ namespace MLS_Mobile
       ConnectedDevice = MLDevice.None;
       Transceiver = null;
       Logger = null;
+    }
+
+    /// <summary>
+    /// 接続済 <see cref="ConnectedXBee"/> から <see cref="BleXBeeTransport"/> を作り、
+    /// <see cref="ProtocolFactory.DetectAsync"/> で v4/v3 を自動判定して <see cref="Protocol"/> に格納する。
+    ///
+    /// 注意: v3 ファームの場合、ProtocolFactory が内部で VER を送るので、その応答は
+    /// 既存の SerialDataReceived 静的コールバック経由でも処理され、<see cref="Logger"/> の
+    /// Version_* 等が副作用で更新される。これにより既存画面の VersionLoaded 待ちロジックは
+    /// 変更不要のまま動作する。
+    /// </summary>
+    public static async Task DetectProtocolAsync(CancellationToken ct = default)
+    {
+      if (ConnectedXBee == null || !ConnectedXBee.IsConnected)
+        throw new InvalidOperationException("XBee is not connected");
+      if (Protocol != null) return; // 既に検出済
+
+      _bleTransport = new BleXBeeTransport(ConnectedXBee);
+      try
+      {
+        Protocol = await ProtocolFactory.DetectAsync(_bleTransport, ct);
+      }
+      catch
+      {
+        _bleTransport.Dispose();
+        _bleTransport = null;
+        throw;
+      }
     }
 
     private static void ConnectedXBee_SerialDataReceived
