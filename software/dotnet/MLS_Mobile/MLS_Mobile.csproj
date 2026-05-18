@@ -30,6 +30,8 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<Nullable>enable</Nullable>
 
+		<!--以下はXcodeのバージョンチェックを無効化する一時設定。.NET for iOSのバージョン更新後に削除-->
+		<ValidateXcodeVersion>false</ValidateXcodeVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='Debug|net10.0-android'">
