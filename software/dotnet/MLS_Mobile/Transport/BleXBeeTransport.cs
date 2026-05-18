@@ -31,6 +31,14 @@ public sealed class BleXBeeTransport : ISerialTransport
     /// </summary>
     private const int MaxBleChunkBytes = 200;
 
+    /// <summary>
+    /// 連続 SendAsync の最小間隔 [ms]。
+    /// 実機実験で複数 RPC を 1 秒以内に連続送信すると firmware から応答が一切返らない
+    /// ことが判明 (id=10/12/13/14 timeout vs id=11 単独 = 成功)。BLE write キューもしくは
+    /// XBee モジュール内部状態の競合と思われるため、連続 write の最小間隔を確保する。
+    /// </summary>
+    private const int MinSendIntervalMs = 150;
+
     public BleXBeeTransport(XBeeBLEDevice device)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -87,6 +95,10 @@ public sealed class BleXBeeTransport : ISerialTransport
                 Buffer.BlockCopy(payload, offset, chunk, 0, len);
                 await Task.Run(() => _device.SendSerialData(chunk)).WaitAsync(ct).ConfigureAwait(false);
             }
+
+            // 次の SendAsync が即座に走らないように lock 内で待機。これにより BLE write キュー
+            // (および firmware の Xbee_BlChars 完了待ち) が消化されてから次のコマンドが流れる。
+            await Task.Delay(MinSendIntervalMs, ct).ConfigureAwait(false);
         }
         finally
         {
