@@ -461,8 +461,18 @@ void Xbee_LoadUART(void)
     while (USART0_IsRxReady())
     {
         // 1バイトずつパーサーに渡し、戻り値がtrueならXbeeフレームの受信が完了
-        if (processXbeeByte(USART0_Read(), xbee_payload_buffer, sizeof(xbee_payload_buffer)))
+        if (processXbeeByte(USART0_Read(), xbee_payload_buffer, sizeof(xbee_payload_buffer))) {
+            // 再入防止: Xbee_BlChars / Xbee_TxChars (g_communicating==true) 内で
+            // waitTxCompletion() がこの関数を呼んでいる最中に新規コマンドフレームを
+            // dispatch すると CH_ProcessCommand → ph_xxx → CH_Reply → Xbee_BlChars
+            // が再帰的に呼ばれ、g_lastFrameId/chkSum 等のグローバル状態が壊れる
+            // (chunk 分割応答の chunk2 が失敗する原因)。
+            // TX 中に到着したコマンドフレームは drop して呼び元に timeout させる
+            // (MAUI 側でユーザが retry する)。TX status (0x8B) は processXbeeByte
+            // 内部で消費済 (返り値 false) なのでここまで来ない。
+            if (g_communicating) continue;
             CH_AppendString(xbee_payload_buffer, g_lastApiId == XB_FRAME_ZIGBEE_RECEIVE_PACKET ? SRC_XBEE : SRC_BLE);
+        }
     }
 }
 
