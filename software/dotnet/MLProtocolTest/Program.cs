@@ -8,7 +8,6 @@
 using System.IO.Ports;
 using System.Reactive.Linq;
 using MLLib.Protocol;
-using MLLib.Protocol.Protocols;
 using MLLib.Protocol.Transport;
 
 const int BaudRate = 115200;
@@ -24,11 +23,11 @@ Console.WriteLine($"\nConnecting to {portName}...");
 using var transport = new SerialPortTransport(portName, BaudRate);
 await Task.Delay(500);    // ポート初期化待ち
 
-using var protocol = await JsonRpcV4Protocol.CreateAsync(transport,
-    new CancellationTokenSource(TimeSpan.FromSeconds(3)).Token);
+using var protocol = await ProtocolFactory.DetectAsync(transport,
+    new CancellationTokenSource(TimeSpan.FromSeconds(6)).Token);
 
 var d = protocol.Device;
-Console.WriteLine($"\nDevice: {d.Device}");
+Console.WriteLine($"\nDevice: {d.Device}  (Protocol: {(d.ProtocolVersion == 0 ? "v3 (legacy)" : $"v{d.ProtocolVersion}")})");
 Console.WriteLine($"  firmware_version : {d.FirmwareVersion}");
 Console.WriteLine($"  protocol_version : {d.ProtocolVersion}");
 Console.WriteLine($"  hardware_id      : {d.HardwareId}");
@@ -174,11 +173,11 @@ async Task<string?> FindDeviceAsync()
         {
             using var t = new SerialPortTransport(name, BaudRate);
             await Task.Delay(1200);
-            using var p = await JsonRpcV4Protocol.CreateAsync(t,
-                new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token);
+            using var p = await ProtocolFactory.DetectAsync(t,
+                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token);
             if (p.Device.Device == "M-Logger")
             {
-                Console.WriteLine("Found!");
+                Console.WriteLine($"Found! ({(p.Device.ProtocolVersion == 0 ? "v3" : "v4")})");
                 return name;
             }
             Console.WriteLine("Not M-Logger.");
