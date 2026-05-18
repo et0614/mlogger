@@ -414,10 +414,12 @@ namespace MLS_Mobile
       // 既存のログが上限を超えているか確認
       ManageLogFileSize();
 
-      // ログをファイルに追加
+      // ログをファイルに追加。改行は CRLF 固定 (Android/iOS の Environment.NewLine は "\n"
+      // のため、Windows メールクライアントで開いたとき行が連結して見える)。
       string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
       using (StreamWriter sw = new StreamWriter(logPath, true))
       {
+        sw.NewLine = "\r\n";
         sw.WriteLine($"{DateTime.Now}: {logMessage}");
       }
     }
