@@ -1,4 +1,5 @@
 using MLLib;
+using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
 using static MLLib.MLogger;
 
@@ -13,6 +14,9 @@ public partial class CO2Calibrator : ContentPage
 
   /// <summary>通信するMLoggerを取得する</summary>
   public MLogger Logger { get { return MLUtility.GetLogger(_mlLowAddress); } }
+
+  /// <summary>v4 Co2CalibrationUpdates subscription (null on v3).</summary>
+  private IDisposable _v4Sub;
 
   /// <summary>低位アドレス</summary>
   private string _mlLowAddress = "";
@@ -35,7 +39,31 @@ public partial class CO2Calibrator : ContentPage
       ml = MLUtility.GetLogger(_mlLowAddress);
       if (ml != null)
         ml.CalibratingCO2LevelReceivedEvent += Ml_CalibratingCO2LevelReceivedEvent;
+
+      // v4: subscribe to Rx progress stream. Keep the v3 event handler wired too;
+      // whichever path the device fires will reach the UI.
+      _v4Sub?.Dispose();
+      _v4Sub = null;
+      if (MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1)
+      {
+        _v4Sub = System.ObservableExtensions.Subscribe(MLUtility.Protocol.Co2CalibrationUpdates, OnV4Progress);
+      }
     }
+  }
+
+  /// <summary>v4 progress handler - maps Co2CalibrationProgress to the existing UI labels.</summary>
+  private void OnV4Progress(Co2CalibrationProgress p)
+  {
+    Application.Current?.Dispatcher.Dispatch(() =>
+    {
+      lblTime.Text = ((int)p.Remaining.TotalSeconds).ToString();
+      lblPPM.Text  = p.CurrentPpm.ToString();
+
+      if (p.State == Co2CalibrationState.Pass)
+        lblRslt.Text = "The calibration was successfully completed.\r\nThe correction value was " + p.CorrectionPpm.ToString() + " ppm.";
+      else if (p.State == Co2CalibrationState.Fail)
+        lblRslt.Text = "The calibration process ended in failure.";
+    });
   }
 
   private void Ml_CalibratingCO2LevelReceivedEvent(object sender, EventArgs e)
@@ -71,7 +99,9 @@ public partial class CO2Calibrator : ContentPage
   {
     if (e.Source == ShellNavigationSource.Pop)
     {
-      Logger.CalibratingCO2LevelReceivedEvent -= Ml_CalibratingCO2LevelReceivedEvent;
+      if (Logger != null) Logger.CalibratingCO2LevelReceivedEvent -= Ml_CalibratingCO2LevelReceivedEvent;
+      _v4Sub?.Dispose();
+      _v4Sub = null;
       Shell.Current.Navigated -= Current_Navigated; //イベント解除
     }
   }
