@@ -744,7 +744,10 @@ public partial class DeviceSetting : ContentPage
 
   private async void SetNameButton_Clicked(object sender, EventArgs e)
   {
-    var popup = new TextInputPopup(MLSResource.DS_SetName, Logger.Name, Keyboard.Text);
+    // v4 では Logger.Name は更新されない (C# のデフォルト 'Unloaded' のまま) ので
+    // hello でキャッシュした Protocol.Device.Name を popup の初期値に使う。
+    string currentName = IsV4Protocol ? MLUtility.Protocol.Device.Name : Logger.Name;
+    var popup = new TextInputPopup(MLSResource.DS_SetName, currentName, Keyboard.Text);
     var result = await this.ShowPopupAsync(popup);
     if (result != null) updateName(popup.EntryValue);
   }
