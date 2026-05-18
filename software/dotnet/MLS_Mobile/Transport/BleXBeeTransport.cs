@@ -34,10 +34,12 @@ public sealed class BleXBeeTransport : ISerialTransport
     /// <summary>
     /// 連続 SendAsync の最小間隔 [ms]。
     /// 実機実験で複数 RPC を 1 秒以内に連続送信すると firmware から応答が一切返らない
-    /// ことが判明 (id=10/12/13/14 timeout vs id=11 単独 = 成功)。BLE write キューもしくは
-    /// XBee モジュール内部状態の競合と思われるため、連続 write の最小間隔を確保する。
+    /// ことが判明。さらに最初の multi-chunk 応答の直後に MAUI が即時 TX を投げると
+    /// 当該 TX が消失する (echo #1 → echo #2 の失敗パターン)。BLE link parameter
+    /// renegotiation 中もしくは XBee 内部キューの整理に必要な時間と推定し、安全側で
+    /// 500ms に拡大して様子を見る (実験 A)。
     /// </summary>
-    private const int MinSendIntervalMs = 150;
+    private const int MinSendIntervalMs = 500;
 
     public BleXBeeTransport(XBeeBLEDevice device)
     {
