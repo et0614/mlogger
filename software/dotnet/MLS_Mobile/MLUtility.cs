@@ -61,17 +61,17 @@ namespace MLS_Mobile
 
     #region XBee接続切断処理
 
-    public static string OpenXbee(IDevice device)
+    public static async Task<string> OpenXbeeAsync(IDevice device)
     {
-      //通信中のXBeeがある場合は接続を閉じる
-      CloseXbee();
+      //通信中のXBeeがある場合は接続を閉じる (await して完全切断後に新接続を始める)
+      await CloseXbeeAsync();
 
       if (Microsoft.Maui.Devices.DeviceInfo.Current.Platform == DevicePlatform.Android)
         ConnectedXBee = new XBeeBLEDevice(device.Id.ToString(), ML_PASS);
       else ConnectedXBee = new XBeeBLEDevice(device, ML_PASS);
 
-      //XBeeをOpen
-      ConnectedXBee.Connect();
+      //XBeeをOpen (BLE GATT 接続は UI スレッドを長時間ブロックするので background へ)
+      await Task.Run(() => ConnectedXBee.Connect());
       ConnectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
 
       //接続先:MLogger (MLTransceiver サポートは v4 移行で削除)
@@ -86,10 +86,10 @@ namespace MLS_Mobile
       else return "";
     }
 
-    public static void CloseXbee()
+    public static async Task CloseXbeeAsync()
     {
-      // 診断: 誰が CloseXbee を呼んだか stack trace を log
-      WriteLog("[diag] CloseXbee called from: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
+      // 診断: 誰が CloseXbeeAsync を呼んだか stack trace を log
+      WriteLog("[diag] CloseXbeeAsync called from: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
 
       //v4/v3 protocol 破棄 (XBee 切断より前に行う)
       try { Protocol?.Dispose(); } catch { }
@@ -97,23 +97,20 @@ namespace MLS_Mobile
       try { _bleTransport?.Dispose(); } catch { }
       _bleTransport = null;
 
-      //通信中のXBeeがある場合は接続を閉じる
-      if (ConnectedXBee != null && ConnectedXBee.IsConnected)
+      //通信中のXBeeがある場合は接続を閉じる。fire-and-forget だと次の Connect と race して
+      //失敗するので必ず await する。
+      var dev = ConnectedXBee;
+      if (dev != null && dev.IsConnected)
       {
-        Task.Run(() =>
+        await Task.Run(() =>
         {
-          try
-          {
-            ConnectedXBee.Disconnect();
-          }
-          catch (Exception ex)
-          {
-            Console.WriteLine(ex.Message);
-          }
+          try { dev.Disconnect(); }
+          catch (Exception ex) { Console.WriteLine(ex.Message); }
         });
       }
       ConnectedDevice = MLDevice.None;
       Logger = null;
+      ConnectedXBee = null;   // 次回の "IsConnected" 判定でゴーストにならないよう null 化
     }
 
     /// <summary>

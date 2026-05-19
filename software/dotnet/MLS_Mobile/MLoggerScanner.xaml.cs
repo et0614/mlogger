@@ -85,29 +85,20 @@ public partial class MLoggerScanner : ContentPage
     await checkBLEPermission();
   }
 
-  private void scanXBees()
+  private async void scanXBees()
   {
-    // Active connection exists -> do NOT close it (tab switch / Pop must not kill
-    // an in-flight DeviceSetting session). New device selection in mlList still
-    // goes through OpenXbee which closes the prior connection cleanly.
-    if (MLUtility.ConnectedXBee != null && MLUtility.ConnectedXBee.IsConnected) {
-      refView.IsRefreshing = false;
-      return;
-    }
+    // Scanner に戻るたびに、以前の接続を完全に閉じてから再スキャンする。
+    // 以前は IsConnected ガードでスキャンをスキップしていたが、それだと DeviceSetting から
+    // pop して戻ったときにリストが更新されず、また Disconnect が fire-and-forget だったため
+    // 次の Connect と race して、同じ子機への再接続が初回でエラーになる事象があった。
+    await MLUtility.CloseXbeeAsync();
 
-    //接続済みのXBeeがある場合には解除
-    MLUtility.CloseXbee();
-
-    //アダプタを用意
     IAdapter adapter = CrossBluetoothLE.Current.Adapter;
-
-    //スキャン設定
     adapter.ScanTimeout = SCAN_TIME;
     adapter.ScanMode = ScanMode.LowLatency;
 
-    //非同期スキャン開始
     MLXBees.Clear();
-    adapter.StartScanningForDevicesAsync();
+    await adapter.StartScanningForDevicesAsync();
   }
 
   #endregion
@@ -128,8 +119,7 @@ public partial class MLoggerScanner : ContentPage
     string lowAddress;
     try
     {
-      lowAddress = await Task.Run(string () =>
-      { return MLUtility.OpenXbee(selectedXBee); });
+      lowAddress = await MLUtility.OpenXbeeAsync(selectedXBee);
     }
     catch (Exception ex)
     {
@@ -153,7 +143,7 @@ public partial class MLoggerScanner : ContentPage
       catch (Exception ex)
       {
         await DisplayAlert("Alert", "Can't detect protocol." + Environment.NewLine + ex.Message, "OK");
-        await Task.Run(MLUtility.CloseXbee);
+        await MLUtility.CloseXbeeAsync();
       }
     }
 
