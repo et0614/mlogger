@@ -58,13 +58,8 @@ public partial class CFSetting : ContentPage
   {
     base.OnAppearing();
 
-    if (IsV4Protocol) loadCorrectionFactorsV4();
-    else              applyCorrectionFactors();
+    loadCorrectionFactorsV4();
   }
-
-  /// <summary>v4 (JSON-RPC) protocol is detected and available.</summary>
-  private static bool IsV4Protocol
-    => MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1;
 
   #endregion
 
@@ -106,8 +101,7 @@ public partial class CFSetting : ContentPage
 
   private void Load_Clicked(object sender, EventArgs e)
   {
-    if (IsV4Protocol) loadCorrectionFactorsV4();
-    else              loadCorrectionFactors();
+    loadCorrectionFactorsV4();
   }
 
   private void Save_Clicked(object sender, EventArgs e)
@@ -174,92 +168,13 @@ public partial class CFSetting : ContentPage
     }
 
     if (hasError) DisplayAlert("Alert", errMsg, "OK");
-    else if (IsV4Protocol)
+    else
       saveCorrectionFactorsV4(
         (float)dbtA, (float)dbtB,
         (float)hmdA, (float)hmdB,
         (float)glbA, (float)glbB,
         (float)luxA, (float)luxB,
         (float)velA, (float)velB);
-    else
-      saveCorrectionFactors(MLogger.MakeCorrectionFactorsSettingCommand
-          (dbtA, dbtB, hmdA, hmdB, glbA, glbB, luxA, luxB, velA, velB, Logger.VelocityMinVoltage));
-  }
-
-  private async Task executeCorrectionFactorCommandAsync(string command)
-  {
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.CorrectionFactorsReceivedEvent += handler;
-
-    //インジケータ表示
-    showIndicator(MLSResource.CF_Setting);
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command)));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-        applyCorrectionFactors();
-      else
-        await DisplayAlert("Alert", MLSResource.CF_FailSetting, "OK");
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.CorrectionFactorsReceivedEvent -= handler;
-
-      //インジケータを隠す
-      hideIndicator();
-    }
-  }
-
-  private async void saveCorrectionFactors(string command)
-  {
-    await executeCorrectionFactorCommandAsync(command);
-  }
-
-  private async void loadCorrectionFactors()
-  {
-    await executeCorrectionFactorCommandAsync(MLogger.MakeLoadCorrectionFactorsCommand());
-  }
-
-  private void applyCorrectionFactors()
-  {
-    cA_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorA.ToString("F3");
-    cB_dbt.Text = Logger.DrybulbTemperature.CorrectionFactorB.ToString("F2");
-
-    cA_hmd.Text = Logger.RelativeHumdity.CorrectionFactorA.ToString("F3");
-    cB_hmd.Text = Logger.RelativeHumdity.CorrectionFactorB.ToString("F2");
-
-    cA_glb.Text = Logger.GlobeTemperature.CorrectionFactorA.ToString("F3");
-    cB_glb.Text = Logger.GlobeTemperature.CorrectionFactorB.ToString("F2");
-
-    cA_vel.Text = Logger.Velocity.CorrectionFactorA.ToString("F3");
-    cB_vel.Text = Logger.Velocity.CorrectionFactorB.ToString("F3");
-
-    cA_lux.Text = Logger.Illuminance.CorrectionFactorA.ToString("F3");
-    cB_lux.Text = Logger.Illuminance.CorrectionFactorB.ToString("F0");
-
-    resetLabelColor();
-
-    isEdited = false;
-    hideIndicator();
   }
 
   private void resetLabelColor()

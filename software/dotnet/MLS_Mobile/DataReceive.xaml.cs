@@ -82,22 +82,11 @@ public partial class DataReceive : ContentPage
 
         MLogger? legacy = MLUtility.GetLogger(_mlLowAddress);
         if (legacy == null) return;
+        IMLProtocol? proto = MLUtility.Protocol;
+        if (proto == null) return;
 
         Title = legacy.LocalName;
-
-        // Seed Clo/Met into legacy logger so its internal thermal-index calculation
-        // matches what the VM will compute.
-        legacy.CloValue = CloValue;
-        legacy.MetValue = MetValue;
-
-        // v4 protocol takes priority if available; otherwise fall back to legacy MLogger events.
-        IMLProtocol? proto = MLUtility.Protocol;
-        bool useV4 = proto != null && proto.Device.ProtocolVersion >= 1;
-
-        _vm = useV4
-            ? new DataReceiveViewModel(proto!, legacy.LocalName, CloValue, MetValue, legacy.HasCO2LevelSensor)
-            : new DataReceiveViewModel(legacy, legacy.LocalName, CloValue, MetValue);
-
+        _vm = new DataReceiveViewModel(proto, legacy.LocalName, CloValue, MetValue, legacy.HasCO2LevelSensor);
         BindingContext = _vm;
     }
 

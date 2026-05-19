@@ -58,16 +58,8 @@ public partial class DeviceSetting : ContentPage
     set
     {
       //登録済の場合にはイベントを解除
-      MLogger ml = MLUtility.GetLogger(_mlLowAddress);
-      if (ml != null)
-        ml.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
-
       _mlLowAddress = value;
       MLUtility.WriteLog("[devset] MLoggerLowAddress setter fired addr=" + value);
-      ml = MLUtility.GetLogger(_mlLowAddress);
-      if (ml != null)
-        ml.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
-
       initInfo();
     }
   }
@@ -119,11 +111,8 @@ public partial class DeviceSetting : ContentPage
     //基本は測定を停止させる
     isStopLogging = true;
 
-    // v4: protocol level stop_logging (best-effort, fire-and-forget).
-    // v3 uses event-driven ENL via Logger_MeasuredValueReceivedEvent.
-    // 初回 OnAppearing でのみ発火。iOS で popup dismiss が OnAppearing を
-    // 再 fire するため、_initInfoV4Done と統合してガード。
-    if (IsV4Protocol && MLUtility.Protocol.IsLogging)
+    // best-effort stop_logging on entry (covers re-entry from DataReceive).
+    if (MLUtility.Protocol != null && MLUtility.Protocol.IsLogging)
     {
       _ = Task.Run(async () =>
       {
@@ -137,10 +126,6 @@ public partial class DeviceSetting : ContentPage
   // を再 set して initInfo が多重発火する事象への対策。OnDisappearing でリセット。
   private bool _initInfoV4Done = false;
 
-  /// <summary>v4 (JSON-RPC) protocol is detected and available.</summary>
-  private static bool IsV4Protocol
-    => MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1;
-
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
@@ -149,51 +134,6 @@ public partial class DeviceSetting : ContentPage
     //シェイクイベント解除
     Accelerometer.Stop();
     Accelerometer.ShakeDetected -= Accelerometer_ShakeDetected;
-
-    if (Logger != null)
-      Logger.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
-  }
-
-  private async void Logger_MeasuredValueReceivedEvent(object sender, EventArgs e)
-  {
-    //計測開始中でなければ停止させる
-    if (isStopLogging)
-    {
-      //イベント待機タスクを作成
-      var tcs = new TaskCompletionSource<bool>();
-
-      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-      EventHandler handler = (s, e) => tcs.TrySetResult(true);
-      Logger.EndMeasuringMessageReceivedEvent += handler;
-
-      try
-      {
-        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-        var command = MLogger.MakeLoadMeasuringSettingCommand();
-        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-        {
-          try
-          {
-            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeEndLoggingCommand())));
-          }
-          catch { }
-
-          //イベントが来るか、タイムアウト(500ms)するまで待つ
-          await Task.WhenAny(tcs.Task, Task.Delay(500));
-        }
-
-        //タスクが正常に完了した場合のみUIを更新
-        if (tcs.Task.IsCompletedSuccessfully)
-        {
-          MLUtility.WriteLog(Logger.XBeeName + "; End logging; ");
-        }
-      }
-      finally
-      {
-        //ハンドラを解除
-        Logger.EndMeasuringMessageReceivedEvent -= handler;
-      }
-    }
   }
 
   #endregion
@@ -202,30 +142,7 @@ public partial class DeviceSetting : ContentPage
 
   private async void initInfo()
   {
-    if (IsV4Protocol) { await initInfoV4(); return; }
-
-    spc_name.Text = MLSResource.DS_SpecName + ": -";
-    spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
-    spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + Logger.LowAddress;
-    spc_vers.Text = MLSResource.DS_SpecVersion + ": " +
-      Logger.Version_Major + "." + Logger.Version_Minor + "." + Logger.Version_Revision;
-
-    //バージョンに応じた処理
-    //常設設置モードボタンの有効化
-    btn_pmntMode.IsEnabled =
-      (3 <= Logger.Version_Minor) ||
-      (2 == Logger.Version_Minor && 4 <= Logger.Version_Revision);
-
-    //名称更新
-    loadName();
-
-    //測定設定更新
-    loadMeasurementSetting();
-
-    //Zigbee LED状態を更新
-
-    //CO2濃度センサの有無を反映
-    loadCO2SensorInfo();
+    await initInfoV4();
   }
 
   #endregion
@@ -233,276 +150,15 @@ public partial class DeviceSetting : ContentPage
   #region MLogger情報更新処理
 
   /// <summary>測定設定を読み込む</summary>
-  private async void loadMeasurementSetting()
-  {
-    if (IsV4Protocol) { await loadMeasurementSettingV4(); return; }
-
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.MeasurementSettingReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      var command = MLogger.MakeLoadMeasuringSettingCommand();
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(command)));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          //計測設定
-          cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
-          ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
-          cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
-          ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
-          cbx_vel.IsToggled = Logger.Velocity.Measure;
-          ent_vel.Text = Logger.Velocity.Interval.ToString();
-          cbx_lux.IsToggled = Logger.Illuminance.Measure;
-          ent_lux.Text = Logger.Illuminance.Interval.ToString();
-          cbx_co2.IsToggled = Logger.CO2Level.Measure;
-          ent_co2.Text = Logger.CO2Level.Interval.ToString();
-          dpck_start.Date = Logger.StartMeasuringDateTime;
-          tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
-
-          //編集要素の着色をもとに戻す
-          resetTextColor();
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.MeasurementSettingReceivedEvent -= handler;
-    }
-  }
+  private async void loadMeasurementSetting() => await loadMeasurementSettingV4();
 
   /// <summary>名称を読み込む</summary>
-  private async void loadName()
-  {
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.LoggerNameReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadLoggerNameCommand())));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.LoggerNameReceivedEvent -= handler;
-    }
-  }
-
   /// <summary>名称を設定する</summary>
   /// <param name="name">名称</param>
-  private async void updateName(string name)
-  {
-    if (IsV4Protocol) { await updateNameV4(name); return; }
-
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.LoggerNameReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeChangeLoggerNameCommand(name))));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          //ロギング
-          MLUtility.WriteLog(Logger.XBeeName + "; Name changed; " + Logger.Name + "; ");
-
-          spc_name.Text = MLSResource.DS_SpecName + ": " + Logger.Name;
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.LoggerNameReceivedEvent -= handler;
-    }
-  }
-
-  private async void loadCO2SensorInfo()
-  {
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.HasCO2LevelSensorReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeHasCO2LevelSensorCommand())));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          co2LevelGrid.IsVisible = Logger.HasCO2LevelSensor;
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.HasCO2LevelSensorReceivedEvent -= handler;
-    }
-  }
+  private async void updateName(string name) => await updateNameV4(name);
 
   /// <summary>測定設定を設定する</summary>
-  private async void updateMeasurementSetting()
-  {
-    if (IsV4Protocol) { await updateMeasurementSettingV4(); return; }
-
-    //入力エラーがあれば終了
-    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
-
-    //設定コマンドを作成
-    string sData = MLogger.MakeChangeMeasuringSettingCommand(
-      dpck_start.Date.Add(tpck_start.Time),
-      cbx_th.IsToggled, thSpan,
-      cbx_glb.IsToggled, glbSpan,
-      cbx_vel.IsToggled, velSpan,
-      cbx_lux.IsToggled, luxSpan,
-      false, 0, false, 0, false, 0, false,
-      Logger.HasCO2LevelSensor && cbx_co2.IsToggled, co2Span); //CO2センサ
-
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.MeasurementSettingReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(sData)));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみUIを更新
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          //ロギング
-          MLUtility.WriteLog(Logger.XBeeName + ": Measurement setting changed; " +
-            (MLSResource.DrybulbTemperature + "=" + (Logger.DrybulbTemperature.Measure ? Logger.DrybulbTemperature.Interval + " sec; " : "false; ")) +
-            (MLSResource.GlobeTemperature + "=" + (Logger.GlobeTemperature.Measure ? Logger.GlobeTemperature.Interval + " sec; " : "false; ")) +
-            (MLSResource.Velocity + "=" + (Logger.Velocity.Measure ? Logger.Velocity.Interval + " sec; " : "false; ")) +
-            (MLSResource.Illuminance + "=" + (Logger.Illuminance.Measure ? Logger.Illuminance.Interval + " sec; " : "false; ")) +
-            (MLSResource.CO2level + "=" + (Logger.CO2Level.Measure ? Logger.CO2Level.Interval + " sec; " : "false; "))
-            );
-
-          //計測設定
-          cbx_th.IsToggled = Logger.DrybulbTemperature.Measure;
-          ent_th.Text = Logger.DrybulbTemperature.Interval.ToString();
-          cbx_glb.IsToggled = Logger.GlobeTemperature.Measure;
-          ent_glb.Text = Logger.GlobeTemperature.Interval.ToString();
-          cbx_vel.IsToggled = Logger.Velocity.Measure;
-          ent_vel.Text = Logger.Velocity.Interval.ToString();
-          cbx_lux.IsToggled = Logger.Illuminance.Measure;
-          ent_lux.Text = Logger.Illuminance.Interval.ToString();
-          cbx_co2.IsToggled = Logger.CO2Level.Measure;
-          ent_co2.Text = Logger.CO2Level.Interval.ToString();
-          dpck_start.Date = Logger.StartMeasuringDateTime;
-          tpck_start.Time = Logger.StartMeasuringDateTime.TimeOfDay;
-
-          //編集要素の着色をもとに戻す
-          resetTextColor();
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.MeasurementSettingReceivedEvent -= handler;
-    }
-  }
+  private async void updateMeasurementSetting() => await updateMeasurementSettingV4();
 
   private bool isInputsCorrect
   (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
@@ -560,204 +216,17 @@ public partial class DeviceSetting : ContentPage
     loadMeasurementSetting();
   }
 
-  private async void CFButton_Clicked(object sender, EventArgs e)
-  {
-    if (IsV4Protocol) { await openCFSettingV4(); return; }
+  private async void CFButton_Clicked(object sender, EventArgs e) => await openCFSettingV4();
 
-    //インジケータ表示
-    showIndicator(MLSResource.CR_Connecting);
+  private async void CO2CalibrationButton_Clicked(object sender, EventArgs e) => await calibrateCo2V4ForcedAsync();
 
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.CorrectionFactorsReceivedEvent += handler;
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeLoadCorrectionFactorsCommand())));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみ
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //開始に成功したらページ移動
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          Shell.Current.GoToAsync(nameof(CFSetting),
-            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-            );
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.CorrectionFactorsReceivedEvent -= handler;
-
-      //インジケータを隠す
-      Application.Current.Dispatcher.Dispatch(hideIndicator);
-    }
-  }
-
-  private async void CO2CalibrationButton_Clicked(object sender, EventArgs e)
-  {
-    if (IsV4Protocol) { await calibrateCo2V4ForcedAsync(); return; }
-
-    var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
-    var result = await this.ShowPopupAsync<string>(popup);
-    if (result != null)
-    {
-      if (!int.TryParse(result.Result, out int refLevel))
-      {
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          DisplayAlert("Alert", "CO2 level is invalid", "OK");
-        });
-        return;
-      }
-
-      //イベント待機タスクを作成
-      var tcs = new TaskCompletionSource<bool>();
-
-      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-      EventHandler handler = (s, e) => tcs.TrySetResult(true);
-      Logger.CalibratingCO2LevelReceivedEvent += handler;
-
-      //インジケータ表示
-      showIndicator(MLSResource.CR_Connecting);
-
-      try
-      {
-        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-        {
-          try
-          {
-            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeCalibrateCO2LevelCommand(refLevel))));
-          }
-          catch { }
-
-          //イベントが来るか、タイムアウト(500ms)するまで待つ
-          await Task.WhenAny(tcs.Task, Task.Delay(500));
-        }
-
-        //タスクが正常に完了した場合のみUIを更新
-        if (tcs.Task.IsCompletedSuccessfully)
-        {
-          //更新された情報を反映
-          Application.Current?.Dispatcher.Dispatch(() =>
-          {
-            Shell.Current.GoToAsync(nameof(CO2Calibrator),
-              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-              );
-          });
-        }
-        else
-        {
-          Application.Current?.Dispatcher.Dispatch(() =>
-          {
-            DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-          });
-        }
-      }
-      finally
-      {
-        //ハンドラを解除
-        Logger.CalibratingCO2LevelReceivedEvent -= handler;
-
-        //インジケータを隠す
-        Application.Current?.Dispatcher.Dispatch(hideIndicator);
-      }
-    }
-  }
-
-  private async void CO2InitializeButton_Clicked(object sender, EventArgs e)
-  {
-    if (IsV4Protocol) { await calibrateCo2V4FactoryAsync(); return; }
-
-    var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
-    var result = await this.ShowPopupAsync<string>(popup);
-    if (result != null)
-    {
-      if (!int.TryParse(result.Result, out int refLevel))
-      {
-        Application.Current?.Dispatcher.Dispatch(() =>
-        {
-          DisplayAlert("Alert", "CO2 level is invalid", "OK");
-        });
-        return;
-      }
-
-      //イベント待機タスクを作成
-      var tcs = new TaskCompletionSource<bool>();
-
-      //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-      EventHandler handler = (s, e) => tcs.TrySetResult(true);
-      Logger.InitializingCO2LevelReceivedEvent += handler;
-
-      //インジケータ表示
-      showIndicator(MLSResource.CR_Connecting);
-
-      try
-      {
-        //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-        for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-        {
-          try
-          {
-            await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLogger.MakeInitializeCO2LevelCommand(refLevel))));
-          }
-          catch { }
-
-          //イベントが来るか、タイムアウト(500ms)するまで待つ
-          await Task.WhenAny(tcs.Task, Task.Delay(500));
-        }
-
-        //タスクが正常に完了した場合のみUIを更新
-        if (tcs.Task.IsCompletedSuccessfully)
-        {
-          //成功したらスタートページに戻る（計測器は12hの連続初期化処理に入る）
-          Application.Current?.Dispatcher.Dispatch(() =>
-          {
-            Shell.Current.GoToAsync("..");
-          });
-        }
-        else
-        {
-          Application.Current?.Dispatcher.Dispatch(() =>
-          {
-            DisplayAlert("Alert", MLSResource.CR_ConnectionFailed, "OK");
-          });
-        }
-      }
-      finally
-      {
-        //ハンドラを解除
-        Logger.InitializingCO2LevelReceivedEvent -= handler;
-
-        //インジケータを隠す
-        Application.Current?.Dispatcher.Dispatch(hideIndicator);
-      }
-    }
-  }
+  private async void CO2InitializeButton_Clicked(object sender, EventArgs e) => await calibrateCo2V4FactoryAsync();
 
   private async void SetNameButton_Clicked(object sender, EventArgs e)
   {
     // v4 では Logger.Name は更新されない (C# のデフォルト 'Unloaded' のまま) ので
     // hello でキャッシュした Protocol.Device.Name を popup の初期値に使う。
-    string currentName = IsV4Protocol ? MLUtility.Protocol.Device.Name : Logger.Name;
+    string currentName = MLUtility.Protocol?.Device.Name ?? Logger.Name;
     var popup = new TextInputPopup(MLSResource.DS_SetName, currentName, Keyboard.Text);
     // Popup<string>.CloseAsync(null) は IPopupResult を non-null で返してくる。
     // 真の Cancel 判定は Result が null かどうかで行う。
@@ -779,94 +248,7 @@ public partial class DeviceSetting : ContentPage
     startLogging(loggingMode.mfcard);
   }
 
-  private async void startLogging(loggingMode lMode)
-  {
-    //計測停止フラグを解除
-    isStopLogging = false;
-
-    // v4 path: call IMLProtocol.StartLoggingAsync directly and skip the v3 STL flow.
-    if (IsV4Protocol)
-    {
-      await startLoggingV4(lMode);
-      return;
-    }
-
-    //イベント待機タスクを作成
-    var tcs = new TaskCompletionSource<bool>();
-
-    //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-    EventHandler handler = (s, e) => tcs.TrySetResult(true);
-    Logger.MeasuredValueReceivedEvent += handler;
-    Logger.StartMeasuringMessageReceivedEvent += handler;
-
-    //インジケータ表示
-    showIndicator(MLSResource.DR_StartLogging);
-
-    try
-    {
-      //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-      string cmd = "";
-      switch (lMode)
-      {
-        case loggingMode.bluetooth:
-          cmd = MLogger.MakeStartMeasuringCommand(false, true, false);
-          break;
-        case loggingMode.mfcard:
-          cmd = MLogger.MakeStartMeasuringCommand(false, false, true);
-          break;
-        case loggingMode.pc:
-          cmd = MLogger.MakeStartMeasuringCommand(true, false, false);
-          break;
-        case loggingMode.permanent:
-          cmd = MLogger.MakeStartMeasuringCommand(true, false, false, true);
-          break;
-      }
-      for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-      {
-        try
-        {
-          await Task.Run(() => MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(cmd)));
-        }
-        catch { }
-
-        //イベントが来るか、タイムアウト(500ms)するまで待つ
-        await Task.WhenAny(tcs.Task, Task.Delay(500));
-      }
-
-      //タスクが正常に完了した場合のみ
-      if (tcs.Task.IsCompletedSuccessfully)
-      {
-        //ログ
-        if (lMode == loggingMode.bluetooth)
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging by smart phone; ");
-        else if (lMode == loggingMode.mfcard)
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to flash memory; ");
-        else
-          MLUtility.WriteLog(Logger.XBeeName + "; Start logging to PC; ");
-
-        //更新された情報を反映
-        Application.Current.Dispatcher.Dispatch(() =>
-        {
-          //Bluetoothの場合にはスマートフォンでデータ表示
-          if (lMode == loggingMode.bluetooth)
-            Shell.Current.GoToAsync(nameof(DataReceive),
-              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } }
-              );
-          //フラッシュメモリまたはPCへの保存の場合にはスタートページへ戻る
-          else Shell.Current.GoToAsync("..");
-        });
-      }
-    }
-    finally
-    {
-      //ハンドラを解除
-      Logger.MeasuredValueReceivedEvent -= handler;
-      Logger.StartMeasuringMessageReceivedEvent -= handler;
-
-      //インジケータを隠す
-      Application.Current.Dispatcher.Dispatch(hideIndicator);
-    }
-  }
+  private async void startLogging(loggingMode lMode) => await startLoggingV4(lMode);
 
   /// <summary>v4 path of startLogging - calls IMLProtocol.StartLoggingAsync.</summary>
   private async Task startLoggingV4(loggingMode lMode)

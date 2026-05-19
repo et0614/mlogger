@@ -10,9 +10,9 @@ using Popolo.ThermophysicalProperty;
 namespace MLS_Mobile.ViewModels;
 
 /// <summary>
-/// DataReceive 画面の ViewModel。v4 (IMLProtocol.Samples) と v3 (MLogger イベント) の
-/// 両プロトコルから計測サンプルを受け取り、表示値・熱的快適性指標 (MRT/PMV/PPD/SET*/WBGT)
-/// を更新し、CSV へ追記する。
+/// DataReceive 画面の ViewModel。IMLProtocol.Samples ストリームから計測サンプルを
+/// 受け取り、表示値・熱的快適性指標 (MRT/PMV/PPD/SET*/WBGT) を更新し、CSV へ追記する。
+/// v3 ハードは LegacyV3Protocol が DTT 行を Sample に変換するため同じ経路で動く。
 /// </summary>
 public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 {
@@ -31,20 +31,13 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     #region 依存先
 
-    private readonly MLogger? _legacyLogger;
-    private readonly IDisposable? _samplesSub;
+    private readonly IDisposable _samplesSub;
 
     /// <summary>表示・CSV 用のファイル名 (LocalName 由来)</summary>
     private readonly string _baseName;
 
     /// <summary>最後に受け取ったサンプル (Clo/Met 変更時の再計算用)</summary>
     private Sample? _lastSample;
-
-    /// <summary>v3 経路で受け取った最新のグローブ電圧 [V] (CSV 出力用)</summary>
-    private double _lastGlobeVolt = double.NaN;
-
-    /// <summary>v3 経路で受け取った最新の風速電圧 [V] (CSV 出力用)</summary>
-    private double _lastVelVolt = double.NaN;
 
     #endregion
 
@@ -84,39 +77,14 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double _cloValue = 1.0;
     [ObservableProperty] private double _metValue = 1.1;
 
-    partial void OnCloValueChanged(double value)
-    {
-        if (_legacyLogger != null) _legacyLogger.CloValue = value;
-        RecalcThermalIndices();
-    }
+    partial void OnCloValueChanged(double value) => RecalcThermalIndices();
 
-    partial void OnMetValueChanged(double value)
-    {
-        if (_legacyLogger != null) _legacyLogger.MetValue = value;
-        RecalcThermalIndices();
-    }
+    partial void OnMetValueChanged(double value) => RecalcThermalIndices();
 
     #endregion
 
     #region コンストラクタ
 
-    /// <summary>
-    /// v3 子機向け: 既存 <see cref="MLogger"/> インスタンスから直接イベントを購読。
-    /// </summary>
-    public DataReceiveViewModel(MLogger legacyLogger, string baseName, double clo, double met)
-    {
-        _legacyLogger = legacyLogger;
-        _baseName = baseName;
-        _cloValue = clo;
-        _metValue = met;
-
-        HasCO2LevelSensor = legacyLogger.HasCO2LevelSensor;
-        _legacyLogger.MeasuredValueReceivedEvent += OnLegacyMeasured;
-    }
-
-    /// <summary>
-    /// v4 子機向け: <see cref="IMLProtocol.Samples"/> ストリームを購読。
-    /// </summary>
     public DataReceiveViewModel(IMLProtocol protocol, string baseName, double clo, double met, bool hasCo2)
     {
         _baseName = baseName;
@@ -130,41 +98,6 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     #endregion
 
     #region サンプル受信
-
-    private void OnLegacyMeasured(object? sender, EventArgs e)
-    {
-        if (_legacyLogger == null) return;
-
-        // v3 は MLogger 内部で既に熱的快適性が計算済み。VM は値を表示文字列へ整形するだけ。
-        _lastGlobeVolt = _legacyLogger.GlobeTemperatureVoltage;
-        _lastVelVolt = _legacyLogger.VelocityVoltage;
-
-        DrybulbTemperature = FormatF(_legacyLogger.DrybulbTemperature.LastValue, 1);
-        RelativeHumdity = FormatF(_legacyLogger.RelativeHumdity.LastValue, 1);
-        GlobeTemperature = FormatF(_legacyLogger.GlobeTemperature.LastValue, 1);
-        // 校正可能上限は 1.5m/s、表示は 2.00m/s 以上を OOR (旧 VM 仕様踏襲)
-        Velocity = (2.00 < _legacyLogger.Velocity.LastValue)
-            ? "OOR"
-            : FormatF(_legacyLogger.Velocity.LastValue, 2);
-        Illuminance = FormatF(_legacyLogger.Illuminance.LastValue, 1);
-        CO2Level = FormatF(_legacyLogger.CO2Level.LastValue, 0);
-
-        LastCommunicated_DBT = _legacyLogger.DrybulbTemperature.LastMeasureTime;
-        LastCommunicated_HMD = _legacyLogger.RelativeHumdity.LastMeasureTime;
-        LastCommunicated_GLB = _legacyLogger.GlobeTemperature.LastMeasureTime;
-        LastCommunicated_VEL = _legacyLogger.Velocity.LastMeasureTime;
-        LastCommunicated_ILL = _legacyLogger.Illuminance.LastMeasureTime;
-        LastCommunicated_CO2 = _legacyLogger.CO2Level.LastMeasureTime;
-
-        MeanRadiantTemperature = FormatF(_legacyLogger.MeanRadiantTemperature, 1);
-        PMV = FormatF(_legacyLogger.PMV, 2);
-        PPD = FormatF(_legacyLogger.PPD, 1);
-        SETStar = FormatF(_legacyLogger.SETStar, 1);
-        WBGT_Outdoor = FormatF(_legacyLogger.WBGT_Outdoor, 1);
-        WBGT_Indoor = FormatF(_legacyLogger.WBGT_Indoor, 1);
-
-        AppendCsvLegacy(_legacyLogger);
-    }
 
     private void OnSample(Sample s)
     {
@@ -257,24 +190,6 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>外部から設定可能なメモ (XAML Entry と双方向バインド)</summary>
     [ObservableProperty] private string _memo = "";
 
-    private void AppendCsvLegacy(MLogger ml)
-    {
-        string memo = SanitizeMemo(Memo);
-        string line =
-            ml.LastMeasured.ToString("yyyy/M/d,HH:mm:ss") + "," +
-            ml.DrybulbTemperature.LastValue.ToString("F1") + "," +
-            ml.RelativeHumdity.LastValue.ToString("F1") + "," +
-            ml.GlobeTemperature.LastValue.ToString("F2") + "," +
-            ml.Velocity.LastValue.ToString("F3") + "," +
-            ml.Illuminance.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
-            ml.VelocityVoltage.ToString("F3") + "," +
-            ml.CO2Level.LastValue.ToString("F0") + "," +
-            memo + Environment.NewLine;
-
-        AppendToFile(line);
-    }
-
     private void AppendCsvV4(Sample s)
     {
         string memo = SanitizeMemo(Memo);
@@ -323,8 +238,6 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        if (_legacyLogger != null)
-            _legacyLogger.MeasuredValueReceivedEvent -= OnLegacyMeasured;
         _samplesSub?.Dispose();
     }
 }

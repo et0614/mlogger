@@ -30,21 +30,10 @@ public partial class CO2Calibrator : ContentPage
     }
     set
     {
-      //登録済の場合にはイベントを解除
-      MLogger ml = MLUtility.GetLogger(_mlLowAddress);
-      if (ml != null)
-        ml.CalibratingCO2LevelReceivedEvent -= Ml_CalibratingCO2LevelReceivedEvent;
-
       _mlLowAddress = value;
-      ml = MLUtility.GetLogger(_mlLowAddress);
-      if (ml != null)
-        ml.CalibratingCO2LevelReceivedEvent += Ml_CalibratingCO2LevelReceivedEvent;
-
-      // v4: subscribe to Rx progress stream. Keep the v3 event handler wired too;
-      // whichever path the device fires will reach the UI.
       _v4Sub?.Dispose();
       _v4Sub = null;
-      if (MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1)
+      if (MLUtility.Protocol != null)
       {
         _v4Sub = System.ObservableExtensions.Subscribe(MLUtility.Protocol.Co2CalibrationUpdates, OnV4Progress);
       }
@@ -66,25 +55,6 @@ public partial class CO2Calibrator : ContentPage
     });
   }
 
-  private void Ml_CalibratingCO2LevelReceivedEvent(object sender, EventArgs e)
-  {
-    CalibratingCO2SensorLevelEventArgs ceArgs = e as CalibratingCO2SensorLevelEventArgs;
-
-    Application.Current.Dispatcher.Dispatch(() =>
-    {
-      lblTime.Text = ceArgs.RemainingTime.ToString("F0");
-      lblPPM.Text = ceArgs.CurrentCO2Level.ToString("F0");
-
-      if (ceArgs.RemainingTime == 0)
-      {
-        if (ceArgs.CalibrationSucceeded)
-          lblRslt.Text = "The calibration was successfully completed.\r\nThe correction value was" + ceArgs.CorrectionCO2Level.ToString("F0") + " ppm.";
-        else
-          lblRslt.Text = "The calibration process ended in failure.";
-      }
-    });    
-  }
-
   #endregion
 
   public CO2Calibrator()
@@ -99,7 +69,6 @@ public partial class CO2Calibrator : ContentPage
   {
     if (e.Source == ShellNavigationSource.Pop)
     {
-      if (Logger != null) Logger.CalibratingCO2LevelReceivedEvent -= Ml_CalibratingCO2LevelReceivedEvent;
       _v4Sub?.Dispose();
       _v4Sub = null;
       Shell.Current.Navigated -= Current_Navigated; //イベント解除
