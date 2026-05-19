@@ -5,6 +5,7 @@
 #include "xbee_controller.h"
 #include "eeprom_manager.h" // EM_isXBeeInitialized など
 #include "command_handler.h"
+#include "diag_usb.h"       // 診断用 USB-CDC ロガー
 
 #include <string.h>
 #include <stdio.h>
@@ -184,12 +185,28 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                     //正常にフレーム受信完了
                     if(g_frameChecksum == XB_CHECKSUM_SUCCESS) {
                         // 受信したフレームが「送信完了ステータス(0x8B)」だった場合
-                        if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS) 
+                        if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS)
                         {
                             uint8_t receivedFrameId = (uint8_t)g_frameBuff[0]; // フレームID
                             if (receivedFrameId == g_lastFrameId) g_txStatusReceived = true;
-                            return false; 
-                            
+
+                            // DIAG: TX status frame の生 payload を吐く
+                            //   USER_DATA_RELAY TX に対する Transmit Status (0x89) の場合、
+                            //   payload は [delivery_status, ...]。0x7C/0x7D 等が出れば XBee 側拒否。
+                            //   ※ frame_id は g_xbeeOffset の関係で payload に含まれない実装。
+                            {
+                                int plen = g_framePosition - (g_xbeeOffset + 1);
+                                if (plen < 0) plen = 0;
+                                if (plen > 0) {
+                                    diag_usb_logf("TX_STATUS recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
+                                                  (unsigned)receivedFrameId, (unsigned)g_lastFrameId,
+                                                  (unsigned)(uint8_t)g_frameBuff[0]);
+                                } else {
+                                    diag_usb_logf("TX_STATUS empty payload");
+                                }
+                            }
+                            return false;
+
                         }
                         // 受信したフレームがATコマンドレスポンスだった場合
                         else if (g_lastApiId == XB_FRAME_AT_COMMAND_RESPONSE) {
@@ -199,14 +216,20 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                             return false;
                         }
                         //受信フレームがコマンドだった場合
-                        else 
-                        {                        
+                        else
+                        {
                             int payload_len = g_framePosition - (g_xbeeOffset + 1);
                             if (payload_len >= 0 && payload_len < XB_RX_BUFFER_SIZE) {
                                 g_frameBuff[payload_len] = '\0';
                             } else {
                                 g_frameBuff[XB_RX_BUFFER_SIZE - 1] = '\0';
                             }
+
+                            // DIAG: 完成したコマンドフレームを USB に吐く
+                            //   type=0xAD は USER_DATA_RELAY_OUTPUT (XBee->firmware, BLE or UART src)
+                            //   type=0x90 は ZIGBEE_RECEIVE_PACKET (XBee->firmware, Zigbee 経由)
+                            diag_usb_logf("RX_FRAME type=0x%02X plen=%d", (unsigned)g_lastApiId, payload_len);
+                            diag_usb_hex("RX_FRAME_DATA", (const uint8_t*)g_frameBuff, payload_len, 96);
 
                             strncpy(output_buffer, g_frameBuff, buffer_size - 1);
                             output_buffer[buffer_size - 1] = '\0';
@@ -471,14 +494,18 @@ void Xbee_TxChars(const char *data)
     g_communicating = true;
     //Sleepの場合には一旦起こす
     bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping) 
+    if(wasSleeping)
     {
         Xbee_Wakeup();
         DELAY_microseconds(150); //XBee立ち上げに0.05ms程度必要:3倍
     }
-    
+
     int chkSum = 0;
     int cl = getCharLength(data);
+
+    // DIAG: Zigbee 経由送信開始
+    diag_usb_logf("TX_ZB_BEGIN cl=%d wasSleeping=%d", cl, (int)wasSleeping);
+    diag_usb_hex("TX_ZB_DATA", (const uint8_t*)data, cl, 96);
     
     USART0_Write(XB_START_DELIMITER);
     USART0_Write((uint8_t)(((cl + XB_TX_HEADER_LENGTH) >> 8) & 0xff));
@@ -573,6 +600,11 @@ void Xbee_BlChars(const char *data)
     }
 
     int total = getCharLength(data);
+
+    // DIAG: BLE 経由で送出する文字列全体 (chunking 前) を吐く
+    diag_usb_logf("TX_BLE_BEGIN total=%d wasSleeping=%d", total, (int)wasSleeping);
+    diag_usb_hex("TX_BLE_DATA", (const uint8_t*)data, total, 96);
+
     int offset = 0;
     while (offset < total) {
         int chunk = total - offset;
