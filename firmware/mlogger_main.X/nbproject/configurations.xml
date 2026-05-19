@@ -15,6 +15,7 @@
         <itemPath>protocol_handlers.h</itemPath>
         <itemPath>version.h</itemPath>
         <itemPath>protocol_events.h</itemPath>
+        <itemPath>diag_usb.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Drivers" projectFiles="true">
         <itemPath>eeprom_manager.h</itemPath>
@@ -151,6 +152,7 @@
         <itemPath>protocol_dispatch.c</itemPath>
         <itemPath>protocol_handlers.c</itemPath>
         <itemPath>protocol_events.c</itemPath>
+        <itemPath>diag_usb.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="Drivers" projectFiles="true">
         <itemPath>w25q512.c</itemPath>

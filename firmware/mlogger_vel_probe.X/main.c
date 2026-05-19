@@ -223,7 +223,7 @@ int main(void)
     SharedMemory.reg.version = VERSION_NUMBER;
     SharedMemory.reg.enable = 1;
     SharedMemory.reg.updated = 0;
-    memcpy((void*)SharedMemory.reg.id, (const void*)&SIGROW.SERNUM0, 16); // AVR製造IDをコピー
+    memcpy((void*)SharedMemory.reg.atarashii , (const void*)&SIGROW.SERNUM0, 16); // AVR製造IDをコピー
     SharedMemory.reg.id_crc = calc_crc8((uint8_t*)SharedMemory.reg.id, 16);
     uint32_t hash = fnv1a_32((void*)SharedMemory.reg.id, sizeof(SharedMemory.reg.id));
     SharedMemory.reg.id_hash[0] = (uint8_t)(hash >> 24);

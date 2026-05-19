@@ -39,7 +39,7 @@ public partial class MLoggerScanner : ContentPage
     CrossBluetoothLE.Current.Adapter.DeviceDiscovered += (s, ev) =>
     {
       string dvName = ev.Device.Name;
-      if (dvName != null && dvName != "" && (dvName.StartsWith("MLogger_") || dvName.StartsWith("MLTransceiver")))
+      if (dvName != null && dvName != "" && dvName.StartsWith("MLogger_"))
       {
         bool newItem = true;
         for (int i = 0; i < MLXBees.Count; i++)
@@ -155,70 +155,6 @@ public partial class MLoggerScanner : ContentPage
         await DisplayAlert("Alert", "Can't detect protocol." + Environment.NewLine + ex.Message, "OK");
         await Task.Run(MLUtility.CloseXbee);
       }
-    }
-
-    //Transcieverの場合***
-    else if (MLUtility.ConnectedDevice == MLDevice.MLTransciever)
-    {
-      //Bluetooth転送モード有効化
-      try
-      {
-        await Task.Run(async () =>
-        {
-          MLUtility.Transceiver.HasRelayToBluetoothReceived = false;
-          for (int i = 0; i < 10; i++)
-          {
-            if (MLUtility.Transceiver.HasRelayToBluetoothReceived) return;
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeRelayToBluetoothCommand()));
-            await Task.Delay(100);
-          }
-        });
-      }
-      catch (Exception ex)
-      {
-        await DisplayAlert("Alert", "Can't enable Bluetooth relay." + Environment.NewLine + ex.Message, "OK");
-        hideIndicator();
-        return;
-      }
-      if (!MLUtility.Transceiver.HasRelayToBluetoothReceived)
-      {
-        await DisplayAlert("Alert", "Can't enable Bluetooth relay.", "OK");
-        await Task.Run(MLUtility.CloseXbee);
-        hideIndicator();
-        return;
-      }
-
-      //現在時刻更新
-      try
-      {
-        await Task.Run(async() =>
-        {
-          MLUtility.Transceiver.HasUpdateCurrentTimeReceived = false;
-          for (int i = 0; i < 10; i++)
-          {
-            if (MLUtility.Transceiver.HasUpdateCurrentTimeReceived) return;
-            MLUtility.ConnectedXBee.SendSerialData(Encoding.ASCII.GetBytes(MLTransceiver.MakeUpdateCurrentTimeCommand(DateTime.Now)));
-            await Task.Delay(100);
-          }
-        });
-      }
-      catch (Exception ex)
-      {
-        await DisplayAlert("Alert", "Can't update current date and time." + Environment.NewLine + ex.Message, "OK");
-        hideIndicator();
-        return;
-      }
-      if (!MLUtility.Transceiver.HasUpdateCurrentTimeReceived)
-      {
-        await DisplayAlert("Alert", "Can't update current date and time.", "OK");
-        await Task.Run(MLUtility.CloseXbee);
-        hideIndicator();
-        return;
-      }
-
-      //Bluetooth有効化+現在時刻更新が成功したら画面遷移
-      await DisplayAlert("", "Current time has been updated.", "OK");
-      await Shell.Current.GoToAsync(nameof(RelayedDataViewer));
     }
 
     hideIndicator();

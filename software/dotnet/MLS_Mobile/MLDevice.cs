@@ -12,8 +12,6 @@ namespace MLS_Mobile
     /// <summary>なし</summary>
     None,
     /// <summary>M-Logger</summary>
-    MLogger,
-    /// <summary>MLTransciever</summary>
-    MLTransciever
+    MLogger
   }
 }

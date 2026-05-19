@@ -45,9 +45,6 @@ namespace MLS_Mobile
     /// <summary>接続中のXBeeデバイスを設定・取得する</summary>
     public static XBeeBLEDevice ConnectedXBee { get; set; }
 
-    /// <summary>接続されたトランシーバを取得する</summary>
-    public static MLTransceiver Transceiver { get; private set; }
-
     /// <summary>接続されたMLoggerを取得する</summary>
     public static MLogger Logger { get; private set; }
 
@@ -77,7 +74,7 @@ namespace MLS_Mobile
       ConnectedXBee.Connect();
       ConnectedXBee.SerialDataReceived += ConnectedXBee_SerialDataReceived;
 
-      //接続先:MLogger
+      //接続先:MLogger (MLTransceiver サポートは v4 移行で削除)
       if (device.Name.StartsWith("MLogger_"))
       {
         ConnectedDevice = MLDevice.MLogger;
@@ -85,13 +82,6 @@ namespace MLS_Mobile
         Logger.LocalName = Logger.XBeeName = device.Name;
         SaveMLName(Logger.LowAddress, Logger.XBeeName); //LowAddressと名称の対応を保存
         return Logger.LowAddress;
-      }
-      //接続先:MLTransceiver
-      else if (device.Name.StartsWith("MLTransceiver"))
-      {
-        ConnectedDevice = MLDevice.MLTransciever;
-        Transceiver = new MLTransceiver(ConnectedXBee.GetAddressString());
-        return Transceiver.LowAddress;
       }
       else return "";
     }
@@ -123,7 +113,6 @@ namespace MLS_Mobile
         });
       }
       ConnectedDevice = MLDevice.None;
-      Transceiver = null;
       Logger = null;
     }
 
@@ -203,20 +192,6 @@ namespace MLS_Mobile
           catch { }
         }
       }
-      else if (ConnectedDevice == MLDevice.MLTransciever)
-      {
-        Transceiver.AddReceivedData(Encoding.ASCII.GetString(e.Data));
-
-        //コマンド処理
-        while (Transceiver.HasCommand)
-        {
-          try
-          {
-            Transceiver.SolveCommand();
-          }
-          catch { }
-        }
-      }
     }
 
     #endregion
@@ -228,10 +203,8 @@ namespace MLS_Mobile
     /// <returns>MLogger</returns>
     public static MLogger GetLogger(string lowAddress)
     {
-      if (ConnectedDevice == MLDevice.MLogger && Logger != null && Logger.LowAddress == lowAddress) 
+      if (ConnectedDevice == MLDevice.MLogger && Logger != null && Logger.LowAddress == lowAddress)
         return Logger;
-      else if (ConnectedDevice == MLDevice.MLTransciever && Transceiver != null) 
-        return Transceiver.GetLogger(lowAddress);
       else return null;
     }
 
