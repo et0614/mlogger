@@ -1,6 +1,7 @@
 using log4net.Repository.Hierarchy;
 using MLLib;
 using MLLib.Protocol;
+using MLLib.Protocol.Protocols;
 using MLServer.BACnet;
 using MLServer.Transport;
 using System;
@@ -97,6 +98,12 @@ namespace MLServer
 
       //温冷感計算のための代謝量[met]と着衣量[clo]を読み込む
       loadInitFile();
+
+      // 診断 sink を Console に向ける (受信 byte / parser 行 を見える化)
+      XBeeZigbeeCoordinatorMux.DiagnosticRxSink = (addr, len) =>
+        Console.WriteLine($"[mux-rx] {addr.Substring(addr.Length - 8)} {len}B");
+      LegacyV3Protocol.DiagnosticLineSink = line =>
+        Console.WriteLine($"[v3-line] {line}");
 
       //必要に応じてBACnet起動
       Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
@@ -374,6 +381,11 @@ namespace MLServer
     {
       session.Cache.ApplySample(s);
       hasNewData = true;
+
+      Console.WriteLine($"[sample] {session.Cache.LowAddress} " +
+        $"dbt={s.DrybulbTemperature:F1} rh={s.RelativeHumidity:F1} " +
+        $"glb={s.GlobeTemperature:F1} vel={s.Velocity:F3} " +
+        $"ill={s.Illuminance} co2={s.Co2}");
 
       //CSV 追記
       string fName = dataDirectory + Path.DirectorySeparatorChar + session.Cache.LowAddress + ".csv";

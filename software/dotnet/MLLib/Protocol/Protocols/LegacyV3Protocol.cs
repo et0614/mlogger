@@ -22,6 +22,9 @@ public sealed class LegacyV3Protocol : IMLProtocol
 {
     private static readonly Encoding Ascii = Encoding.ASCII;
 
+    /// <summary>line-level 診断 sink (各受信行を opt-in でログ出力)。MLServer などで使う。</summary>
+    public static Action<string>? DiagnosticLineSink { get; set; }
+
     private readonly ISerialTransport _transport;
     private readonly IDisposable _rxSubscription;
     private readonly LineBuffer _lineBuffer = new();
@@ -196,6 +199,8 @@ public sealed class LegacyV3Protocol : IMLProtocol
 
     private void OnLine(string line)
     {
+        DiagnosticLineSink?.Invoke(line.TrimEnd('\r', '\n'));
+
         // 応答行: pending のプレフィックスに一致するなら最優先
         if (_pendingPrefix is not null && line.StartsWith(_pendingPrefix, StringComparison.Ordinal))
         {
