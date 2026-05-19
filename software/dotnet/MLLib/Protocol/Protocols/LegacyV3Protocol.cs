@@ -265,14 +265,20 @@ public sealed class LegacyV3Protocol : IMLProtocol
     // ============================================================
     public async Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default)
     {
-        // STL{10桁unix}{zigbee:t/f/e}{ble:t/f}{flash:t/f}{usb:t/f}\r
-        // 'e' = endless (auto_restart) かつ Zigbee 有効
-        char zig = config.Mode == LoggingMode.AutoRestart ? 'e' : (config.Tx.Zigbee ? 't' : 'f');
-        char ble = config.Tx.Ble   ? 't' : 'f';
-        char fl  = config.Tx.Flash ? 't' : 'f';
-        char usb = config.Tx.Usb   ? 't' : 'f';
+        // v3 firmware STL フォーマット: STL{10桁unix}{zigbee}{ble}{sd}\r
+        // - zigbee: 't' / 'f' / 'e' ('e' = endless = AutoRestart かつ Zigbee 有効)
+        // - ble:    't' / 'f'
+        // - sd:     't' / 'f' (v4 でいう flash)
+        // v3 には USB 出力が無いので Tx.Usb は無視する。フラグは 3 文字固定で、
+        // 4 文字目を送ると firmware が \r の位置を誤認して STL コマンド全体が
+        // 無効化される (MLServer Zigbee 受信が止まる原因だった)。
+        // permanent モードでは ble/sd は強制 'f'。
+        bool permanent = config.Mode == LoggingMode.AutoRestart;
+        char zig = permanent ? 'e' : (config.Tx.Zigbee ? 't' : 'f');
+        char ble = (!permanent && config.Tx.Ble)   ? 't' : 'f';
+        char sd  = (!permanent && config.Tx.Flash) ? 't' : 'f';
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        await SendAsync($"STL{now:D10}{zig}{ble}{fl}{usb}\r", "STL", ct);
+        await SendAsync($"STL{now:D10}{zig}{ble}{sd}\r", "STL", ct);
         _isLogging = true;
         if (_device is not null) _device = _device with { IsLogging = true };
     }
