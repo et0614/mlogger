@@ -90,6 +90,11 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     public DeviceInfo Device =>
         _device ?? throw new InvalidOperationException("hello not yet completed");
 
+    // ロギング状態のローカル cache。 hello 応答で初期化、 start/stop 成功と
+    // ready event で更新される。
+    private bool _isLogging;
+    public bool IsLogging => _isLogging;
+
     public IObservable<Sample> Samples => _samples.AsObservable();
     public IObservable<ReadyEvent> ReadyHeartbeats => _ready.AsObservable();
     public IObservable<Co2CalibrationProgress> Co2CalibrationUpdates => _co2.AsObservable();
@@ -207,7 +212,12 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                     if (data is not null) _samples.OnNext(ParseSample(data, ts));
                     break;
                 case "ready":
-                    if (data is not null) _ready.OnNext(ParseReadyEvent(data, ts));
+                    if (data is not null)
+                    {
+                        var re = ParseReadyEvent(data, ts);
+                        _isLogging = re.IsLogging;  // 自発状態変化に追従
+                        _ready.OnNext(re);
+                    }
                     break;
                 case "co2_calibration_progress":
                     if (data is not null) _co2.OnNext(ParseCo2Progress(data, ts));
@@ -226,13 +236,15 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     private async Task<DeviceInfo> HelloAsync(CancellationToken ct)
     {
         var result = RequireResult<JsonObject>(await CallAsync("hello", null, ct));
-        return new DeviceInfo(
+        var info = new DeviceInfo(
             Device:          result["device"]?.GetValue<string>() ?? "",
             FirmwareVersion: result["firmware_version"]?.GetValue<string>() ?? "",
             ProtocolVersion: result["protocol_version"]?.GetValue<int>() ?? 0,
             HardwareId:      result["hardware_id"]?.GetValue<string>() ?? "",
             Name:            result["name"]?.GetValue<string>() ?? "",
             IsLogging:       result["logging"]?.GetValue<bool>() ?? false);
+        _isLogging = info.IsLogging;  // ローカル cache を hello の値で初期化
+        return info;
     }
 
     public async Task<Settings> GetSettingsAsync(CancellationToken ct = default)
@@ -303,10 +315,14 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             ["mode"]       = config.Mode == LoggingMode.AutoRestart ? "auto_restart" : "once",
         };
         await CallAsync("start_logging", p, ct);
+        _isLogging = true;  // 成功した場合のみここに到達
     }
 
     public async Task StopLoggingAsync(CancellationToken ct = default)
-        => await CallAsync("stop_logging", null, ct);
+    {
+        await CallAsync("stop_logging", null, ct);
+        _isLogging = false;
+    }
 
     /// <summary>
     /// 診断用 echo (firmware ph_echo を直叩き)。size 文字の 'x' を含む応答を返させ、

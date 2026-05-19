@@ -10,6 +10,13 @@ public interface IMLProtocol : IDisposable
     /// <summary>接続済みデバイスの識別情報 (hello/VER 応答キャッシュ)。</summary>
     DeviceInfo Device { get; }
 
+    /// <summary>
+    /// 子機がロギング中かどうかの現在の状態 (cached, ローカル更新)。
+    /// 初期値は hello 応答の logging field。StartLoggingAsync/StopLoggingAsync の
+    /// 成功で更新、ready event の logging field でも追従する。
+    /// </summary>
+    bool IsLogging { get; }
+
     // ============================================================
     // コマンド (request/response)
     // ============================================================

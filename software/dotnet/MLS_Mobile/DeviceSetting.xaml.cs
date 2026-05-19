@@ -123,7 +123,7 @@ public partial class DeviceSetting : ContentPage
     // v3 uses event-driven ENL via Logger_MeasuredValueReceivedEvent.
     // 初回 OnAppearing でのみ発火。iOS で popup dismiss が OnAppearing を
     // 再 fire するため、_initInfoV4Done と統合してガード。
-    if (IsV4Protocol && !_initInfoV4Done)
+    if (IsV4Protocol && MLUtility.Protocol.IsLogging)
     {
       _ = Task.Run(async () =>
       {

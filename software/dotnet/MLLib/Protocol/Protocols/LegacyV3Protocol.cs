@@ -46,6 +46,11 @@ public sealed class LegacyV3Protocol : IMLProtocol
     private DeviceInfo? _device;
 
     public DeviceInfo Device => _device ?? throw new InvalidOperationException("VER probe not yet completed");
+
+    // v3 でも IsLogging を提供 (start/stop での local 更新のみ、初期は false)
+    private bool _isLogging;
+    public bool IsLogging => _isLogging;
+
     public IObservable<Sample> Samples => _samples.AsObservable();
     public IObservable<ReadyEvent> ReadyHeartbeats => _ready.AsObservable();
     public IObservable<Co2CalibrationProgress> Co2CalibrationUpdates => _co2.AsObservable();
@@ -230,6 +235,7 @@ public sealed class LegacyV3Protocol : IMLProtocol
     public async Task StopLoggingAsync(CancellationToken ct = default)
     {
         await SendAsync("ENL\r", "ENL", ct);
+        _isLogging = false;
         if (_device is not null) _device = _device with { IsLogging = false };
     }
 
@@ -251,6 +257,7 @@ public sealed class LegacyV3Protocol : IMLProtocol
         char usb = config.Tx.Usb   ? 't' : 'f';
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         await SendAsync($"STL{now:D10}{zig}{ble}{fl}{usb}\r", "STL", ct);
+        _isLogging = true;
         if (_device is not null) _device = _device with { IsLogging = true };
     }
 
