@@ -40,6 +40,12 @@ public sealed class BleXBeeTransport : ISerialTransport
     /// </summary>
     private const int MinSendIntervalMs = 150;
 
+    /// <summary>multi-chunk TX における chunk 間の最小間隔 [ms]。</summary>
+    private const int InterChunkDelayMs = 50;
+
+    /// <summary>診断: chunk 毎の TX 結果 (size / time / error) を LogView に流すシンク。</summary>
+    public static Action<string>? TxChunkSink { get; set; }
+
     public BleXBeeTransport(XBeeBLEDevice device)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -97,13 +103,36 @@ public sealed class BleXBeeTransport : ISerialTransport
             // SendSerialData 自体は (1) Task.Run で threadpool に逃がして UI 凍結回避、
             // (2) WaitAsync(ct) で ct キャンセル時に即制御を返す。
             var payload = data.ToArray();
+            int chunkIdx = 0;
+            int totalChunks = (payload.Length + MaxBleChunkBytes - 1) / MaxBleChunkBytes;
             for (int offset = 0; offset < payload.Length; offset += MaxBleChunkBytes)
             {
                 ct.ThrowIfCancellationRequested();
                 int len = Math.Min(MaxBleChunkBytes, payload.Length - offset);
                 var chunk = new byte[len];
                 Buffer.BlockCopy(payload, offset, chunk, 0, len);
-                await Task.Run(() => _device.SendSerialData(chunk)).WaitAsync(ct).ConfigureAwait(false);
+                chunkIdx++;
+
+                // 診断: chunk 毎の SendSerialData 所要時間を計測
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                try
+                {
+                    await Task.Run(() => _device.SendSerialData(chunk)).WaitAsync(ct).ConfigureAwait(false);
+                    sw.Stop();
+                    TxChunkSink?.Invoke($"chunk {chunkIdx}/{totalChunks} {len}B OK {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    sw.Stop();
+                    TxChunkSink?.Invoke($"chunk {chunkIdx}/{totalChunks} {len}B FAIL {sw.ElapsedMilliseconds}ms {ex.GetType().Name}: {ex.Message}");
+                    throw;
+                }
+
+                // chunk 間にも小休止 (BLE GATT write キュー / XBee 内部処理に追従時間を確保)。
+                // chunk1->chunk2 を背中合わせで投げると 2回目以降の multi-chunk TX が失われる
+                // 実機現象 (Phase 4 P4 #2/#3 FAIL) への対策。
+                if (offset + MaxBleChunkBytes < payload.Length)
+                    await Task.Delay(InterChunkDelayMs, ct).ConfigureAwait(false);
             }
 
             // 次の SendAsync が即座に走らないように lock 内で待機。これにより BLE write キュー

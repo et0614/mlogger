@@ -156,6 +156,9 @@ namespace MLS_Mobile
 
       // BleXBeeTransport.Dispose 呼び出し元を log (誰が disposed しているかの追跡用)
       BleXBeeTransport.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
+
+      // chunk 毎の TX 結果を log (multi-chunk TX 連続発火時の挙動観察用)
+      BleXBeeTransport.TxChunkSink = msg => WriteLog("[ble-tx] " + msg);
       MLLib.Protocol.Protocols.JsonRpcV4Protocol.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
 
       //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
