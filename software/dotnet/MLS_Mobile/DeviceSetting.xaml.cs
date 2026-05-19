@@ -235,6 +235,8 @@ public partial class DeviceSetting : ContentPage
   /// <summary>測定設定を読み込む</summary>
   private async void loadMeasurementSetting()
   {
+    if (IsV4Protocol) { await loadMeasurementSettingV4(); return; }
+
     //イベント待機タスクを作成
     var tcs = new TaskCompletionSource<bool>();
 
@@ -1022,6 +1024,25 @@ public partial class DeviceSetting : ContentPage
     var local         = s.StartTime.LocalDateTime;
     dpck_start.Date   = local.Date;
     tpck_start.Time   = local.TimeOfDay;
+  }
+
+  /// <summary>v4 path of loadMeasurementSetting -- GetSettingsAsync + UI 反映。</summary>
+  private async Task loadMeasurementSettingV4()
+  {
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var s = await MLUtility.Protocol.GetSettingsAsync(cts.Token);
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        applySettingsToUI(s);
+        resetTextColor();
+      });
+    }
+    catch (Exception ex)
+    {
+      await DisplayAlert("Alert", "Failed to load settings." + Environment.NewLine + ex.Message, "OK");
+    }
   }
 
   /// <summary>v4 path of CFButton_Clicked - pre-fetches correction factors then navigates.</summary>
