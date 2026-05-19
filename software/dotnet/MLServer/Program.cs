@@ -104,6 +104,8 @@ namespace MLServer
         Console.WriteLine($"[mux-rx] {addr.Substring(addr.Length - 8)} {len}B");
       LegacyV3Protocol.DiagnosticLineSink = line =>
         Console.WriteLine($"[v3-line] {line}");
+      JsonRpcV4Protocol.DiagnosticSink = msg =>
+        Console.WriteLine($"[v4] {msg}");
 
       //必要に応じてBACnet起動
       Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
@@ -352,10 +354,11 @@ namespace MLServer
           session.Cache.Name = session.Protocol.Device.Name;
         session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
 
-        // 計測設定を一度取得 (best-effort)
+        // 計測設定を一度取得 (best-effort)。Zigbee 経由は frame 帯域が不安定で
+        // 応答が遅延しがちなので 15 秒待つ。失敗しても session は継続。
         try
         {
-          using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+          using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
           var s = await session.Protocol.GetSettingsAsync(cts.Token);
           session.Cache.ApplySettings(s);
         }
