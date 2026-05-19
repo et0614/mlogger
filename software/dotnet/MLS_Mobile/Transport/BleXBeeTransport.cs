@@ -32,16 +32,16 @@ public sealed class BleXBeeTransport : ISerialTransport
     private const int MaxBleChunkBytes = 200;
 
     /// <summary>
-    /// 連続 SendAsync の最小間隔 [ms]。
-    /// 実機実験で複数 RPC を 1 秒以内に連続送信すると firmware から応答が一切返らない
-    /// ことが判明。150ms で 5回中 1回失敗、500ms で 5回中 3回失敗 (悪化) のため
-    /// 150ms に戻す。根本原因は別 (連続 BLE notification 受信後の write degradation
-    /// と推定) なので、別の経路から attack する。
+    /// 連続 SendAsync の最小間隔 [ms]。0 でスロットリング無効。
+    /// (過去に 150/500ms を試したが効果未確定だったため一旦 0 に戻している)
     /// </summary>
-    private const int MinSendIntervalMs = 150;
+    private const int MinSendIntervalMs = 0;
 
-    /// <summary>multi-chunk TX における chunk 間の最小間隔 [ms]。</summary>
-    private const int InterChunkDelayMs = 50;
+    /// <summary>
+    /// multi-chunk TX における chunk 間の最小間隔 [ms]。0 で遅延なし。
+    /// (過去に 50ms を試したが効果未確定だったため一旦 0 に戻している)
+    /// </summary>
+    private const int InterChunkDelayMs = 0;
 
     /// <summary>診断: chunk 毎の TX 結果 (size / time / error) を LogView に流すシンク。</summary>
     public static Action<string>? TxChunkSink { get; set; }
