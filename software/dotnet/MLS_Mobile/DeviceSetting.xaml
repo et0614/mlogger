@@ -183,9 +183,6 @@
                     </Button.ImageSource>
                 </Button>
 
-                <!--BLE diag (developer)-->
-                <Button x:Name="diagBleBtn" Margin="50,5,0,5" Text="Run BLE Diag (echo burst)" Clicked="DiagBleButton_Clicked" HorizontalOptions="FillAndExpand"/>
-
             </StackLayout>
         </ScrollView>
 

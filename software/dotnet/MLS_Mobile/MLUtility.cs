@@ -419,6 +419,13 @@ namespace MLS_Mobile
       }
     }
 
+    /// <summary>ログファイルを空にする (LogView の Clear ボタン用)。</summary>
+    public static void ClearLog()
+    {
+      string logPath = FileSystem.Current.AppDataDirectory + Path.DirectorySeparatorChar + LOG_FILE_NAME;
+      File.WriteAllText(logPath, "");
+    }
+
     public static void WriteLog(string logMessage)
     {
       // 既存のログが上限を超えているか確認
