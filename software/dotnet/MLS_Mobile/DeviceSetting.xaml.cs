@@ -121,7 +121,9 @@ public partial class DeviceSetting : ContentPage
 
     // v4: protocol level stop_logging (best-effort, fire-and-forget).
     // v3 uses event-driven ENL via Logger_MeasuredValueReceivedEvent.
-    if (IsV4Protocol)
+    // 初回 OnAppearing でのみ発火。iOS で popup dismiss が OnAppearing を
+    // 再 fire するため、_initInfoV4Done と統合してガード。
+    if (IsV4Protocol && !_initInfoV4Done)
     {
       _ = Task.Run(async () =>
       {
