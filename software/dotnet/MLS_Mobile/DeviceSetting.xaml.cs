@@ -918,50 +918,6 @@ public partial class DeviceSetting : ContentPage
     {
       // best-effort; leave UI defaults
     }
-
-    // BLE 経路診断 (実験 B): chunk 数依存性をプロファイル。
-    //   Phase 1: 5x size=80 (応答 ~150B = 1 chunk) -- 単一チャンクなら安定するか
-    //   Phase 2: mixed [20, 80, 200, 300, 80, 20] -- サイズを変えながら失敗パターン観察
-    _ = Task.Run(async () =>
-    {
-      var jp = MLUtility.Protocol as MLLib.Protocol.Protocols.JsonRpcV4Protocol;
-      if (jp == null) return;
-
-      MLUtility.WriteLog("=== BLE diag start ===");
-
-      MLUtility.WriteLog("--- Phase 1: 5x size=80 (1-chunk responses) ---");
-      for (int i = 1; i <= 5; i++)
-      {
-        try
-        {
-          using var ects = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-          int returned = await jp.EchoAsync(80, ects.Token);
-          MLUtility.WriteLog("P1 echo #" + i + " OK returned=" + returned);
-        }
-        catch (Exception ex)
-        {
-          MLUtility.WriteLog("P1 echo #" + i + " FAIL " + ex.GetType().Name + ": " + ex.Message);
-        }
-      }
-
-      MLUtility.WriteLog("--- Phase 2: mixed sizes [20, 80, 200, 300, 80, 20] ---");
-      int[] sizes = new int[] { 20, 80, 200, 300, 80, 20 };
-      for (int i = 0; i < sizes.Length; i++)
-      {
-        try
-        {
-          using var ects = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-          int returned = await jp.EchoAsync(sizes[i], ects.Token);
-          MLUtility.WriteLog("P2 echo #" + (i+1) + " size=" + sizes[i] + " OK returned=" + returned);
-        }
-        catch (Exception ex)
-        {
-          MLUtility.WriteLog("P2 echo #" + (i+1) + " size=" + sizes[i] + " FAIL " + ex.GetType().Name + ": " + ex.Message);
-        }
-      }
-
-      MLUtility.WriteLog("=== BLE diag end ===");
-    });
   }
 
   /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>
@@ -1130,6 +1086,47 @@ public partial class DeviceSetting : ContentPage
     finally
     {
       Application.Current?.Dispatcher.Dispatch(hideIndicator);
+    }
+  }
+
+  /// <summary>Manual BLE diag: echo burst (size sweep + repeats), awaited inline.</summary>
+  private async void DiagBleButton_Clicked(object sender, EventArgs e)
+  {
+    var jp = MLUtility.Protocol as MLLib.Protocol.Protocols.JsonRpcV4Protocol;
+    if (jp == null) { await DisplayAlert("Alert", "v4 protocol not active", "OK"); return; }
+
+    diagBleBtn.IsEnabled = false;
+    diagBleBtn.Text = "Running BLE diag...";
+    try
+    {
+      MLUtility.WriteLog("=== BLE diag (manual) start ===");
+
+      MLUtility.WriteLog("--- Phase 1: 5x size=80 (1-chunk) ---");
+      for (int i = 1; i <= 5; i++)
+      {
+        try { using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+              int r = await jp.EchoAsync(80, cts.Token);
+              MLUtility.WriteLog("P1 #" + i + " OK r=" + r); }
+        catch (Exception ex) { MLUtility.WriteLog("P1 #" + i + " FAIL " + ex.GetType().Name + ": " + ex.Message); }
+      }
+
+      MLUtility.WriteLog("--- Phase 2: mixed [20, 80, 200, 300, 80, 20] ---");
+      int[] sizes = new int[] { 20, 80, 200, 300, 80, 20 };
+      for (int i = 0; i < sizes.Length; i++)
+      {
+        try { using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+              int r = await jp.EchoAsync(sizes[i], cts.Token);
+              MLUtility.WriteLog("P2 #" + (i+1) + " sz=" + sizes[i] + " OK r=" + r); }
+        catch (Exception ex) { MLUtility.WriteLog("P2 #" + (i+1) + " sz=" + sizes[i] + " FAIL " + ex.GetType().Name + ": " + ex.Message); }
+      }
+
+      MLUtility.WriteLog("=== BLE diag end ===");
+      await DisplayAlert("BLE diag", "Done. Check LogView for details.", "OK");
+    }
+    finally
+    {
+      diagBleBtn.Text = "Run BLE Diag (echo burst)";
+      diagBleBtn.IsEnabled = true;
     }
   }
 

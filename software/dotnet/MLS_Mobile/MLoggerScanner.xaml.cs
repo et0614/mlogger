@@ -87,6 +87,14 @@ public partial class MLoggerScanner : ContentPage
 
   private void scanXBees()
   {
+    // Active connection exists -> do NOT close it (tab switch / Pop must not kill
+    // an in-flight DeviceSetting session). New device selection in mlList still
+    // goes through OpenXbee which closes the prior connection cleanly.
+    if (MLUtility.ConnectedXBee != null && MLUtility.ConnectedXBee.IsConnected) {
+      refView.IsRefreshing = false;
+      return;
+    }
+
     //Ú‘±Ï‚İ‚ÌXBee‚ª‚ ‚éê‡‚É‚Í‰ğœ
     MLUtility.CloseXbee();
 
