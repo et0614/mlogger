@@ -1,7 +1,8 @@
 using System;
+using System.Text.Json.Serialization;
 using MLLib.Protocol;
-using Popolo.HumanBody;
-using Popolo.ThermophysicalProperty;
+using Popolo.Core.ThermalComfort;
+using Popolo.Core.Physics;
 
 namespace MLLib;
 
@@ -25,60 +26,60 @@ public sealed class LoggerCache : ImmutableMLogger
     }
 
     // --- IDs / 名称 ---
-    public string LongAddress { get; }
-    public string LowAddress { get; }
-    public string LocalName { get; set; } = "Unloaded";
-    public string XBeeName { get; set; } = "Unloaded";
-    public string Name { get; set; } = "Unloaded";
-    public bool IsFirstSave => false;
-    public DateTime LastCommunicated { get; private set; } = DateTime.MinValue;
-    public DateTime LastMeasured { get; private set; } = DateTime.MinValue;
-    public int Version_Major { get; set; }
-    public int Version_Minor { get; set; }
-    public int Version_Revision { get; set; }
-    public MLogger.Status CurrentStatus { get; set; } = MLogger.Status.WaitingForCommand;
-    public DateTime StartMeasuringDateTime { get; set; }
-    public bool MeasuringSettingLoaded { get; set; }
-    public bool VersionLoaded { get; set; }
-    public int VelocityCalibrationTime => 0;
-    public int TemperatureCalibrationTime => 0;
-    public double VelocityMinVoltage { get; set; }
-    public double VelocityCharacteristicsCoefA { get; set; }
-    public double VelocityCharacteristicsCoefB { get; set; }
-    public double VelocityCharacteristicsCoefC { get; set; }
-    public bool HasCO2LevelSensor { get; set; }
-    public int CO2CalibrationTime => 0;
+    [JsonIgnore] public string LongAddress { get; }
+    [JsonPropertyName("lowAddress")] public string LowAddress { get; }
+    [JsonPropertyName("localName")] public string LocalName { get; set; } = "Unloaded";
+    [JsonPropertyName("xbeeName")]  public string XBeeName  { get; set; } = "Unloaded";
+    [JsonPropertyName("name")]      public string Name      { get; set; } = "Unloaded";
+    [JsonIgnore] public bool IsFirstSave => false;
+    [JsonPropertyName("lastCommunicated")] public DateTime LastCommunicated { get; private set; } = DateTime.MinValue;
+    [JsonIgnore] public DateTime LastMeasured { get; private set; } = DateTime.MinValue;
+    [JsonIgnore] public int Version_Major { get; set; }
+    [JsonIgnore] public int Version_Minor { get; set; }
+    [JsonIgnore] public int Version_Revision { get; set; }
+    [JsonIgnore] public MLogger.Status CurrentStatus { get; set; } = MLogger.Status.WaitingForCommand;
+    [JsonIgnore] public DateTime StartMeasuringDateTime { get; set; }
+    [JsonIgnore] public bool MeasuringSettingLoaded { get; set; }
+    [JsonIgnore] public bool VersionLoaded { get; set; }
+    [JsonIgnore] public int VelocityCalibrationTime => 0;
+    [JsonIgnore] public int TemperatureCalibrationTime => 0;
+    [JsonIgnore] public double VelocityMinVoltage { get; set; }
+    [JsonIgnore] public double VelocityCharacteristicsCoefA { get; set; }
+    [JsonIgnore] public double VelocityCharacteristicsCoefB { get; set; }
+    [JsonIgnore] public double VelocityCharacteristicsCoefC { get; set; }
+    [JsonIgnore] public bool HasCO2LevelSensor { get; set; }
+    [JsonIgnore] public int CO2CalibrationTime => 0;
 
     // --- 計測値 ---
-    public MLogger.MeasurementInfo DrybulbTemperature { get; } = new();
-    public MLogger.MeasurementInfo RelativeHumdity   { get; } = new();
-    public MLogger.MeasurementInfo GlobeTemperature  { get; } = new();
-    public double GlobeTemperatureVoltage { get; private set; }
-    public MLogger.MeasurementInfo Velocity          { get; } = new();
-    public double VelocityVoltage { get; private set; }
-    public MLogger.MeasurementInfo Illuminance       { get; } = new();
-    public MLogger.MeasurementInfo GeneralVoltage1   { get; } = new();
-    public MLogger.MeasurementInfo GeneralVoltage2   { get; } = new();
-    public MLogger.MeasurementInfo GeneralVoltage3   { get; } = new();
-    public MLogger.MeasurementInfo CO2Level          { get; } = new();
-    public bool MeasureProximity => false;
+    [JsonPropertyName("drybulbTemperature")] public MLogger.MeasurementInfo DrybulbTemperature { get; } = new();
+    [JsonPropertyName("relativeHumdity")]    public MLogger.MeasurementInfo RelativeHumdity   { get; } = new();
+    [JsonPropertyName("globeTemperature")]   public MLogger.MeasurementInfo GlobeTemperature  { get; } = new();
+    [JsonIgnore] public double GlobeTemperatureVoltage { get; private set; }
+    [JsonPropertyName("velocity")]           public MLogger.MeasurementInfo Velocity          { get; } = new();
+    [JsonIgnore] public double VelocityVoltage { get; private set; }
+    [JsonPropertyName("illuminance")]        public MLogger.MeasurementInfo Illuminance       { get; } = new();
+    [JsonIgnore] public MLogger.MeasurementInfo GeneralVoltage1   { get; } = new();
+    [JsonIgnore] public MLogger.MeasurementInfo GeneralVoltage2   { get; } = new();
+    [JsonIgnore] public MLogger.MeasurementInfo GeneralVoltage3   { get; } = new();
+    [JsonPropertyName("co2Level")]           public MLogger.MeasurementInfo CO2Level          { get; } = new();
+    [JsonIgnore] public bool MeasureProximity => false;
 
     // --- 熱的快適性入力 ---
-    public bool CalcThermalIndices { get; set; } = true;
-    public double MetValue { get; set; } = 1.1;
-    public double CloValue { get; set; } = 1.0;
-    public double DefaultTemperature { get; set; } = 25.0;
-    public double DefaultRelativeHumidity { get; set; } = 50.0;
-    public double DefaultVelocity { get; set; } = 0.1;
-    public double DefaultGlobeTemperature { get; set; } = 25.0;
+    [JsonIgnore] public bool CalcThermalIndices { get; set; } = true;
+    [JsonPropertyName("metValue")] public double MetValue { get; set; } = 1.1;
+    [JsonPropertyName("cloValue")] public double CloValue { get; set; } = 1.0;
+    [JsonIgnore] public double DefaultTemperature { get; set; } = 25.0;
+    [JsonIgnore] public double DefaultRelativeHumidity { get; set; } = 50.0;
+    [JsonIgnore] public double DefaultVelocity { get; set; } = 0.1;
+    [JsonIgnore] public double DefaultGlobeTemperature { get; set; } = 25.0;
 
     // --- 熱的快適性出力 ---
-    public double MeanRadiantTemperature { get; private set; } = double.NaN;
-    public double PMV { get; private set; } = double.NaN;
-    public double PPD { get; private set; } = double.NaN;
-    public double SETStar { get; private set; } = double.NaN;
-    public double WBGT_Outdoor { get; private set; } = double.NaN;
-    public double WBGT_Indoor { get; private set; } = double.NaN;
+    [JsonPropertyName("meanRadiantTemperature")] public double MeanRadiantTemperature { get; private set; } = double.NaN;
+    [JsonPropertyName("pmv")]                    public double PMV { get; private set; } = double.NaN;
+    [JsonPropertyName("ppd")]                    public double PPD { get; private set; } = double.NaN;
+    [JsonPropertyName("setStar")]                public double SETStar { get; private set; } = double.NaN;
+    [JsonPropertyName("wbgt_outdoor")]           public double WBGT_Outdoor { get; private set; } = double.NaN;
+    [JsonPropertyName("wbgt_indoor")]            public double WBGT_Indoor { get; private set; } = double.NaN;
 
     // --- ImmutableMLogger 互換: events と HasCommand/NextCommand (LoggerCache では未使用) ---
 #pragma warning disable CS0067 // インタフェース整合のための宣言、LoggerCache 内では fire しないので未使用警告を抑制
@@ -156,9 +157,9 @@ public sealed class LoggerCache : ImmutableMLogger
 
         double mrt = GetMRT(dbt, glb, vel);
         double wbt = MoistAir.GetWetBulbTemperatureFromDryBulbTemperatureAndRelativeHumidity(dbt, rhd, ATM);
-        double set = TwoNodeModel.GetSETStarFromAmbientCondition(dbt, mrt, rhd, vel, CloValue, 58.15 * MetValue, 0);
-        double pmv = ThermalComfort.GetPMV(dbt, mrt, rhd, vel, CloValue, MetValue, 0);
-        double ppd = ThermalComfort.GetPPD(pmv);
+        double set = GaggeModel.GetSETStarFromAmbientCondition(dbt, mrt, rhd, vel, CloValue, 58.15 * MetValue, 0);
+        double pmv = FangerModel.GetPMV(dbt, mrt, rhd, vel, CloValue, MetValue, 0);
+        double ppd = FangerModel.GetPPD(pmv);
 
         // グローブ温度の 150mm 換算 (JIS B7922, JIS Z8504)
         double glb150 = dbt + (1 + 1.13 * Math.Pow(GLOBE_DIAMETER, -0.4) * Math.Pow(vel, 0.6))
