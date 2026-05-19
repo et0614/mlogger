@@ -310,11 +310,20 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
 
     /// <summary>
     /// 診断用 echo (firmware ph_echo を直叩き)。size 文字の 'x' を含む応答を返させ、
-    /// 返却された size を返す。BLE 経路の chunked 応答バグの切り分けに使う。
+    /// 返却された size を返す。
     /// </summary>
-    public async Task<int> EchoAsync(int size, CancellationToken ct = default)
+    public Task<int> EchoAsync(int size, CancellationToken ct = default)
+        => EchoAsync(size, 0, ct);
+
+    /// <summary>
+    /// padBytes > 0 ならリクエスト側にも "pad" キーで filler 文字を埋めて MAUI 側 TX
+    /// チャンキングを意図的に発生させる (set_settings の TX サイズを模擬)。
+    /// firmware ph_echo は未知のキーは無視するので副作用なし。
+    /// </summary>
+    public async Task<int> EchoAsync(int size, int padBytes, CancellationToken ct = default)
     {
         var p = new JsonObject { ["size"] = size };
+        if (padBytes > 0) p["pad"] = new string('p', padBytes);
         var result = RequireResult<JsonObject>(await CallAsync("echo", p, ct));
         return result["size"]?.GetValue<int>() ?? -1;
     }

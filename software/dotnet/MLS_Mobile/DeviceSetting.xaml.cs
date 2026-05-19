@@ -1120,13 +1120,23 @@ public partial class DeviceSetting : ContentPage
         catch (Exception ex) { MLUtility.WriteLog("P2 #" + (i+1) + " sz=" + sizes[i] + " FAIL " + ex.GetType().Name + ": " + ex.Message); }
       }
 
-      MLUtility.WriteLog("--- Phase 3: 3x size=240 with 2000ms gap (mimics set_settings pattern) ---");
+      MLUtility.WriteLog("--- Phase 3: 3x size=240 with 2000ms gap (mimics set_settings RX size) ---");
       for (int i = 1; i <= 3; i++)
       {
         try { using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-              int r = await jp.EchoAsync(240, cts.Token);
+              int r = await jp.EchoAsync(240, 0, cts.Token);
               MLUtility.WriteLog("P3 #" + i + " sz=240 OK r=" + r); }
         catch (Exception ex) { MLUtility.WriteLog("P3 #" + i + " sz=240 FAIL " + ex.GetType().Name + ": " + ex.Message); }
+        if (i < 3) await Task.Delay(2000);
+      }
+
+      MLUtility.WriteLog("--- Phase 4: 3x echo(size=20, pad=260) with 2000ms gap (mimics set_settings TX size) ---");
+      for (int i = 1; i <= 3; i++)
+      {
+        try { using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+              int r = await jp.EchoAsync(20, 260, cts.Token);
+              MLUtility.WriteLog("P4 #" + i + " sz=20 pad=260 OK r=" + r); }
+        catch (Exception ex) { MLUtility.WriteLog("P4 #" + i + " sz=20 pad=260 FAIL " + ex.GetType().Name + ": " + ex.Message); }
         if (i < 3) await Task.Delay(2000);
       }
 
