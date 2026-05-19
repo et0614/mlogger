@@ -174,24 +174,9 @@ namespace MLS_Mobile
     private static void ConnectedXBee_SerialDataReceived
     (object sender, XBeeLibrary.Core.Events.Relay.SerialDataReceivedEventArgs e)
     {
-      //v4 移行用: 新 IMLProtocol への受信データ供給 (BleXBeeTransport は SerialDataReceived
-      //を直接購読せず、ここから FeedReceived 経由で受け取る — マルチ subscriber 不信のため)
+      //IMLProtocol へ受信データを供給。v3/v4 とも LegacyV3Protocol / JsonRpcV4Protocol が
+      //パース・イベント発火を担当する (旧 MLogger.AddReceivedData + SolveCommand 経路は D7 で撤去)。
       _bleTransport?.FeedReceived(e.Data);
-
-      if (ConnectedDevice == MLDevice.MLogger)
-      {
-        Logger.AddReceivedData(Encoding.ASCII.GetString(e.Data));
-
-        //コマンド処理
-        while (Logger.HasCommand)
-        {
-          try
-          {
-            Logger.SolveCommand();
-          }
-          catch { }
-        }
-      }
     }
 
     #endregion
