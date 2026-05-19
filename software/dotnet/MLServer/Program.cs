@@ -1,10 +1,13 @@
-﻿using log4net.Repository.Hierarchy;
+using log4net.Repository.Hierarchy;
 using MLLib;
+using MLLib.Protocol;
 using MLServer.BACnet;
+using MLServer.Transport;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -13,7 +16,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using XBeeLibrary.Core;
 using XBeeLibrary.Core.Models;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace MLServer
 {
@@ -22,7 +24,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    private const string VERSION = "1.1.12";
+    private const string VERSION = "1.2.0";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -39,6 +41,9 @@ namespace MLServer
     /// <summary>日時の型</summary>
     private const string DT_FORMAT = "yyyy/MM/dd HH:mm:ss";
 
+    /// <summary>XBeeLibrary.Core のバグで ~48500B 受信付近で落ちるため、この閾値で coordinator を再接続</summary>
+    private const int REOPEN_BYTES_THRESHOLD = 45000;
+
     #endregion
 
     #region クラス変数
@@ -52,7 +57,7 @@ namespace MLServer
     /// <summary>BACnet DeviceのLocal End Point IP Address</summary>
     private static string bacEPIPAddress = "127.0.0.1";
 
-    private static MLServerDevice mlBacDevice;
+    private static MLServerDevice? mlBacDevice;
 
     /// <summary>温冷感計算のための基準の物理量</summary>
     private static double metValue, cloValue, dbtValue, rhdValue, velValue, mrtValue;
@@ -61,22 +66,22 @@ namespace MLServer
     private static bool hasNewData = true;
 
     /// <summary>データ格納用のディレクトリ</summary>
-    private static string dataDirectory;
+    private static string dataDirectory = "";
 
-    /// <summary>発見されたMLogger端末のリスト</summary>
-    private static ConcurrentDictionary<string, MLogger> mLoggers = new ConcurrentDictionary<string, MLogger>();
+    /// <summary>発見された子機 (remote アドレスごとの session)</summary>
+    private static readonly ConcurrentDictionary<string, RemoteSession> sessions = new();
 
     /// <summary>接続できなかったポートリスト</summary>
-    private static List<string> excludedPorts = new List<string>();
+    private static readonly List<string> excludedPorts = new();
 
     /// <summary>通信用コーディネータリスト</summary>
-    private static ConcurrentDictionary<ZigBeeDevice, xbeeInfo> coordinators = new ConcurrentDictionary<ZigBeeDevice, xbeeInfo>();
+    private static readonly ConcurrentDictionary<ZigBeeDevice, xbeeInfo> coordinators = new();
 
     /// <summary>MLoggerのアドレス-名称対応リスト</summary>
-    private static readonly Dictionary<string, string> mlNames = new Dictionary<string, string>();
+    private static readonly Dictionary<string, string> mlNames = new();
 
-    /// <summary>受信パケット総量[bytes]</summary>
-    private static int pBytes = 0;
+    /// <summary>受信パケット総量[bytes] (coordinator ごと)</summary>
+    private static readonly ConcurrentDictionary<ZigBeeDevice, int> packetBytes = new();
 
     #endregion
 
@@ -91,7 +96,7 @@ namespace MLServer
       if (!Directory.Exists(dataDirectory)) Directory.CreateDirectory(dataDirectory);
 
       //温冷感計算のための代謝量[met]と着衣量[clo]を読み込む
-      loadInitFile(out metValue, out cloValue, out dbtValue, out rhdValue, out velValue, out mrtValue);
+      loadInitFile();
 
       //必要に応じてBACnet起動
       Console.WriteLine("BACnet service is " + (useBACnet ? "enabled." : "disabled."));
@@ -107,21 +112,19 @@ namespace MLServer
       string nFile = AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "mlnames.txt";
       if (File.Exists(nFile))
       {
-        using (StreamReader sReader = new StreamReader(nFile))
+        using StreamReader sReader = new(nFile);
+        string? line;
+        while ((line = sReader.ReadLine()) != null && line.Contains(':'))
         {
-          string line;
-          while ((line = sReader.ReadLine()) != null && line.Contains(':'))
-          {
-            line = line.Split("//", StringSplitOptions.None)[0].Trim(); //コメント削除
-            string[] bf = line.Split(':');
-            if (!mlNames.ContainsKey(HIGH_ADD + bf[0]))
-              mlNames.Add(HIGH_ADD + bf[0], bf[1]);
-          }
+          line = line.Split("//", StringSplitOptions.None)[0].Trim(); //コメント削除
+          string[] bf = line.Split(':');
+          if (!mlNames.ContainsKey(HIGH_ADD + bf[0]))
+            mlNames.Add(HIGH_ADD + bf[0], bf[1]);
         }
       }
 
       //定期的にJSONファイルを更新する
-      Task jsonRefreshTask = Task.Run(() =>
+      Task.Run(() =>
       {
         while (true)
         {
@@ -134,7 +137,7 @@ namespace MLServer
         }
       });
 
-      //現在日時更新タスク
+      //現在日時更新タスク (日が変わったら全 session に SetTimeAsync)
       updateCurrentDateTime();
 
       //定期的にコーディネータをスキャン
@@ -144,8 +147,7 @@ namespace MLServer
       resistEvent();
 
       //メインスレッドは休む
-      while (true)
-        Thread.Sleep(1000);
+      while (true) Thread.Sleep(1000);
     }
 
     private static void showTitle()
@@ -153,7 +155,7 @@ namespace MLServer
       Console.WriteLine("\r\n");
       Console.WriteLine("#########################################################################");
       Console.WriteLine("#                                                                       #");
-      Console.WriteLine("#                     MLServer  verstion " + VERSION + "                         #");
+      Console.WriteLine("#                     MLServer  verstion " + VERSION + "                          #");
       Console.WriteLine("#                                                                       #");
       Console.WriteLine("#        Software for logging data transmitted from the M-Logger.       #");
       Console.WriteLine("#                       (https://www.mlogger.jp)                        #");
@@ -162,57 +164,32 @@ namespace MLServer
       Console.WriteLine("\r\n");
     }
 
-    private static void loadInitFile
-      (out double met, out double clo, out double dbt, out double rhd, out double vel, out double mrt)
+    private static void loadInitFile()
     {
-      met = 1.1;
-      clo = 1.0;
-      dbt = 25.0;
-      rhd = 50.0;
-      vel = 0.2;
-      mrt = 25.0;
+      metValue = 1.1; cloValue = 1.0; dbtValue = 25.0; rhdValue = 50.0; velValue = 0.2; mrtValue = 25.0;
 
-      using (StreamReader sReader = new StreamReader
-        (AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "setting.ini"))
+      using StreamReader sReader = new(AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + "setting.ini");
+      string? line;
+      while ((line = sReader.ReadLine()) != null)
       {
-        string line;
-        while ((line = sReader.ReadLine()) != null)
-        {
-          if (string.IsNullOrEmpty(line)) continue;
-          if (line.StartsWith('#')) continue;
+        if (string.IsNullOrEmpty(line)) continue;
+        if (line.StartsWith('#')) continue;
 
-          line = line.Remove(line.IndexOf(';'));
-          string[] st = line.Split('=');
-          switch (st[0])
-          {
-            case "met":
-              metValue = double.Parse(st[1]);
-              break;
-            case "clo":
-              cloValue = double.Parse(st[1]);
-              break;
-            case "dbt":
-              dbtValue = double.Parse(st[1]);
-              break;
-            case "rhd":
-              rhdValue = double.Parse(st[1]);
-              break;
-            case "vel":
-              velValue = double.Parse(st[1]);
-              break;
-            case "mrt":
-              mrtValue = double.Parse(st[1]);
-              break;
-            case "bacnet":
-              useBACnet = bool.Parse(st[1]);
-              break;
-            case "bacport":
-              bacnetPort = int.Parse(st[1]);
-              break;
-            case "bacip":
-              bacEPIPAddress = st[1];
-              break;
-          }
+        int semi = line.IndexOf(';');
+        if (semi >= 0) line = line.Remove(semi);
+        string[] st = line.Split('=');
+        if (st.Length < 2) continue;
+        switch (st[0].Trim())
+        {
+          case "met":     metValue   = double.Parse(st[1]); break;
+          case "clo":     cloValue   = double.Parse(st[1]); break;
+          case "dbt":     dbtValue   = double.Parse(st[1]); break;
+          case "rhd":     rhdValue   = double.Parse(st[1]); break;
+          case "vel":     velValue   = double.Parse(st[1]); break;
+          case "mrt":     mrtValue   = double.Parse(st[1]); break;
+          case "bacnet":  useBACnet  = bool.Parse(st[1]);   break;
+          case "bacport": bacnetPort = int.Parse(st[1]);    break;
+          case "bacip":   bacEPIPAddress = st[1].Trim();    break;
         }
       }
     }
@@ -229,8 +206,8 @@ namespace MLServer
         {
           if (!excludedPorts.Contains(port))
           {
-            ZigBeeDevice device = new ZigBeeDevice(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(port, BAUD_RATE));
-            xbeeInfo xInfo = new xbeeInfo(port);
+            ZigBeeDevice device = new(new XBeeLibrary.Windows.Connection.Serial.WinSerialPort(port, BAUD_RATE));
+            xbeeInfo xInfo = new(port);
             if (coordinators.TryAdd(device, xInfo))
             {
               excludedPorts.Add(port);
@@ -255,14 +232,15 @@ namespace MLServer
           {
             if (xInfo.connectTask.Status == TaskStatus.RanToCompletion)
             {
-              coordinators[device].resistEvent = true;
-              Console.WriteLine(coordinators[device].portName + ": Connection succeeded." + " S/N = " + device.XBee64BitAddr.ToString());
-              device.DataReceived += Device_DataReceived; //データ受信イベント登録
-              device.PacketReceived += Device_PacketReceived; ;  //パケット総量を捕捉
+              xInfo.resistEvent = true;
+              Console.WriteLine(xInfo.portName + ": Connection succeeded. S/N = " + device.XBee64BitAddr.ToString());
+
+              //Mux と PacketReceived を登録
+              attachMux(device);
             }
             else if (xInfo.connectTask.Status == TaskStatus.Faulted)
             {
-              coordinators[device].resistEvent = true;
+              xInfo.resistEvent = true;
               Console.WriteLine("Failed to connect port " + xInfo.portName);
             }
           }
@@ -272,260 +250,204 @@ namespace MLServer
       }
     }
 
-    private static void Device_PacketReceived(object sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
+    /// <summary>coordinator に Mux と PacketReceived を取り付ける。</summary>
+    private static void attachMux(ZigBeeDevice device)
     {
-      pBytes += e.ReceivedPacket.PacketLength;
+      var mux = new XBeeZigbeeCoordinatorMux(device);
+      mux.NewRemoteDiscovered += OnNewRemoteDiscovered;
+      coordinators[device].mux = mux;
+
+      device.PacketReceived += Device_PacketReceived;
     }
 
-    #endregion
-
-    #region コーディネータ接続関連の処理
-
-    private static void addXBeeDevice(RemoteXBeeDevice rdv)
+    private static void Device_PacketReceived(object? sender, XBeeLibrary.Core.Events.PacketReceivedEventArgs e)
     {
-      string add = rdv.GetAddressString();
+      if (sender is not ZigBeeDevice coord) return;
+      int total = packetBytes.AddOrUpdate(coord, e.ReceivedPacket.PacketLength, (_, v) => v + e.ReceivedPacket.PacketLength);
 
-      //親機が見つかった場合には終了
-      foreach (ZigBeeDevice cd in coordinators.Keys)
-        if (cd.GetAddressString() == add) return;
-
-      if (mLoggers.ContainsKey(add)) return;
-
-      ZigBeeDevice dv = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
-      MLogger ml = new MLogger(add);
-
-      //名前を設定
-      if (mlNames.ContainsKey(add)) ml.LocalName = mlNames[add];
-
-      //熱的快適性計算のための情報を設定
-      ml.CloValue = cloValue;
-      ml.MetValue = metValue;
-      ml.DefaultTemperature = dbtValue;
-      ml.DefaultRelativeHumidity = rhdValue;
-      ml.DefaultGlobeTemperature = mrtValue;
-      ml.DefaultVelocity = velValue;
-
-      //イベント登録
-      ml.MeasuredValueReceivedEvent += Ml_MeasuredValueReceivedEvent;
-
-      mLoggers.TryAdd(add, ml);
-
-      //子機のアドレスと通信用XBeeを対応付ける
-      if (!coordinators[dv].longAddress.Contains(add))
-        coordinators[dv].longAddress.Add(add);
+      //XBeeLibrary.Core のバグ workaround: 受信総量が閾値超えたら coordinator を再接続
+      if (total > REOPEN_BYTES_THRESHOLD)
+      {
+        reopenCoordinator(coord);
+      }
     }
 
-    private static void Device_DataReceived(object sender, XBeeLibrary.Core.Events.DataReceivedEventArgs e)
+    private static void reopenCoordinator(ZigBeeDevice coord)
     {
-      RemoteXBeeDevice rdv = e.DataReceived.Device;
-      string add = rdv.GetAddressString();
-      string rcvStr = e.DataReceived.DataString;
-
-      //未登録のノードからの受信の場合
-      if (!mLoggers.ContainsKey(add))
-        addXBeeDevice(rdv);
-
-      //HTML更新フラグを立てる
-      hasNewData = true;
-
-      MLogger mlg = mLoggers[add];
-
-      //受信データを追加
-      mlg.AddReceivedData(rcvStr);
-
-      //コマンド処理
-      while (mlg.HasCommand)
+      while (true)
       {
         try
         {
-          Console.WriteLine(mlg.LocalName + ": " + mlg.NextCommand);
-          mlg.SolveCommand();
+          coord.PacketReceived -= Device_PacketReceived;
+          coord.Close();
+          packetBytes[coord] = 0;
+          coord.Open();
+          coord.PacketReceived += Device_PacketReceived;
+          coordinators[coord].mux?.RebindAfterReopen();
+          return;
         }
-        catch (Exception exc)
+        catch
         {
-          Console.WriteLine(mlg.LocalName + " : " + exc.Message);
-          mlg.ClearReceivedData(); //異常終了時はコマンドを全消去する
+          Console.WriteLine("Re-connect Error");
         }
       }
-
-      //受信パケット総量が48500bytesを超えた場合に再接続
-      //XBeeLibrary.Coreのバグなのか、48500byteあたりで落ちるため
-      //かなりいい加減でデータの取りこぼしが発生しかねない処理。
-      if (45000 < pBytes)
-      {
-        while (true)
-        {
-          try
-          {
-            XBeeDevice dvv = (XBeeDevice)e.DataReceived.Device.GetLocalXBeeDevice();
-
-            dvv.DataReceived -= Device_DataReceived;
-            dvv.PacketReceived -= Device_PacketReceived;
-            dvv.Close();
-
-            pBytes = 0;
-
-            dvv.Open();
-            dvv.DataReceived += Device_DataReceived;
-            dvv.PacketReceived += Device_PacketReceived;
-            return;
-          }
-          catch
-          {
-            Console.WriteLine("Re-connect Error");
-          }
-        }
-
-      }
-
     }
 
     #endregion
 
-    #region コマンド受信イベント発生時の処理
+    #region 子機 (RemoteSession) 関連の処理
 
-    private static void Ml_MeasuredValueReceivedEvent(object sender, EventArgs e)
+    private static void OnNewRemoteDiscovered(RemoteXBeeDevice rdv)
     {
-      //データ書き出し
-      MLogger ml = (MLogger)sender;
-      string fName = dataDirectory + Path.DirectorySeparatorChar + ml.LowAddress + ".csv";
+      string addr = rdv.GetAddressString();
 
+      //親機が見つかった場合には終了
+      foreach (ZigBeeDevice cd in coordinators.Keys)
+        if (cd.GetAddressString() == addr) return;
+
+      if (sessions.ContainsKey(addr)) return;
+
+      ZigBeeDevice? coord = rdv.GetLocalXBeeDevice() as ZigBeeDevice;
+      if (coord == null) return;
+      var xInfo = coordinators[coord];
+      if (xInfo.mux == null) return;
+
+      //session 構築 (Protocol 検出は async でバックグラウンド実行)
+      var session = new RemoteSession(addr, rdv);
+      session.Cache.LocalName = mlNames.TryGetValue(addr, out var nm) ? nm : "MLogger_" + addr;
+      session.Cache.CloValue = cloValue;
+      session.Cache.MetValue = metValue;
+      session.Cache.DefaultTemperature = dbtValue;
+      session.Cache.DefaultRelativeHumidity = rhdValue;
+      session.Cache.DefaultGlobeTemperature = mrtValue;
+      session.Cache.DefaultVelocity = velValue;
+
+      if (!sessions.TryAdd(addr, session)) return;
+      xInfo.longAddress.Add(addr);
+
+      _ = Task.Run(() => InitSessionAsync(session, xInfo.mux));
+    }
+
+    private static async Task InitSessionAsync(RemoteSession session, XBeeZigbeeCoordinatorMux mux)
+    {
+      try
+      {
+        session.Transport = new XBeeZigbeeTransport(mux, session.Remote);
+        using var detectCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        session.Protocol = await ProtocolFactory.DetectAsync(session.Transport, detectCts.Token);
+
+        Console.WriteLine(session.Cache.LocalName + ": Protocol = " +
+          (session.Protocol.Device.ProtocolVersion >= 1 ? "v4 (JSON-RPC)" : "v3 (legacy)") +
+          ", FW " + session.Protocol.Device.FirmwareVersion);
+
+        // device.Name (v4 の hello name) を反映 (v3 では LLN から取得)
+        if (!string.IsNullOrEmpty(session.Protocol.Device.Name))
+          session.Cache.Name = session.Protocol.Device.Name;
+        session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
+
+        // 計測設定を一度取得 (best-effort)
+        try
+        {
+          using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+          var s = await session.Protocol.GetSettingsAsync(cts.Token);
+          session.Cache.ApplySettings(s);
+        }
+        catch (Exception ex) { Console.WriteLine(session.Cache.LocalName + ": GetSettings failed: " + ex.Message); }
+
+        // Samples 購読: ApplySample → CSV 出力 + BACnet 更新
+        session.SamplesSub = session.Protocol.Samples.Subscribe(s => OnSampleReceived(session, s));
+
+        hasNewData = true;
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(session.Cache.LocalName + ": Protocol detection failed: " + ex.Message);
+        // session は残しておく (再試行は別 sample 到着でトリガできるが今は単純に放置)
+      }
+    }
+
+    #endregion
+
+    #region 計測値受信処理
+
+    private static void OnSampleReceived(RemoteSession session, Sample s)
+    {
+      session.Cache.ApplySample(s);
+      hasNewData = true;
+
+      //CSV 追記
+      string fName = dataDirectory + Path.DirectorySeparatorChar + session.Cache.LowAddress + ".csv";
       try
       {
         bool firstCall = !File.Exists(fName);
-        using (StreamWriter sWriter = new StreamWriter(fName, true, Encoding.UTF8))
-        {
-          //初回呼び出し時はヘッダを追加
-          if (firstCall)
-            sWriter.WriteLine(
-              "Server Timestamp,Client Timestamp,Drybulb temperature[C],Relative humidity[%], " +
-              "Globe temperature[C],Velocity[m/s],Illuminance[lux],Forward Compatibility Placeholder," +
-              "Voltage for velocity measurement[V],Future Placeholder,Mean radiant temperature[C],WBGT (Indoor)[C],WBGT (Outdoor[C])");
-
+        using StreamWriter sWriter = new(fName, true, Encoding.UTF8);
+        if (firstCall)
           sWriter.WriteLine(
-            DateTime.Now.ToString(DT_FORMAT) + "," + //親機の現在日時
-            ((ml.LastMeasured.Year == 2000 || 2100 < ml.LastMeasured.Year) ? "n/a" : ml.LastMeasured.ToString(DT_FORMAT)) + "," + //子機の計測日時
-            ml.DrybulbTemperature.LastValue.ToString("F1") + "," +
-            ml.RelativeHumdity.LastValue.ToString("F1") + "," +
-            ml.GlobeTemperature.LastValue.ToString("F1") + "," +
-            ml.Velocity.LastValue.ToString("F4") + "," +
-            ml.Illuminance.LastValue.ToString("F2") + "," +
-            ml.GlobeTemperatureVoltage.ToString("F3") + "," +
-            ml.VelocityVoltage.ToString("F3") + "," +
-            ml.GeneralVoltage1.LastValue.ToString("F3") + "," + 
-            ml.MeanRadiantTemperature.ToString("F1") + "," + 
-            ml.WBGT_Indoor.ToString("F1") + "," + 
-            ml.WBGT_Outdoor.ToString("F1"));
-        }
+            "Server Timestamp,Client Timestamp,Drybulb temperature[C],Relative humidity[%]," +
+            "Globe temperature[C],Velocity[m/s],Illuminance[lux],Forward Compatibility Placeholder," +
+            "Voltage for velocity measurement[V],Future Placeholder,Mean radiant temperature[C],WBGT (Indoor)[C],WBGT (Outdoor[C])");
+
+        var cache = session.Cache;
+        sWriter.WriteLine(
+          DateTime.Now.ToString(DT_FORMAT) + "," +
+          ((cache.LastMeasured.Year == 2000 || 2100 < cache.LastMeasured.Year) ? "n/a" : cache.LastMeasured.ToString(DT_FORMAT)) + "," +
+          fmtOrNA(s.DrybulbTemperature, "F1") + "," +
+          fmtOrNA(s.RelativeHumidity,   "F1") + "," +
+          fmtOrNA(s.GlobeTemperature,   "F1") + "," +
+          fmtOrNA(s.Velocity,           "F4") + "," +
+          fmtOrNA(s.Illuminance,        "F2") + "," +
+          "n/a,n/a,n/a," + // v4 Sample に電圧フィールド無し、placeholder
+          fmtOrDouble(cache.MeanRadiantTemperature, "F1") + "," +
+          fmtOrDouble(cache.WBGT_Indoor,            "F1") + "," +
+          fmtOrDouble(cache.WBGT_Outdoor,           "F1"));
       }
       catch
       {
-        Console.WriteLine(ml.LocalName + ": Can't access to file.");
-        return;
+        Console.WriteLine(session.Cache.LocalName + ": Can't access to file.");
       }
 
-      //BACnet device更新
-      if (useBACnet) 
-        mlBacDevice.UpdateLogger(ml);
+      //BACnet device 更新
+      if (useBACnet && mlBacDevice != null)
+        mlBacDevice.UpdateLogger(session.Cache);
     }
+
+    private static string fmtOrNA(double? v, string fmt) => v.HasValue ? v.Value.ToString(fmt) : "n/a";
+    private static string fmtOrNA(int? v, string fmt) => v.HasValue ? v.Value.ToString(fmt) : "n/a";
+    private static string fmtOrDouble(double v, string fmt) => double.IsNaN(v) ? "n/a" : v.ToString(fmt);
 
     #endregion
 
     #region 現在日時更新関連の処理
 
-    /// <summary>現在時刻を更新するタスク</summary>
+    /// <summary>日付変更時に各 session の Protocol.SetTimeAsync で時刻同期。</summary>
     private static void updateCurrentDateTime()
     {
-      Task dtUpdateTask = Task.Run(async () =>
+      Task.Run(async () =>
       {
         DateTime prevTime = DateTime.Now;
         while (true)
         {
-          //日付変更時に現在時刻を再設定
           if (prevTime.Day != DateTime.Now.Day)
           {
-            foreach (string key in mLoggers.Keys)
+            foreach (var session in sessions.Values)
             {
-              MLogger ml = mLoggers[key];
-
-              //イベント待機タスクを作成
-              var tcs = new TaskCompletionSource<bool>();
-
-              //イベントが発生したらタスクを完了させるハンドラを一時的に登録
-              EventHandler handler = (s, e) => tcs.TrySetResult(true);
-              ml.UpdateCurrentTimeReceivedEvent += handler;
-
+              if (session.Protocol == null) continue;
               try
               {
-                //コマンドを送信 (タイムアウトも考慮して数回繰り返す)
-                var command = MLogger.MakeLoadMeasuringSettingCommand();
-                for (int i = 0; i < 5 && !tcs.Task.IsCompleted; i++)
-                {
-                  try
-                  {
-                    await Task.Run(() => sendCommand(ml.LongAddress, MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now)));
-                  }
-                  catch { }
-
-                  //イベントが来るか、タイムアウト(500ms)するまで待つ
-                  await Task.WhenAny(tcs.Task, Task.Delay(500));
-                }
-
-                //タスクが正常に完了した場合のみUIを更新
-                if (tcs.Task.IsCompletedSuccessfully)
-                {
-                  
-                }
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await session.Protocol.SetTimeAsync(DateTimeOffset.Now, cts.Token);
+                Console.WriteLine(session.Cache.LocalName + ": Time sync OK");
               }
-              finally
+              catch (Exception ex)
               {
-                //ハンドラを解除
-                ml.UpdateCurrentTimeReceivedEvent -= handler;
+                Console.WriteLine(session.Cache.LocalName + ": Time sync failed: " + ex.Message);
               }
-
-
-              /*
-              ml.HasUpdateCurrentTimeReceived = false;
-              int num = 0;
-              //情報が更新されるまで命令を繰り返す
-              while (!ml.HasUpdateCurrentTimeReceived)
-              {
-                try
-                {
-                  sendCommand(ml.LongAddress, MLogger.MakeUpdateCurrentTimeCommand(DateTime.Now));
-                }
-                catch { }
-                Task.Delay(500);
-
-                //3回失敗したら諦める
-                num++;
-                if (3 < num) break;
-              }
-              */
             }
           }
           prevTime = DateTime.Now;
-          Thread.Sleep(1000); //1秒お休みあれ
+          Thread.Sleep(1000);
         }
       });
-    }
-
-    private static void sendCommand(string longAddress, string command)
-    {
-      ZigBeeDevice xbee = getXBee(longAddress);
-      if (xbee == null) return;
-      RemoteXBeeDevice rmdv = xbee.GetNetwork().GetDevice(new XBee64BitAddress(longAddress));
-      xbee.SendData(rmdv, Encoding.ASCII.GetBytes(command));
-    }
-
-    /// <summary>子機のLongAddressを管理する通信用XBee端末を取得する</summary>
-    /// <param name="address">子機のLongAddress</param>
-    /// <returns>通信用XBee端末</returns>
-    private static ZigBeeDevice getXBee(string address)
-    {
-      foreach (ZigBeeDevice key in coordinators.Keys)
-        if (coordinators[key].longAddress.Contains(address)) return key;
-      return null;
     }
 
     #endregion
@@ -541,10 +463,12 @@ namespace MLServer
           Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
           WriteIndented = true,
         };
-        var json = JsonSerializer.Serialize(mLoggers, options);
-        using (StreamWriter sWriter = new StreamWriter
-          (dataDirectory + Path.DirectorySeparatorChar + "latest.json", false, Encoding.UTF8))
-        { sWriter.Write(json); }
+        // セッション → cache の dict に変換して serialize (HTML dashboard の参照する shape)
+        var snapshot = new Dictionary<string, LoggerCache>();
+        foreach (var (addr, session) in sessions) snapshot[addr] = session.Cache;
+        var json = JsonSerializer.Serialize(snapshot, options);
+        using StreamWriter sWriter = new(dataDirectory + Path.DirectorySeparatorChar + "latest.json", false, Encoding.UTF8);
+        sWriter.Write(json);
       }
       catch (JsonException e)
       {
@@ -559,18 +483,33 @@ namespace MLServer
     /// <summary>通信用XBee端末の情報</summary>
     private class xbeeInfo
     {
-      public xbeeInfo(string portName)
-      {
-        this.portName = portName;
-      }
+      public xbeeInfo(string portName) { this.portName = portName; }
 
-      public List<string> longAddress = new List<string>();
-
+      public List<string> longAddress = new();
       public string portName { get; private set; }
-
       public bool resistEvent { get; set; } = false;
+      public Task? connectTask { get; set; }
+      public XBeeZigbeeCoordinatorMux? mux { get; set; }
+    }
 
-      public Task connectTask { get; set; }
+    /// <summary>1 子機ぶんの protocol/transport/cache をまとめる</summary>
+    private class RemoteSession
+    {
+      public string Address { get; }
+      public RemoteXBeeDevice Remote { get; }
+      public LoggerCache Cache { get; }
+      public XBeeZigbeeTransport? Transport { get; set; }
+      public IMLProtocol? Protocol { get; set; }
+      public IDisposable? SamplesSub { get; set; }
+
+      public RemoteSession(string address, RemoteXBeeDevice remote)
+      {
+        Address = address;
+        Remote = remote;
+        // LowAddress は HIGH_ADD を除いた下位アドレス
+        string low = address.Length > 8 ? address.Substring(address.Length - 8) : address;
+        Cache = new LoggerCache(longAddress: address, lowAddress: low);
+      }
     }
 
     #endregion
