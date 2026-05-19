@@ -86,7 +86,7 @@ public partial class DataReceive : ContentPage
         if (proto == null) return;
 
         Title = legacy.LocalName;
-        _vm = new DataReceiveViewModel(proto, legacy.LocalName, CloValue, MetValue, legacy.HasCO2LevelSensor);
+        _vm = new DataReceiveViewModel(proto, legacy.LocalName, CloValue, MetValue, proto.Device.HasCo2Sensor);
         BindingContext = _vm;
     }
 

@@ -306,7 +306,7 @@ public partial class DeviceSetting : ContentPage
       spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
       spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
       btn_pmntMode.IsEnabled = true;        // v4 firmware always supports permanent mode
-      co2LevelGrid.IsVisible = true;        // assume CO2 sensor present (toggle handles real state)
+      co2LevelGrid.IsVisible = dev.HasCo2Sensor;
     });
 
     try

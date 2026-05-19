@@ -242,7 +242,8 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             ProtocolVersion: result["protocol_version"]?.GetValue<int>() ?? 0,
             HardwareId:      result["hardware_id"]?.GetValue<string>() ?? "",
             Name:            result["name"]?.GetValue<string>() ?? "",
-            IsLogging:       result["logging"]?.GetValue<bool>() ?? false);
+            IsLogging:       result["logging"]?.GetValue<bool>() ?? false,
+            HasCo2Sensor:    true);     // v4 ハードは CO2 センサ標準搭載 (HCS コマンド廃止)
         _isLogging = info.IsLogging;  // ローカル cache を hello の値で初期化
         return info;
     }

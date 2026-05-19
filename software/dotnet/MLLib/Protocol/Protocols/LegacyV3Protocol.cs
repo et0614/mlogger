@@ -72,13 +72,24 @@ public sealed class LegacyV3Protocol : IMLProtocol
             var versionStr = ver.Substring(4).TrimEnd('\r', '\n');
             var nameStr    = name.Substring(4).TrimEnd('\r', '\n').TrimEnd('\0');
 
+            // HCS で CO2 センサ有無を probe。応答は "HCS:t" / "HCS:f"。
+            // 未対応 firmware (probe 失敗) は false 扱い。
+            bool hasCo2 = false;
+            try
+            {
+                var hcs = await p.SendAsync("HCS\r", "HCS:", ct).ConfigureAwait(false);
+                hasCo2 = hcs.Substring(4).TrimStart().StartsWith("t", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { /* 古い v3 firmware は HCS 非対応の可能性、false のまま */ }
+
             p._device = new DeviceInfo(
                 Device:          "M-Logger",
                 FirmwareVersion: versionStr,
                 ProtocolVersion: 0,        // v3 端末を示す
                 HardwareId:      "",       // v3 では取得不可
                 Name:            nameStr,
-                IsLogging:       false);   // v3 に直接の照会コマンド無し、初期 false
+                IsLogging:       false,    // v3 に直接の照会コマンド無し、初期 false
+                HasCo2Sensor:    hasCo2);
             return p;
         }
         catch
