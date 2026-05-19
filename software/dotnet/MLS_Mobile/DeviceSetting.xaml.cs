@@ -1120,6 +1120,16 @@ public partial class DeviceSetting : ContentPage
         catch (Exception ex) { MLUtility.WriteLog("P2 #" + (i+1) + " sz=" + sizes[i] + " FAIL " + ex.GetType().Name + ": " + ex.Message); }
       }
 
+      MLUtility.WriteLog("--- Phase 3: 3x size=240 with 2000ms gap (mimics set_settings pattern) ---");
+      for (int i = 1; i <= 3; i++)
+      {
+        try { using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+              int r = await jp.EchoAsync(240, cts.Token);
+              MLUtility.WriteLog("P3 #" + i + " sz=240 OK r=" + r); }
+        catch (Exception ex) { MLUtility.WriteLog("P3 #" + i + " sz=240 FAIL " + ex.GetType().Name + ": " + ex.Message); }
+        if (i < 3) await Task.Delay(2000);
+      }
+
       MLUtility.WriteLog("=== BLE diag end ===");
       await DisplayAlert("BLE diag", "Done. Check LogView for details.", "OK");
     }
