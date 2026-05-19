@@ -63,6 +63,7 @@ public partial class DeviceSetting : ContentPage
         ml.MeasuredValueReceivedEvent -= Logger_MeasuredValueReceivedEvent;
 
       _mlLowAddress = value;
+      MLUtility.WriteLog("[devset] MLoggerLowAddress setter fired addr=" + value);
       ml = MLUtility.GetLogger(_mlLowAddress);
       if (ml != null)
         ml.MeasuredValueReceivedEvent += Logger_MeasuredValueReceivedEvent;
@@ -106,6 +107,7 @@ public partial class DeviceSetting : ContentPage
   protected override void OnAppearing()
   {
     base.OnAppearing();
+    MLUtility.WriteLog("[devset] OnAppearing fired");
 
     //シェイクイベント登録
     Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
@@ -140,7 +142,7 @@ public partial class DeviceSetting : ContentPage
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
-    _initInfoV4Done = false;  // 次回 navigate 時には再 init するためリセット
+    MLUtility.WriteLog("[devset] OnDisappearing fired");
 
     //シェイクイベント解除
     Accelerometer.Stop();
@@ -907,7 +909,8 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
   private async Task initInfoV4()
   {
-    if (_initInfoV4Done) return;  // ガード: page lifecycle 中に 1 回だけ実行
+    if (_initInfoV4Done) { MLUtility.WriteLog("[devset] initInfoV4 SKIPPED guard"); return; }
+    MLUtility.WriteLog("[devset] initInfoV4 RUN first-time");  // ガード: page lifecycle 中に 1 回だけ実行
     _initInfoV4Done = true;
     var dev = MLUtility.Protocol.Device;
     Application.Current?.Dispatcher.Dispatch(() =>
