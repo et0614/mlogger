@@ -179,9 +179,14 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
             if(g_xbeeOffset < g_framePosition) {
                 if (g_frameSize <= g_framePosition) {
                     // Frame End (Checksum)
+                    // payload_len は g_framePosition を 0 に reset する前に計算する
+                    // (reset 後だと常に負値になり、下流の null 終端処理が
+                    // g_frameBuff[XB_RX_BUFFER_SIZE-1] のみで終端する fragile な
+                    // 状態だった。これを正しい payload 末尾での終端に修正)。
+                    int payload_len_at_end = (int)g_framePosition - (int)(g_xbeeOffset + 1);
                     g_readingFrame = false;
                     g_framePosition = 0;
-                    
+
                     //正常にフレーム受信完了
                     if(g_frameChecksum == XB_CHECKSUM_SUCCESS) {
                         // 受信したフレームが「送信完了ステータス(0x8B)」だった場合
@@ -194,16 +199,13 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                             //   USER_DATA_RELAY TX に対する Transmit Status (0x89) の場合、
                             //   payload は [delivery_status, ...]。0x7C/0x7D 等が出れば XBee 側拒否。
                             //   ※ frame_id は g_xbeeOffset の関係で payload に含まれない実装。
-                            {
-                                int plen = g_framePosition - (g_xbeeOffset + 1);
-                                if (plen < 0) plen = 0;
-                                if (plen > 0) {
-                                    diag_usb_logf("TX_STATUS recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
-                                                  (unsigned)receivedFrameId, (unsigned)g_lastFrameId,
-                                                  (unsigned)(uint8_t)g_frameBuff[0]);
-                                } else {
-                                    diag_usb_logf("TX_STATUS empty payload");
-                                }
+                            if (payload_len_at_end > 0) {
+                                diag_usb_logf("TX_STATUS plen=%d recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
+                                              payload_len_at_end,
+                                              (unsigned)receivedFrameId, (unsigned)g_lastFrameId,
+                                              (unsigned)(uint8_t)g_frameBuff[0]);
+                            } else {
+                                diag_usb_logf("TX_STATUS plen=%d (empty)", payload_len_at_end);
                             }
                             return false;
 
@@ -218,12 +220,10 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                         //受信フレームがコマンドだった場合
                         else
                         {
-                            int payload_len = g_framePosition - (g_xbeeOffset + 1);
-                            if (payload_len >= 0 && payload_len < XB_RX_BUFFER_SIZE) {
-                                g_frameBuff[payload_len] = '\0';
-                            } else {
-                                g_frameBuff[XB_RX_BUFFER_SIZE - 1] = '\0';
-                            }
+                            int payload_len = payload_len_at_end;
+                            if (payload_len < 0) payload_len = 0;
+                            if (payload_len >= XB_RX_BUFFER_SIZE) payload_len = XB_RX_BUFFER_SIZE - 1;
+                            g_frameBuff[payload_len] = '\0';  // payload 末尾できちんと終端する
 
                             // DIAG: 完成したコマンドフレームを USB に吐く
                             //   type=0xAD は USER_DATA_RELAY_OUTPUT (XBee->firmware, BLE or UART src)
@@ -231,8 +231,11 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                             diag_usb_logf("RX_FRAME type=0x%02X plen=%d", (unsigned)g_lastApiId, payload_len);
                             diag_usb_hex("RX_FRAME_DATA", (const uint8_t*)g_frameBuff, payload_len, 96);
 
-                            strncpy(output_buffer, g_frameBuff, buffer_size - 1);
-                            output_buffer[buffer_size - 1] = '\0';
+                            // strncpy ではなく memcpy + 明示的 \0 で確実に終端
+                            int cp = payload_len;
+                            if (cp > buffer_size - 1) cp = buffer_size - 1;
+                            memcpy(output_buffer, g_frameBuff, cp);
+                            output_buffer[cp] = '\0';
                             return true;
                         }
                     }

@@ -1,4 +1,7 @@
 #include "diag_usb.h"
+
+#if DIAG_USB_ENABLED
+
 #include "usb_extension.h"
 
 #include <stdio.h>
@@ -46,3 +49,5 @@ void diag_usb_hex(const char *tag, const uint8_t *data, int len, int limit_bytes
     }
     terminate_and_send(n);
 }
+
+#endif // DIAG_USB_ENABLED

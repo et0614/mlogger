@@ -129,6 +129,10 @@ public partial class DeviceSetting : ContentPage
     }
   }
 
+  // initInfoV4 が既にこの page life で走ったか。iOS で popup dismiss が QueryProperty
+  // を再 set して initInfo が多重発火する事象への対策。OnDisappearing でリセット。
+  private bool _initInfoV4Done = false;
+
   /// <summary>v4 (JSON-RPC) protocol is detected and available.</summary>
   private static bool IsV4Protocol
     => MLUtility.Protocol != null && MLUtility.Protocol.Device.ProtocolVersion >= 1;
@@ -136,6 +140,7 @@ public partial class DeviceSetting : ContentPage
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
+    _initInfoV4Done = false;  // 次回 navigate 時には再 init するためリセット
 
     //シェイクイベント解除
     Accelerometer.Stop();
@@ -750,8 +755,17 @@ public partial class DeviceSetting : ContentPage
     var popup = new TextInputPopup(MLSResource.DS_SetName, currentName, Keyboard.Text);
     // Popup<string>.CloseAsync(null) は IPopupResult を non-null で返してくる。
     // 真の Cancel 判定は Result が null かどうかで行う。
+    // ただし iOS で OK 押下時にも Result が null になる事象を実機で確認したため、
+    // popup.EntryValue (binding 経由で常に typed text を保持) をフォールバックに使う。
+    // Cancel 時は EntryValue は popup 初期値のまま残るが、ユーザが何も typing
+    // しなかった場合は initial と同じ値で update が走る (副作用 = 名前不変)。
     var result = await this.ShowPopupAsync<string>(popup);
-    if (result?.Result is string newName) updateName(newName);
+    string typed = (result?.Result is string r && !string.IsNullOrEmpty(r))
+                   ? r
+                   : popup.EntryValue;
+    // Cancel と OK を区別: result.Result が string なら確定 OK、null かつ initial と同じなら Cancel と推定。
+    bool isCancel = (result?.Result == null) && (typed == currentName);
+    if (!isCancel && !string.IsNullOrEmpty(typed)) updateName(typed);
   }
 
   private void SDButton_Clicked(object sender, EventArgs e)
@@ -893,6 +907,8 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
   private async Task initInfoV4()
   {
+    if (_initInfoV4Done) return;  // ガード: page lifecycle 中に 1 回だけ実行
+    _initInfoV4Done = true;
     var dev = MLUtility.Protocol.Device;
     Application.Current?.Dispatcher.Dispatch(() =>
     {
