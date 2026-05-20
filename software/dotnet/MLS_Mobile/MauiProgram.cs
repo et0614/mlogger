@@ -1,7 +1,5 @@
 ﻿using CommunityToolkit.Maui;
-using LiveChartsCore.SkiaSharpView.Maui;
 using Microsoft.Maui.LifecycleEvents;
-using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MLS_Mobile;
 
@@ -14,8 +12,6 @@ public static class MauiProgram
     builder
       .UseMauiApp<App>()
       .UseMauiCommunityToolkit()
-      .UseSkiaSharp()
-      .UseLiveCharts()
       .ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -27,8 +23,8 @@ public static class MauiProgram
         fonts.AddFont("Free-Solid-900.otf", "FAS");
       });
 
-		//国際化
-		builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+    // i18n は MLSResource (resx 自動生成) が System.Resources.ResourceManager 経由で
+    // 直接アクセスするので Microsoft.Extensions.Localization の AddLocalization は不要。
 
     builder.Services.AddSingleton<IConnectivity>(Connectivity.Current);
 

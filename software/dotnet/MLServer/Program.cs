@@ -1,4 +1,3 @@
-using log4net.Repository.Hierarchy;
 using MLLib;
 using MLLib.Protocol;
 using MLLib.Protocol.Protocols;
