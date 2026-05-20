@@ -10,47 +10,33 @@ namespace MLLib.Protocol;
 /// </summary>
 public static class ProtocolFactory
 {
-    /// <summary>v3 VER probe のタイムアウト (この時間内に "VER:" 応答が返らなければ v4 へ)。</summary>
-    public static TimeSpan V3ProbeTimeout { get; set; } = TimeSpan.FromSeconds(2);
-
-    /// <summary>v4 hello probe のタイムアウト。</summary>
+    /// <summary>v4 hello probe のタイムアウト。主流ターゲット (v4 機) なので短く。</summary>
     public static TimeSpan V4ProbeTimeout { get; set; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>v3 VER probe のタイムアウト (この時間内に "VER:" 応答が返らなければ失敗)。
+    /// v3 firmware は接続直後の BLE write 応答が数秒かかることがあるため長めに設定。</summary>
+    public static TimeSpan V3ProbeTimeout { get; set; } = TimeSpan.FromSeconds(8);
 
     /// <summary>
     /// プロトコルを自動判定して <see cref="IMLProtocol"/> を返す。
     ///
-    /// 判定フロー (v3 を先に試す):
-    ///   1. v3 VER (3バイト) を投げて <see cref="V3ProbeTimeout"/> 以内に "VER:" 応答が返れば v3。
-    ///   2. タイムアウト/通信エラーならば v4 hello (~33バイト) で再試行。
+    /// 判定フロー (v4 を先に試す):
+    ///   1. v4 hello (~33バイト JSON) を投げて <see cref="V4ProbeTimeout"/> 以内に応答が返れば v4。
+    ///   2. タイムアウト/通信エラーならば v3 VER (3バイト) で再試行。
+    ///      v3 firmware は応答までに時間がかかることがあるので <see cref="V3ProbeTimeout"/> は長めに。
     ///   3. それでも応答が無ければ AggregateException。
     ///
-    /// 順序が v3 先の理由:
-    /// - v3 VER の方が短く (3バイト)、BLE MTU/iOS BLE スタック の問題を起こしにくい
-    /// - v3 firmware は VER に応答するが v4 firmware は Phase E で v3 コマンドを全廃したので
-    ///   v4 端末では VER は無視 (応答無し)
-    /// - 結果として、v3 端末は ~50ms で判定、v4 端末は V3ProbeTimeout (2秒) + hello で判定
+    /// 順序が v4 先の理由:
+    /// - v4 機が今後の主流で、v4 機の検出は ~50ms で完了させたい
+    /// - v3 firmware は v4 hello JSON を未知コマンドとして無視するので副作用なし
+    /// - v3 fallback パスの LegacyV3Protocol.SendAsync は先頭に \r を付けて送るので、
+    ///   v3 firmware 側のコマンドバッファに v4 hello の残骸があっても \r で flush される
+    /// - v3 機の VER probe には十分な timeout を与えられる (v4 機の UX を犠牲にしない)
     /// </summary>
     public static async Task<IMLProtocol> DetectAsync(ISerialTransport transport, CancellationToken ct = default)
     {
-        // --- 1. v3 VER probe ---
-        Exception? v3Error = null;
-        try
-        {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(V3ProbeTimeout);
-            return await LegacyV3Protocol.CreateAsync(transport, cts.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // タイムアウト / 通信エラー → v4 フォールバックを試す
-            v3Error = ex;
-        }
-
-        // --- 2. v4 hello で再試行 ---
+        // --- 1. v4 hello probe (主流) ---
+        Exception? v4Error = null;
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -60,11 +46,28 @@ public static class ProtocolFactory
             v4.Dispose();
             throw new InvalidDataException("v4 hello succeeded but protocol_version < 1");
         }
-        catch (Exception v4Ex) when (v3Error is not null && !ct.IsCancellationRequested)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // タイムアウト / 通信エラー → v3 fallback を試す
+            v4Error = ex;
+        }
+
+        // --- 2. v3 VER probe (fallback) ---
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(V3ProbeTimeout);
+            return await LegacyV3Protocol.CreateAsync(transport, cts.Token).ConfigureAwait(false);
+        }
+        catch (Exception v3Ex) when (v4Error is not null && !ct.IsCancellationRequested)
         {
             throw new AggregateException(
-                "Failed to detect protocol (both v3 VER and v4 hello probes failed)",
-                v3Error, v4Ex);
+                "Failed to detect protocol (both v4 hello and v3 VER probes failed)",
+                v4Error, v3Ex);
         }
     }
 }

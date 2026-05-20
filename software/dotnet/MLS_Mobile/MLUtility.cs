@@ -151,10 +151,11 @@ namespace MLS_Mobile
       //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため
       //意図的に遅延を入れない。
 
-      //ProtocolFactory.DetectAsync は v3 VER → v4 hello の順に試す。
-      //BLE 通信が完全に死んでいる場合の永久ハング保護として全体に 10秒のハードリミット。
+      //ProtocolFactory.DetectAsync は v4 hello → v3 VER の順に試す。
+      //v4: 2s で即決、v3: 8s 待つ (firmware の BLE 応答遅延に追従)。
+      //内側 ProbeTimeout 合計 ~10s に対し外側 ハードリミットは余裕を持って 15s。
       using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-      cts.CancelAfter(TimeSpan.FromSeconds(10));
+      cts.CancelAfter(TimeSpan.FromSeconds(15));
 
       try
       {
