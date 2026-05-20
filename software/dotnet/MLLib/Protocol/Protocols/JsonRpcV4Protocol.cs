@@ -24,6 +24,7 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     private readonly Subject<Sample> _samples = new();
     private readonly Subject<ReadyEvent> _ready = new();
     private readonly Subject<Co2CalibrationProgress> _co2 = new();
+    private readonly Subject<TimeSyncRequest> _timeSyncRequests = new();
 
     // dump 用のバイナリモード状態
     private byte[]? _dumpBuffer;
@@ -62,6 +63,30 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         }
     }
 
+    /// <summary>
+    /// hello probe を打たずに instance を生成する (passive observer 用)。
+    /// 既に sleep に入っている子機からの sample event 等を観測するのに使う。
+    /// <see cref="DeviceInfo"/> は推測値で埋める (Name / FirmwareVersion は呼び出し側が
+    /// 既知の値を渡せれば良いが、無ければ "unknown")。
+    /// </summary>
+    public static JsonRpcV4Protocol CreatePassive(
+        ISerialTransport transport,
+        string deviceName = "MLogger",
+        string hardwareId = "")
+    {
+        var p = new JsonRpcV4Protocol(transport);
+        p._device = new DeviceInfo(
+            Device:          "M-Logger",
+            FirmwareVersion: "unknown",
+            ProtocolVersion: 1,
+            HardwareId:      hardwareId,
+            Name:            deviceName,
+            IsLogging:       true,  // passive モードに入る = 通常は既にロギング中
+            HasCo2Sensor:    true); // v4 firmware は CO2 標準搭載
+        p._isLogging = true;
+        return p;
+    }
+
     /// <summary>診断: 誰が Dispose を呼んだか log</summary>
     public static Action<string>? DisposeTraceSink { get; set; }
 
@@ -85,6 +110,8 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         _ready.Dispose();
         _co2.OnCompleted();
         _co2.Dispose();
+        _timeSyncRequests.OnCompleted();
+        _timeSyncRequests.Dispose();
     }
 
     public DeviceInfo Device =>
@@ -98,6 +125,7 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     public IObservable<Sample> Samples => _samples.AsObservable();
     public IObservable<ReadyEvent> ReadyHeartbeats => _ready.AsObservable();
     public IObservable<Co2CalibrationProgress> Co2CalibrationUpdates => _co2.AsObservable();
+    public IObservable<TimeSyncRequest> TimeSyncRequests => _timeSyncRequests.AsObservable();
 
     // ============================================================
     // コマンド送信の共通基盤
@@ -225,6 +253,13 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                 case "dump_end":
                     int sent = data?["sent"]?.GetValue<int>() ?? 0;
                     _dumpEndReceived?.TrySetResult(sent);
+                    break;
+                case "time_sync_request":
+                    int windowSec = data?["window_s"]?.GetValue<int>() ?? 30;
+                    _timeSyncRequests.OnNext(new TimeSyncRequest(
+                        Timestamp:      DateTimeOffset.UtcNow,
+                        DeviceTime:     ts,
+                        WindowDuration: TimeSpan.FromSeconds(windowSec)));
                     break;
             }
         }

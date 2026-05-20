@@ -55,4 +55,12 @@ public interface IMLProtocol : IDisposable
 
     /// <summary>CO2 校正進捗 (co2_calibration_progress) ストリーム。</summary>
     IObservable<Co2CalibrationProgress> Co2CalibrationUpdates { get; }
+
+    /// <summary>
+    /// 時刻同期要求 (time_sync_request) ストリーム。子機が長期計測中の RTC drift 補正の
+    /// ため能動的に同期を要求してくる。受信側 (MLServer 想定) は即座に <see cref="SetTimeAsync"/>
+    /// を呼ぶことで、子機の wake window (data.window_s 秒) 内に時刻同期が完了する。
+    /// v3 (LegacyV3Protocol) は本機能未対応のため <see cref="System.Reactive.Linq.Observable.Empty{T}()"/> を返す。
+    /// </summary>
+    IObservable<TimeSyncRequest> TimeSyncRequests { get; }
 }

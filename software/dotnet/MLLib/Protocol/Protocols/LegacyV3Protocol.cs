@@ -58,10 +58,34 @@ public sealed class LegacyV3Protocol : IMLProtocol
     public IObservable<ReadyEvent> ReadyHeartbeats => _ready.AsObservable();
     public IObservable<Co2CalibrationProgress> Co2CalibrationUpdates => _co2.AsObservable();
 
+    // v3 firmware は time_sync_request 未対応のため empty observable を返す
+    public IObservable<TimeSyncRequest> TimeSyncRequests => System.Reactive.Linq.Observable.Empty<TimeSyncRequest>();
+
     private LegacyV3Protocol(ISerialTransport transport)
     {
         _transport = transport;
         _rxSubscription = _transport.Received.Subscribe(OnBytesReceived);
+    }
+
+    /// <summary>
+    /// VER/LLN/HCS probe を打たずに instance を生成する (passive observer 用)。
+    /// 既に sleep に入っている子機からの DTT 等を観測するのに使う。
+    /// </summary>
+    public static LegacyV3Protocol CreatePassive(
+        ISerialTransport transport,
+        string deviceName = "MLogger")
+    {
+        var p = new LegacyV3Protocol(transport);
+        p._device = new DeviceInfo(
+            Device:          "M-Logger",
+            FirmwareVersion: "unknown",
+            ProtocolVersion: 0,        // v3
+            HardwareId:      "",
+            Name:            deviceName,
+            IsLogging:       true,     // 通常は既にロギング中
+            HasCo2Sensor:    false);   // probe してないので保守的に false
+        p._isLogging = true;
+        return p;
     }
 
     public static async Task<LegacyV3Protocol> CreateAsync(ISerialTransport transport, CancellationToken ct = default)

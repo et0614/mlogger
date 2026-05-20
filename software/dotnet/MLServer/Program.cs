@@ -145,8 +145,8 @@ namespace MLServer
         }
       });
 
-      //現在日時更新タスク (日が変わったら全 session に SetTimeAsync)
-      updateCurrentDateTime();
+      //時刻同期は子機からの time_sync_request イベント駆動に変更 (旧 polling 削除)。
+      //OnTimeSyncRequestAsync で SetTimeAsync を発火する。
 
       //定期的にコーディネータをスキャン
       scanCoordinators();
@@ -366,18 +366,17 @@ namespace MLServer
             session.Cache.Name = session.Protocol.Device.Name;
           session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
 
-          // 計測設定を一度取得 (best-effort)。Zigbee 経由は frame 帯域が不安定で
-          // 応答が遅延しがちなので 15 秒待つ。失敗しても session は継続。
-          try
-          {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            var s = await session.Protocol.GetSettingsAsync(cts.Token);
-            session.Cache.ApplySettings(s);
-          }
-          catch (Exception ex) { Console.WriteLine(session.Cache.LocalName + ": GetSettings failed: " + ex.Message); }
+          // 注: GetSettings は呼ばない。MLServer は子機の設定変更機能を持たず、
+          // ロギング中の子機は sleep 状態で応答できないため。MLS_Mobile (BLE) で
+          // 計測開始前に設定済み。MLServer 側は受信値のみ取り扱う。
 
           // Samples 購読: ApplySample → CSV 出力 + BACnet 更新
           session.SamplesSub = session.Protocol.Samples.Subscribe(s => OnSampleReceived(session, s));
+
+          // 時刻同期要求イベント購読: 子機が wake window で SetTime を待っている
+          // 間に応答する。v3 では Empty observable なので何も起こらない。
+          session.TimeSyncSub = session.Protocol.TimeSyncRequests.Subscribe(
+            req => _ = OnTimeSyncRequestAsync(session, req));
 
           hasNewData = true;
           return; // 成功
@@ -391,7 +390,77 @@ namespace MLServer
         }
       }
 
-      Console.WriteLine(session.Cache.LocalName + ": gave up after " + MaxAttempts + " attempts");
+      Console.WriteLine(session.Cache.LocalName + ": active detect gave up after " +
+        MaxAttempts + " attempts; falling back to passive observer");
+
+      // active probe 全失敗 = 子機が既に sleep に入っているケース。
+      // 受信バイトの最初の 1 行を sniff して protocol 種別を判定、CreatePassive で
+      // probe 無し instance を生成。以降はサンプルだけ受信して CSV/BACnet 出力する。
+      try
+      {
+        session.Transport?.Dispose();
+        session.Transport = new XBeeZigbeeTransport(mux, session.Remote);
+        var firstLine = await SniffFirstLineAsync(session.Transport, TimeSpan.FromSeconds(120));
+        if (firstLine == null)
+        {
+          Console.WriteLine(session.Cache.LocalName + ": no data within sniff window, giving up");
+          return;
+        }
+        if (firstLine.StartsWith("{\"v\":1"))
+        {
+          session.Protocol = JsonRpcV4Protocol.CreatePassive(session.Transport, session.Cache.LocalName);
+          Console.WriteLine(session.Cache.LocalName + ": passive v4 observer (sniffed: " +
+            firstLine.Substring(0, Math.Min(60, firstLine.Length)) + "...)");
+        }
+        else if (firstLine.StartsWith("DTT:") || firstLine.StartsWith("WFC"))
+        {
+          session.Protocol = LegacyV3Protocol.CreatePassive(session.Transport, session.Cache.LocalName);
+          Console.WriteLine(session.Cache.LocalName + ": passive v3 observer (sniffed: " + firstLine + ")");
+        }
+        else
+        {
+          Console.WriteLine(session.Cache.LocalName + ": unrecognized line, giving up: " + firstLine);
+          return;
+        }
+
+        session.SamplesSub = session.Protocol.Samples.Subscribe(s => OnSampleReceived(session, s));
+        session.TimeSyncSub = session.Protocol.TimeSyncRequests.Subscribe(
+          req => _ = OnTimeSyncRequestAsync(session, req));
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(session.Cache.LocalName + ": passive fallback failed: " + ex.Message);
+      }
+    }
+
+    /// <summary>
+    /// transport の Received から最初の 1 行 (\r or \n 終端) を読み出す。
+    /// timeout 内に届かなければ null を返す。後段 protocol の LineBuffer は別 instance
+    /// なので、sniff で消費した行は実質スキップされる (許容)。
+    /// </summary>
+    private static async Task<string?> SniffFirstLineAsync(MLLib.Protocol.Transport.ISerialTransport transport, TimeSpan timeout)
+    {
+      var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+      var sb = new System.Text.StringBuilder();
+      IDisposable? sub = null;
+      sub = transport.Received.Subscribe(data =>
+      {
+        foreach (var b in data.Span)
+        {
+          char c = (char)b;
+          if (c == '\r' || c == '\n')
+          {
+            if (sb.Length > 0) { tcs.TrySetResult(sb.ToString()); return; }
+          }
+          else if (sb.Length < 512) sb.Append(c);
+        }
+      });
+      using var ctsTimeout = new CancellationTokenSource(timeout);
+      using (ctsTimeout.Token.Register(() => tcs.TrySetResult(null)))
+      {
+        try { return await tcs.Task; }
+        finally { sub.Dispose(); }
+      }
     }
 
     #endregion
@@ -450,37 +519,35 @@ namespace MLServer
 
     #endregion
 
-    #region 現在日時更新関連の処理
+    #region 時刻同期 (子機 → 親機 要求駆動)
 
-    /// <summary>日付変更時に各 session の Protocol.SetTimeAsync で時刻同期。</summary>
-    private static void updateCurrentDateTime()
+    /// <summary>
+    /// 子機からの time_sync_request イベントに応答して SetTimeAsync を発火する。
+    /// 子機は本イベント送出後 <see cref="TimeSyncRequest.WindowDuration"/> 秒間
+    /// 無線を awake 維持しているので、その間に SetTime コマンドを送れば確実に届く。
+    /// 旧 updateCurrentDateTime (日付変更時 polling) は廃止 — 子機が sleep 中だと
+    /// XBee バッファ依存になり信頼性が低かったため、event-driven に統一。
+    /// </summary>
+    private static async Task OnTimeSyncRequestAsync(RemoteSession session, TimeSyncRequest req)
     {
-      Task.Run(async () =>
+      if (session.Protocol == null) return;
+      var drift = (DateTimeOffset.UtcNow - req.DeviceTime).TotalSeconds;
+      Console.WriteLine($"{session.Cache.LocalName}: time_sync_request received, " +
+        $"device_drift={drift:F1}s, window={req.WindowDuration.TotalSeconds:F0}s");
+      try
       {
-        DateTime prevTime = DateTime.Now;
-        while (true)
-        {
-          if (prevTime.Day != DateTime.Now.Day)
-          {
-            foreach (var session in sessions.Values)
-            {
-              if (session.Protocol == null) continue;
-              try
-              {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                await session.Protocol.SetTimeAsync(DateTimeOffset.Now, cts.Token);
-                Console.WriteLine(session.Cache.LocalName + ": Time sync OK");
-              }
-              catch (Exception ex)
-              {
-                Console.WriteLine(session.Cache.LocalName + ": Time sync failed: " + ex.Message);
-              }
-            }
-          }
-          prevTime = DateTime.Now;
-          Thread.Sleep(1000);
-        }
-      });
+        // window 内に往復完了させたいので timeout は window より少し短く設定
+        var timeout = req.WindowDuration > TimeSpan.FromSeconds(2)
+          ? req.WindowDuration - TimeSpan.FromSeconds(2)
+          : req.WindowDuration;
+        using var cts = new CancellationTokenSource(timeout);
+        var newTime = await session.Protocol.SetTimeAsync(DateTimeOffset.Now, cts.Token);
+        Console.WriteLine($"{session.Cache.LocalName}: Time sync OK, set to {newTime:HH:mm:ss}");
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"{session.Cache.LocalName}: Time sync failed: {ex.Message}");
+      }
     }
 
     #endregion
@@ -534,6 +601,7 @@ namespace MLServer
       public XBeeZigbeeTransport? Transport { get; set; }
       public IMLProtocol? Protocol { get; set; }
       public IDisposable? SamplesSub { get; set; }
+      public IDisposable? TimeSyncSub { get; set; }
 
       public RemoteSession(string address, RemoteXBeeDevice remote)
       {
