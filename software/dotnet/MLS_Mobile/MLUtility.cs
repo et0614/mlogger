@@ -166,6 +166,21 @@ namespace MLS_Mobile
         _bleTransport = null;
         throw;
       }
+
+      // 接続毎に子機の RTC を端末の現在時刻 (オフセット込み) に合わせる。
+      // これをしないと firmware の RTC が初期値 (2029/12/31 等) のまま動き、
+      // サンプル/CSV/dump の Client Timestamp が誤った値になる。
+      // best-effort: 失敗しても接続自体は維持する。
+      try
+      {
+        using var stCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await Protocol.SetTimeAsync(DateTimeOffset.Now, stCts.Token);
+        WriteLog("[time] SetTimeAsync OK: " + DateTimeOffset.Now);
+      }
+      catch (Exception ex)
+      {
+        WriteLog("[time] SetTimeAsync FAIL: " + ex.GetType().Name + " " + ex.Message);
+      }
     }
 
     private static void ConnectedXBee_SerialDataReceived
