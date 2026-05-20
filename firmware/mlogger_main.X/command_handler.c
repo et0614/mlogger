@@ -15,9 +15,14 @@ typedef struct {
     uint16_t pos;
 } CommandBuffer_t;
 
-// コマンド組み立て用バッファ (USB/XBee で別管理、BLE は XBee と共有)
-static CommandBuffer_t usb_buffer  = { {0}, 0 };
-static CommandBuffer_t xbee_buffer = { {0}, 0 };
+// コマンド組み立て用バッファ。USB / Zigbee / BLE で完全独立に持つ。
+// 以前は Zigbee と BLE で共有していたが、両方が同時にコマンドを送ると
+// バイトが混ざって JSON が破損し pd_dispatch がコマンドを認識できなくなる
+// 事象 (MLServer Zigbee 経由の get_settings が MLS_Mobile BLE 接続中に
+// 無応答になる現象) が出たため分離。
+static CommandBuffer_t usb_buffer    = { {0}, 0 };
+static CommandBuffer_t zigbee_buffer = { {0}, 0 };
+static CommandBuffer_t ble_buffer    = { {0}, 0 };
 
 // 応答送信 (v4 ハンドラは CH_Reply 経由でこれを呼ぶ)
 static void reply(const char *msg, CommandSource_t src) {
@@ -35,7 +40,13 @@ void CH_Reply(const char *msg, CommandSource_t src) {
 
 // 1文字をバッファに追加、\r/\n でコマンド確定
 static void append_char_internal(char c, CommandSource_t src) {
-    CommandBuffer_t *b = (src == SRC_USB) ? &usb_buffer : &xbee_buffer;
+    CommandBuffer_t *b;
+    switch (src) {
+        case SRC_USB:  b = &usb_buffer;    break;
+        case SRC_XBEE: b = &zigbee_buffer; break;
+        case SRC_BLE:  b = &ble_buffer;    break;
+        default:       return;
+    }
 
     if (c == '\r' || c == '\n') {
         if (b->pos > 0) {
