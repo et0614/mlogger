@@ -2,7 +2,7 @@ namespace MLS_Mobile;
 
 using CommunityToolkit.Maui.Extensions;
 using MLS_Mobile.Resources.i18n;
-using Popolo.HumanBody;
+using Popolo.Core.ThermalComfort;
 
 [QueryProperty(nameof(CloValue), "CloValue")]
 [QueryProperty(nameof(MetValue), "MetValue")]
@@ -84,9 +84,9 @@ public partial class ThermalComfortCalculator : ContentPage
     double clo = cloSlider.Value;
     double met = metSlider.Value;
 
-    double pmv = ThermalComfort.GetPMV(dbt, mrt, hmd, vel, clo, met, 0);
-    double ppd = ThermalComfort.GetPPD(pmv);
-    double setstar = TwoNodeModel.GetSETStarFromAmbientCondition(dbt, mrt, hmd, vel, clo, 58 * met, 0);
+    double pmv = FangerModel.GetPMV(dbt, mrt, hmd, vel, clo, met, 0);
+    double ppd = FangerModel.GetPPD(pmv);
+    double setstar = GaggeModel.GetSETStarFromAmbientCondition(dbt, mrt, hmd, vel, clo, 58 * met, 0);
 
     lblPMV.Text = pmv.ToString("F2");
     lblPPD.Text = ppd.ToString("F1");

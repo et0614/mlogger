@@ -2,10 +2,9 @@ using System;
 using System.Globalization;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
-using MLLib;
 using MLLib.Protocol;
-using Popolo.HumanBody;
-using Popolo.ThermophysicalProperty;
+using Popolo.Core.ThermalComfort;
+using Popolo.Core.Physics;
 
 namespace MLS_Mobile.ViewModels;
 
@@ -155,9 +154,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
         double mrt = GetMRT(dbt, glb, vel);
         double wbt = MoistAir.GetWetBulbTemperatureFromDryBulbTemperatureAndRelativeHumidity(dbt, rhd, ATM);
-        double set = TwoNodeModel.GetSETStarFromAmbientCondition(dbt, mrt, rhd, vel, CloValue, 58.15 * MetValue, 0);
-        double pmv = ThermalComfort.GetPMV(dbt, mrt, rhd, vel, CloValue, MetValue, 0);
-        double ppd = ThermalComfort.GetPPD(pmv);
+        double set = GaggeModel.GetSETStarFromAmbientCondition(dbt, mrt, rhd, vel, CloValue, 58.15 * MetValue, 0);
+        double pmv = FangerModel.GetPMV(dbt, mrt, rhd, vel, CloValue, MetValue, 0);
+        double ppd = FangerModel.GetPPD(pmv);
 
         // グローブ温度の 150mm 換算 (JIS B7922, JIS Z8504)
         double glb150 = dbt + (1 + 1.13 * Math.Pow(GLOBE_DIAMETER, -0.4) * Math.Pow(vel, 0.6))

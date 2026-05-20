@@ -1,7 +1,7 @@
 namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
-using Popolo.ThermophysicalProperty;
+using Popolo.Core.Physics;
 using MLS_Mobile.Resources.i18n;
 using CommunityToolkit.Maui.Extensions;
 
