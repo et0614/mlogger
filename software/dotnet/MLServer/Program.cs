@@ -338,41 +338,60 @@ namespace MLServer
 
     private static async Task InitSessionAsync(RemoteSession session, XBeeZigbeeCoordinatorMux mux)
     {
-      try
+      // v3 firmware は DTT 配信中に VER probe 応答が遅れることがあり、初回 DetectAsync が
+      // タイムアウトしがち。失敗 → 放置だと mux subject に subscriber が居なくなり、以降の
+      // DTT バイトが全て捨てられて CSV/BACnet 出力が止まる事象が出る。
+      // → 数回リトライし、各試行で新規 Transport (= 新規 subscription) を張り直す。
+      const int MaxAttempts = 5;
+      const int RetryDelaySec = 5;
+
+      for (int attempt = 1; attempt <= MaxAttempts; attempt++)
       {
-        session.Transport = new XBeeZigbeeTransport(mux, session.Remote);
-        using var detectCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        session.Protocol = await ProtocolFactory.DetectAsync(session.Transport, detectCts.Token);
-
-        Console.WriteLine(session.Cache.LocalName + ": Protocol = " +
-          (session.Protocol.Device.ProtocolVersion >= 1 ? "v4 (JSON-RPC)" : "v3 (legacy)") +
-          ", FW " + session.Protocol.Device.FirmwareVersion);
-
-        // device.Name (v4 の hello name) を反映 (v3 では LLN から取得)
-        if (!string.IsNullOrEmpty(session.Protocol.Device.Name))
-          session.Cache.Name = session.Protocol.Device.Name;
-        session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
-
-        // 計測設定を一度取得 (best-effort)。Zigbee 経由は frame 帯域が不安定で
-        // 応答が遅延しがちなので 15 秒待つ。失敗しても session は継続。
         try
         {
-          using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-          var s = await session.Protocol.GetSettingsAsync(cts.Token);
-          session.Cache.ApplySettings(s);
+          // 既存 Transport があれば破棄してから新規作成 (前回 Detect 失敗時の disposed subscription を捨てる)
+          session.Transport?.Dispose();
+          session.Transport = new XBeeZigbeeTransport(mux, session.Remote);
+
+          using var detectCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+          session.Protocol = await ProtocolFactory.DetectAsync(session.Transport, detectCts.Token);
+
+          Console.WriteLine(session.Cache.LocalName + ": Protocol = " +
+            (session.Protocol.Device.ProtocolVersion >= 1 ? "v4 (JSON-RPC)" : "v3 (legacy)") +
+            ", FW " + session.Protocol.Device.FirmwareVersion +
+            (attempt > 1 ? $" (after {attempt} attempts)" : ""));
+
+          // device.Name (v4 の hello name) を反映 (v3 では LLN から取得)
+          if (!string.IsNullOrEmpty(session.Protocol.Device.Name))
+            session.Cache.Name = session.Protocol.Device.Name;
+          session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
+
+          // 計測設定を一度取得 (best-effort)。Zigbee 経由は frame 帯域が不安定で
+          // 応答が遅延しがちなので 15 秒待つ。失敗しても session は継続。
+          try
+          {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            var s = await session.Protocol.GetSettingsAsync(cts.Token);
+            session.Cache.ApplySettings(s);
+          }
+          catch (Exception ex) { Console.WriteLine(session.Cache.LocalName + ": GetSettings failed: " + ex.Message); }
+
+          // Samples 購読: ApplySample → CSV 出力 + BACnet 更新
+          session.SamplesSub = session.Protocol.Samples.Subscribe(s => OnSampleReceived(session, s));
+
+          hasNewData = true;
+          return; // 成功
         }
-        catch (Exception ex) { Console.WriteLine(session.Cache.LocalName + ": GetSettings failed: " + ex.Message); }
-
-        // Samples 購読: ApplySample → CSV 出力 + BACnet 更新
-        session.SamplesSub = session.Protocol.Samples.Subscribe(s => OnSampleReceived(session, s));
-
-        hasNewData = true;
+        catch (Exception ex)
+        {
+          Console.WriteLine(session.Cache.LocalName +
+            $": Protocol detection failed (attempt {attempt}/{MaxAttempts}): " + ex.Message);
+          if (attempt < MaxAttempts)
+            await Task.Delay(TimeSpan.FromSeconds(RetryDelaySec));
+        }
       }
-      catch (Exception ex)
-      {
-        Console.WriteLine(session.Cache.LocalName + ": Protocol detection failed: " + ex.Message);
-        // session は残しておく (再試行は別 sample 到着でトリガできるが今は単純に放置)
-      }
+
+      Console.WriteLine(session.Cache.LocalName + ": gave up after " + MaxAttempts + " attempts");
     }
 
     #endregion
