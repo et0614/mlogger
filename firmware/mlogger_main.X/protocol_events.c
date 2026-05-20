@@ -118,3 +118,19 @@ void pe_emit_ready(uint32_t uptime_s, bool logging, bool toZigbee, bool toBLE) {
     if (toZigbee) Xbee_TxChars(s_evt_buf);
     if (toBLE)    Xbee_BlChars(s_evt_buf);
 }
+
+// ============================================================
+// time_sync_request イベント (spec 5.4)
+//   親機 (MLServer 等) に時刻設定要求を投げる。送出後は logger_control が
+//   window_s 秒間 sleep に入らず set_time コマンドの受信を待つ。
+// ============================================================
+void pe_emit_time_sync_request(uint16_t window_s) {
+    pc_writer_t w;
+    begin_event(&w, "time_sync_request");
+    pc_key(&w, "window_s"); pc_uint(&w, window_s);
+    end_event(&w);
+
+    if (!pc_ok(&w)) return;
+    // Zigbee 経由が主用途 (MLServer 想定)、BLE にも吐く (BLE 接続中も同期可能に)
+    Xbee_BlTxChars(s_evt_buf);
+}

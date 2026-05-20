@@ -45,6 +45,10 @@ typedef struct {
 //CO2センサの接続確認時間間隔[sec]
 #define CO2_CHECK_INTERVAL  10
 
+// 時刻同期 (spec 5.4 time_sync_request)
+#define TIME_SYNC_INTERVAL_S  86400   // 24h ごとに time_sync_request を送出
+#define TIME_SYNC_WINDOW_S    30      // event 送出後に親機 set_time 受信を待つ秒数
+
 //</editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="変数宣言">
@@ -54,6 +58,19 @@ static volatile time_t currentTime = UNIX_OFFSET;
 
 //計測中か否か
 static bool logging = false;
+
+// 時刻同期スケジュール: 0 なら未設定 (= 計測中でない/同期予定無し)。
+// 計測開始時に次の UTC midnight にセットされ、以降は SetTime 成功で +24h、
+// または window タイムアウト時にも +24h ずらして再試行する。
+static time_t time_sync_next_unix = 0;
+
+// 時刻同期 wake window の残秒数。> 0 の間 XBee を sleep させず set_time 受信を待つ。
+static volatile uint16_t time_sync_window_remaining = 0;
+
+// 1秒タスク内で「time_sync_request を emit すべき」フラグ。LC_TickSecond 内では
+// USART を叩きたくない (割り込み文脈なので) ので、ここでフラグだけ立てて
+// 後段 LC_ProcessTimeSyncTask で emit する。
+static volatile bool time_sync_emit_pending = false;
 
 //コマンド
 static bool outputToBLE=false; //Bluetooth接続に書き出すか否か
@@ -359,6 +376,11 @@ void LC_SetCurrentTime(time_t unixTime) {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         currentTime = unixTime - UNIX_OFFSET;
     }
+    // 外部から時刻設定された = 同期完了。wake window をクリアし、次回は +24h 後に再要求。
+    if (time_sync_window_remaining > 0) {
+        time_sync_window_remaining = 0;
+        time_sync_next_unix = unixTime + TIME_SYNC_INTERVAL_S;
+    }
 }
 
 time_t LC_GetCurrentTime(void) {
@@ -372,6 +394,20 @@ time_t LC_GetCurrentTime(void) {
 void LC_TickSecond(void) {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         currentTime++;
+    }
+
+    // 時刻同期 wake window のカウントダウン
+    if (time_sync_window_remaining > 0) time_sync_window_remaining--;
+
+    // ロギング中で同期時刻に達したら emit フラグを立てる (実 emit は割り込み外で)
+    if (logging && time_sync_next_unix > 0) {
+        time_t now_unix = currentTime + UNIX_OFFSET;
+        if (now_unix >= time_sync_next_unix) {
+            time_sync_emit_pending = true;
+            // 次回 sync は 24h 後に予約 (set_time が来たら LC_SetCurrentTime 側で
+            // 上書きされるので衝突しない)
+            time_sync_next_unix = now_unix + TIME_SYNC_INTERVAL_S;
+        }
     }
 }
 
@@ -402,7 +438,19 @@ bool LC_OutputToUSB(void){
 }
 
 bool LC_HasTask(void){
-    return hasTask;
+    return hasTask || time_sync_window_remaining > 0;
+}
+
+bool LC_IsTimeSyncWindowActive(void){
+    return time_sync_window_remaining > 0;
+}
+
+void LC_ProcessTimeSyncTask(void){
+    // LC_TickSecond で立ったフラグを見て event 送出 + wake window 開始
+    if (!time_sync_emit_pending) return;
+    time_sync_emit_pending = false;
+    time_sync_window_remaining = TIME_SYNC_WINDOW_S;
+    pe_emit_time_sync_request(TIME_SYNC_WINDOW_S);
 }
 
 void LC_CheckCO2Connection(void){
@@ -453,17 +501,29 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     //CO2計測不要の場合はスリープ
     if(!EM_mSettings.measure_co2 && !LC_IsInitializingCO2())
         STCC4_stopContinuousMeasurement();
-    
+
     //ロギング開始
     logging = true;
+
+    // 時刻同期スケジュール: 初回は最初に到来する UTC 0:00 を狙う (2.4GHz 混雑が
+    // 少ない深夜時間帯で同期成功率を上げる)。
+    time_t now_unix = LC_GetCurrentTime();
+    time_sync_next_unix = ((now_unix / 86400) + 1) * 86400;
+    time_sync_window_remaining = 0;
+    time_sync_emit_pending = false;
 }
 
 void LC_EndLoggingTask(void){
     logging=false;	//ロギング停止
     Anemometer_Sleep(); //風速センサを停止
-    
+
     //CO2連続測定再開
     STCC4_startContinuousMeasurement();
+
+    // 時刻同期スケジュールも停止
+    time_sync_next_unix = 0;
+    time_sync_window_remaining = 0;
+    time_sync_emit_pending = false;
 }
 
 void LC_ProcessSensingTask(void){    

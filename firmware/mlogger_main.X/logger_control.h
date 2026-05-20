@@ -82,8 +82,23 @@ bool LC_OutputToUSB(void);
 /**
  * @brief タスクがあるか否か
  * @return true:タスクあり, false:タスクなし
+ *         time_sync wake window 中も true を返す (sleep 抑制)
  */
 bool LC_HasTask(void);
+
+/**
+ * @brief 時刻同期 wake window 中か否か
+ *        true の間は XBee を sleep させず set_time 受信を待つ
+ * @return true: window 中、false: 通常状態
+ */
+bool LC_IsTimeSyncWindowActive(void);
+
+/**
+ * @brief 時刻同期タスクを進める (per-second、main loop から呼ぶ)
+ *        LC_TickSecond で立てられた emit pending フラグを処理し、
+ *        time_sync_request イベントを送出する。
+ */
+void LC_ProcessTimeSyncTask(void);
 
 /**
  * @brief CO2センサの接続状況を確認する

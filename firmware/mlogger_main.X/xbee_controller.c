@@ -656,8 +656,8 @@ void Xbee_SendAtCmd(const char *data)
 // <editor-fold defaultstate="collapsed" desc="公開関数：スリープ">
 
 void Xbee_MaintainTask(Xbee_InterfaceConfig_t config) {
-    // BLEが有効な場合にはスリープ不可
-    if (config.ble_enabled) {
+    // BLE 有効、または time_sync wake window 中はスリープ不可
+    if (config.ble_enabled || config.wake_hold_active) {
         Xbee_Wakeup();
         g_ai_request_timer = 0;
         return;

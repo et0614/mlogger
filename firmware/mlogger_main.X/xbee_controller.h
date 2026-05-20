@@ -47,8 +47,9 @@ extern "C" {
 
 // 通信インターフェースの有効状態を伝えるための構造体
 typedef struct {
-    bool zigbee_enabled; // Zigbee通信（親機への送信）が必要か
-    bool ble_enabled;    // BLE通信が必要か
+    bool zigbee_enabled;     // Zigbee通信（親機への送信）が必要か
+    bool ble_enabled;        // BLE通信が必要か
+    bool wake_hold_active;   // time_sync wake window 等で XBee 強制 awake が要るか
 } Xbee_InterfaceConfig_t;
 
 /**

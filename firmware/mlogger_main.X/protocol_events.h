@@ -46,6 +46,15 @@ void pe_emit_dump_end(uint32_t records_sent);
  */
 void pe_emit_ready(uint32_t uptime_s, bool logging, bool toZigbee, bool toBLE);
 
+/**
+ * @brief time_sync_request イベントを送出 (Zigbee + BLE)。
+ *        子機が長期計測中の RTC drift 補正を目的として親機に時刻設定を能動的に
+ *        要求する。送出後 window_s 秒間は無線を awake 維持して set_time を待つ。
+ *        spec 5.4 準拠。
+ * @param window_s  親機が set_time を送れる猶予秒数 (子機の wake 維持時間)
+ */
+void pe_emit_time_sync_request(uint16_t window_s);
+
 #ifdef __cplusplus
 }
 #endif

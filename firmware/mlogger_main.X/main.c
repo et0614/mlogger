@@ -141,6 +141,7 @@ int main(void)
             Xbee_InterfaceConfig_t xb_cfg;
             xb_cfg.zigbee_enabled = LC_UseZigbeeConnection();
             xb_cfg.ble_enabled = LC_UseBLEConnection();
+            xb_cfg.wake_hold_active = LC_IsTimeSyncWindowActive();
             Xbee_MaintainTask(xb_cfg);
 		}
 
@@ -225,6 +226,9 @@ void executeSecondlyTask(void)
 	
     //稼働秒数を進める
     uptime_s++;
+
+    //時刻同期タスク (24h 経過 or 計測開始後の初回 midnight で time_sync_request 送出)
+    LC_ProcessTimeSyncTask();
 
     //センシングタスクを実施
     LC_ProcessSensingTask();
