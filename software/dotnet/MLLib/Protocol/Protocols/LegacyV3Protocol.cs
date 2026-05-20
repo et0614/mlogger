@@ -243,7 +243,15 @@ public sealed class LegacyV3Protocol : IMLProtocol
 
     public async Task<DateTimeOffset> SetTimeAsync(DateTimeOffset time, CancellationToken ct = default)
     {
-        var unix = time.ToUnixTimeSeconds();
+        // v3 firmware は RTC を timezone 不明な naive 時刻として扱い、DTT 応答も
+        // YMDHMS をそのまま local time として吐く。よってここでは「現在の local 成分を
+        // UTC として encode した unix 秒」を送る必要がある (旧 MLogger.GetUnixTime の hack)。
+        // 単純に time.ToUnixTimeSeconds() (= 実 UTC) を送ると firmware が UTC で動き
+        // DTT YMDHMS が UTC になり、PC 側 ParseDtt (YMDHMS を local とみなす) で
+        // タイムゾーン分のズレが出る (JST なら 9h 過去にずれる)。
+        var local = time.LocalDateTime;
+        var localAsUtc = DateTime.SpecifyKind(local, DateTimeKind.Utc);
+        var unix = new DateTimeOffset(localAsUtc).ToUnixTimeSeconds();
         await SendAsync($"UCT{unix:D10}\r", "UCT", ct);
         return DateTimeOffset.FromUnixTimeSeconds(unix);
     }
