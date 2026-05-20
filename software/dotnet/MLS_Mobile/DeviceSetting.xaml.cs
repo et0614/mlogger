@@ -323,6 +323,10 @@ public partial class DeviceSetting : ContentPage
     {
       // best-effort; leave UI defaults
     }
+
+    // After GetSettings succeeds the BLE link has settled enough that set_time
+    // is reliably accepted by firmware. fire-and-forget; failure is logged only.
+    _ = MLUtility.SyncDeviceTimeAsync();
   }
 
   /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>

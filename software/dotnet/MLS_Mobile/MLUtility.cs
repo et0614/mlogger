@@ -167,14 +167,27 @@ namespace MLS_Mobile
         throw;
       }
 
-      // 接続毎に子機の RTC を端末の現在時刻 (オフセット込み) に合わせる。
-      // これをしないと firmware の RTC が初期値 (2029/12/31 等) のまま動き、
-      // サンプル/CSV/dump の Client Timestamp が誤った値になる。
-      // best-effort: 失敗しても接続自体は維持する。
+      // 注: 子機 RTC の時刻同期 (SetTimeAsync) は DeviceSetting.initInfoV4 で
+      // GetSettings の直後に呼ぶ。hello 応答直後に set_time を打つと phone 側
+      // BLE スタックが notification 直後の write を取りこぼし、firmware に届かない
+      // 事象があったため、UI 遷移 (数秒のクッション) を経てから打つ。
+    }
+
+    /// <summary>
+    /// 子機の RTC を端末の現在時刻に合わせる (best-effort)。<see cref="DetectProtocolAsync"/>
+    /// 直後ではなく、UI 遷移後の落ち着いた時点で呼ぶ。
+    ///
+    /// これを呼ばないと firmware RTC が初期値 (2029/12/31 等) のまま動き、
+    /// Sample/CSV/dump の Client Timestamp が現実時刻と乖離する。
+    /// </summary>
+    public static async Task SyncDeviceTimeAsync(CancellationToken ct = default)
+    {
+      if (Protocol == null) return;
       try
       {
-        using var stCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        await Protocol.SetTimeAsync(DateTimeOffset.Now, stCts.Token);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(5));
+        await Protocol.SetTimeAsync(DateTimeOffset.Now, cts.Token);
         WriteLog("[time] SetTimeAsync OK: " + DateTimeOffset.Now);
       }
       catch (Exception ex)
