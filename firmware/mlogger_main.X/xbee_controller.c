@@ -492,6 +492,57 @@ void Xbee_LoadUART(void)
     }
 }
 
+// 1 つの ZIGBEE_TX_REQUEST フレーム (coordinator 宛) を送信するヘルパ。
+// data: 送信バイト先頭, len: この呼び出しで送るバイト数のみ。
+// 呼び出し側で Wakeup/Sleep/g_communicating の管理を行う。
+static void xbee_zb_send_chunk(const char *data, int len)
+{
+    int chkSum = 0;
+
+    USART0_Write(XB_START_DELIMITER);
+    USART0_Write((uint8_t)(((len + XB_TX_HEADER_LENGTH) >> 8) & 0xff));
+    USART0_Write((uint8_t)((len + XB_TX_HEADER_LENGTH) & 0xff));
+
+    USART0_Write(XB_FRAME_ZIGBEE_TX_REQUEST);
+    chkSum = addCsum(chkSum, XB_FRAME_ZIGBEE_TX_REQUEST);
+
+    g_txStatusReceived = false;
+    g_lastFrameId++;
+    if(g_lastFrameId == 0) g_lastFrameId = 0x01; // 0はNoACKなのでスキップ
+    USART0_Write(g_lastFrameId);
+    chkSum = addCsum(chkSum, g_lastFrameId);
+
+    // 64bit Address (All 0)
+    for(int i=0; i<8; i++) USART0_Write(0x00);
+
+    // 16bit Address
+    uint8_t addr_msb = (uint8_t)(XB_TX_ADDR16_COORDINATOR >> 8);
+    uint8_t addr_lsb = (uint8_t)(XB_TX_ADDR16_COORDINATOR & 0xFF);
+    USART0_Write(addr_msb); chkSum = addCsum(chkSum, addr_msb);
+    USART0_Write(addr_lsb); chkSum = addCsum(chkSum, addr_lsb);
+
+    USART0_Write(XB_TX_BROADCAST_RADIUS_MAX);
+    USART0_Write(XB_TX_OPTIONS_DEFAULT);
+
+    // Payload
+    for(int i=0; i<len; i++) {
+        USART0_Write((uint8_t)data[i]);
+        chkSum = addCsum(chkSum, data[i]);
+    }
+
+    USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
+
+    waitTxCompletion(200);
+}
+
+// XBee 3 Zigbee の単一 API フレーム payload 上限 (NP) を超える長さを 1 発で
+// 送ると ZB モジュールが silently drop する。256B 弱に余裕を持たせて
+// 150B/chunk で複数 ZIGBEE_TX_REQUEST に分割して送る。
+// (実例: hello 応答 156B は送れるが get_settings 応答 ~290B は届かなかった)
+// 受信側 (MLServer JsonRpcV4Protocol の LineBuffer 等) は \n まで連結するため
+// 分割は透過的。
+#define XB_TX_MAX_CHUNK_BYTES 150
+
 void Xbee_TxChars(const char *data)
 {
     g_communicating = true;
@@ -503,51 +554,20 @@ void Xbee_TxChars(const char *data)
         DELAY_microseconds(150); //XBee立ち上げに0.05ms程度必要:3倍
     }
 
-    int chkSum = 0;
-    int cl = getCharLength(data);
+    int total = getCharLength(data);
 
     // DIAG: Zigbee 経由送信開始
-    diag_usb_logf("TX_ZB_BEGIN cl=%d wasSleeping=%d", cl, (int)wasSleeping);
-    diag_usb_hex("TX_ZB_DATA", (const uint8_t*)data, cl, 96);
-    
-    USART0_Write(XB_START_DELIMITER);
-    USART0_Write((uint8_t)(((cl + XB_TX_HEADER_LENGTH) >> 8) & 0xff));
-    USART0_Write((uint8_t)((cl + XB_TX_HEADER_LENGTH) & 0xff));
-    
-    // Checksum start
-    USART0_Write(XB_FRAME_ZIGBEE_TX_REQUEST);
-    chkSum = addCsum(chkSum, XB_FRAME_ZIGBEE_TX_REQUEST);
-    
-    // 2026.01.1 送信完了ACKチェック機能を追加
-    g_txStatusReceived = false; // フラグをリセット
-    g_lastFrameId++;
-    if(g_lastFrameId == 0) g_lastFrameId = 0x01; // 0はNoACKなのでスキップ
-    USART0_Write(g_lastFrameId);
-    chkSum = addCsum(chkSum, g_lastFrameId);
-    
-    // 64bit Address (All 0)
-    for(int i=0; i<8; i++) USART0_Write(0x00);
-    
-    // 16bit Address
-    uint8_t addr_msb = (uint8_t)(XB_TX_ADDR16_COORDINATOR >> 8);
-    uint8_t addr_lsb = (uint8_t)(XB_TX_ADDR16_COORDINATOR & 0xFF);
-    USART0_Write(addr_msb); chkSum = addCsum(chkSum, addr_msb);
-    USART0_Write(addr_lsb); chkSum = addCsum(chkSum, addr_lsb);
-    
-    USART0_Write(XB_TX_BROADCAST_RADIUS_MAX);
-    USART0_Write(XB_TX_OPTIONS_DEFAULT);
-    
-    // Payload
-    for(int i=0; i<cl; i++) {
-        USART0_Write((uint8_t)data[i]);
-        chkSum = addCsum(chkSum, data[i]);
+    diag_usb_logf("TX_ZB_BEGIN total=%d wasSleeping=%d", total, (int)wasSleeping);
+    diag_usb_hex("TX_ZB_DATA", (const uint8_t*)data, total, 96);
+
+    int offset = 0;
+    while (offset < total) {
+        int chunk = total - offset;
+        if (chunk > XB_TX_MAX_CHUNK_BYTES) chunk = XB_TX_MAX_CHUNK_BYTES;
+        xbee_zb_send_chunk(data + offset, chunk);
+        offset += chunk;
     }
-    
-    USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
-    
-    //送信完了を待つ
-    waitTxCompletion(200);
-    
+
     //Sleep状態だったもしくはSleep指令が来た場合には再びSleep
     if(wasSleeping || g_shouldSleep) sleepXBee();
     g_communicating = false;
