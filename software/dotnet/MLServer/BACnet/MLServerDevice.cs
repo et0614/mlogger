@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.IO.BACnet;
 using System.Text;
 using MLLib;
@@ -7,16 +8,48 @@ using MLServer.BACnet.Storage;
 
 namespace MLServer.BACnet
 {
-
-    internal class MLServerDevice
+  internal class MLServerDevice
   {
+    // 子機 1 台あたりの BACnet オブジェクト Instance ID 体系:
+    //   AI       1000+i : DBT (°C)
+    //   AI       2000+i : GLB (°C)
+    //   AI       3000+i : VEL (m/s)
+    //   AI       4000+i : ILL (lux)
+    //   AI       5000+i : RHM (%)
+    //   AI       6000+i : MRT (°C)
+    //   AI       7000+i : PMV (-)
+    //   AI       8000+i : SET (-)
+    //   AI       9000+i : WBGT_Indoor (°C)
+    //   AI      10000+i : WBGT_Outdoor (°C)
+    //   AI      11000+i : CO2 (ppm)
+    //   AI      12000+i : PPD (%)
+    //   DateTime 1000+i : DBRH 最終計測日時
+    //   DateTime 2000+i : GLB  最終計測日時
+    //   DateTime 3000+i : VEL  最終計測日時
+    //   DateTime 4000+i : ILL  最終計測日時
+    //   DateTime 5000+i : CO2  最終計測日時
+    //
+    // i = 子機発見順 (myLoggers 内 index)。i は再起動で変わり得るので 2次側
+    // アプリ (BAS フロントエンド) は OBJECT_NAME に埋め込まれた LowAddress
+    // でマッピングする方針 (Instance ID では追跡しない)。
+    private const int MAX_LOGGERS = 1000;
+    private const int BACNET_UNIT_DEGREES_C  = 62;
+    private const int BACNET_UNIT_PERCENT    = 29;
+    private const int BACNET_UNIT_METERS_PER_S = 161;
+    private const int BACNET_UNIT_LUX        = 37;
+    private const int BACNET_UNIT_PPM        = 96;
+    private const int BACNET_UNIT_NO_UNITS   = 95;
 
     #region インスタンス変数・プロパティ
 
     /// <summary>BACnet通信用オブジェクト</summary>
     public BACnetCommunicator Communicator { get; set; }
 
-    private List<ImmutableMLogger> myLoggers = new List<ImmutableMLogger>();
+    // 子機発見順リスト。addLogger / UpdateLogger は _lock で全部直列化する
+    // (XBee 受信 callback が複数子機ぶん並行で発火し得るため)。
+    private readonly List<ImmutableMLogger> myLoggers = new();
+    private readonly object _lock = new();
+    private bool _overflowReported = false;
 
     #endregion
 
@@ -31,20 +64,20 @@ namespace MLServer.BACnet
     {
       DeviceStorage storage = DeviceStorage.Load("MLServerDeviceStorage.xml");
 
-      //MLogger一覧を示す文字列
+      //MLogger一覧を示す文字列 (LowAddress を CSV で並べる)
       storage.AddObject(new BACnetObject()
       {
         Instance = 1u,
         Type = BacnetObjectTypes.OBJECT_CHARACTERSTRING_VALUE,
         Properties = new BACnetProperty[]
         {
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_CHARACTERSTRING_VALUE:" + 1),
+            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_CHARACTERSTRING_VALUE:1"),
             new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "MLoggerList"),
             new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "40"),
-            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the name (XBee low address) of the connected MLogger in a CSV format string."),
+            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "CSV of LowAddress for each connected MLogger. 2次側アプリは本 CSV と各 Object NAME 中の LowAddress でマッピングする。"),
             new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, ""),
             new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          }
+        }
       });
 
       return storage;
@@ -52,385 +85,145 @@ namespace MLServer.BACnet
 
     #endregion
 
-    public void UpdateLogger(ImmutableMLogger logger) 
+    public void UpdateLogger(ImmutableMLogger logger)
     {
-      //新出の場合
-      if (!myLoggers.Contains(logger))
-        addLogger(logger);
+      lock (_lock)
+      {
+        int indx;
+        if (!myLoggers.Contains(logger))
+        {
+          if (myLoggers.Count >= MAX_LOGGERS)
+          {
+            if (!_overflowReported)
+            {
+              Console.WriteLine($"[BACnet] WARNING: MAX_LOGGERS ({MAX_LOGGERS}) reached. Subsequent devices will NOT be exposed via BACnet (CSV/JSON 出力は継続)。");
+              _overflowReported = true;
+            }
+            return;
+          }
+          addLogger(logger);
+        }
+        indx = myLoggers.IndexOf(logger);
 
-      int indx = myLoggers.IndexOf(logger);
-      if (1000 <= indx) return; //1000台まで
+        // 計測時刻
+        WriteDateTime(1000 + indx, logger.DrybulbTemperature.LastMeasureTime);
+        WriteDateTime(2000 + indx, logger.GlobeTemperature.LastMeasureTime);
+        WriteDateTime(3000 + indx, logger.Velocity.LastMeasureTime);
+        WriteDateTime(4000 + indx, logger.Illuminance.LastMeasureTime);
+        WriteDateTime(5000 + indx, logger.CO2Level.LastMeasureTime);
 
-      //温湿度の最終計測日時
+        // 計測値 / 計算値
+        WriteAnalog(1000  + indx, (float)logger.DrybulbTemperature.LastValue);
+        WriteAnalog(2000  + indx, (float)logger.GlobeTemperature.LastValue);
+        WriteAnalog(3000  + indx, (float)logger.Velocity.LastValue);
+        WriteAnalog(4000  + indx, (float)logger.Illuminance.LastValue);
+        WriteAnalog(5000  + indx, (float)logger.RelativeHumdity.LastValue);
+        WriteAnalog(6000  + indx, (float)logger.MeanRadiantTemperature);
+        WriteAnalog(7000  + indx, (float)logger.PMV);
+        WriteAnalog(8000  + indx, (float)logger.SETStar);
+        WriteAnalog(9000  + indx, (float)logger.WBGT_Indoor);
+        WriteAnalog(10000 + indx, (float)logger.WBGT_Outdoor);
+        WriteAnalog(11000 + indx, (float)logger.CO2Level.LastValue);
+        WriteAnalog(12000 + indx, (float)logger.PPD);
+      }
+    }
+
+    private void WriteAnalog(int instance, float value)
+    {
       Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_DATETIME_VALUE, (uint)(1000 + indx)),
+        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)instance),
         BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.DrybulbTemperature.LastMeasureTime)
-        );
+        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, value));
+    }
 
-      //グローブ温度の最終計測日時
+    private void WriteDateTime(int instance, DateTime value)
+    {
       Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_DATETIME_VALUE, (uint)(2000 + indx)),
+        new BacnetObjectId(BacnetObjectTypes.OBJECT_DATETIME_VALUE, (uint)instance),
         BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.GlobeTemperature.LastMeasureTime)
-        );
-
-      //風速の最終計測日時
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_DATETIME_VALUE, (uint)(3000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.Velocity.LastMeasureTime)
-        );
-
-      //照度の最終計測日時
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_DATETIME_VALUE, (uint)(4000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.Illuminance.LastMeasureTime)
-        );
-
-      //乾球温度の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(1000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.DrybulbTemperature.LastValue)
-        );
-
-      //相対湿度の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(5000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.RelativeHumdity.LastValue)
-        );
-
-      //グローブ温度の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(2000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.GlobeTemperature.LastValue)
-        );
-
-      //風速の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(3000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.Velocity.LastValue)
-        );
-
-      //照度の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(4000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.Illuminance.LastValue)
-        );
-
-      //MRTの現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(6000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.MeanRadiantTemperature)
-        );
-
-      //PMVの現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(7000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.PMV)
-        );
-
-      //SET*の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(8000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.SETStar)
-        );
-
-      //WBGT(Indoor)の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(9000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.WBGT_Indoor)
-        );
-
-      //WBGT(Outdoor)の現在値
-      Communicator.Storage.WriteProperty(
-        new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_INPUT, (uint)(10000 + indx)),
-        BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, (float)logger.WBGT_Outdoor)
-        );
+        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, value));
     }
 
     private void addLogger(ImmutableMLogger logger)
     {
-      //リストに追加
+      // 呼び出し側で _lock 取得済の前提。
       myLoggers.Add(logger);
 
-      //機器一覧を更新
+      //機器一覧 (LowAddress の CSV) を更新
       StringBuilder sBuilder = new StringBuilder(myLoggers[0].LowAddress);
       for (int i = 1; i < myLoggers.Count; i++)
         sBuilder.Append("," + myLoggers[i].LowAddress);
       Communicator.Storage.WriteProperty(
         new BacnetObjectId(BacnetObjectTypes.OBJECT_CHARACTERSTRING_VALUE, 1u),
         BacnetPropertyIds.PROP_PRESENT_VALUE,
-        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, sBuilder.ToString())
-        );
+        new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, sBuilder.ToString()));
 
-      //以下、オブジェクトの追加処理
-      int indx = myLoggers.IndexOf(logger);
-      if (1000 <= indx) return; //1000台まで
+      int indx = myLoggers.Count - 1;
+      string lo = logger.LowAddress;
+      string nm = logger.LocalName;
 
-      //温湿度の最終計測日時
+      // 計測時刻 (最終計測日時) 群
+      AddDateTimeObject(1000 + indx, "DBRH", "dry-bulb temperature and relative humidity", lo, nm, logger.DrybulbTemperature.LastMeasureTime);
+      AddDateTimeObject(2000 + indx, "GLB",  "globe temperature",                          lo, nm, logger.GlobeTemperature.LastMeasureTime);
+      AddDateTimeObject(3000 + indx, "VEL",  "velocity",                                   lo, nm, logger.Velocity.LastMeasureTime);
+      AddDateTimeObject(4000 + indx, "ILL",  "illuminance",                                lo, nm, logger.Illuminance.LastMeasureTime);
+      AddDateTimeObject(5000 + indx, "CO2",  "CO2 concentration",                          lo, nm, logger.CO2Level.LastMeasureTime);
+
+      // 計測値 (Analog Input) 群
+      AddAnalogInputObject(1000  + indx, "DBT",        "current drybulb temperature",        lo, nm, (float)logger.DrybulbTemperature.LastValue, BACNET_UNIT_DEGREES_C);
+      AddAnalogInputObject(2000  + indx, "GLB",        "current globe temperature",          lo, nm, (float)logger.GlobeTemperature.LastValue,  BACNET_UNIT_DEGREES_C);
+      AddAnalogInputObject(3000  + indx, "VEL",        "current velocity",                   lo, nm, (float)logger.Velocity.LastValue,          BACNET_UNIT_METERS_PER_S);
+      AddAnalogInputObject(4000  + indx, "ILL",        "current illuminance",                lo, nm, (float)logger.Illuminance.LastValue,       BACNET_UNIT_LUX);
+      AddAnalogInputObject(5000  + indx, "RHM",        "current relative humidity",          lo, nm, (float)logger.RelativeHumdity.LastValue,   BACNET_UNIT_PERCENT);
+      AddAnalogInputObject(6000  + indx, "MRT",        "current mean radiant temperature",   lo, nm, (float)logger.MeanRadiantTemperature,      BACNET_UNIT_DEGREES_C);
+      AddAnalogInputObject(7000  + indx, "PMV",        "current PMV",                        lo, nm, (float)logger.PMV,                          BACNET_UNIT_NO_UNITS);
+      AddAnalogInputObject(8000  + indx, "SET",        "current SET*",                       lo, nm, (float)logger.SETStar,                      BACNET_UNIT_NO_UNITS);
+      AddAnalogInputObject(9000  + indx, "WBGT(IN)",   "current indoor WBGT",                lo, nm, (float)logger.WBGT_Indoor,                  BACNET_UNIT_DEGREES_C);
+      AddAnalogInputObject(10000 + indx, "WBGT(OUT)",  "current outdoor WBGT",               lo, nm, (float)logger.WBGT_Outdoor,                 BACNET_UNIT_DEGREES_C);
+      AddAnalogInputObject(11000 + indx, "CO2",        "current CO2 concentration",          lo, nm, (float)logger.CO2Level.LastValue,           BACNET_UNIT_PPM);
+      AddAnalogInputObject(12000 + indx, "PPD",        "current PPD",                        lo, nm, (float)logger.PPD,                          BACNET_UNIT_PERCENT);
+    }
+
+    /// <summary>Analog Input object をひとつ Storage に追加するヘルパ。</summary>
+    private void AddAnalogInputObject(int instance, string nameTag, string descBody, string lowAddress, string localName, float initialValue, int unitEnum)
+    {
+      string tag = $"{lowAddress}({localName})";
       Communicator.Storage.AddObject(new BACnetObject()
       {
-        Instance = (uint)(1000 + indx),
+        Instance = (uint)instance,
+        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
+        Properties = new BACnetProperty[]
+        {
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, $"OBJECT_ANALOG_INPUT:{instance}"),
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME,       BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, $"{nameTag}_{tag}"),
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE,       BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
+          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION,       BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, $"This object represents the {descBody} measured/calculated by {tag}"),
+          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE,     BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, initialValue.ToString()),
+          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS,      BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
+          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE,    BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
+          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY,       BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
+          new BACnetProperty(BacnetPropertyIds.PROP_UNITS,             BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, unitEnum.ToString()),
+        }
+      });
+    }
+
+    /// <summary>DateTime Value object をひとつ Storage に追加するヘルパ。</summary>
+    private void AddDateTimeObject(int instance, string nameTag, string descBody, string lowAddress, string localName, DateTime initialValue)
+    {
+      string tag = $"{lowAddress}({localName})";
+      Communicator.Storage.AddObject(new BACnetObject()
+      {
+        Instance = (uint)instance,
         Type = BacnetObjectTypes.OBJECT_DATETIME_VALUE,
         Properties = new BACnetProperty[]
         {
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_DATETIME_VALUE:" + (1000 + indx).ToString()),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "DBRH_LastMeasurementDate_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "44"),
-            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the date and time when " + logger.LowAddress + "(" + logger.LocalName + ")" + " last measured dry-bulb temperature and relative humidity."),
-            new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.DrybulbTemperature.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss")),
-            new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          }
-      });
-
-      //グローブ温度の最終計測日時
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(2000 + indx),
-        Type = BacnetObjectTypes.OBJECT_DATETIME_VALUE,
-        Properties = new BACnetProperty[]
-        {
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_DATETIME_VALUE:" + (2000 + indx).ToString()),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "GLB_LastMeasurementDate_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "44"),
-            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the date and time when " + logger.LowAddress + "(" + logger.LocalName + ")" + " last measured globe temperature."),
-            new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.GlobeTemperature.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss")),
-            new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          }
-      });
-
-      //風速の最終計測日時
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(3000 + indx),
-        Type = BacnetObjectTypes.OBJECT_DATETIME_VALUE,
-        Properties = new BACnetProperty[]
-        {
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_DATETIME_VALUE:" + (3000 + indx).ToString()),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "VEL_LastMeasurementDate_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "44"),
-            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the date and time when " + logger.LowAddress + "(" + logger.LocalName + ")" + " last measured velocity."),
-            new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.Velocity.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss")),
-            new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          }
-      });
-
-      //照度の最終計測日時
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(4000 + indx),
-        Type = BacnetObjectTypes.OBJECT_DATETIME_VALUE,
-        Properties = new BACnetProperty[]
-        {
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_DATETIME_VALUE:" + (4000 + indx).ToString()),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "ILL_LastMeasurementDate_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-            new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "44"),
-            new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the date and time when " + logger.LowAddress + "(" + logger.LocalName + ")" + " last measured illuminance."),
-            new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, logger.Illuminance.LastMeasureTime.ToString("yyyy/MM/dd HH:mm:ss")),
-            new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          }
-      });
-
-      //乾球温度の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(1000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (1000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "DBT_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current drybulb temperature measured by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.DrybulbTemperature.LastValue.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "62"), //C
-          }
-      });
-
-      //相対湿度の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(5000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (5000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "RHM_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current relative humidity measured by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.RelativeHumdity.LastValue.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "29"), //%
-          }
-      });
-
-      //グローブ温度の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(2000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (2000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "GLB_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current globe temperature measured by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.GlobeTemperature.LastValue.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "62"), //C
-          }
-      });
-
-      //風速の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(3000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (3000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "VEL_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current velocity measured by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.Velocity.LastValue.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "161"), //m/s
-          }
-      });
-
-      //照度の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(4000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (4000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "ILL_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current illuminance measured by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.Illuminance.LastValue.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "37"), //lux
-          }
-      });
-
-      //MRTの現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(6000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (6000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "MRT_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current mean radiant temperature calculated by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.MeanRadiantTemperature.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "62"), //C
-          }
-      });
-
-      //PMVの現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(7000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (7000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "PMV_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current PMV calculated by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.MeanRadiantTemperature.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "95"), //No units
-          }
-      });
-
-      //SET*の現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(8000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (8000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "SET_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current SET* calculated by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.MeanRadiantTemperature.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "95"), //No units
-          }
-      });
-
-      //WBGTの現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(9000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (9000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "WBGT(IN)_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current indoor WBGT calculated by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.WBGT_Indoor.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "62"), //C
-          }
-      });
-
-      //MRTの現在値
-      Communicator.Storage.AddObject(new BACnetObject()
-      {
-        Instance = (uint)(10000 + indx),
-        Type = BacnetObjectTypes.OBJECT_ANALOG_INPUT,
-        Properties = new BACnetProperty[]
-        {
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, "OBJECT_ANALOG_INPUT:" + (10000 + indx).ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "WBGT(OUT)_" + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION, BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "This object represents the current outdoor WBGT calculated by " + logger.LowAddress + "(" + logger.LocalName + ")"),
-          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE, BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, logger.MeanRadiantTemperature.ToString()),
-          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS, BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
-          new BACnetProperty(BacnetPropertyIds.PROP_OUT_OF_SERVICE, BacnetApplicationTags.BACNET_APPLICATION_TAG_BOOLEAN, "False"),
-          new BACnetProperty(BacnetPropertyIds.PROP_RELIABILITY, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "0"),
-          new BACnetProperty(BacnetPropertyIds.PROP_UNITS, BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "62"), //C
-          }
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_IDENTIFIER, BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, $"OBJECT_DATETIME_VALUE:{instance}"),
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_NAME,       BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, $"{nameTag}_LastMeasurementDate_{tag}"),
+          new BACnetProperty(BacnetPropertyIds.PROP_OBJECT_TYPE,       BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, "44"),
+          new BACnetProperty(BacnetPropertyIds.PROP_DESCRIPTION,       BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, $"This object represents the date and time when {tag} last measured {descBody}."),
+          new BACnetProperty(BacnetPropertyIds.PROP_PRESENT_VALUE,     BacnetApplicationTags.BACNET_APPLICATION_TAG_DATETIME, initialValue.ToString("yyyy/MM/dd HH:mm:ss")),
+          new BACnetProperty(BacnetPropertyIds.PROP_STATUS_FLAGS,      BacnetApplicationTags.BACNET_APPLICATION_TAG_BIT_STRING, "0000"),
+        }
       });
     }
 
