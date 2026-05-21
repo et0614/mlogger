@@ -25,6 +25,20 @@ TIMEOUT_SEC = 2.0
 # ==========================================
 
 
+def open_no_reset(port, baud=BAUD_RATE, timeout=TIMEOUT_SEC):
+    """DTR/RTS を非アサートで open して AVR DU32 の reset 経路を踏まないようにする。
+    pyserial デフォルトでは open 時に DTR/RTS がアサートされ、USB CDC reconnect と
+    合わせて MCU reset を引き起こす環境がある。"""
+    ser = serial.Serial()
+    ser.port = port
+    ser.baudrate = baud
+    ser.timeout = timeout
+    ser.dtr = False
+    ser.rts = False
+    ser.open()
+    return ser
+
+
 def find_device_port():
     """利用可能なCOMポートを走査し、v4 hello JSON コマンドで M-Logger を探す。"""
     print("Scanning ports...")
@@ -39,20 +53,29 @@ def find_device_port():
                 print(" Skipped (Likely Bluetooth).")
                 continue
 
-            with serial.Serial(p.device, BAUD_RATE, timeout=1.5) as ser:
+            with open_no_reset(p.device, timeout=1.5) as ser:
                 time.sleep(1.5)
                 ser.reset_input_buffer()
                 ser.write(probe)
-                line = ser.readline().decode('utf-8', errors='ignore').strip()
-                try:
-                    resp = json.loads(line)
+                # 応答が来るまで複数行スキャン。firmware が ready event や
+                # diag 行を先に流していると 1 行 readline では取りこぼす。
+                end = time.time() + 2.0
+                found = False
+                while time.time() < end:
+                    line = ser.readline().decode('utf-8', errors='ignore').strip()
+                    if not line:
+                        continue
+                    try:
+                        resp = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
                     if (isinstance(resp, dict)
                             and resp.get("result", {}).get("device") == "M-Logger"):
                         print(" Found!")
+                        found = True
                         return p.device
-                    print(" Not M-Logger.")
-                except json.JSONDecodeError:
-                    print(" No JSON response.")
+                if not found:
+                    print(" No M-Logger response.")
 
         except (OSError, serial.SerialException):
             print(" Failed to open.")
@@ -722,7 +745,7 @@ def test_dump_xbee_rejection_offline(ser):
 def run_test(com_port):
     print(f"\nConnecting to {com_port}...")
     try:
-        with serial.Serial(com_port, BAUD_RATE, timeout=TIMEOUT_SEC) as ser:
+        with open_no_reset(com_port, timeout=TIMEOUT_SEC) as ser:
             time.sleep(2.0)  # 接続安定待ち
 
             results = []

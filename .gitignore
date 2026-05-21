@@ -448,3 +448,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# load_data.py の dump 出力 (実機テスト成果物、リポジトリには含めない)
+software/python/mlogger/mlogger_*.csv

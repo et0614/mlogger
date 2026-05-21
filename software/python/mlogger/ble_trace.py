@@ -26,6 +26,18 @@ from datetime import datetime
 BAUD_RATE = 115200
 
 
+def open_no_reset(port, baud=BAUD_RATE, timeout=1.5):
+    """DTR/RTS を非アサートで open して AVR DU32 の reset を抑制。"""
+    ser = serial.Serial()
+    ser.port = port
+    ser.baudrate = baud
+    ser.timeout = timeout
+    ser.dtr = False
+    ser.rts = False
+    ser.open()
+    return ser
+
+
 def find_device_port():
     """Probe each COM port with a v4 hello over USB-CDC, return the responder."""
     import json
@@ -35,7 +47,7 @@ def find_device_port():
         if "Bluetooth" in (p.description or ""):
             continue
         try:
-            with serial.Serial(p.device, BAUD_RATE, timeout=1.5) as s:
+            with open_no_reset(p.device, timeout=1.5) as s:
                 time.sleep(1.0)
                 s.reset_input_buffer()
                 s.write(probe)
@@ -70,7 +82,7 @@ def classify(line: str) -> str:
 def main(port):
     print(f"Listening on {port} @ {BAUD_RATE} (Ctrl+C to stop)\n")
     try:
-        with serial.Serial(port, BAUD_RATE, timeout=0.2) as s:
+        with open_no_reset(port, timeout=0.2) as s:
             buf = b""
             while True:
                 chunk = s.read(512)

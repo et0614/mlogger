@@ -39,8 +39,26 @@ BAUD_RATE       = 115200
 CONNECT_TIMEOUT = 1.5
 DUMP_TIMEOUT    = 30.0       # バルク転送中はタイムアウトを延ばす
 
-RECORD_FORMAT = "<BIBIhhHHHH"
+
+def open_no_reset(port, baud=BAUD_RATE, timeout=CONNECT_TIMEOUT):
+    """DTR/RTS を非アサートで open して AVR DU32 の reset 経路を踏まないようにする。
+    pyserial デフォルトでは open 時に DTR/RTS がアサートされ、USB CDC reconnect と
+    合わせて MCU reset を引き起こす環境がある。"""
+    ser = serial.Serial()
+    ser.port = port
+    ser.baudrate = baud
+    ser.timeout = timeout
+    ser.dtr = False
+    ser.rts = False
+    ser.open()
+    return ser
+
+RECORD_FORMAT = "<BIBIhhHHHH"  # struct format = 22 byte (LE / no alignment)
 RECORD_SIZE   = struct.calcsize(RECORD_FORMAT)   # = 22
+# firmware 側 ("docs/protocol_v4.md") は表記上 "<BIBIhhHHHH>" を返す。
+# 末尾の '>' はバイトオーダー再指定にならない (struct は最初の 1 文字だけ参照)
+# ので意味なし。firmware 表記との照合用に末尾 '>' 込みも許容する。
+RECORD_FORMAT_FW = RECORD_FORMAT + ">"
 
 # valid_flags ビット
 FLAG_ILLUMINANCE = 1 << 0
@@ -65,20 +83,29 @@ def find_device_port():
             if "Bluetooth" in p.description:
                 print(" Skipped (Bluetooth).")
                 continue
-            with serial.Serial(p.device, BAUD_RATE, timeout=CONNECT_TIMEOUT) as ser:
+            with open_no_reset(p.device) as ser:
                 time.sleep(1.5)
                 ser.reset_input_buffer()
                 ser.write(probe)
-                line = ser.readline().decode('utf-8', errors='ignore').strip()
-                try:
-                    resp = json.loads(line)
+                # 応答が来るまで複数行スキャン。firmware が ready event や
+                # diag 行を先に流していると 1 行 readline では取りこぼす。
+                end = time.time() + 2.0
+                found = False
+                while time.time() < end:
+                    line = ser.readline().decode('utf-8', errors='ignore').strip()
+                    if not line:
+                        continue
+                    try:
+                        resp = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
                     if (isinstance(resp, dict)
                             and resp.get("result", {}).get("device") == "M-Logger"):
                         print(" Found!")
+                        found = True
                         return p.device
-                    print(" Not M-Logger.")
-                except json.JSONDecodeError:
-                    print(" No JSON response.")
+                if not found:
+                    print(" No M-Logger response.")
         except (OSError, serial.SerialException):
             print(" Failed to open.")
     return None
@@ -87,17 +114,25 @@ def find_device_port():
 # ============================================================
 # JSON 1 行のリクエスト
 # ============================================================
-def send_command(ser, payload):
+def send_command(ser, payload, timeout=3.0):
+    """payload の id 一致応答を timeout 秒の窓内で待つ。間に挟まる ready 等の
+    event (id を持たない) は読み飛ばす。"""
     msg = json.dumps(payload, ensure_ascii=False) + '\n'
     ser.reset_input_buffer()
     ser.write(msg.encode('utf-8'))
-    line = ser.readline().decode('utf-8', errors='ignore').strip()
-    if not line:
-        return None
-    try:
-        return json.loads(line)
-    except json.JSONDecodeError:
-        return None
+    target_id = payload.get("id")
+    end = time.time() + timeout
+    while time.time() < end:
+        line = ser.readline().decode('utf-8', errors='ignore').strip()
+        if not line:
+            continue
+        try:
+            resp = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(resp, dict) and resp.get("id") == target_id:
+            return resp
+    return None
 
 
 # ============================================================
@@ -109,15 +144,26 @@ def dump_records(ser):
     失敗時は (None, None, None)。
     """
     ser.reset_input_buffer()
-    msg = json.dumps({"v": 1, "id": 1000, "command": "dump"}) + '\n'
+    dump_id = 1000
+    msg = json.dumps({"v": 1, "id": dump_id, "command": "dump"}) + '\n'
     ser.write(msg.encode('utf-8'))
 
-    # 1) ヘッダ JSON
-    line = ser.readline().decode('utf-8', errors='ignore').strip()
-    try:
-        hdr = json.loads(line)
-    except json.JSONDecodeError:
-        print(f"[ERROR] dump header not JSON: {line!r}")
+    # 1) ヘッダ JSON: id 一致を待つ (間に ready event 等が挟まる可能性)
+    hdr = None
+    end = time.time() + 3.0
+    while time.time() < end:
+        line = ser.readline().decode('utf-8', errors='ignore').strip()
+        if not line:
+            continue
+        try:
+            cand = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(cand, dict) and cand.get("id") == dump_id:
+            hdr = cand
+            break
+    if hdr is None:
+        print("[ERROR] dump header not received within 3s")
         return None, None, None
     if "result" not in hdr:
         print(f"[ERROR] dump rejected: {hdr}")
@@ -128,33 +174,58 @@ def dump_records(ser):
     fmt      = hdr["result"].get("format", RECORD_FORMAT)
     print(f"  count={count}, record_size={rec_size}, format={fmt}")
 
-    if rec_size != RECORD_SIZE or fmt != RECORD_FORMAT:
+    if rec_size != RECORD_SIZE or fmt not in (RECORD_FORMAT, RECORD_FORMAT_FW):
         print(f"[WARN] firmware reports {rec_size}B/{fmt!r} but client expects "
-              f"{RECORD_SIZE}B/{RECORD_FORMAT!r} — parser may misinterpret data")
+              f"{RECORD_SIZE}B/{RECORD_FORMAT_FW!r} — parser may misinterpret data")
 
-    # 2) バイナリストリーム
+    # 2) バイナリストリーム (chunk 受信 + 進捗バー)
     total = count * rec_size
     print(f"  receiving {total} bytes...")
     data = b""
     if total > 0:
         original_timeout = ser.timeout
-        ser.timeout = DUMP_TIMEOUT
+        ser.timeout = 0.5   # 1 chunk 待ちは短く、全体は deadline で制御
+        chunk_size = 1024
+        buf = bytearray()
+        deadline = time.time() + DUMP_TIMEOUT
+        last_pct = -1
         try:
-            data = ser.read(total)
+            while len(buf) < total and time.time() < deadline:
+                remaining = total - len(buf)
+                chunk = ser.read(min(chunk_size, remaining))
+                if chunk:
+                    buf.extend(chunk)
+                pct = len(buf) * 100 // total
+                if pct != last_pct:
+                    last_pct = pct
+                    bar_len = 30
+                    filled  = bar_len * len(buf) // total
+                    bar     = "#" * filled + "-" * (bar_len - filled)
+                    print(f"\r  [{bar}] {pct:3d}%  {len(buf):>8}/{total} B",
+                          end="", flush=True)
         finally:
             ser.timeout = original_timeout
+        print()  # 進捗バーの行を確定
+        data = bytes(buf)
         if len(data) != total:
             print(f"[WARN] expected {total}B, got {len(data)}B (timeout?)")
 
-    # 3) dump_end イベント
-    end_line = ser.readline().decode('utf-8', errors='ignore').strip()
+    # 3) dump_end イベント: 同じく複数行スキャン
     end_ev = None
-    try:
-        end_ev = json.loads(end_line)
-        if end_ev.get("event") != "dump_end":
-            print(f"[WARN] expected dump_end, got: {end_ev}")
-    except json.JSONDecodeError:
-        print(f"[WARN] dump_end not received: {end_line!r}")
+    deadline = time.time() + 3.0
+    while time.time() < deadline:
+        end_line = ser.readline().decode('utf-8', errors='ignore').strip()
+        if not end_line:
+            continue
+        try:
+            cand = json.loads(end_line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(cand, dict) and cand.get("event") == "dump_end":
+            end_ev = cand
+            break
+    if end_ev is None:
+        print("[WARN] dump_end not received within 3s")
 
     return hdr["result"], data, end_ev
 
@@ -242,7 +313,7 @@ def main():
 
     print(f"Connecting to {port}...")
     try:
-        with serial.Serial(port, BAUD_RATE, timeout=CONNECT_TIMEOUT) as ser:
+        with open_no_reset(port) as ser:
             time.sleep(2.0)
 
             # 機器情報
