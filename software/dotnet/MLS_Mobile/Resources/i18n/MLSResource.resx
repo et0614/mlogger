@@ -530,4 +530,34 @@ To exit, hold the device reset button for 3 seconds.</value>
   <data name="LV_ShareTitle" xml:space="preserve">
     <value>M-Logger log</value>
   </data>
+  <data name="ERR_AlertTitle" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ERR_DetailsInLog" xml:space="preserve">
+    <value>Technical details can be reviewed on the Log screen.</value>
+  </data>
+  <data name="ERR_ConnectionFailed" xml:space="preserve">
+    <value>Failed to connect to the M-Logger. Please make sure the device is powered on and within range, then try again.</value>
+  </data>
+  <data name="ERR_ProtocolDetectionFailed" xml:space="preserve">
+    <value>Failed to identify the device type. Please power-cycle the M-Logger and try connecting again.</value>
+  </data>
+  <data name="ERR_StartLoggingFailed" xml:space="preserve">
+    <value>Failed to start logging.</value>
+  </data>
+  <data name="ERR_SaveSettingsFailed" xml:space="preserve">
+    <value>Failed to save settings to the device.</value>
+  </data>
+  <data name="ERR_LoadSettingsFailed" xml:space="preserve">
+    <value>Failed to load settings from the device.</value>
+  </data>
+  <data name="ERR_SetNameFailed" xml:space="preserve">
+    <value>Failed to update the device name.</value>
+  </data>
+  <data name="ERR_LoadCorrectionFailed" xml:space="preserve">
+    <value>Failed to load correction factors.</value>
+  </data>
+  <data name="ERR_StartCo2CalibrationFailed" xml:space="preserve">
+    <value>Failed to start CO2 calibration.</value>
+  </data>
 </root>

@@ -200,7 +200,7 @@ public partial class CFSetting : ContentPage
     }
     catch (Exception ex)
     {
-      await DisplayAlert("Alert", MLSResource.CF_FailSetting + Environment.NewLine + ex.Message, "OK");
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_LoadCorrectionFailed, ex);
     }
     finally
     {
@@ -233,7 +233,7 @@ public partial class CFSetting : ContentPage
     }
     catch (Exception ex)
     {
-      await DisplayAlert("Alert", MLSResource.CF_FailSetting + Environment.NewLine + ex.Message, "OK");
+      await MLUtility.ShowErrorAsync(this, MLSResource.CF_FailSetting, ex);
     }
     finally
     {

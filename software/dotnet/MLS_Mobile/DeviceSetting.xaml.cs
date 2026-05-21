@@ -328,10 +328,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      Application.Current?.Dispatcher.Dispatch(() =>
-      {
-        DisplayAlert("Alert", "Failed to start logging." + Environment.NewLine + ex.Message, "OK");
-      });
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_StartLoggingFailed, ex);
     }
     finally
     {
@@ -406,10 +403,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      Application.Current?.Dispatcher.Dispatch(() =>
-      {
-        DisplayAlert("Alert", "Failed to save settings." + Environment.NewLine + ex.Message, "OK");
-      });
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_SaveSettingsFailed, ex);
     }
   }
 
@@ -430,11 +424,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      MLUtility.WriteLog("v4 set_name FAIL " + ex.GetType().Name + ": " + ex.Message);
-      Application.Current?.Dispatcher.Dispatch(() =>
-      {
-        DisplayAlert("Alert", "Failed to set name." + Environment.NewLine + ex.Message, "OK");
-      });
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_SetNameFailed, ex);
     }
   }
 
@@ -471,7 +461,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      await DisplayAlert("Alert", "Failed to load settings." + Environment.NewLine + ex.Message, "OK");
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_LoadSettingsFailed, ex);
     }
   }
 
@@ -492,10 +482,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      Application.Current?.Dispatcher.Dispatch(() =>
-      {
-        DisplayAlert("Alert", "Failed to load correction." + Environment.NewLine + ex.Message, "OK");
-      });
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_LoadCorrectionFailed, ex);
     }
     finally
     {
@@ -550,10 +537,7 @@ public partial class DeviceSetting : ContentPage
     }
     catch (Exception ex)
     {
-      Application.Current?.Dispatcher.Dispatch(() =>
-      {
-        DisplayAlert("Alert", "Failed to start CO2 calibration." + Environment.NewLine + ex.Message, "OK");
-      });
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_StartCo2CalibrationFailed, ex);
     }
     finally
     {

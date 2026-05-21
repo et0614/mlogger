@@ -123,7 +123,7 @@ public partial class MLoggerScanner : ContentPage
     }
     catch (Exception ex)
     {
-      await DisplayAlert("Alert", "Can't open XBee connection." + Environment.NewLine + ex.Message, "OK");
+      await MLUtility.ShowErrorAsync(this, MLSResource.ERR_ConnectionFailed, ex);
       hideIndicator();
       return;
     }
@@ -142,7 +142,7 @@ public partial class MLoggerScanner : ContentPage
       }
       catch (Exception ex)
       {
-        await DisplayAlert("Alert", "Can't detect protocol." + Environment.NewLine + ex.Message, "OK");
+        await MLUtility.ShowErrorAsync(this, MLSResource.ERR_ProtocolDetectionFailed, ex);
         await MLUtility.CloseXbeeAsync();
       }
     }

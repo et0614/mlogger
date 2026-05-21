@@ -530,4 +530,34 @@
   <data name="LV_ShareTitle" xml:space="preserve">
     <value>M-Logger ログ</value>
   </data>
+  <data name="ERR_AlertTitle" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="ERR_DetailsInLog" xml:space="preserve">
+    <value>詳細はログ画面で確認できます。</value>
+  </data>
+  <data name="ERR_ConnectionFailed" xml:space="preserve">
+    <value>M-Logger との接続に失敗しました。本体の電源が入っていることと、近くにあることを確認してから再試行してください。</value>
+  </data>
+  <data name="ERR_ProtocolDetectionFailed" xml:space="preserve">
+    <value>機種の判別に失敗しました。M-Logger の電源を入れ直してから、もう一度接続を試してください。</value>
+  </data>
+  <data name="ERR_StartLoggingFailed" xml:space="preserve">
+    <value>ロギングを開始できませんでした。</value>
+  </data>
+  <data name="ERR_SaveSettingsFailed" xml:space="preserve">
+    <value>設定の保存に失敗しました。</value>
+  </data>
+  <data name="ERR_LoadSettingsFailed" xml:space="preserve">
+    <value>設定の読み込みに失敗しました。</value>
+  </data>
+  <data name="ERR_SetNameFailed" xml:space="preserve">
+    <value>機器名の変更に失敗しました。</value>
+  </data>
+  <data name="ERR_LoadCorrectionFailed" xml:space="preserve">
+    <value>補正係数の読み込みに失敗しました。</value>
+  </data>
+  <data name="ERR_StartCo2CalibrationFailed" xml:space="preserve">
+    <value>CO2 校正の開始に失敗しました。</value>
+  </data>
 </root>

@@ -1292,5 +1292,95 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("LV_ShareTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_AlertTitle {
+            get {
+                return ResourceManager.GetString("ERR_AlertTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Technical details can be reviewed on the Log screen. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_DetailsInLog {
+            get {
+                return ResourceManager.GetString("ERR_DetailsInLog", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   接続失敗時のユーザー向けメッセージ に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_ConnectionFailed {
+            get {
+                return ResourceManager.GetString("ERR_ConnectionFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   機種判別失敗時のユーザー向けメッセージ に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_ProtocolDetectionFailed {
+            get {
+                return ResourceManager.GetString("ERR_ProtocolDetectionFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to start logging. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_StartLoggingFailed {
+            get {
+                return ResourceManager.GetString("ERR_StartLoggingFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to save settings to the device. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_SaveSettingsFailed {
+            get {
+                return ResourceManager.GetString("ERR_SaveSettingsFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to load settings from the device. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_LoadSettingsFailed {
+            get {
+                return ResourceManager.GetString("ERR_LoadSettingsFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to update the device name. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_SetNameFailed {
+            get {
+                return ResourceManager.GetString("ERR_SetNameFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to load correction factors. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_LoadCorrectionFailed {
+            get {
+                return ResourceManager.GetString("ERR_LoadCorrectionFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Failed to start CO2 calibration. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string ERR_StartCo2CalibrationFailed {
+            get {
+                return ResourceManager.GetString("ERR_StartCo2CalibrationFailed", resourceCulture);
+            }
+        }
     }
 }

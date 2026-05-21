@@ -4,6 +4,7 @@ using System.Text;
 using Plugin.BLE.Abstractions.Contracts;
 using DigiIoT.Maui.Devices.XBee;
 using MLLib.Protocol;
+using MLS_Mobile.Resources.i18n;
 using MLS_Mobile.Transport;
 
 namespace MLS_Mobile
@@ -408,6 +409,30 @@ namespace MLS_Mobile
         sw.NewLine = "\r\n";
         sw.WriteLine($"{DateTime.Now}: {logMessage}");
       }
+    }
+
+    /// <summary>
+    /// 例外発生時のユーザー向け Alert を統一する。
+    ///   - 技術詳細 (型名 + ex.Message + StackTrace 先頭) は WriteLog で LogView に残す
+    ///   - 画面には userMessage + 「詳細はログ画面で確認できます。」とだけ表示
+    /// これで一般ユーザーには技術詳細を出さず、開発者は LogView で原因追跡できる。
+    /// </summary>
+    public static async Task ShowErrorAsync(Page page, string userMessage, Exception ex)
+    {
+      // スタックトレースは長いので先頭 600 文字程度に切り詰めて記録
+      string stack = ex.StackTrace ?? "";
+      if (stack.Length > 600) stack = stack.Substring(0, 600) + "...";
+      WriteLog($"[Error] {userMessage} :: {ex.GetType().Name}: {ex.Message}\r\n{stack}");
+
+      // DisplayAlert は UI スレッド必須。バックグラウンドからの呼び出しでも安全になるよう
+      // MainThread 経由で実行する。
+      await MainThread.InvokeOnMainThreadAsync(async () =>
+      {
+        await page.DisplayAlert(
+          MLSResource.ERR_AlertTitle,
+          userMessage + Environment.NewLine + Environment.NewLine + MLSResource.ERR_DetailsInLog,
+          "OK");
+      });
     }
 
     private static void ManageLogFileSize()
