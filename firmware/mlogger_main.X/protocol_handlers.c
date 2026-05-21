@@ -6,6 +6,7 @@
 #include "logger_control.h"    // LC_IsLogging, LC_SetCurrentTime, LC_GetCurrentTime, LC_StartLoggingTask, LC_EndLoggingTask, LC_ClearData, LC_FactoryResetCO2, LC_CalibrateCO2
 #include "eeprom_manager.h"    // EM_mlName, EM_cFactors, EM_mSettings, EM_save*
 #include "usb_extension.h"     // USB_StartRecordStream, USB_SetStreamDoneCallback, rec_latest
+#include "w25q512.h"           // SensorData_t (record_size 算出用)
 
 #include <avr/io.h>            // SIGROW
 #include <stdio.h>
@@ -454,11 +455,12 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
         return;
     }
 
-    // JSON ヘッダ送信
+    // JSON ヘッダ送信。record_size は SensorData_t (=22 bytes) に追従する。
+    // format string "<BIBIhhHHHH>" も 22 bytes (LE 無 alignment) で一致確認済。
     pc_writer_t w;
     pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
     pc_key(&w, "count");       pc_uint(&w, rec_latest);
-    pc_key(&w, "record_size"); pc_uint(&w, 18);
+    pc_key(&w, "record_size"); pc_uint(&w, sizeof(SensorData_t));
     pc_key(&w, "format");      pc_str(&w, "<BIBIhhHHHH>");
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);

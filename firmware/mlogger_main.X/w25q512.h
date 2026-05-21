@@ -23,8 +23,8 @@ extern "C" {
 // ==========================================
 // 定数定義 (内部設定)
 // ==========================================
-#define RECORD_SIZE      sizeof(SensorData_t) // 20バイト
-#define RECS_PER_PAGE    11   // 1ページに入るレコード数 (256 / 22 = 11 ... 12余り)
+#define RECORD_SIZE      sizeof(SensorData_t) // 22バイト
+#define RECS_PER_PAGE    11   // 1ページに入るレコード数 (256 / 22 = 11 余り 14)
 #define DATA_START_ADDR  4096 // データ領域の開始位置 (最初の4KBは管理領域として飛ばす)
 #define PAGE_SIZE        256  // Flashのページサイズ
 #define FLASH_TOTAL_SIZE 0x4000000 // 64MB (フラッシュの総容量 (Byte))
