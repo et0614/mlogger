@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MLLib.Protocol;
 using MLS_Mobile.Services;
@@ -112,41 +114,50 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         _lastSample = s;
         var local = s.Timestamp.LocalDateTime;
 
+        // [ObservableProperty] の自動 setter (= SetProperty 経由で個別 PropertyChanged 発火)
+        // を使わず field を直接書き換える。OnSample 1 回で 12 個の通知が連鎖していたのを、
+        // 末尾の OnPropertyChanged(string.Empty) で全 binding を 1 度だけ refresh させる形に
+        // まとめる。これがサンプル受信時の UI カクつきの主要因。
         if (s.DrybulbTemperature is double dbt)
         {
-            DrybulbTemperature = FormatF(dbt, 1);
-            LastCommunicated_DBT = local;
+            _drybulbTemperature   = FormatF(dbt, 1);
+            _lastCommunicated_DBT = local;
         }
         if (s.RelativeHumidity is double rh)
         {
-            RelativeHumdity = FormatF(rh, 1);
-            LastCommunicated_HMD = local;
+            _relativeHumdity      = FormatF(rh, 1);
+            _lastCommunicated_HMD = local;
         }
         if (s.GlobeTemperature is double glb)
         {
-            GlobeTemperature = FormatF(glb, 1);
-            LastCommunicated_GLB = local;
+            _globeTemperature     = FormatF(glb, 1);
+            _lastCommunicated_GLB = local;
         }
         if (s.Velocity is double vel)
         {
-            Velocity = (2.00 < vel) ? "OOR" : FormatF(vel, 2);
-            LastCommunicated_VEL = local;
+            _velocity             = (2.00 < vel) ? "OOR" : FormatF(vel, 2);
+            _lastCommunicated_VEL = local;
         }
         if (s.Illuminance is int ill)
         {
-            Illuminance = ill.ToString(CultureInfo.InvariantCulture);
-            LastCommunicated_ILL = local;
+            _illuminance          = ill.ToString(CultureInfo.InvariantCulture);
+            _lastCommunicated_ILL = local;
         }
         if (s.Co2 is int co2)
         {
-            CO2Level = co2.ToString(CultureInfo.InvariantCulture);
-            LastCommunicated_CO2 = local;
+            _cO2Level             = co2.ToString(CultureInfo.InvariantCulture);
+            _lastCommunicated_CO2 = local;
         }
 
-        // 共有モデルへ反映 (他 Tab の ViewModel が PropertyChanged 経由で受け取る)
+        // 共有モデル (内部で 1 回だけ PropertyChanged を発火)
         _live.UpdateFromSample(s);
 
-        RecalcThermalIndices();
+        // 派生指標を field 直書き (個別通知なし)
+        RecalcThermalIndicesNoNotify();
+
+        // 1 度だけ全 binding refresh
+        OnPropertyChanged(string.Empty);
+
         AppendCsvV4(s);
     }
 
@@ -154,8 +165,11 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     #region 熱的快適性
 
-    /// <summary>最新サンプル + 現在の Clo/Met から MRT/PMV/PPD/SET*/WBGT を更新する</summary>
-    private void RecalcThermalIndices()
+    /// <summary>
+    /// OnSample 用: 派生指標を field 直書きして、PropertyChanged は個別に発火させない。
+    /// 呼び出し側で <c>OnPropertyChanged(string.Empty)</c> をまとめて呼ぶこと。
+    /// </summary>
+    private void RecalcThermalIndicesNoNotify()
     {
         if (_lastSample is not Sample s) return;
 
@@ -174,12 +188,22 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         double glb150 = dbt + (1 + 1.13 * Math.Pow(GLOBE_DIAMETER, -0.4) * Math.Pow(vel, 0.6))
                               / (1 + 2.41 * Math.Pow(vel, 0.6)) * (glb - dbt);
 
-        MeanRadiantTemperature = FormatF(mrt, 1);
-        PMV = FormatF(pmv, 2);
-        PPD = FormatF(ppd, 1);
-        SETStar = FormatF(set, 1);
-        WBGT_Indoor = FormatF(0.7 * wbt + 0.3 * glb150, 1);
-        WBGT_Outdoor = FormatF(0.7 * wbt + 0.2 * glb150 + 0.1 * dbt, 1);
+        _meanRadiantTemperature = FormatF(mrt, 1);
+        _pMV                    = FormatF(pmv, 2);
+        _pPD                    = FormatF(ppd, 1);
+        _sETStar                = FormatF(set, 1);
+        _wBGT_Indoor            = FormatF(0.7 * wbt + 0.3 * glb150, 1);
+        _wBGT_Outdoor           = FormatF(0.7 * wbt + 0.2 * glb150 + 0.1 * dbt, 1);
+    }
+
+    /// <summary>
+    /// Clo/Met 変化時用: 計算 + 1 回の全 binding refresh。OnSample 経路と違ってサンプルは
+    /// 来ていないので、empty 通知で派生指標 (MRT/PMV/PPD/SET*/WBGT) を一括更新する。
+    /// </summary>
+    private void RecalcThermalIndices()
+    {
+        RecalcThermalIndicesNoNotify();
+        OnPropertyChanged(string.Empty);
     }
 
     /// <summary>
@@ -206,8 +230,17 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>外部から設定可能なメモ (XAML Entry と双方向バインド)</summary>
     [ObservableProperty] private string _memo = "";
 
+    /// <summary>
+    /// CSV file I/O を OnSample (UI スレッド) から外すための排他。
+    /// SemaphoreSlim(1,1) で書き込み順序を保証しつつ、Task.Run で実 I/O を背景に逃がす。
+    /// これがないと毎サンプルで file open/write/close が UI スレッドを止め、
+    /// スクロール中に値受信があると体感的にカクつく。
+    /// </summary>
+    private readonly SemaphoreSlim _csvLock = new(1, 1);
+
     private void AppendCsvV4(Sample s)
     {
+        // 行内容の組み立ては UI スレッドで完結させる (Memo のスナップショットを撮るため)。
         string memo = SanitizeMemo(Memo);
         var t = s.Timestamp.LocalDateTime;
         var sb = new StringBuilder();
@@ -222,13 +255,24 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         sb.Append(FormatOrNA(s.Co2, "F0")).Append(',');
         sb.Append(memo).Append(Environment.NewLine);
 
-        AppendToFile(sb.ToString());
+        string line     = sb.ToString();
+        string fileName = _baseName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+
+        // 実 I/O は background に投げる (fire-and-forget)。SemaphoreSlim で順序保証。
+        _ = AppendLineInBackgroundAsync(fileName, line);
     }
 
-    private void AppendToFile(string line)
+    private async Task AppendLineInBackgroundAsync(string fileName, string line)
     {
-        string fileName = _baseName + "_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
-        MLUtility.AppendData(fileName, line);
+        await _csvLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await Task.Run(() => MLUtility.AppendData(fileName, line)).ConfigureAwait(false);
+        }
+        finally
+        {
+            _csvLock.Release();
+        }
     }
 
     private static string SanitizeMemo(string? memo)

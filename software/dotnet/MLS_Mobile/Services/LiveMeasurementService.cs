@@ -23,13 +23,20 @@ public sealed partial class LiveMeasurementService : ObservableObject, ILiveMeas
 
     public void UpdateFromSample(Sample s)
     {
-        if (s.DrybulbTemperature is double dbt) DryBulbTemperature = dbt;
-        if (s.RelativeHumidity   is double rh)  RelativeHumidity   = rh;
-        if (s.GlobeTemperature   is double glb) GlobeTemperature   = glb;
-        if (s.Velocity           is double vel) Velocity           = vel;
-        if (s.Illuminance        is int    ill) Illuminance        = ill;
-        if (s.Co2                is int    co2) Co2                = co2;
-        LastSampleAt = s.Timestamp;
+        // ObservableProperty の auto-generated setter を使わず field を直接書き換える。
+        // これで個別 PropertyChanged を抑止し、最後に空文字 (全 property 変化) で 1 回だけ通知する。
+        // (各 setter ごとに通知すると subscriber × プロパティ数の連鎖になり、UI に体感
+        //  カクつきが出る原因になっていた。subscriber 側は _liveActive ガードと
+        //  e.PropertyName での分岐で空文字も処理できるため互換性は保たれる。)
+        if (s.DrybulbTemperature is double dbt) _dryBulbTemperature = dbt;
+        if (s.RelativeHumidity   is double rh)  _relativeHumidity   = rh;
+        if (s.GlobeTemperature   is double glb) _globeTemperature   = glb;
+        if (s.Velocity           is double vel) _velocity           = vel;
+        if (s.Illuminance        is int    ill) _illuminance        = ill;
+        if (s.Co2                is int    co2) _co2                = co2;
+        _lastSampleAt = s.Timestamp;
+
+        OnPropertyChanged(string.Empty);
     }
 
     public void SetConnection(bool connected, string? deviceName)
