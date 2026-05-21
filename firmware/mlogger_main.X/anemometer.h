@@ -30,10 +30,10 @@ void Anemometer_Init(Anemometer_t* anemo);
 void Anemometer_Update(Anemometer_t* anemo);
 
 // 起動する
-void Anemometer_Wakeup();
+void Anemometer_Wakeup(void);
 
 // 休止する
-void Anemometer_Sleep();
+void Anemometer_Sleep(void);
 
 #ifdef	__cplusplus
 }
