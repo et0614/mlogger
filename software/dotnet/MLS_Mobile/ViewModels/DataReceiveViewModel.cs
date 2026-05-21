@@ -41,6 +41,12 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>表示・CSV 用のファイル名 (LocalName 由来)</summary>
     private readonly string _baseName;
 
+    /// <summary>
+    /// 風速の Out-Of-Range 表示閾値 [m/s]。これを超えたら "OOR" 表記にする。
+    /// v3 firmware は 0-1.5 m/s が物理測定範囲、v4 (poem_velocity_sensor.X) は校正により 5.0 m/s まで拡張。
+    /// </summary>
+    private readonly double _velocityOorThreshold;
+
     /// <summary>最後に受け取ったサンプル (Clo/Met 変更時の再計算用)</summary>
     private Sample? _lastSample;
 
@@ -99,6 +105,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         _metValue = met;
         HasCO2LevelSensor = hasCo2;
 
+        // v4 (protocol_version >= 1) は校正範囲 5.0 m/s まで、v3 は従来通り 1.5 m/s
+        _velocityOorThreshold = protocol.Device.ProtocolVersion >= 1 ? 5.0 : 1.5;
+
         // 接続オープン通知 (TabBar バッジ等が反応する)
         _live.SetConnection(true, baseName);
 
@@ -135,7 +144,7 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         }
         if (s.Velocity is double vel)
         {
-            _velocity             = (2.00 < vel) ? "OOR" : FormatF(vel, 2);
+            _velocity             = (_velocityOorThreshold < vel) ? "OOR" : FormatF(vel, 2);
             _lastCommunicated_VEL = local;
         }
         if (s.Illuminance is int ill)
