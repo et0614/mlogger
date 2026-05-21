@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MLLib.Protocol;
+using MLS_Mobile.Services;
 using Popolo.Core.ThermalComfort;
 using Popolo.Core.Physics;
 
@@ -31,6 +32,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     #region 依存先
 
     private readonly IDisposable _samplesSub;
+
+    /// <summary>アプリ全体で共有される現在値モデル (他 Tab がライブ入力として購読)</summary>
+    private readonly ILiveMeasurementService _live;
 
     /// <summary>表示・CSV 用のファイル名 (LocalName 由来)</summary>
     private readonly string _baseName;
@@ -84,12 +88,17 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     #region コンストラクタ
 
-    public DataReceiveViewModel(IMLProtocol protocol, string baseName, double clo, double met, bool hasCo2)
+    public DataReceiveViewModel(IMLProtocol protocol, ILiveMeasurementService live,
+                                string baseName, double clo, double met, bool hasCo2)
     {
+        _live     = live;
         _baseName = baseName;
         _cloValue = clo;
         _metValue = met;
         HasCO2LevelSensor = hasCo2;
+
+        // 接続オープン通知 (TabBar バッジ等が反応する)
+        _live.SetConnection(true, baseName);
 
         _samplesSub = System.ObservableExtensions.Subscribe(protocol.Samples, OnSample);
     }
@@ -134,6 +143,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
             LastCommunicated_CO2 = local;
         }
 
+        // 共有モデルへ反映 (他 Tab の ViewModel が PropertyChanged 経由で受け取る)
+        _live.UpdateFromSample(s);
+
         RecalcThermalIndices();
         AppendCsvV4(s);
     }
@@ -170,7 +182,12 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         WBGT_Outdoor = FormatF(0.7 * wbt + 0.2 * glb150 + 0.1 * dbt, 1);
     }
 
-    private static double GetMRT(double tmp, double glb, double vel)
+    /// <summary>
+    /// グローブ温度 + 乾球温度 + 気流速度から平均放射温度 [°C] を求める。
+    /// ピンポン球 (φ38mm) を想定した強制対流補正付き。
+    /// Thermal Comfort 画面 (Live モード) からも参照されるため public static で公開。
+    /// </summary>
+    public static double GetMRT(double tmp, double glb, double vel)
     {
         const double EPS = 0.95; // ピンポン球の放射率
         const double SIG = 5.67e-8;
@@ -238,5 +255,6 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _samplesSub?.Dispose();
+        _live.SetConnection(false, null);
     }
 }

@@ -76,7 +76,7 @@
     </Shell.Resources>
 
     <TabBar>
-        <Tab Title="ML Scanner" Style="{StaticResource BLTab}">
+        <Tab x:Name="scannerTab" Title="ML Scanner" Style="{StaticResource BLTab}">
             <!--
             ここで個別ページのレイアウトをデバッグ
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>

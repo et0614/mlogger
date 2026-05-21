@@ -2,9 +2,11 @@ namespace MLS_Mobile;
 
 using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
+using Microsoft.Extensions.DependencyInjection;
 using MLLib;
 using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
+using MLS_Mobile.Services;
 using MLS_Mobile.ViewModels;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
@@ -68,8 +70,10 @@ public partial class DataReceive : ContentPage
 
         DeviceDisplay.Current.KeepScreenOn = false;
 
-        _vm?.Dispose();
-        _vm = null;
+        // Tab 切り替え等の一時離脱では _vm を破棄しない。破棄するとサンプル購読が切れ、
+        // 他 Tab の計算機 (ThermalComfort / MoistAir) がライブ値を受け取れなくなる。
+        // _vm の解放は (a) 別デバイス選択時の BuildViewModel 再構築、(b) Page Pop による
+        // 参照消失後の finalizer (~DataReceive) に任せる。
     }
 
     #endregion
@@ -86,7 +90,8 @@ public partial class DataReceive : ContentPage
         if (proto == null) return;
 
         Title = legacy.LocalName;
-        _vm = new DataReceiveViewModel(proto, legacy.LocalName, CloValue, MetValue, proto.Device.HasCo2Sensor);
+        var live = IPlatformApplication.Current!.Services.GetRequiredService<ILiveMeasurementService>();
+        _vm = new DataReceiveViewModel(proto, live, legacy.LocalName, CloValue, MetValue, proto.Device.HasCo2Sensor);
         BindingContext = _vm;
     }
 

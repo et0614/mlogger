@@ -6,8 +6,12 @@
              Title="{x:Static res:MLSResource.MS_Title}"
              xmlns:local="clr-namespace:MLS_Mobile"
              x:DataType="local:MoistAirCalculator">
-    
+
     <StackLayout BackgroundColor="{StaticResource Lightest_G}">
+        <HorizontalStackLayout Margin="20,10,20,0" Spacing="10" VerticalOptions="Center">
+            <Switch x:Name="liveToggle" Toggled="LiveToggle_Toggled" IsEnabled="False"/>
+            <Label x:Name="liveStatusLabel" Text="Live (no device connected)" VerticalTextAlignment="Center"/>
+        </HorizontalStackLayout>
         <Picker x:Name="pairList" Margin="20" SelectedIndexChanged="pairList_SelectedIndexChanged"/>
 
         <Grid Margin="20,0,20,20">

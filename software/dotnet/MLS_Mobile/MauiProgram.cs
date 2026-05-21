@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Maui.LifecycleEvents;
+using MLS_Mobile.Services;
 
 namespace MLS_Mobile;
 
@@ -27,6 +28,10 @@ public static class MauiProgram
     // 直接アクセスするので Microsoft.Extensions.Localization の AddLocalization は不要。
 
     builder.Services.AddSingleton<IConnectivity>(Connectivity.Current);
+
+    // 計測値の共有モデル。DataReceive が書き込み、他 Tab (Thermal comfort / Moist air) が
+    // ライブ入力として読む。アプリ生存期間中 1 インスタンスのみ。
+    builder.Services.AddSingleton<ILiveMeasurementService, LiveMeasurementService>();
 
     return builder.Build();
 	}
