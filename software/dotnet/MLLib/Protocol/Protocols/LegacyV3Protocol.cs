@@ -310,7 +310,14 @@ public sealed class LegacyV3Protocol : IMLProtocol
         char zig = permanent ? 'e' : (config.Tx.Zigbee ? 't' : 'f');
         char ble = (!permanent && config.Tx.Ble)   ? 't' : 'f';
         char sd  = (!permanent && config.Tx.Flash) ? 't' : 'f';
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // 重要: v3 firmware STL handler は受信した unix 秒で内部 currentTime を
+        // 上書きする (UCT で同期した時刻もリセットされる)。よって SetTimeAsync と
+        // 同じく「local 成分を UTC として encode した unix 秒」を送る必要がある。
+        // ここで実 UTC を送ると後続 DTT が UTC YMDHMS になり、host 側 ParseDtt
+        // (YMDHMS を local とみなす) で JST 9h 過去にずれる。
+        var localNow = DateTimeOffset.Now.LocalDateTime;
+        var localAsUtc = DateTime.SpecifyKind(localNow, DateTimeKind.Utc);
+        var now = new DateTimeOffset(localAsUtc).ToUnixTimeSeconds();
         await SendAsync($"STL{now:D10}{zig}{ble}{sd}\r", "STL", ct);
         _isLogging = true;
         if (_device is not null) _device = _device with { IsLogging = true };
