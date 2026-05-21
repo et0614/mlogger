@@ -12,9 +12,16 @@ Phase 3: 7 点で再現精度を検証
 - デバイス識別は OSL device_id (FNV-1a 22bit) と name に簡素化
   (旧版の UUID / firmware version / MCU 温度は OSL に存在しない)
 - AnemometerManager.set_coefficients_a / _b (lowercase) を使用
+- 出力は e-sensor 互換の JSON 1 ファイル (PNG は base64 で同梱)。
+  保存先は software/web/calibration/reports/<6hex>.json。
+  Web (software/web/calibration/index+viewer.html) から fetch される。
 """
+import base64
 import datetime
+import io
+import json
 import math
+import os
 import statistics
 import time
 
@@ -309,11 +316,16 @@ def run_phase_3():
 
 
 # ==========================================
-# 結果可視化 + レポート出力
+# 結果出力 (e-sensor 互換 JSON; PNG は base64 同梱)
 # ==========================================
 
-def generate_calibration_plot(device_id, phase1_data, coef_a, coef_b, phase3_data):
-    """King の法則 (3 区分) 近似曲線と実測点を 1 枚にまとめた PNG を保存。"""
+REPORTS_DIR = os.path.normpath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "..", "web", "calibration", "reports"))
+
+
+def build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data):
+    """King の法則 (3 区分) 曲線 + 実測点を描いた PNG を bytes で返す。"""
     e0 = coef_a[0]
     m1, ln_c1 = coef_a[1], coef_a[2]
     m2, ln_c2 = coef_a[3], coef_a[4]
@@ -331,82 +343,97 @@ def generate_calibration_plot(device_id, phase1_data, coef_a, coef_b, phase3_dat
         else:
             m, ln_c = m3, ln_c3
         e_sq = e0 ** 2 + np.exp((np.log(v) - ln_c) / m)
-        vol_curve.append(np.sqrt(e_sq))  # V
+        vol_curve.append(np.sqrt(e_sq) * 1000)  # mV (e-sensor 流のグラフ軸単位)
 
     ref_v  = [r['ref_velocity'] for r in phase1_data]
-    meas_v = [r['measured_avg'] for r in phase1_data]
+    meas_v = [r['measured_avg'] * 1000 for r in phase1_data]   # mV
 
-    verify_vel = [r['ref'] for r in phase3_data]
-    verify_vol = [r['measuredV'] for r in phase3_data]
+    verify_vel = [r['ref']                  for r in phase3_data]
+    verify_vol = [r['measuredV'] * 1000     for r in phase3_data]  # mV
 
     plt.figure(figsize=(8, 5))
     plt.plot(v_curve, vol_curve, 'r-', label="King's Law Fit", alpha=0.7)
-    plt.scatter(ref_v, meas_v, color='blue', label='Reference Points', zorder=5)
+    plt.scatter(ref_v, meas_v, color='blue',
+                label='Reference Points', zorder=5)
     plt.scatter(verify_vel, verify_vol, color='green', marker='x', s=80,
                 linewidths=2, label='Verification Points', zorder=5)
     plt.xlabel('Air Velocity [m/s]')
-    plt.ylabel('Sensor Voltage [V]')
-    plt.title(f'Calibration Curve (Device ID: 0x{device_id:06X})')
+    plt.ylabel('Sensor Voltage [mV]')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.legend()
 
-    fname = f"plot_{device_id:06X}.png"
-    plt.savefig(fname, dpi=150)
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=120)
+    buf.seek(0)
+    png_bytes = buf.read()
     plt.close()
-    return fname
+    return png_bytes
 
 
-def save_calibration_report(device_info, phase1_data, coef_a, coef_b,
-                            phase3_data, img_filename):
-    device_id = device_info['device_id']
-    name      = device_info['name']
+def build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64):
+    """e-sensor schema 互換の anemometer ノードを構築。"""
+    return {
+        "calibrated_at": datetime.date.today().isoformat(),
+        "model":         "kings_law_3range",
+        "E0":            round(float(coef_a[0]), 6),
+        "ranges": [
+            {"v_min": 0.0,
+             "v_max": round(float(coef_b[2]), 4),
+             "m":     round(float(coef_a[1]), 4),
+             "lnC":   round(float(coef_a[2]), 4)},
+            {"v_min": round(float(coef_b[2]), 4),
+             "v_max": round(float(coef_b[3]), 4),
+             "m":     round(float(coef_a[3]), 4),
+             "lnC":   round(float(coef_a[4]), 4)},
+            {"v_min": round(float(coef_b[3]), 4),
+             "v_max": None,
+             "m":     round(float(coef_b[0]), 4),
+             "lnC":   round(float(coef_b[1]), 4)},
+        ],
+        "verification": [
+            {
+                "ref_velocity":      round(float(r['ref']),       2),
+                "measured_velocity": round(float(r['measured']),  3),
+                "error_pct":         round(float(r['error']),     1),
+                "voltage_mV":        round(float(r['measuredV'] * 1000), 1),
+            }
+            for r in phase3_data
+        ],
+        "plot": {
+            "format":   "image/png",
+            "data_url": f"data:image/png;base64,{png_b64}",
+        },
+    }
 
-    ts       = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"calib_{device_id:06X}_{ts}.md"
 
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write("# Anemometer Calibration Report\n\n")
-        f.write("## 1. Device Information\n")
-        f.write(f"- **Device ID (FNV-1a 22bit)**: `0x{device_id:06X}` ({device_id})\n")
-        f.write(f"- **Device Name**: `{name}`\n")
-        f.write(f"- **Calibration Date**: "
-                f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_data):
+    """JSON 1 ファイルに集約して reports/ に書き出し (既存ファイルがあれば merge)。"""
+    png_bytes = build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data)
+    png_b64   = base64.b64encode(png_bytes).decode('ascii')
 
-        f.write("## 2. Phase 1: Reference Measurements\n")
-        f.write("| Fan Power | Ref Velocity [m/s] | Measured Voltage [V] | StdDev [V] |\n")
-        f.write("|---|---|---|---|\n")
-        for r in phase1_data:
-            f.write(f"| {r['fan_power']}% | {r['ref_velocity']:.2f} | "
-                    f"{r['measured_avg']:.4f} | {r['std_dev']:.4f} |\n")
-        f.write("\n")
+    anemo = build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64)
 
-        f.write("## 3. Phase 2: Estimated Coefficients (King's Law, 3-range)\n")
-        f.write("Formula: $v = e^{m \\cdot \\ln(E^2 - E_0^2) + \\ln(C)}$\n\n")
-        f.write(f"- **Common $E_0$ (Zero-wind)**: `{coef_a[0]:.6f} V`\n")
-        f.write(f"### Range 1 (Low, v < {coef_b[2]:.2f} m/s)\n")
-        f.write(f"- **Slope ($m_1$)**: `{coef_a[1]:.6e}`\n")
-        f.write(f"- **Intercept ($\\ln(C_1)$)**: `{coef_a[2]:.6e}`\n")
-        f.write(f"### Range 2 (Mid, {coef_b[2]:.2f} <= v < {coef_b[3]:.2f} m/s)\n")
-        f.write(f"- **Slope ($m_2$)**: `{coef_a[3]:.6e}`\n")
-        f.write(f"- **Intercept ($\\ln(C_2)$)**: `{coef_a[4]:.6e}`\n")
-        f.write(f"### Range 3 (High, v >= {coef_b[3]:.2f} m/s)\n")
-        f.write(f"- **Slope ($m_3$)**: `{coef_b[0]:.6e}`\n")
-        f.write(f"- **Intercept ($\\ln(C_3)$)**: `{coef_b[1]:.6e}`\n\n")
+    device_id_hex = f"{device_info['device_id']:06X}"
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    out_path = os.path.join(REPORTS_DIR, f"{device_id_hex}.json")
 
-        f.write("## 4. Phase 3: Verification Results\n")
-        f.write("| Ref Velocity [m/s] | Measured Velocity [m/s] | Error [%] | "
-                "Measured Voltage [V] |\n")
-        f.write("|---|---|---|---|\n")
-        for r in phase3_data:
-            f.write(f"| {r['ref']:.2f} | {r['measured']:.3f} | "
-                    f"{r['error']:.1f}% | {r['measuredV']:.4f} |\n")
-        max_err = max(r['error'] for r in phase3_data)
-        f.write(f"\n- **Maximum Verification Error**: `{max_err:.1f}%`\n\n")
+    # 既存 JSON があれば merge (将来 CO2 等の別校正を併存させる余地)
+    if os.path.exists(out_path):
+        with open(out_path, "r", encoding="utf-8") as f:
+            doc = json.load(f)
+        doc.setdefault("calibrations", {})
+        doc["calibrations"]["anemometer"] = anemo
+    else:
+        doc = {
+            "schema_version": 1,
+            "device_id":      device_id_hex,
+            "calibrations":   {"anemometer": anemo},
+        }
 
-        f.write("## 5. Calibration Visualization\n")
-        f.write(f"![Calibration Curve](./{img_filename})\n\n")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
 
-    print(f"\nReport generated: {filename}")
+    print(f"\nReport written: {out_path}")
 
 
 # ==========================================
@@ -431,6 +458,4 @@ if __name__ == "__main__":
     if not data3:
         exit(1)
 
-    fname = generate_calibration_plot(device_info["device_id"],
-                                      data1, coef_a, coef_b, data3)
-    save_calibration_report(device_info, data1, coef_a, coef_b, data3, fname)
+    save_calibration_report(device_info, data1, coef_a, coef_b, data3)
