@@ -37,6 +37,8 @@
 void Anemometer_Init(Anemometer_t* anemo) {
     anemo->adc_value = 0;
     anemo->wind_speed_mps = 0.0f;
+    anemo->voltage_valid = false;
+    anemo->wind_valid = false;
 
     // 平滑化フィルタ係数を設定 (拡張領域への 1byte 書き込み)
     uint8_t writeBuffer[2];
@@ -50,7 +52,15 @@ void Anemometer_Update(Anemometer_t* anemo) {
     // 内訳: status1(1B) + status2(1B) + reserved(2B) + value[8] float (32B)
     const uint8_t cmd = REG_POLL_BASE;
     uint8_t buffer[POLL_BLOCK_SIZE];
-    I2C_WriteRead(ANEMO_ADDRESS, &cmd, 1, buffer, POLL_BLOCK_SIZE);
+    bool ok = I2C_WriteRead(ANEMO_ADDRESS, &cmd, 1, buffer, POLL_BLOCK_SIZE);
+
+    // 子機が物理的に外れている等で I2C が失敗したら全部 invalid。
+    // 過去値もそのまま残すと誤検出になるので、ここで明示的に invalid 化する。
+    if (!ok) {
+        anemo->voltage_valid = false;
+        anemo->wind_valid = false;
+        return;
+    }
 
     uint8_t status1 = buffer[POLL_OFS_STATUS1];
 
@@ -59,6 +69,9 @@ void Anemometer_Update(Anemometer_t* anemo) {
         float velocity_mps;
         memcpy(&velocity_mps, &buffer[POLL_OFS_VALUE + VAL_IDX_VELOCITY * 4], 4);
         anemo->wind_speed_mps = velocity_mps;
+        anemo->wind_valid = true;
+    } else {
+        anemo->wind_valid = false;
     }
 
     // value[1] = 風速計回路の生電圧 [V]
@@ -69,6 +82,9 @@ void Anemometer_Update(Anemometer_t* anemo) {
         if (voltage_v < 0.0f)       voltage_v = 0.0f;
         else if (voltage_v > 65.0f) voltage_v = 65.0f;   // uint16 max / 1000 = 65.535
         anemo->adc_value = (uint16_t)(voltage_v * 1000.0f);
+        anemo->voltage_valid = true;
+    } else {
+        anemo->voltage_valid = false;
     }
 }
 

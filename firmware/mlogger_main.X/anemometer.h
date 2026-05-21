@@ -19,6 +19,8 @@ extern "C" {
 typedef struct {
     uint16_t adc_value;         // ADC値 [mV]
     float    wind_speed_mps;    // 風速 (m/s)
+    bool     voltage_valid;     // 直近 Update で adc_value が有効か (I2C 成功 & status1 OK)
+    bool     wind_valid;        // 直近 Update で wind_speed_mps が有効か (同上)
 } Anemometer_t;
 
 // --- 公開関数プロトタイプ宣言 ---

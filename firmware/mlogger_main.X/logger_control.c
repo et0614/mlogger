@@ -232,9 +232,16 @@ void execLogging(void)
             pass_counters.vel = 0;
             
             LC_Update_Anemometer();
-            data.voltage = anemometer.adc_value;
-            data.wind_speed = anemometer.wind_speed_mps * 10000;
-            data.valid_flags |= (FLAG_WIND_SPEED | FLAG_VOLTAGE);
+            // 子機切断 / status1 異常時は valid_flag を立てない
+            // (= load_data.py 等で空欄になり、ゴミ値 65000 等が混入しない)
+            if (anemometer.wind_valid) {
+                data.wind_speed = anemometer.wind_speed_mps * 10000;
+                data.valid_flags |= FLAG_WIND_SPEED;
+            }
+            if (anemometer.voltage_valid) {
+                data.voltage = anemometer.adc_value;
+                data.valid_flags |= FLAG_VOLTAGE;
+            }
 
             //次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
             if(V_WAKEUP_TIME <= EM_mSettings.interval_vel) Anemometer_Sleep();
