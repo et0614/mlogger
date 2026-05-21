@@ -2,12 +2,14 @@ namespace MLS_Mobile;
 
 using CommunityToolkit.Maui.Extensions;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Devices.Sensors;
 using MLLib;
 using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 [QueryProperty(nameof(MLoggerLowAddress), "mlLowAddress")]
@@ -81,6 +83,54 @@ public partial class DeviceSetting : ContentPage
   {
     InitializeComponent();
   }
+
+  #region 常設モード (PC ボタン長押し)
+
+  /// <summary>長押し成立を検知したフラグ。直後の Clicked を 1 回スキップするために使う。</summary>
+  private bool _pcLongPressTriggered = false;
+
+  /// <summary>Pressed で開始するタイマー。Released で取消す。</summary>
+  private CancellationTokenSource? _pcLongPressCts;
+
+  /// <summary>長押し成立までの時間 [ms]。</summary>
+  private const int PC_LONG_PRESS_MS = 2000;
+
+  /// <summary>PC ボタン押下開始: 2 秒タイマーを起動 (Released または別ボタン押下で取消)。</summary>
+  private async void CnctToPcButton_Pressed(object sender, EventArgs e)
+  {
+    _pcLongPressCts?.Cancel();
+    _pcLongPressCts = new CancellationTokenSource();
+    var ct = _pcLongPressCts.Token;
+
+    try
+    {
+      await Task.Delay(PC_LONG_PRESS_MS, ct);
+    }
+    catch (TaskCanceledException) { return; }
+    if (ct.IsCancellationRequested) return;
+
+    // 長押し成立: 後続の Clicked を 1 回スキップさせるフラグを立てる
+    _pcLongPressTriggered = true;
+
+    try { HapticFeedback.Default.Perform(HapticFeedbackType.LongPress); }
+    catch { /* 端末が haptic 非対応でも気にしない */ }
+
+    bool ok = await DisplayAlert(
+      MLSResource.DS_PermanentConfirmTitle,
+      MLSResource.DS_PermanentConfirmMessage,
+      MLSResource.Yes,
+      MLSResource.Cancel);
+
+    if (ok) startLogging(loggingMode.permanent);
+  }
+
+  /// <summary>PC ボタン押上 (or タッチ離脱): 2 秒経過前なら長押しタイマーを取消。</summary>
+  private void CnctToPcButton_Released(object sender, EventArgs e)
+  {
+    _pcLongPressCts?.Cancel();
+  }
+
+  #endregion
 
   /// <summary>シェイク時の処理</summary>
   /// <param name="sender"></param>
@@ -301,7 +351,6 @@ public partial class DeviceSetting : ContentPage
       spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
       spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
       spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
-      btn_pmntMode.IsEnabled = true;        // v4 firmware always supports permanent mode
       co2LevelGrid.IsVisible = dev.HasCo2Sensor;
     });
 
@@ -588,20 +637,14 @@ public partial class DeviceSetting : ContentPage
 
   #region Zigbee通信関連の処理
 
-  /// <summary>PCとの接続ボタンタップ時の処理</summary>
+  /// <summary>PCとの接続ボタンタップ時の処理 (長押し時は StartPermanentLoggingCommand 側で処理し、こちらは 1 回スキップ)</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
   private void CnctToPcButton_Clicked(object sender, EventArgs e)
   {
+    // 直前に長押しが成立していたら通常のクリック処理はスキップ
+    if (_pcLongPressTriggered) { _pcLongPressTriggered = false; return; }
     startLogging(loggingMode.pc);
-  }
-
-  /// <summary>常設モードボタンタップ時の処理</summary>
-  /// <param name="sender"></param>
-  /// <param name="e"></param>
-  private void PermanentModeButton_Clicked(object sender, EventArgs e)
-  {
-    startLogging(loggingMode.permanent);
   }
 
   #endregion
@@ -620,11 +663,6 @@ public partial class DeviceSetting : ContentPage
     var result = await this.ShowPopupAsync(popup);
   }
 
-  private async void TapGestureRecognizer_PCSetting_Tapped(object sender, TappedEventArgs e)
-  {
-    var popup = new DescriptionPopup(DescriptionText.PCSetting);
-    var result = await this.ShowPopupAsync(popup);
-  }
 
   #endregion
 

@@ -4,7 +4,7 @@
              x:Class="MLS_Mobile.LogView"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              BackgroundColor="White"
-             Title="LogView">
+             Title="{x:Static res:MLSResource.LV_Title}">
     <Grid RowDefinitions="*,Auto,Auto,Auto" BackgroundColor="White">
 
         <!-- ログ表示 (Editor で IsReadOnly: iOS でも TextColor が安定して効く) -->
@@ -20,7 +20,7 @@
         <BoxView Grid.Row="1" HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
 
         <!-- Clear ボタン -->
-        <Button Grid.Row="2" Text="Clear log" Margin="10,10,10,0" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="clear_Clicked" FontSize="Medium">
+        <Button Grid.Row="2" Text="{x:Static res:MLSResource.LV_ClearLog}" Margin="10,10,10,0" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="clear_Clicked" FontSize="Medium">
             <Button.ImageSource>
                 <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>

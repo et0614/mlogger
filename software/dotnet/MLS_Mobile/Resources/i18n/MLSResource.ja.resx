@@ -507,4 +507,27 @@
   <data name="DS_InitializeCO2Sensor" xml:space="preserve">
     <value>CO2センサを初期化する</value>
   </data>
+  <data name="DS_PermanentConfirmTitle" xml:space="preserve">
+    <value>常設モード</value>
+  </data>
+  <data name="DS_PermanentConfirmMessage" xml:space="preserve">
+    <value>常設モードで計測を開始しますか？
+電源を入れ直すと自動で計測が再開されます。
+解除するには本体のリセットボタンを3秒間長押ししてください。</value>
+  </data>
+  <data name="LV_Title" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="LV_ClearLog" xml:space="preserve">
+    <value>ログを消去</value>
+  </data>
+  <data name="LV_ClearConfirmMessage" xml:space="preserve">
+    <value>すべてのログを消去しますか？</value>
+  </data>
+  <data name="LV_NoDataAvailable" xml:space="preserve">
+    <value>ログがありません。</value>
+  </data>
+  <data name="LV_ShareTitle" xml:space="preserve">
+    <value>M-Logger ログ</value>
+  </data>
 </root>

@@ -1229,5 +1229,68 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("Yes", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Permanent Mode に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_PermanentConfirmTitle {
+            get {
+                return ResourceManager.GetString("DS_PermanentConfirmTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   常設モード確認ダイアログのメッセージ本文 に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_PermanentConfirmMessage {
+            get {
+                return ResourceManager.GetString("DS_PermanentConfirmMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Log に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LV_Title {
+            get {
+                return ResourceManager.GetString("LV_Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Clear log に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LV_ClearLog {
+            get {
+                return ResourceManager.GetString("LV_ClearLog", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Delete all log entries? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LV_ClearConfirmMessage {
+            get {
+                return ResourceManager.GetString("LV_ClearConfirmMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   No log data available. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LV_NoDataAvailable {
+            get {
+                return ResourceManager.GetString("LV_NoDataAvailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   M-Logger log に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LV_ShareTitle {
+            get {
+                return ResourceManager.GetString("LV_ShareTitle", resourceCulture);
+            }
+        }
     }
 }

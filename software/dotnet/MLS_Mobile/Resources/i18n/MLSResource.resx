@@ -507,4 +507,27 @@
   <data name="DS_InitializeCO2Sensor" xml:space="preserve">
     <value>Initialize CO2 Sensor</value>
   </data>
+  <data name="DS_PermanentConfirmTitle" xml:space="preserve">
+    <value>Permanent Mode</value>
+  </data>
+  <data name="DS_PermanentConfirmMessage" xml:space="preserve">
+    <value>Start logging in permanent mode?
+Logging will automatically resume when the device is powered on.
+To exit, hold the device reset button for 3 seconds.</value>
+  </data>
+  <data name="LV_Title" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="LV_ClearLog" xml:space="preserve">
+    <value>Clear log</value>
+  </data>
+  <data name="LV_ClearConfirmMessage" xml:space="preserve">
+    <value>Delete all log entries?</value>
+  </data>
+  <data name="LV_NoDataAvailable" xml:space="preserve">
+    <value>No log data available.</value>
+  </data>
+  <data name="LV_ShareTitle" xml:space="preserve">
+    <value>M-Logger log</value>
+  </data>
 </root>
