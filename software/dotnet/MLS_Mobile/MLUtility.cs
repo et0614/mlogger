@@ -132,6 +132,8 @@ namespace MLS_Mobile
 
       // v4 protocol の TX/RX を LogView で見えるようにする (診断用)
       MLLib.Protocol.Protocols.JsonRpcV4Protocol.DiagnosticSink = msg => WriteLog("[v4] " + msg);
+      // v3 protocol の line-level RX を LogView に出す
+      MLLib.Protocol.Protocols.LegacyV3Protocol.DiagnosticLineSink = line => WriteLog("[v3] " + line);
 
       // BLE バイトレベル RX を LogView に出す (chunked 応答の chunk1/chunk2 到着状況を見る)
       BleXBeeTransport.DiagnosticRxSink = (len, data) =>
