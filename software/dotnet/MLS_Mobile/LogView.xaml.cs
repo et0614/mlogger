@@ -28,7 +28,7 @@ public partial class LogView : ContentPage
         await Share.Default.RequestAsync(new ShareTextRequest
         {
             Text = logText,
-            Title = "MLS_Mobile log data"
+            Title = "M-Logger log " + DateTime.Now.ToString("yyyy-MM-dd HH:mm")
         });
     }
 }

@@ -276,7 +276,6 @@ public sealed class LegacyV3Protocol : IMLProtocol
         var local = time.LocalDateTime;
         var localAsUtc = DateTime.SpecifyKind(local, DateTimeKind.Utc);
         var unix = new DateTimeOffset(localAsUtc).ToUnixTimeSeconds();
-        DiagnosticLineSink?.Invoke($"[tx] UCT{unix:D10} (local={local:yyyy-MM-dd HH:mm:ss})");
         await SendAsync($"UCT{unix:D10}\r", "UCT", ct);
         return DateTimeOffset.FromUnixTimeSeconds(unix);
     }

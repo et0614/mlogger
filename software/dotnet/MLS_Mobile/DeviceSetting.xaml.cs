@@ -59,7 +59,6 @@ public partial class DeviceSetting : ContentPage
     {
       //登録済の場合にはイベントを解除
       _mlLowAddress = value;
-      MLUtility.WriteLog("[devset] MLoggerLowAddress setter fired addr=" + value);
       initInfo();
     }
   }
@@ -99,7 +98,6 @@ public partial class DeviceSetting : ContentPage
   protected override void OnAppearing()
   {
     base.OnAppearing();
-    MLUtility.WriteLog("[devset] OnAppearing fired");
 
     //シェイクイベント登録
     Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
@@ -129,7 +127,6 @@ public partial class DeviceSetting : ContentPage
   protected override void OnDisappearing()
   {
     base.OnDisappearing();
-    MLUtility.WriteLog("[devset] OnDisappearing fired");
 
     //シェイクイベント解除
     Accelerometer.Stop();
@@ -295,8 +292,7 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
   private async Task initInfoV4()
   {
-    if (_initInfoV4Done) { MLUtility.WriteLog("[devset] initInfoV4 SKIPPED guard"); return; }
-    MLUtility.WriteLog("[devset] initInfoV4 RUN first-time");  // ガード: page lifecycle 中に 1 回だけ実行
+    if (_initInfoV4Done) return;
     _initInfoV4Done = true;
     var dev = MLUtility.Protocol.Device;
     Application.Current?.Dispatcher.Dispatch(() =>
@@ -371,7 +367,6 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of updateName - calls SetNameAsync and reflects the returned name.</summary>
   private async Task updateNameV4(string name)
   {
-    MLUtility.WriteLog("v4 set_name START name='" + (name ?? "<null>") + "' len=" + (name?.Length ?? -1));
     try
     {
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));

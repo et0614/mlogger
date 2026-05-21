@@ -88,9 +88,6 @@ namespace MLS_Mobile
 
     public static async Task CloseXbeeAsync()
     {
-      // 診断: 誰が CloseXbeeAsync を呼んだか stack trace を log
-      WriteLog("[diag] CloseXbeeAsync called from: " + System.Environment.StackTrace.Replace("\r\n", " | ").Replace("\n", " | "));
-
       //v4/v3 protocol 破棄 (XBee 切断より前に行う)
       try { Protocol?.Dispose(); } catch { }
       Protocol = null;
@@ -130,28 +127,11 @@ namespace MLS_Mobile
 
       _bleTransport = new BleXBeeTransport(ConnectedXBee);
 
-      // v4 protocol の TX/RX を LogView で見えるようにする (診断用)
-      MLLib.Protocol.Protocols.JsonRpcV4Protocol.DiagnosticSink = msg => WriteLog("[v4] " + msg);
-      // v3 protocol の line-level RX を LogView に出す
-      MLLib.Protocol.Protocols.LegacyV3Protocol.DiagnosticLineSink = line => WriteLog("[v3] " + line);
-
-      // BLE バイトレベル RX を LogView に出す (chunked 応答の chunk1/chunk2 到着状況を見る)
-      BleXBeeTransport.DiagnosticRxSink = (len, data) =>
-      {
-        int preview = Math.Min(48, len);
-        WriteLog("[ble-rx] " + len + "B: " + Convert.ToHexString(data, 0, preview) + (len > preview ? "..." : ""));
-      };
-
-      // BleXBeeTransport.Dispose 呼び出し元を log (誰が disposed しているかの追跡用)
-      BleXBeeTransport.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
-
-      // chunk 毎の TX 結果を log (multi-chunk TX 連続発火時の挙動観察用)
-      BleXBeeTransport.TxChunkSink = msg => WriteLog("[ble-tx] " + msg);
-      MLLib.Protocol.Protocols.JsonRpcV4Protocol.DisposeTraceSink = msg => WriteLog("[diag] " + msg);
-
-      //旧コードは OpenXbee 直後に即 SendSerialData していた。warmup delay を挟むと
-      //BLE characteristic が idle 化して最初の write が長時間 hang する事象が出るため
-      //意図的に遅延を入れない。
+      // 旧 debug 用 diagnostic sink (JsonRpcV4Protocol.DiagnosticSink,
+      // LegacyV3Protocol.DiagnosticLineSink, BleXBeeTransport.DiagnosticRxSink/
+      // TxChunkSink/DisposeTraceSink, JsonRpcV4Protocol.DisposeTraceSink) は
+      // chunking/timing/race 系の bug 解析用に追加していたが解決済みのため撤去。
+      // 将来必要になれば各クラスの static sink プロパティに再 wire するだけで復活可。
 
       //ProtocolFactory.DetectAsync は v4 hello → v3 VER の順に試す。
       //v4: 2s で即決、v3: 8s 待つ (firmware の BLE 応答遅延に追従)。
@@ -162,6 +142,9 @@ namespace MLS_Mobile
       try
       {
         Protocol = await ProtocolFactory.DetectAsync(_bleTransport, cts.Token);
+        var dev = Protocol.Device;
+        WriteLog($"Connected: {(string.IsNullOrEmpty(dev.Name) ? Logger?.LocalName : dev.Name)} " +
+          $"({(dev.ProtocolVersion >= 1 ? "v4" : "v3")} FW {dev.FirmwareVersion})");
       }
       catch
       {
