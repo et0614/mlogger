@@ -74,7 +74,12 @@ public partial class AppShell : Shell
       {
         ShellNavigatingDeferral token = args.GetDeferral();
         var result = await DisplayActionSheet(MLSResource.DR_FinishAlert, MLSResource.Cancel, MLSResource.Yes);
-        if (result == MLSResource.Yes) token.Complete();
+        if (result == MLSResource.Yes)
+        {
+          // Pop 確定時に _vm を即解放 (finalizer 任せだと ML Scanner Tab のバッジが残る)
+          currentpage.DisposeViewModel();
+          token.Complete();
+        }
         else args.Cancel();
       }
     }

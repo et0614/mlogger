@@ -53,6 +53,16 @@ public partial class DataReceive : ContentPage
         _vm?.Dispose();
     }
 
+    /// <summary>
+    /// AppShell から Pop 確定時に呼ばれて _vm を確実に解放する。
+    /// finalizer 任せだと TabBar の「● デバイス名」バッジが消えるタイミングが遅延する。
+    /// </summary>
+    public void DisposeViewModel()
+    {
+        _vm?.Dispose();
+        _vm = null;
+    }
+
     protected override void OnAppearing()
     {
         base.OnAppearing();
