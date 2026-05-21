@@ -3,9 +3,9 @@ namespace MLS_Mobile;
 public partial class MLoggerView : ContentView
 {
 
-  #region コンストラクタ
+  #region 繧ｳ繝ｳ繧ｹ繝医Λ繧ｯ繧ｿ
 
-  /// <summary>インスタンスを初期化する</summary>
+  /// <summary>繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ繧貞�晄悄蛹悶☆繧�</summary>
   public MLoggerView()
   {
     InitializeComponent();

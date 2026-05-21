@@ -25,6 +25,6 @@ public partial class TextInputPopup : Popup<string>
        => await CloseAsync(entName.Text);
 
   private async void btnCancel_Clicked(object sender, EventArgs e)
-      => await CloseAsync(default(string)); // null ‚ğ•Ô‚·ê‡
+      => await CloseAsync(default(string)); // null ã‚’è¿”ã™å ´åˆ
 
 }
