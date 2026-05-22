@@ -126,16 +126,6 @@ If the measurement start date and time are set to a past time relative to the cu
 
 If you make any changes to these settings, you must send the updated configuration to overwrite the internal settings of the M-Logger.</value>
   </data>
-  <data name="PCSetting" xml:space="preserve">
-    <value>These settings are only relevant when the data is transmitted to and stored on a PC.
-
-Enabling "Permanent Mode" will start the measurement automatically upon startup.
-Pressing and holding the reset switch will return the M-Logger to normal mode.
-
-PAN ID is the Zigbee communication ID, with a default value of 19800614.
-
-When the communication status LED is enabled, the Zigbee communication status will be indicated by the LED blinking.</value>
-  </data>
   <data name="ShortMemo" xml:space="preserve">
     <value>Entering text here will append it to the end of each measurement data entry.
 This can be useful for adding notes to record when measurement conditions were changed.</value>
@@ -150,6 +140,6 @@ PC:
 Transmit the data using Zigbee to a PC or Raspberry Pi equipped with an XBee module.
 
 Flash:
-Write the data to a flash memory inserted into the M-Logger.</value>
+Write the data to the M-Logger's built-in flash memory.</value>
   </data>
 </root>

@@ -583,15 +583,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Set to permanent mode に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_SetToPermanentMode {
-            get {
-                return ResourceManager.GetString("DS_SetToPermanentMode", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   XBee name に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_SpecLocalName {
@@ -687,15 +678,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_VelocityVoltageSetting {
             get {
                 return ResourceManager.GetString("DS_VelocityVoltageSetting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   PC connection settings に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_ZigbeeSetting {
-            get {
-                return ResourceManager.GetString("DS_ZigbeeSetting", resourceCulture);
             }
         }
         

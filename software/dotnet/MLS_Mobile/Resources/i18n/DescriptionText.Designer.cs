@@ -76,22 +76,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   These settings are only relevant when the data is transmitted to and stored on a PC.
-        ///
-        ///Enabling &quot;Permanent Mode&quot; will start the measurement automatically upon startup.
-        ///Pressing and holding the reset switch will return the M-Logger to normal mode.
-        ///
-        ///PAN ID is the Zigbee communication ID, with a default value of 19800614.
-        ///
-        ///When the communication status LED is enabled, the Zigbee communication status will be indicated by the LED blinking. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string PCSetting {
-            get {
-                return ResourceManager.GetString("PCSetting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Entering text here will append it to the end of each measurement data entry.
         ///This can be useful for adding notes to record when measurement conditions were changed. に類似しているローカライズされた文字列を検索します。
         /// </summary>

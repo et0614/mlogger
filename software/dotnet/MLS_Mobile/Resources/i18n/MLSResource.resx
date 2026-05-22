@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AbsoluteHumidity" xml:space="preserve">
-    <value>Absolute humidity</value>
+    <value>Humidity ratio</value>
   </data>
   <data name="AtmosphericPressure" xml:space="preserve">
     <value>Atmospheric pressure</value>
@@ -136,19 +136,19 @@
     <value>CV =</value>
   </data>
   <data name="CF_Discard" xml:space="preserve">
-    <value>Discard the entries ?</value>
+    <value>Discard the entries?</value>
   </data>
   <data name="CF_FailSetting" xml:space="preserve">
-    <value>Fail to set correction factors.</value>
+    <value>Failed to set correction factors.</value>
   </data>
   <data name="CF_Invalid" xml:space="preserve">
     <value>Correction factor {0} of {1} is invalid.</value>
   </data>
   <data name="CF_InvalidVelocity1" xml:space="preserve">
-    <value>Voltage at 0m/s velocity is invalid.</value>
+    <value>Voltage at 0 m/s is invalid.</value>
   </data>
   <data name="CF_InvalidVelocity2" xml:space="preserve">
-    <value>Voltage at 0m/s velocity should be positive.</value>
+    <value>Voltage at 0 m/s must be positive.</value>
   </data>
   <data name="CF_Loading" xml:space="preserve">
     <value>Loading correction factors...</value>
@@ -157,7 +157,7 @@
     <value>Failed to load correction factors.</value>
   </data>
   <data name="CF_Measurement" xml:space="preserve">
-    <value>* meas. + </value>
+    <value>× measured + </value>
   </data>
   <data name="CF_Set" xml:space="preserve">
     <value>Set</value>
@@ -169,7 +169,7 @@
     <value>Correction factor setting</value>
   </data>
   <data name="CF_VelocityVoltage" xml:space="preserve">
-    <value>No wind voltage: </value>
+    <value>Zero-wind voltage: </value>
   </data>
   <data name="ClothingUnit" xml:space="preserve">
     <value>Clothing unit</value>
@@ -217,10 +217,10 @@
     <value>Dry-bulb temp.</value>
   </data>
   <data name="DR_FailStarting" xml:space="preserve">
-    <value>Fail to start logging.</value>
+    <value>Failed to start logging.</value>
   </data>
   <data name="DR_FailStopping" xml:space="preserve">
-    <value>Fail to stop logging.</value>
+    <value>Failed to stop logging.</value>
   </data>
   <data name="DR_FinishAlert" xml:space="preserve">
     <value>End measurement?</value>
@@ -235,7 +235,7 @@
     <value>Stop logging...</value>
   </data>
   <data name="DR_Title" xml:space="preserve">
-    <value>Date receiver</value>
+    <value>Data receiver</value>
   </data>
   <data name="DS_AdjustVelocityVoltage" xml:space="preserve">
     <value>Adjust velocity voltage</value>
@@ -276,9 +276,6 @@
   <data name="DS_SetName" xml:space="preserve">
     <value>Set M-Logger name</value>
   </data>
-  <data name="DS_SetToPermanentMode" xml:space="preserve">
-    <value>Set to permanent mode</value>
-  </data>
   <data name="DS_SpecLocalName" xml:space="preserve">
     <value>XBee name</value>
   </data>
@@ -311,9 +308,6 @@
   </data>
   <data name="DS_VelocityVoltageSetting" xml:space="preserve">
     <value>Starting up for voltage adjustment</value>
-  </data>
-  <data name="DS_ZigbeeSetting" xml:space="preserve">
-    <value>PC connection settings</value>
   </data>
   <data name="EditMeasuredData" xml:space="preserve">
     <value>Edit measured data</value>
@@ -364,16 +358,16 @@
     <value>Logging data</value>
   </data>
   <data name="MA_AhmdAndDens" xml:space="preserve">
-    <value>Absolute humidity and Density</value>
+    <value>Humidity ratio and Density</value>
   </data>
   <data name="MA_AhmdAndEnth" xml:space="preserve">
-    <value>Absolute humidity and Enthalpy</value>
+    <value>Humidity ratio and Enthalpy</value>
   </data>
   <data name="MA_AhmdAndWbt" xml:space="preserve">
-    <value>Absolute humdity and Wet-bulb temperature</value>
+    <value>Humidity ratio and Wet-bulb temperature</value>
   </data>
   <data name="MA_DbtAndAhmd" xml:space="preserve">
-    <value>Dry-bulb temperature and Absolute humdity</value>
+    <value>Dry-bulb temperature and Humidity ratio</value>
   </data>
   <data name="MA_DbtAndDens" xml:space="preserve">
     <value>Dry-bulb temperature and Density</value>
@@ -388,7 +382,7 @@
     <value>Dry-bulb temperature and Wet-bulb temperature</value>
   </data>
   <data name="MA_RhmdAndAhmd" xml:space="preserve">
-    <value>Relative humidity and Absolute humdity</value>
+    <value>Relative humidity and Humidity ratio</value>
   </data>
   <data name="MA_RhmdAndDens" xml:space="preserve">
     <value>Relative humidity and Density</value>
@@ -448,13 +442,13 @@
     <value>Connecting to M-Logger...</value>
   </data>
   <data name="SC_Empty" xml:space="preserve">
-    <value>The device cannnot be found.</value>
+    <value>The device cannot be found.</value>
   </data>
   <data name="SC_Notfound" xml:space="preserve">
     <value>M-Logger not found</value>
   </data>
   <data name="SC_Scannning" xml:space="preserve">
-    <value>Scanning MLogger...</value>
+    <value>Scanning M-Logger...</value>
   </data>
   <data name="SC_Title" xml:space="preserve">
     <value>ML scanner</value>

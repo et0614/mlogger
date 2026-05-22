@@ -276,9 +276,6 @@
   <data name="DS_SetName" xml:space="preserve">
     <value>M-Loggerの名称を設定</value>
   </data>
-  <data name="DS_SetToPermanentMode" xml:space="preserve">
-    <value>常設モードに移行</value>
-  </data>
   <data name="DS_SpecLocalName" xml:space="preserve">
     <value>XBee名称</value>
   </data>
@@ -311,9 +308,6 @@
   </data>
   <data name="DS_VelocityVoltageSetting" xml:space="preserve">
     <value>電圧調整のための起動中</value>
-  </data>
-  <data name="DS_ZigbeeSetting" xml:space="preserve">
-    <value>PCとの接続設定</value>
   </data>
   <data name="EditMeasuredData" xml:space="preserve">
     <value>収集データを操作する</value>
