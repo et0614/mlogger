@@ -468,7 +468,7 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of CFButton_Clicked - pre-fetches correction factors then navigates.</summary>
   private async Task openCFSettingV4()
   {
-    showIndicator(MLSResource.CR_Connecting);
+    showIndicator(MLSResource.CF_Setting);   // 「補正係数を読み込み中...」
     try
     {
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -494,33 +494,42 @@ public partial class DeviceSetting : ContentPage
   private async Task calibrateCo2V4ForcedAsync()
   {
     var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
-    var result = await this.ShowPopupAsync<string>(popup);
-    if (result == null) return;
-    if (!int.TryParse(result.Result, out int refLevel))
-    {
-      Application.Current?.Dispatcher.Dispatch(() => { DisplayAlert("Alert", "CO2 level is invalid", "OK"); });
-      return;
-    }
-    await calibrateCo2V4(Co2CalibrationMode.Forced, refLevel, navigateToCalibrator: true);
+    int? refLevel = await PromptCo2LevelAsync(popup);
+    if (refLevel is not int level) return;
+    await calibrateCo2V4(Co2CalibrationMode.Forced, level, navigateToCalibrator: true);
   }
 
   /// <summary>v4 path of CO2InitializeButton_Clicked (factory reset).</summary>
   private async Task calibrateCo2V4FactoryAsync()
   {
     var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
+    int? refLevel = await PromptCo2LevelAsync(popup);
+    if (refLevel is not int level) return;
+    await calibrateCo2V4(Co2CalibrationMode.Factory, level, navigateToCalibrator: false);
+  }
+
+  /// <summary>
+  /// CO2 reference level の数値入力 popup を出して値を返す。
+  /// Cancel (Popup.Result == null) なら黙って null を返す。
+  /// 数値として解釈できないときだけ alert を出す。
+  /// </summary>
+  private async Task<int?> PromptCo2LevelAsync(TextInputPopup popup)
+  {
     var result = await this.ShowPopupAsync<string>(popup);
-    if (result == null) return;
-    if (!int.TryParse(result.Result, out int refLevel))
+    if (result?.Result is not string typed || string.IsNullOrWhiteSpace(typed))
+      return null;
+
+    if (!int.TryParse(typed, out int refLevel))
     {
-      Application.Current?.Dispatcher.Dispatch(() => { DisplayAlert("Alert", "CO2 level is invalid", "OK"); });
-      return;
+      await DisplayAlert(MLSResource.ERR_AlertTitle, MLSResource.DS_InvalidNumber, "OK");
+      return null;
     }
-    await calibrateCo2V4(Co2CalibrationMode.Factory, refLevel, navigateToCalibrator: false);
+    return refLevel;
   }
 
   private async Task calibrateCo2V4(Co2CalibrationMode mode, int refLevel, bool navigateToCalibrator)
   {
-    showIndicator(MLSResource.CR_Connecting);
+    showIndicator(MLSResource.DS_StartingCo2Calibration);
     try
     {
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));

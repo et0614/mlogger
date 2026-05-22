@@ -958,5 +958,32 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("ERR_StartCo2CalibrationFailed", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Waiting for the first measurement... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DR_WaitingForFirstSample {
+            get {
+                return ResourceManager.GetString("DR_WaitingForFirstSample", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Saving correction factors... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CF_SavingFactors {
+            get {
+                return ResourceManager.GetString("CF_SavingFactors", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Starting CO2 calibration... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_StartingCo2Calibration {
+            get {
+                return ResourceManager.GetString("DS_StartingCo2Calibration", resourceCulture);
+            }
+        }
     }
 }

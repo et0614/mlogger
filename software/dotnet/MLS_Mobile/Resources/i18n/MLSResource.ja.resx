@@ -422,4 +422,13 @@
   <data name="ERR_StartCo2CalibrationFailed" xml:space="preserve">
     <value>CO2 校正の開始に失敗しました。</value>
   </data>
+  <data name="DR_WaitingForFirstSample" xml:space="preserve">
+    <value>計測データの受信を待機中...</value>
+  </data>
+  <data name="CF_SavingFactors" xml:space="preserve">
+    <value>補正係数を書き込み中...</value>
+  </data>
+  <data name="DS_StartingCo2Calibration" xml:space="preserve">
+    <value>CO2 校正を開始しています...</value>
+  </data>
 </root>

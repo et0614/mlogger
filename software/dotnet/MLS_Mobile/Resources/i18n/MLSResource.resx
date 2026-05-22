@@ -422,4 +422,13 @@ To exit, hold the device reset button for 3 seconds.</value>
   <data name="ERR_StartCo2CalibrationFailed" xml:space="preserve">
     <value>Failed to start CO2 calibration.</value>
   </data>
+  <data name="DR_WaitingForFirstSample" xml:space="preserve">
+    <value>Waiting for the first measurement...</value>
+  </data>
+  <data name="CF_SavingFactors" xml:space="preserve">
+    <value>Saving correction factors...</value>
+  </data>
+  <data name="DS_StartingCo2Calibration" xml:space="preserve">
+    <value>Starting CO2 calibration...</value>
+  </data>
 </root>

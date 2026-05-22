@@ -224,7 +224,7 @@ public partial class CFSetting : ContentPage
       Illuminance        = new CorrectionCoefficientsPatch(luxA, luxB),
       Velocity           = new CorrectionCoefficientsPatch(velA, velB),
     };
-    showIndicator(MLSResource.CF_Setting);
+    showIndicator(MLSResource.CF_SavingFactors);
     try
     {
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));

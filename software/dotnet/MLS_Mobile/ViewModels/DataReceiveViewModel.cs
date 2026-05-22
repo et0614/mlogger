@@ -94,6 +94,12 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     [ObservableProperty] private bool _hasCO2LevelSensor;
 
+    /// <summary>
+    /// 初回サンプル受信前は true。Page 側の灰 overlay + indicator を表示する binding 用。
+    /// OnSample 内で false にする。
+    /// </summary>
+    [ObservableProperty] private bool _isWaitingForFirstSample = true;
+
     // 警告色 (OOR / 高 CO2 / 高 WBGT のとき変化)
     [ObservableProperty] private Color _velocityColor     = NormalColor;
     [ObservableProperty] private Color _co2Color          = NormalColor;
@@ -163,6 +169,8 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     private void OnSample(Sample s)
     {
         _lastSample = s;
+        // 初回サンプル到着で indicator を消す (最初の 1 回だけ意味あり、以後 no-op)
+        if (_isWaitingForFirstSample) _isWaitingForFirstSample = false;
         var local = s.Timestamp.LocalDateTime;
 
         // [ObservableProperty] の自動 setter (= SetProperty 経由で個別 PropertyChanged 発火)

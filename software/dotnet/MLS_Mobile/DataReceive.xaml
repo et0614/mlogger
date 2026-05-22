@@ -159,12 +159,12 @@
             </StackLayout>
         </ScrollView>
 
-        <!--インジケータ-->
-        <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+        <!--インジケータ (初回サンプル受信まで表示)-->
+        <ContentView x:Name="grayback" IsVisible="{Binding IsWaitingForFirstSample}" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
+        <Border x:Name="indicator" IsVisible="{Binding IsWaitingForFirstSample}" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
             <StackLayout BackgroundColor="White">
                 <ActivityIndicator Color="Black" IsRunning="True"/>
-                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+                <Label x:Name="indicatorLabel" Text="{x:Static res:MLSResource.DR_WaitingForFirstSample}" TextColor="Black"/>
             </StackLayout>
         </Border>
         <!--インジケータここまで-->
