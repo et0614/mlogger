@@ -22,22 +22,22 @@ extern "C" {
     
 static inline void turnOnGreenLED(void)
 {
-    R_LED_SetHigh();
+    G_LED_SetHigh();
 }
 
 static inline void turnOffGreenLED(void)
 {
-    R_LED_SetLow();
+    G_LED_SetLow();
 }
 
 static inline void turnOnRedLED(void)
 {
-    G_LED_SetHigh();
+    R_LED_SetHigh();
 }
 
 static inline void turnOffRedLED(void)
 {
-    G_LED_SetLow();
+    R_LED_SetLow();
 }
 
 static inline void blinkGreenLED(int iterNum)
