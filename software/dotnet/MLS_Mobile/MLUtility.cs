@@ -5,6 +5,7 @@ using Plugin.BLE.Abstractions.Contracts;
 using DigiIoT.Maui.Devices.XBee;
 using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
+using MLS_Mobile.Services;
 using MLS_Mobile.Transport;
 
 namespace MLS_Mobile
@@ -203,6 +204,27 @@ namespace MLS_Mobile
       if (ConnectedDevice == MLDevice.MLogger && Logger != null && Logger.LowAddress == lowAddress)
         return Logger;
       else return null;
+    }
+
+    #endregion
+
+    #region Demo (実機なし UI 確認用)
+
+    /// <summary>
+    /// Demo 用: BLE 接続なしに <see cref="DummyMLProtocol"/> を活性化する。
+    /// 戻り値の lowAddress を <c>DeviceSetting?mlLowAddress=...</c> に渡せば既存フローで
+    /// DataReceive まで進める。実機接続中なら先に切断する。
+    /// </summary>
+    public static async Task<string> UseDummyProtocolAsync()
+    {
+      await CloseXbeeAsync();
+
+      // LongAddress 16桁 hex 想定、下位 8 桁が LowAddress (= LocalName) になる
+      Logger = new MLogger("0013A200DEMODEMO");
+      Protocol = new DummyMLProtocol();
+      ConnectedDevice = MLDevice.MLogger;
+
+      return Logger.LowAddress;
     }
 
     #endregion

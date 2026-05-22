@@ -7,7 +7,11 @@
              Title="{x:Static res:MLSResource.SC_Title}">
 
     <RefreshView x:Name="refView">
-        <Grid>
+        <Grid RowDefinitions="Auto,*">
+            <!-- Demo モード: 実機なしで UI 確認用 (DummyMLProtocol 経由) -->
+            <Button Grid.Row="0" Text="Open Demo Device" Clicked="DemoButton_Clicked"
+                    Margin="10,5" Padding="5"
+                    BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
             <CollectionView Grid.Row="1"
                 x:Name="mlList" ItemsSource="{ Binding MLXBees }" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
                 <CollectionView.ItemTemplate>
@@ -33,9 +37,9 @@
                 </CollectionView.EmptyView>
             </CollectionView>
 
-            <!--インジケータ-->
-            <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-            <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+            <!--インジケータ (Grid 全体を覆う)-->
+            <ContentView x:Name="grayback" Grid.RowSpan="2" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
+            <Border x:Name="indicator" Grid.RowSpan="2" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
                 <StackLayout BackgroundColor="White">
                     <ActivityIndicator Color="Black" IsRunning="True"/>
                     <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>

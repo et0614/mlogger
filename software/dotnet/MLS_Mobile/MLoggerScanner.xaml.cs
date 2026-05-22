@@ -152,6 +152,14 @@ public partial class MLoggerScanner : ContentPage
 
   #endregion
 
+  /// <summary>Demo モード起動: DummyMLProtocol を活性化して DeviceSetting へ navigate。</summary>
+  private async void DemoButton_Clicked(object sender, EventArgs e)
+  {
+    string lowAddress = await MLUtility.UseDummyProtocolAsync();
+    await Shell.Current.GoToAsync(nameof(DeviceSetting),
+      new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
+  }
+
   private async Task checkBLEPermission()
   {
     if (bleChecked) return;
