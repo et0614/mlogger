@@ -173,51 +173,102 @@ bool W25_ReadOnePage(uint32_t pageIndex, uint8_t *buffer)
 }
 
 /**
- * @brief 指定された世代番号を持つレコードの総数をBinary Searchで探す
- * * @param target_gen 探したい世代番号 (current_generation)
- * @return uint32_t 格納されているレコード数 (0 ～ MAX_TOTAL_RECORDS)
+ * @brief 指定 index の record の timestamp (uint32 UNIX 秒) を読み出す。
+ *        SensorData_t は packed: gen(1) + timestamp(4) + ... なので offset 1 から 4 byte。
+ */
+static bool W25_ReadTimestamp(uint32_t recordIndex, uint32_t *ts)
+{
+    uint32_t addr = W25_GetAddressFromRecordIndex(recordIndex);
+    uint8_t buf[4];
+    if (!W25_ReadData(addr + 1, buf, 4)) return false;
+    // AVR/Cortex は little-endian、SensorData_t も packed LE なので素直に組み立て
+    *ts = (uint32_t)buf[0]
+        | ((uint32_t)buf[1] << 8)
+        | ((uint32_t)buf[2] << 16)
+        | ((uint32_t)buf[3] << 24);
+    return true;
+}
+
+/**
+ * @brief Ring buffer が一周し終わったあと (全レコードが target_gen) に、
+ *        timestamp の rotation point (= 次に書き込む index、最古の record の位置) を
+ *        二分探索で見つける。
+ *        timestamp は通常 単調増加 ＋ 一周境界で急減するので、古典的な
+ *        "rotated sorted array" の最小値探索と同型。
+ *        全体が単調増加 (rotation 無し) なら 0 を返す = 一周直後の最古位置。
+ */
+static uint32_t W25_FindRotationPoint(void)
+{
+    uint32_t low  = 0;
+    uint32_t high = MAX_RECORD_COUNT - 1;
+
+    uint32_t ts_low, ts_high;
+    if (!W25_ReadTimestamp(low,  &ts_low))  return 0;
+    if (!W25_ReadTimestamp(high, &ts_high)) return 0;
+
+    // 全体が単調増加なら rotation 無し (= ちょうど末尾まで書き終わった瞬間)。
+    // 次に書き込む位置は wrap して index 0。
+    if (ts_low <= ts_high) return 0;
+
+    while (low < high) {
+        uint32_t mid = low + (high - low) / 2;
+        uint32_t ts_mid;
+        if (!W25_ReadTimestamp(mid, &ts_mid)) return low;
+
+        if (ts_mid > ts_high) {
+            // [low, mid] は ascending 部分 → rotation point は (mid, high] の中
+            low = mid + 1;
+        } else {
+            // mid は降順切替後の側 (= 最古を含む右半分) → rotation point は [low, mid] の中
+            high = mid;
+        }
+    }
+    return low;
+}
+
+/**
+ * @brief 指定された世代番号 (target_gen) を持つレコードの個数を返す。
+ *        起動時に logger_control から呼ばれ、戻り値は rec_latest (= 次の書き込み index) に
+ *        そのまま入る。
+ *
+ * 対応ケース:
+ *   1) target_gen のレコードが 1 件も無い (clear_data 直後など) → 0
+ *   2) target_gen のレコードが flash 先頭から連続している (一周未満) → 二分探索で末尾を見つけて count
+ *   3) ring buffer 一周済み (全 record が target_gen) → timestamp の rotation point を返す
+ *      (rec_latest はその位置に上書き再開すれば、最古 record を消して時系列を保てる)
  */
 uint32_t W25_Count_Record(uint8_t target_gen) {
-    uint32_t low = 0;
-    uint32_t high = MAX_RECORD_COUNT - 1;
-    
-    uint32_t last_valid_index = 0; // 見つかった有効なインデックスの最大値
-    bool found_any = false;        // 1つでも見つかったかフラグ
-    uint8_t read_gen; // 世代保持用の1バイトバッファ
+    uint8_t read_gen;
 
-    // --- データが1件もない場合の高速チェック ---
-    // 先頭データの世代番号を読む
+    // --- ケース 1: 先頭が target_gen でなければ 0 件 ---
     W25_ReadData(W25_GetAddressFromRecordIndex(0), &read_gen, 1);
-    
-    // 先頭がターゲット世代でないなら、データ数は0
     if (read_gen != target_gen) return 0;
 
-    // --- 二分探索 (Binary Search) ---
+    // --- ケース 3: 末尾も target_gen なら ring 一周 → rotation point を探す ---
+    W25_ReadData(W25_GetAddressFromRecordIndex(MAX_RECORD_COUNT - 1), &read_gen, 1);
+    if (read_gen == target_gen) {
+        return W25_FindRotationPoint();
+    }
+
+    // --- ケース 2: 末尾は別世代 (or 空) → 先頭から連続する target_gen の最大 index + 1 ---
+    uint32_t low  = 0;
+    uint32_t high = MAX_RECORD_COUNT - 1;
+    uint32_t last_valid_index = 0;
+    bool     found_any = false;
+
     while (low <= high) {
-        // 中間地点のインデックスを計算
         uint32_t mid = low + (high - low) / 2;
-        
-        // 世代番号を読む  
         W25_ReadData(W25_GetAddressFromRecordIndex(mid), &read_gen, 1);
 
-        // 有効データの条件:
-        bool is_valid = (read_gen == target_gen);
-
-        if (is_valid) {
-            // 一致した！ -> 有効データは「ここ」か、もっと「右(後ろ)」にあるはず
+        if (read_gen == target_gen) {
             found_any = true;
-            last_valid_index = mid; // 暫定値として記録
-            low = mid + 1;          // 右側を探索
+            last_valid_index = mid;
+            low = mid + 1;
         } else {
-            // 一致しない（古いデータ or 空き領域） -> 有効データはもっと「左(前)」にあるはず
-            if (mid == 0) break;    // underflow防止
-            high = mid - 1;         // 左側を探索
+            if (mid == 0) break;     // underflow 防止
+            high = mid - 1;
         }
     }
 
-    if (found_any) {
-        return last_valid_index + 1; // インデックスは0始まりなので、個数は +1
-    } else {
-        return 0;
-    }
+    return found_any ? (last_valid_index + 1) : 0;
 }
