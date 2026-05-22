@@ -31,10 +31,17 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>計測値が無い場合のデフォルト値</summary>
     private const double DEF_TEMP = 25, DEF_RH = 50, DEF_VEL = 0.1, DEF_GLB = 25;
 
-    // 警告色 (XAML の Dark_G = ForestGreen と揃える)
-    private static readonly Color NormalColor = Colors.ForestGreen;
-    private static readonly Color WarnColor   = Colors.DarkOrange;
-    private static readonly Color DangerColor = Colors.Red;
+    // 警告色は App.xaml の Status_* リソースから取得 (Colors.xaml で一元管理)。
+    // resource が見つからない場合は安全な fallback で動作継続。
+    private static Color GetResourceColor(string key, Color fallback)
+    {
+        var res = Application.Current?.Resources;
+        if (res != null && res.TryGetValue(key, out var v) && v is Color c) return c;
+        return fallback;
+    }
+    private static Color NormalColor => GetResourceColor("Status_Normal", Colors.ForestGreen);
+    private static Color WarnColor   => GetResourceColor("Status_Warn",   Colors.DarkOrange);
+    private static Color DangerColor => GetResourceColor("Status_Danger", Colors.Red);
 
     // CO2 [ppm] の警告/危険閾値 (一般的な室内空気質基準)
     private const int CO2_WARN_PPM   = 1000;

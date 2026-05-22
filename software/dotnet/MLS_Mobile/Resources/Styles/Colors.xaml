@@ -10,9 +10,19 @@
     <Color x:Key="Black">Black</Color>
 
     <Color x:Key="Darkest_G">#155915</Color>
-    <Color x:Key="Dark_G">ForestGreen</Color>
+    <Color x:Key="Dark_G">#1B5E20</Color>  <!-- Material Green 900。旧 ForestGreen (#228B22) より深く、白背景での小文字 contrast を AA 達成 -->
     <Color x:Key="Light_G">#C8FFC8</Color>
     <Color x:Key="Lightest_G">#F5FFF5</Color>
+
+    <!-- 計測値の semantic 色 (緑基調アプリでも警告/危険は補色寄りで強調).
+         DataReceiveViewModel が Application.Current.Resources から取得して
+         VelocityColor / Co2Color / WbgtIndoorColor / WbgtOutdoorColor binding に流す。-->
+    <Color x:Key="Status_Normal">#1B5E20</Color>  <!-- = Dark_G、通常時 -->
+    <Color x:Key="Status_Warn">#EF6C00</Color>    <!-- Material Orange 900、警戒 -->
+    <Color x:Key="Status_Danger">#C62828</Color>  <!-- Material Red 800、危険 -->
+    <SolidColorBrush x:Key="Status_NormalBrush" Color="{StaticResource Status_Normal}"/>
+    <SolidColorBrush x:Key="Status_WarnBrush"   Color="{StaticResource Status_Warn}"/>
+    <SolidColorBrush x:Key="Status_DangerBrush" Color="{StaticResource Status_Danger}"/>
 
     <Color x:Key="Darkest_O">#804d00</Color>
     <Color x:Key="Dark_O">#e68a00</Color>
