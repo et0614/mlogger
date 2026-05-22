@@ -205,7 +205,7 @@
     <value>ロギング開始</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
-    <value>測定項目と測定間隔</value>
+    <value>有効なセンサと計測間隔</value>
   </data>
   <data name="DS_TemperatureAndHumidity" xml:space="preserve">
     <value>乾球温度と相対湿度</value>

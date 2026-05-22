@@ -175,13 +175,13 @@
     <value>Invalid number</value>
   </data>
   <data name="DS_LoadSetting" xml:space="preserve">
-    <value>Load</value>
+    <value>Read from M-Logger</value>
   </data>
   <data name="DS_OtherSetting" xml:space="preserve">
     <value>Other settings</value>
   </data>
   <data name="DS_SaveSetting" xml:space="preserve">
-    <value>Save</value>
+    <value>Write to M-Logger</value>
   </data>
   <data name="DS_SetName" xml:space="preserve">
     <value>Set M-Logger name</value>
@@ -205,7 +205,7 @@
     <value>Start logging to:</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
-    <value>Target and time interval</value>
+    <value>Active sensors and intervals</value>
   </data>
   <data name="DS_TemperatureAndHumidity" xml:space="preserve">
     <value>Temperature and relative humidity</value>
