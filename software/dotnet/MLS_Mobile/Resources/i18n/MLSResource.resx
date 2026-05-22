@@ -431,4 +431,7 @@ To exit, hold the device reset button for 3 seconds.</value>
   <data name="DS_StartingCo2Calibration" xml:space="preserve">
     <value>Starting CO2 calibration...</value>
   </data>
+  <data name="DS_PromptCo2RefLevel" xml:space="preserve">
+    <value>Reference CO2 level [ppm]</value>
+  </data>
 </root>

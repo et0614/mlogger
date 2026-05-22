@@ -985,5 +985,14 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("DS_StartingCo2Calibration", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Reference CO2 level [ppm] に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_PromptCo2RefLevel {
+            get {
+                return ResourceManager.GetString("DS_PromptCo2RefLevel", resourceCulture);
+            }
+        }
     }
 }

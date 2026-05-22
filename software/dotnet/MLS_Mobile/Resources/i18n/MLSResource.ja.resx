@@ -431,4 +431,7 @@
   <data name="DS_StartingCo2Calibration" xml:space="preserve">
     <value>CO2 校正を開始しています...</value>
   </data>
+  <data name="DS_PromptCo2RefLevel" xml:space="preserve">
+    <value>基準 CO2 濃度 [ppm]</value>
+  </data>
 </root>

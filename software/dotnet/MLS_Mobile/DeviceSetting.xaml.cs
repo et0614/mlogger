@@ -493,7 +493,7 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of CO2CalibrationButton_Clicked (forced calibration).</summary>
   private async Task calibrateCo2V4ForcedAsync()
   {
-    var popup = new TextInputPopup("Reference CO2 level [ppm].", "600", Keyboard.Numeric);
+    var popup = new TextInputPopup(MLSResource.DS_PromptCo2RefLevel,"600", Keyboard.Numeric);
     int? refLevel = await PromptCo2LevelAsync(popup);
     if (refLevel is not int level) return;
     await calibrateCo2V4(Co2CalibrationMode.Forced, level, navigateToCalibrator: true);
@@ -502,7 +502,7 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of CO2InitializeButton_Clicked (factory reset).</summary>
   private async Task calibrateCo2V4FactoryAsync()
   {
-    var popup = new TextInputPopup("Reference CO2 level [ppm].", "400", Keyboard.Numeric);
+    var popup = new TextInputPopup(MLSResource.DS_PromptCo2RefLevel,"400", Keyboard.Numeric);
     int? refLevel = await PromptCo2LevelAsync(popup);
     if (refLevel is not int level) return;
     await calibrateCo2V4(Co2CalibrationMode.Factory, level, navigateToCalibrator: false);
