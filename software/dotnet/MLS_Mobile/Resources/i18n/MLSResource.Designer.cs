@@ -12,9 +12,6 @@ namespace MLS_Mobile.Resources.i18n {
     using System;
     
     
-    /// <summary>
-    ///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
-    /// </summary>
     // このクラスは StronglyTypedResourceBuilder クラスが ResGen
     // または Visual Studio のようなツールを使用して自動生成されました。
     // メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
@@ -32,9 +29,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal MLSResource() {
         }
         
-        /// <summary>
-        ///   このクラスで使用されているキャッシュされた ResourceManager インスタンスを返します。
-        /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
@@ -46,10 +40,6 @@ namespace MLS_Mobile.Resources.i18n {
             }
         }
         
-        /// <summary>
-        ///   すべてについて、現在のスレッドの CurrentUICulture プロパティをオーバーライドします
-        ///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
-        /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
         internal static global::System.Globalization.CultureInfo Culture {
             get {
@@ -97,29 +87,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Back に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_Back {
-            get {
-                return ResourceManager.GetString("CF_Back", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   CV = に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CF_CorrectionValue {
             get {
                 return ResourceManager.GetString("CF_CorrectionValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Discard the entries ? に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_Discard {
-            get {
-                return ResourceManager.GetString("CF_Discard", resourceCulture);
             }
         }
         
@@ -142,56 +114,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Voltage at 0m/s velocity is invalid. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_InvalidVelocity1 {
-            get {
-                return ResourceManager.GetString("CF_InvalidVelocity1", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Voltage at 0m/s velocity should be positive. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_InvalidVelocity2 {
-            get {
-                return ResourceManager.GetString("CF_InvalidVelocity2", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Loading correction factors... に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_Loading {
-            get {
-                return ResourceManager.GetString("CF_Loading", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Failed to load correction factors. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_LoadingError {
-            get {
-                return ResourceManager.GetString("CF_LoadingError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   * meas. +  に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CF_Measurement {
             get {
                 return ResourceManager.GetString("CF_Measurement", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Set に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_Set {
-            get {
-                return ResourceManager.GetString("CF_Set", resourceCulture);
             }
         }
         
@@ -214,15 +141,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   No wind voltage:  に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CF_VelocityVoltage {
-            get {
-                return ResourceManager.GetString("CF_VelocityVoltage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Clothing unit に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string ClothingUnit {
@@ -241,101 +159,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Connect to M-Logger に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string ConnectMLogger {
-            get {
-                return ResourceManager.GetString("ConnectMLogger", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Automatic temperature calibration に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_AutoCalTemp {
-            get {
-                return ResourceManager.GetString("CR_AutoCalTemp", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Automatic velocity calibration に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_AutoCalVel {
-            get {
-                return ResourceManager.GetString("CR_AutoCalVel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Calibrate velocity に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_CalibrateVelocityVoltage {
-            get {
-                return ResourceManager.GetString("CR_CalibrateVelocityVoltage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Calibrating time: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_CalibratingTime {
-            get {
-                return ResourceManager.GetString("CR_CalibratingTime", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Set correction factor に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_CFactor {
-            get {
-                return ResourceManager.GetString("CR_CFactor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Connecting... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CR_Connecting {
             get {
                 return ResourceManager.GetString("CR_Connecting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Connection failed に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_ConnectionFailed {
-            get {
-                return ResourceManager.GetString("CR_ConnectionFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   End calibration に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_EndCalibration {
-            get {
-                return ResourceManager.GetString("CR_EndCalibration", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Calibration has started. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_StartCalibration {
-            get {
-                return ResourceManager.GetString("CR_StartCalibration", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Calibrator に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CR_Title {
-            get {
-                return ResourceManager.GetString("CR_Title", resourceCulture);
             }
         }
         
@@ -358,24 +186,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Fail to start logging. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DR_FailStarting {
-            get {
-                return ResourceManager.GetString("DR_FailStarting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Fail to stop logging. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DR_FailStopping {
-            get {
-                return ResourceManager.GetString("DR_FailStopping", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   End measurement? に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DR_FinishAlert {
@@ -385,29 +195,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Finish measurement に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DR_FinishMeasurement {
-            get {
-                return ResourceManager.GetString("DR_FinishMeasurement", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Start logging... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DR_StartLogging {
             get {
                 return ResourceManager.GetString("DR_StartLogging", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Stop logging... に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DR_StopLogging {
-            get {
-                return ResourceManager.GetString("DR_StopLogging", resourceCulture);
             }
         }
         
@@ -430,65 +222,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Adjust velocity voltage に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_AdjustVelocityVoltage {
-            get {
-                return ResourceManager.GetString("DS_AdjustVelocityVoltage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Calibrate CO2 Sensor に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_CalibrateCO2Sensor {
             get {
                 return ResourceManager.GetString("DS_CalibrateCO2Sensor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Calibrate Velocity Sensor に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_CalibrateVelocitySensor {
-            get {
-                return ResourceManager.GetString("DS_CalibrateVelocitySensor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Change PAN ID に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_ChangePANID {
-            get {
-                return ResourceManager.GetString("DS_ChangePANID", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Start logging to PC に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_ConnectToPC {
-            get {
-                return ResourceManager.GetString("DS_ConnectToPC", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Disable status LED に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_DisableZigLED {
-            get {
-                return ResourceManager.GetString("DS_DisableZigLED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Enable status LED に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_EnableZigLED {
-            get {
-                return ResourceManager.GetString("DS_EnableZigLED", resourceCulture);
             }
         }
         
@@ -511,38 +249,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Loading status... に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_LoadingZigLED {
-            get {
-                return ResourceManager.GetString("DS_LoadingZigLED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Load に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_LoadSetting {
             get {
                 return ResourceManager.GetString("DS_LoadSetting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Logging to TF/MM card に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_LoggingToMF {
-            get {
-                return ResourceManager.GetString("DS_LoggingToMF", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Logging to Smartphone に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_LoggingToSmartPhone {
-            get {
-                return ResourceManager.GetString("DS_LoggingToSmartPhone", resourceCulture);
             }
         }
         
@@ -588,15 +299,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_SpecLocalName {
             get {
                 return ResourceManager.GetString("DS_SpecLocalName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   MAC address に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_SpecMACAdd {
-            get {
-                return ResourceManager.GetString("DS_SpecMACAdd", resourceCulture);
             }
         }
         
@@ -673,24 +375,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Starting up for voltage adjustment に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string DS_VelocityVoltageSetting {
-            get {
-                return ResourceManager.GetString("DS_VelocityVoltageSetting", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Edit measured data に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string EditMeasuredData {
-            get {
-                return ResourceManager.GetString("EditMeasuredData", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Specific enthalpy に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Enthalpy {
@@ -718,29 +402,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Hour に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string Hour {
-            get {
-                return ResourceManager.GetString("Hour", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Illuminance に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Illuminance {
             get {
                 return ResourceManager.GetString("Illuminance", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Copy に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string LD_Copy {
-            get {
-                return ResourceManager.GetString("LD_Copy", resourceCulture);
             }
         }
         
@@ -768,15 +434,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string LD_Exceed {
             get {
                 return ResourceManager.GetString("LD_Exceed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Format に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string LD_Format {
-            get {
-                return ResourceManager.GetString("LD_Format", resourceCulture);
             }
         }
         
@@ -979,15 +636,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Wet-bulb temperature and Enthalpy に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string MA_WbtAndEnth {
-            get {
-                return ResourceManager.GetString("MA_WbtAndEnth", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Winter-indoor に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MA_WinterIndoor {
@@ -1024,29 +672,11 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   Minute に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string Minute {
-            get {
-                return ResourceManager.GetString("Minute", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Moist air calculator に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MS_Title {
             get {
                 return ResourceManager.GetString("MS_Title", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   No に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string No {
-            get {
-                return ResourceManager.GetString("No", resourceCulture);
             }
         }
         
@@ -1074,15 +704,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string RelativeHumidity {
             get {
                 return ResourceManager.GetString("RelativeHumidity", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Relayed data viewer に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string RV_Title {
-            get {
-                return ResourceManager.GetString("RV_Title", resourceCulture);
             }
         }
         
@@ -1123,24 +744,6 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
-        ///   M-Logger not found に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string SC_Notfound {
-            get {
-                return ResourceManager.GetString("SC_Notfound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Scanning MLogger... に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string SC_Scannning {
-            get {
-                return ResourceManager.GetString("SC_Scannning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   ML scanner に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SC_Title {
@@ -1164,15 +767,6 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string Time {
             get {
                 return ResourceManager.GetString("Time", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Velocity Calibrator に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string VC_Title {
-            get {
-                return ResourceManager.GetString("VC_Title", resourceCulture);
             }
         }
         
