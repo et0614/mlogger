@@ -8,6 +8,17 @@
     >
     <Shell.Resources>
         <ResourceDictionary>
+            <!-- 全 ContentPage に NavBar / TabBar の緑テーマを適用 (attached property 経由) -->
+            <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+                <Setter Property="Shell.BackgroundColor"       Value="{StaticResource Darkest_G}"/>  <!-- NavBar 背景 -->
+                <Setter Property="Shell.ForegroundColor"       Value="White"/>                       <!-- NavBar の icon/Back ボタン色 -->
+                <Setter Property="Shell.TitleColor"            Value="White"/>                       <!-- Page Title 文字色 -->
+                <Setter Property="Shell.UnselectedColor"       Value="{StaticResource Light_G}"/>
+                <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource Darkest_G}"/>
+                <Setter Property="Shell.TabBarTitleColor"      Value="White"/>
+                <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource Light_G}"/>
+            </Style>
+
             <!--Bluetooth-->
             <Style TargetType="Tab" x:Key="BLTab">
                 <Style.Triggers>
