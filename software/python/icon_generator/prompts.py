@@ -67,6 +67,32 @@ def clothing_prompt(item_description: str) -> str:
     )
 
 
+SENSOR_MASTER_PROMPT = """\
+Generate a 1024x1024 square icon on a fully transparent background.
+
+[Style - match Font Awesome 6 Free Solid (FAS) glyphs]
+- Single-color flat silhouette icon, solid charcoal (#212121).
+- No gradients, no drop shadows, no outlines around the silhouette.
+- Bold uniform stroke width (~40 px equivalent) when lines are present.
+- Slightly rounded corners (FA "rounded" feel), not sharp.
+- Readable at 32 px display size.
+- Subject centered, ~80% of canvas (10% padding on every side).
+- Front view, orthographic, no perspective vanishing.
+- Reads as ONE silhouette, not a detailed illustration.
+
+[Hard constraints]
+- TRANSPARENT background (NOT white).
+- No text, no letters, no numbers, no labels, no logos, no chemical formulas.
+- No numerical readings on any scale.
+- One subject only, no surrounding decoration, no enclosing frame.
+"""
+
+
+def sensor_prompt(subject_description: str) -> str:
+    """センサアイコン (FA Solid 互換シルエット) 用プロンプト。"""
+    return SENSOR_MASTER_PROMPT + "\n[Subject]\n" + subject_description
+
+
 def activity_prompt(activity_description: str, prop_description: str) -> str:
     """anchor 画像と組み合わせて使う、活動 (姿勢 + プロップ) の差分指示プロンプト。"""
     prop_line = (

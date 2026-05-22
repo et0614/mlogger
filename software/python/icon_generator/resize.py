@@ -13,7 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageDraw
 
 
 HERE = Path(__file__).parent
@@ -23,6 +23,30 @@ TARGET = 256
 # autocrop: 白背景とみなす閾値 (R,G,B いずれも >= この値) と外側に残す余白 px
 BG_THRESHOLD = 245
 PAD_PX = 16  # 256 中の片側 ~6%
+# 白→透過化の許容色差 (ImageDraw.floodfill の thresh、0 = 完全一致のみ)
+WHITE_TO_ALPHA_THRESH = 255 - BG_THRESHOLD
+
+
+def _whiten_to_alpha(img: Image.Image) -> Image.Image:
+    """画像の外周から接する「ほぼ白」領域を flood-fill で透明化する。
+
+    被写体内部の白っぽいハイライトは外周と連結していないので保持される。
+    """
+    rgba = img.convert("RGBA")
+    w, h = rgba.size
+    fill = (255, 255, 255, 0)
+    # 4 隅 + 各辺中点を起点に試行 (外周に少なくとも 1 つは白ピクセルがある想定)
+    seeds = [
+        (0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1),
+        (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2),
+    ]
+    for xy in seeds:
+        try:
+            ImageDraw.floodfill(rgba, xy, fill, thresh=WHITE_TO_ALPHA_THRESH)
+        except Exception:
+            # 既にその点が透過なら例外を握り潰して次の seed へ
+            pass
+    return rgba
 
 
 def _autocrop_to_subject(img: Image.Image) -> Image.Image:
@@ -67,10 +91,12 @@ def _resize_one(src: Path, dst: Path, do_autocrop: bool) -> None:
         img = _autocrop_to_subject(img)
     else:
         img = img.convert("RGBA")
+    # 外周白を透過化 (アプリの淡緑背景に乗せたとき白いハロが出ないように)
+    img = _whiten_to_alpha(img)
     # 長辺を TARGET に合わせるよう縮小。比率を保持。
     img.thumbnail((TARGET, TARGET), Image.LANCZOS)
     # 正方形キャンバスに中央配置 (背景は透過)
-    canvas = Image.new("RGBA", (TARGET, TARGET), (255, 255, 255, 0))
+    canvas = Image.new("RGBA", (TARGET, TARGET), (0, 0, 0, 0))
     ox = (TARGET - img.width) // 2
     oy = (TARGET - img.height) // 2
     canvas.paste(img, (ox, oy), img)
