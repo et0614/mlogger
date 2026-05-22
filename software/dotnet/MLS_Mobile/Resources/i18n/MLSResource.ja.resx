@@ -202,7 +202,7 @@
     <value>測定開始日時</value>
   </data>
   <data name="DS_StartLogging" xml:space="preserve">
-    <value>ロギング開始</value>
+    <value>ロギング先</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
     <value>有効なセンサと計測間隔</value>
@@ -424,6 +424,9 @@
   </data>
   <data name="DR_WaitingForFirstSample" xml:space="preserve">
     <value>計測データの受信を待機中...</value>
+  </data>
+  <data name="LIVE_NoDevice" xml:space="preserve">
+    <value>Live (機器未接続)</value>
   </data>
   <data name="CF_SavingFactors" xml:space="preserve">
     <value>補正係数を書き込み中...</value>

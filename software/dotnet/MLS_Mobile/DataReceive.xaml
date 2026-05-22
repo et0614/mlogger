@@ -140,15 +140,16 @@
 
                 <!--メモ-->
                 <Grid Margin="0,0,0,50" RowDefinitions="30,*" ColumnDefinitions="*">
-                    <HorizontalStackLayout Grid.Row="0" Grid.Column="0">
-                        <Label Text="Short memo (Max 30 characters)" VerticalTextAlignment="Start" FontSize="Large"/>
-                        <!--(i)マーク-->
-                        <Border Margin="8,0,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
-                            <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
-                            <Border.GestureRecognizers>
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="0" Spacing="8" VerticalOptions="Center">
+                        <Label Text="Short memo (Max 30 characters)" VerticalTextAlignment="Center" FontSize="Large"/>
+                        <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                            <Image.Source>
+                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            </Image.Source>
+                            <Image.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="TapGestureRecognizer_ShortMemo_Tapped"/>
-                            </Border.GestureRecognizers>
-                        </Border>
+                            </Image.GestureRecognizers>
+                        </Image>
                     </HorizontalStackLayout>
                     
                     <Border Grid.Row="1" Grid.Column="0" Stroke="Gray">

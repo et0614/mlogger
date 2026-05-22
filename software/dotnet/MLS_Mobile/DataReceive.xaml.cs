@@ -25,6 +25,9 @@ public partial class DataReceive : ContentPage
         get => _mlLowAddress;
         set
         {
+            // Popup の開閉等で Shell が QueryProperty を再適用しても VM を作り直さない
+            // (作り直すと IsWaitingForFirstSample が true に戻り、インジケータが再表示される)
+            if (_mlLowAddress == value && _vm != null) return;
             _mlLowAddress = value;
             BuildViewModel();
         }

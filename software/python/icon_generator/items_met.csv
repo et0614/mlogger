@@ -1,0 +1,32 @@
+filename,activity,prop
+act_sleeping.png,lying flat on its back in a relaxed sleeping posture,a simple low rectangular bed / mattress shown from a 3/4 view
+act_reclining.png,reclining at about 30 degrees in a leaned-back resting posture,a simple recliner or chaise lounge chair
+act_seated_quiet.png,sitting upright in a relaxed posture with both hands resting on the knees,a simple wooden chair
+act_standing_relaxed.png,standing upright in a relaxed posture with arms slightly away from the body,none
+act_walking_09.png,walking forward at a slow pace shown mid-stride with arms swinging slightly,none
+act_walking_12.png,walking forward at a normal pace shown mid-stride with arms swinging naturally,none
+act_walking_18.png,walking forward at a brisk pace shown mid-stride with arms swinging vigorously and body leaning slightly forward,none
+act_of_seated.png,seated at an office desk with both hands resting on the desk surface,a simple flat office desk
+act_typing.png,seated at an office desk with both hands on a laptop keyboard typing,a simple flat office desk with an open laptop on it
+act_filing_seated.png,seated at a desk reaching to one side to pull a file out of a low filing cabinet drawer,a desk with a low two-drawer filing cabinet with the upper drawer open
+act_filing_standing.png,standing in front of an open filing cabinet reaching one hand into an open drawer,a tall vertical filing cabinet with one drawer open
+act_walking_about.png,walking through an office at a leisurely pace while carrying a folder in one hand,a single paper folder / document held in one hand
+act_lifting_packing.png,standing while lifting a medium cardboard box with both hands at chest height,a medium cardboard box
+act_automobile.png,seated in a car driver's seat with both hands on a steering wheel facing forward,a steering wheel and a simplified car driver's seat outline
+act_aircraft_routine.png,seated in an aircraft cockpit with both hands on a control yoke in a calm relaxed posture,a cockpit yoke and a simplified pilot seat outline
+act_aircraft_instrument_landing.png,seated in an aircraft cockpit leaning forward in focused concentration with both hands on the control yoke,a cockpit yoke and a simplified instrument panel outline in front of the mannequin
+act_aircraft_combat.png,seated in a tight fighter cockpit in a tense alert posture with one hand on a center control stick and head turned to one side,a fighter-cockpit control stick and a simplified pilot seat outline
+act_heavy_vehicle.png,seated high up in the cab of a heavy vehicle (truck or excavator) with both hands on a large steering wheel,a large truck steering wheel and a simplified elevated cab seat outline
+act_cooking.png,standing at a stove top stirring a pot with a long-handled utensil held in one hand,a simplified stove top with a single round pot on it
+act_house_cleaning.png,standing and pushing an upright vacuum cleaner forward with both hands on its handle,an upright vacuum cleaner
+act_heavy_limb_movement.png,standing with both arms raised mid-motion swinging widely in a vigorous cleaning or scrubbing gesture against an unseen vertical surface,none
+act_sawing.png,standing and using a hand saw on a wooden plank held flat on a workbench,a workbench with a flat wooden plank and a hand saw being held in one hand
+act_light.png,standing at a workbench assembling small parts with both hands in a focused posture,a workbench with a few small parts laid out on it
+act_heavy.png,standing and swinging a heavy two-handed hammer overhead toward an anvil,an anvil on the ground and a heavy long-handled hammer held above the head with both hands
+act_handling_bags.png,bent at the waist lifting a heavy sack from the floor with both hands,a large heavy sack on the ground
+act_pick_and_shovel_work.png,standing and swinging a pickaxe overhead toward the ground in a digging motion,a long-handled pickaxe held above the head with both hands
+act_dancing.png,dancing energetically in a dynamic pose with one arm raised overhead and one leg lifted off the ground,none
+act_calisthenics.png,performing a jumping jack at the apex of the motion with both arms above the head and legs spread wide,none
+act_tennis.png,mid-swing of a tennis forehand stroke with one arm extended forward holding a tennis racket,a tennis racket held in one hand
+act_basketball.png,running forward with one arm raised dribbling a basketball at hip height,a basketball
+act_wrestling.png,in a wrestling crouch stance with both arms forward ready to grapple and legs braced wide apart,none

@@ -142,4 +142,11 @@ XBeeモジュールを持つPCやRaspberryPiなどにZigbeeを使って送信し
 Flash:
 M-Logger本体のフラッシュメモリに書き込みます。</value>
   </data>
+  <data name="OtherSetting" xml:space="preserve">
+    <value>隠しモード
+
+端末をシェイクするとメンテナンス用の操作が解禁され、センサ補正係数の編集や CO2 センサの校正リセットが行えるようになります。
+
+これらは計測精度に直接影響する操作なので、自己責任でご使用ください。</value>
+  </data>
 </root>

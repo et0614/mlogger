@@ -219,8 +219,12 @@ namespace MLS_Mobile
     {
       await CloseXbeeAsync();
 
-      // LongAddress 16桁 hex 想定、下位 8 桁が LowAddress (= LocalName) になる
+      // LongAddress 16桁 hex 想定、下位 8 桁が LowAddress になる
       Logger = new MLogger("0013A200DEMODEMO");
+      // 実機の BLE デバイス名と同形式 ("MLogger_XXXX") にしておかないと
+      // LoggingDataList の prefix フィルタ (StartsWith("MLogger_")) を通らず
+      // ダミー計測の CSV が一覧に出てこない
+      Logger.LocalName = Logger.XBeeName = "MLogger_DEMO";
       Protocol = new DummyMLProtocol();
       ConnectedDevice = MLDevice.MLogger;
 

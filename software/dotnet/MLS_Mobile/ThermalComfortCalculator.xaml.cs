@@ -185,7 +185,7 @@ public partial class ThermalComfortCalculator : ContentPage
     liveToggle.IsEnabled = available;
     liveStatusLabel.Text = available
         ? (_live!.DeviceName is string n ? $"Live ({n})" : "Live")
-        : "Live (no device connected)";
+        : MLSResource.LIVE_NoDevice;
 
     // 接続が切れた瞬間にライブモードが ON のままだと値が古いまま固定されるので強制 OFF
     if (!available && liveToggle.IsToggled) liveToggle.IsToggled = false;

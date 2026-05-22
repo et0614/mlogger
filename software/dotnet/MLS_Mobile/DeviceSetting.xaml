@@ -15,16 +15,21 @@
             <StackLayout Padding="15">
                 
                 <!--主要な3機能-->
-                <HorizontalStackLayout>
-                    <Label Text="{x:Static res:MLSResource.DS_StartLogging}" FontSize="Subtitle"/>
-                    <!--(i)マーク-->
-                    <Border Margin="8,0,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
-                        <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
-                        <Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="{x:Static res:MLSResource.DS_StartLogging}"
+                           FontSize="Subtitle" FontAttributes="Bold"
+                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           VerticalOptions="Center"/>
+                    <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                        <Image.Source>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                        </Image.Source>
+                        <Image.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Measure_Tapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
-                </HorizontalStackLayout>                
+                        </Image.GestureRecognizers>
+                    </Image>
+                </HorizontalStackLayout>
+
 
                 <Grid Margin="5,5,0,0" RowDefinitions="Auto" ColumnDefinitions="*,*,*">
                     <!--スマートフォンに記録-->
@@ -64,15 +69,19 @@
                 </Grid>
 
                 <!--測定設定-->
-                <HorizontalStackLayout>
-                    <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}" FontSize="Subtitle"/>
-                    <!--(i)マーク-->
-                    <Border Margin="8,15,0,0" StrokeThickness="1.2" WidthRequest="20" HeightRequest="20" Padding="0" HorizontalOptions="End" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
-                        <Label Text="i" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center"/>
-                        <Border.GestureRecognizers>
+                <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
+                    <Label Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}"
+                           FontSize="Subtitle" FontAttributes="Bold"
+                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           VerticalOptions="Center"/>
+                    <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                        <Image.Source>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                        </Image.Source>
+                        <Image.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Setting_Tapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
+                        </Image.GestureRecognizers>
+                    </Image>
                 </HorizontalStackLayout>
 
                 <!--温湿度計-->
@@ -139,17 +148,30 @@
                 <!--設定ボタン-->
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="LoadButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf56e;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="SaveButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf56d;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
 
                 <!--その他の設定-->
-                <Label Margin="0,20,0,5" Text="{x:Static res:MLSResource.DS_OtherSetting}" FontSize="Subtitle"/>
+                <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
+                    <Label Text="{x:Static res:MLSResource.DS_OtherSetting}"
+                           FontSize="Subtitle" FontAttributes="Bold"
+                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           VerticalOptions="Center"/>
+                    <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                        <Image.Source>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                        </Image.Source>
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="TapGestureRecognizer_Other_Tapped"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </HorizontalStackLayout>
                 <Label x:Name="spc_name" Margin="10,5,0,0" FontSize="16"/>
                 <Label x:Name="spc_localName" Margin="10,0,0,0" FontSize="16"/>
                 <Label x:Name="spc_xbadds" Margin="10,0,0,0" FontSize="16"/>
@@ -157,7 +179,7 @@
                 <!--名称の設定-->
                 <Button Margin="50,15,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetName}" Clicked="SetNameButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf5b7;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf02b;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
                 

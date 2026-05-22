@@ -102,5 +102,14 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("StartLogging", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Hidden mode に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string OtherSetting {
+            get {
+                return ResourceManager.GetString("OtherSetting", resourceCulture);
+            }
+        }
     }
 }

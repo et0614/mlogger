@@ -1,15 +1,9 @@
-using System.ComponentModel;
-using MLLib;
 using MLS_Mobile.Resources.i18n;
-using MLS_Mobile.Services;
 
 namespace MLS_Mobile;
 
 public partial class AppShell : Shell
 {
-  private const string SCANNER_TAB_BASE = "ML Scanner";
-  private readonly ILiveMeasurementService? _live;
-
   public AppShell()
   {
     InitializeComponent();
@@ -27,39 +21,6 @@ public partial class AppShell : Shell
     Routing.RegisterRoute(nameof(DataReceive), typeof(DataReceive));
     Routing.RegisterRoute(nameof(LogView), typeof(LogView));
     Routing.RegisterRoute(nameof(CO2Calibrator), typeof(CO2Calibrator));
-
-    // 計測中バッジ: ILiveMeasurementService の接続状態を ML Scanner Tab のタイトルに反映
-    // (どの Tab を見ていても「いま接続中である」事実が分かるようにするため)
-    _live = IPlatformApplication.Current?.Services.GetService(typeof(ILiveMeasurementService))
-            as ILiveMeasurementService;
-    if (_live != null)
-    {
-      _live.PropertyChanged += OnLivePropertyChanged;
-      UpdateScannerTabBadge();
-    }
-  }
-
-  private void OnLivePropertyChanged(object? sender, PropertyChangedEventArgs e)
-  {
-    if (e.PropertyName != nameof(ILiveMeasurementService.IsConnected)
-     && e.PropertyName != nameof(ILiveMeasurementService.DeviceName)) return;
-    Dispatcher.Dispatch(UpdateScannerTabBadge);
-  }
-
-  private void UpdateScannerTabBadge()
-  {
-    if (scannerTab == null) return;
-    if (_live?.IsConnected == true)
-    {
-      // 緑点 + デバイス名で「いま計測中」を明示。
-      scannerTab.Title = _live.DeviceName is string n && !string.IsNullOrWhiteSpace(n)
-                       ? $"● {n}"
-                       : $"● {SCANNER_TAB_BASE}";
-    }
-    else
-    {
-      scannerTab.Title = SCANNER_TAB_BASE;
-    }
   }
 
   protected override async void OnNavigating(ShellNavigatingEventArgs args)

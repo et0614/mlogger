@@ -336,7 +336,7 @@ public partial class MoistAirCalculator : ContentPage
     liveToggle.IsEnabled = available;
     liveStatusLabel.Text = available
         ? (_live!.DeviceName is string n ? $"Live ({n})" : "Live")
-        : "Live (no device connected)";
+        : MLSResource.LIVE_NoDevice;
 
     if (!available && liveToggle.IsToggled) liveToggle.IsToggled = false;
   }

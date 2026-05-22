@@ -969,6 +969,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
 
         /// <summary>
+        ///   Live (no device connected) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LIVE_NoDevice {
+            get {
+                return ResourceManager.GetString("LIVE_NoDevice", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Saving correction factors... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CF_SavingFactors {

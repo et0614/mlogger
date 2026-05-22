@@ -35,17 +35,17 @@
                 </Style.Triggers>
             </Style>
 
-            <!--DataFiles-->
+            <!--DataFiles (file-csv: 中身が CSV であることを示唆)-->
             <Style TargetType="Tab" x:Key="DFTab">
                 <Style.Triggers>
                     <Trigger TargetType="Tab" Property="IsChecked" Value="True">
                         <Setter Property="Icon">
-                            <FontImageSource Glyph="&#xf15c;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
+                            <FontImageSource Glyph="&#xf6dd;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
                         </Setter>
                     </Trigger>
                     <Trigger TargetType="Tab" Property="IsChecked" Value="False">
                         <Setter Property="Icon">
-                            <FontImageSource Glyph="&#xf15c;" FontFamily="FAR" Size="24" Color="White"/>
+                            <FontImageSource Glyph="&#xf6dd;" FontFamily="FAS" Size="24" Color="White"/>
                         </Setter>
                     </Trigger>
                 </Style.Triggers>
@@ -67,17 +67,17 @@
                 </Style.Triggers>
             </Style>
 
-            <!--MoistAir-->
+            <!--MoistAir (tint: 水滴で湿度・水蒸気を象徴)-->
             <Style TargetType="Tab" x:Key="MATab">
                 <Style.Triggers>
                     <Trigger TargetType="Tab" Property="IsChecked" Value="True">
                         <Setter Property="Icon">
-                            <FontImageSource Glyph="&#xf769;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
+                            <FontImageSource Glyph="&#xf043;" FontFamily="FAS" Size="24" Color="{StaticResource Light_G}"/>
                         </Setter>
                     </Trigger>
                     <Trigger TargetType="Tab" Property="IsChecked" Value="False">
                         <Setter Property="Icon">
-                            <FontImageSource Glyph="&#xf76b;" FontFamily="FAS" Size="24" Color="White"/>
+                            <FontImageSource Glyph="&#xf043;" FontFamily="FAS" Size="24" Color="White"/>
                         </Setter>
                     </Trigger>
                 </Style.Triggers>
@@ -87,7 +87,7 @@
     </Shell.Resources>
 
     <TabBar>
-        <Tab x:Name="scannerTab" Title="ML Scanner" Style="{StaticResource BLTab}">
+        <Tab Title="ML Scanner" Style="{StaticResource BLTab}">
             <!--
             ここで個別ページのレイアウトをデバッグ
             <ShellContent ContentTemplate="{DataTemplate local:MLoggerScanner}"/>

@@ -202,7 +202,7 @@
     <value>Starting date and time</value>
   </data>
   <data name="DS_StartLogging" xml:space="preserve">
-    <value>Start logging to:</value>
+    <value>Logging destination</value>
   </data>
   <data name="DS_TargetAndTimeInterval" xml:space="preserve">
     <value>Active sensors and intervals</value>
@@ -424,6 +424,9 @@ To exit, hold the device reset button for 3 seconds.</value>
   </data>
   <data name="DR_WaitingForFirstSample" xml:space="preserve">
     <value>Waiting for the first measurement...</value>
+  </data>
+  <data name="LIVE_NoDevice" xml:space="preserve">
+    <value>Live (no device connected)</value>
   </data>
   <data name="CF_SavingFactors" xml:space="preserve">
     <value>Saving correction factors...</value>

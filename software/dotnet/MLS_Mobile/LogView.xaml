@@ -20,16 +20,16 @@
         <BoxView Grid.Row="1" HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
 
         <!-- Clear ボタン -->
-        <Button Grid.Row="2" Text="{x:Static res:MLSResource.LV_ClearLog}" Margin="10,10,10,0" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="clear_Clicked" FontSize="Medium">
+        <Button Grid.Row="2" Text="{x:Static res:MLSResource.LV_ClearLog}" Margin="10,10,10,0" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="clear_Clicked" FontSize="Medium" ContentLayout="Left, 10">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="16" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>
         </Button>
 
         <!-- Share ボタン -->
-        <Button Grid.Row="3" Text="{x:Static res:MLSResource.LD_Share}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="share_Clicked" FontSize="Medium">
+        <Button Grid.Row="3" Text="{x:Static res:MLSResource.LD_Share}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="share_Clicked" FontSize="Medium" ContentLayout="Left, 10">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="24" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="{StaticResource Dark_G}"/>
             </Button.ImageSource>
         </Button>
 

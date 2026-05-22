@@ -558,38 +558,43 @@ public partial class DeviceSetting : ContentPage
 
   #region コントロール編集時の着色処理
 
+  // 「未保存」状態を示す警告色 (Resources/Styles/Colors.xaml の Status_Warn)
+  private static Color UnsavedColor => (Color)Application.Current.Resources["Status_Warn"];
+
   private void cbx_Toggled(object sender, ToggledEventArgs e)
   {
-    if (sender.Equals(cbx_th)) lbl_th.TextColor = Colors.Red;
-    else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = Colors.Red;
-    else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = Colors.Red;
-    else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = Colors.Red;
-    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = Colors.Red;
+    if (sender.Equals(cbx_th)) lbl_th.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = UnsavedColor;
   }
 
   private void ent_TextChanged(object sender, TextChangedEventArgs e)
   {
-    if (sender.Equals(ent_th)) lbl_th.TextColor = Colors.Red;
-    else if (sender.Equals(ent_glb)) lbl_glb.TextColor = Colors.Red;
-    else if (sender.Equals(ent_vel)) lbl_vel.TextColor = Colors.Red;
-    else if (sender.Equals(ent_lux)) lbl_lux.TextColor = Colors.Red;
-    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = Colors.Red;
+    if (sender.Equals(ent_th)) lbl_th.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_glb)) lbl_glb.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_vel)) lbl_vel.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_lux)) lbl_lux.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = UnsavedColor;
   }
 
   private void dpck_start_DateSelected(object sender, DateChangedEventArgs e)
   {
-    //日付変更がなければ終了
-    if (dpck_start.Date == Logger.StartMeasuringDateTime) return;
+    //日付変更がなければ終了 (Logger 側は秒まで持つので .Date で比較)
+    if (Logger == null || dpck_start.Date == Logger.StartMeasuringDateTime.Date) return;
 
-    lbl_stdtime.TextColor = Colors.Red;
+    lbl_stdtime.TextColor = UnsavedColor;
   }
 
   private void tpck_start_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
   {
+    //Time プロパティ以外の変更 (IsVisible, Layout 等) では走らせない
+    if (e.PropertyName != nameof(TimePicker.Time)) return;
     //時刻変更がなければ終了
     if (tpck_start == null || Logger == null || tpck_start.Time == Logger.StartMeasuringDateTime.TimeOfDay) return;
 
-    lbl_stdtime.TextColor = Colors.Red;
+    lbl_stdtime.TextColor = UnsavedColor;
   }
 
   private void resetTextColor()
@@ -656,6 +661,11 @@ public partial class DeviceSetting : ContentPage
     var result = await this.ShowPopupAsync(popup);
   }
 
+  private async void TapGestureRecognizer_Other_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.OtherSetting);
+    var result = await this.ShowPopupAsync(popup);
+  }
 
   #endregion
 

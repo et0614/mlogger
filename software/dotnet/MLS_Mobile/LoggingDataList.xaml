@@ -16,20 +16,20 @@
                     <SwipeView Margin="0,2,0,2" BackgroundColor="{StaticResource Lightest_G}">
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Reveal">
-                                <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}" 
+                                <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}"
                                            BackgroundColor="{StaticResource Light_O}"
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
                                     <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="20" Color="Black"/>
+                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="16" Color="Black"/>
                                     </SwipeItem.IconImageSource>
                                 </SwipeItem>
-                                <SwipeItem Text="{x:Static res:MLSResource.LD_Share}" 
+                                <SwipeItem Text="{x:Static res:MLSResource.LD_Share}"
                                            BackgroundColor="{StaticResource Light_G}"
                                            Command="{Binding ShareCommand}"
                                            CommandParameter="{Binding .}">
                                     <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="20" Color="Black"/>
+                                        <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="Black"/>
                                     </SwipeItem.IconImageSource>
                                 </SwipeItem>
                             </SwipeItems>
@@ -93,7 +93,11 @@
         
         <!--ログデータ閲覧ボタン-->
         <BoxView HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
-        <Button Text="{x:Static res:MLSResource.LD_ViewLog}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="log_Clicked"/>
+        <Button Text="{x:Static res:MLSResource.LD_ViewLog}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="log_Clicked" ContentLayout="Left, 20">
+            <Button.ImageSource>
+                <FontImageSource Glyph="&#xf15c;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+            </Button.ImageSource>
+        </Button>
 
     </StackLayout>
 

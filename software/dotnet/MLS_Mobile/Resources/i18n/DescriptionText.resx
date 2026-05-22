@@ -142,4 +142,11 @@ Transmit the data using Zigbee to a PC or Raspberry Pi equipped with an XBee mod
 Flash:
 Write the data to the M-Logger's built-in flash memory.</value>
   </data>
+  <data name="OtherSetting" xml:space="preserve">
+    <value>Hidden mode
+
+Shaking the device unlocks additional maintenance options, including editing sensor correction factors and resetting the CO2 sensor calibration.
+
+These operations directly affect measurement accuracy, so use them at your own risk.</value>
+  </data>
 </root>
