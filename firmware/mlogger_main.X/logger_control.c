@@ -337,14 +337,24 @@ void execLogging(void)
             pe_emit_smp(&data, outputToZigbee, outputToBLE, outputToUSB);
         }
 
-        //FM出力
+        //FM出力 (内蔵フラッシュ書き込み)
 		if(outputToFM)
 		{
-            //asm("nop"); //dummy
-            if(W25_WriteRecord(rec_latest, &data)) 
+            // ring buffer 方式 (古いデータを wrap して上書き) は廃止。
+            // 満杯 (rec_latest == MAX_RECORD_COUNT) に達したら以降のサンプルは捨てる。
+            // 過去データの自動消失を防ぐため、満杯到達はユーザーに赤 LED 点滅で知らせる。
+            // PC や BLE への送信は別経路 (上の outputToZigbee / BLE / USB) で行われるので
+            // PC 接続中 (= outputToFM=false) ではこのブロック自体に入らない = 満杯概念は無関係。
+            if (rec_latest < MAX_RECORD_COUNT)
             {
-                rec_latest++;
-                if (rec_latest >= MAX_RECORD_COUNT) rec_latest = 0; 
+                if (W25_WriteRecord(rec_latest, &data))
+                {
+                    rec_latest++;
+                }
+            }
+            else
+            {
+                blinkRedLED(3);   // 満杯通知 (約 375ms blocking、計測周期 >= 1 sec なら許容)
             }
 		}
 	}
