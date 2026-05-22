@@ -2,7 +2,7 @@
 #include "mcc_generated_files/usb/usb_cdc/usb_cdc.h"
 #include "mcc_generated_files/timer/delay.h"   // DELAY_milliseconds
 #include "usb_extension.h"
-#include "w25q512.h" // Flash読み出し用
+#include "w25q256.h" // Flash読み出し用
 #include "eeprom_manager.h" //EEPROM
 #include "command_handler.h"
 

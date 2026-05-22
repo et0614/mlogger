@@ -275,16 +275,42 @@ XBee/BLE から送ると:
 
 #### 内蔵フラッシュの容量と満杯時の挙動
 
-内蔵フラッシュ (W25Q512) の記録領域は約 **2,883,584 件** (`MAX_RECORD_COUNT` ≒ 62 MB ÷ 22 byte/record × 詰め込み係数) を上限とする **満杯停止方式**。すなわち、
+内蔵フラッシュ (W25Q256, 32MB) の記録領域は約 **1,441,792 件** (`MAX_RECORD_COUNT` = (32MB - 4KB 予約) ÷ 256B/page × 11 record/page) を上限とする **満杯停止方式**。すなわち、
 
 - 上限件数に達したら **以降のサンプルは捨てられる** (ring buffer 方式の自動上書きは行わない)
 - 満杯到達はサンプル受信のたびに **本体の赤 LED 点滅** でユーザーに通知される
 - 記録を続けるには `clear_data` で世代をインクリメントして書き込み位置を 0 に戻す (必要に応じて事前に `dump` で吸い出し)
-- 計測間隔別の目安: 1 sec ≈ 33 日 / 10 sec ≈ 11 ヶ月 / 60 sec ≈ 5.5 年 / 300 sec ≈ 27 年
+- 計測間隔別の目安: 1 sec ≈ 16.7 日 / 10 sec ≈ 5.5 ヶ月 / 60 sec ≈ 2.7 年 / 300 sec ≈ 13.7 年
 
 PC (Zigbee) / BLE / USB-CDC への送信は内蔵フラッシュを使わないため、満杯概念は無関係 (`start_logging` の `transports.flash:false` で運用)。
 
 `dump` の `count` は常に「現世代のレコード数」= `rec_latest` を返し、バイナリストリームも index 0 から `count` 件を時系列順 (= 書き込み順) に出力する。CSV 上の並び替えは不要。
+
+### 4.10 `erase_flash` (USB-CDC 専用)
+
+W25Q256 を chip erase で完全に初期化し、generation を 1 にリセットする復旧手段。`clear_data` と異なり flash 上のデータも物理的に消える。
+
+```jsonc
+// 要求
+{"v":1,"id":N,"command":"erase_flash"}
+
+// 約 40〜80 秒の blocking 後に応答 (Python 側 timeout は余裕を見て 300 秒推奨)
+{"v":1,"id":N,"result":{}}
+```
+
+| 失敗時 | 条件 |
+|---|---|
+| `unsupported_transport` | XBee / BLE 経由は不可 (誤操作防止 + 長時間 blocking 対策) |
+| `busy` | ロギング中は拒否 |
+
+実行中は **本体の赤 LED が点灯し続ける** ので、ユーザーは処理中であることが視覚的に確認できる。
+
+**ユースケース**: 通常運用では呼ばない。以下の特殊状況のみ:
+
+- firmware 書き換え時に EEPROM がクリアされ、`EM_generationNumber` (= 1) が flash に残っている旧データの generation と衝突する場合
+- ノイズ等で EEPROM 上の generation 値が壊れて `dump` が異常な件数を返す場合
+
+完了後は `EM_generationNumber = 1`、`rec_latest = 0` の工場初期化相当の状態になる。
 
 ## 5. イベント一覧
 

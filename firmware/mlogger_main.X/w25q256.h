@@ -4,9 +4,13 @@
  * Created on December 11, 2025
  *
  * Summary:
- * Winbond W25Q512 (512M-bit / 64MB) Flashメモリ制御ドライバ
+ * Winbond W25Q256 (256M-bit / 32MB) Flashメモリ制御ドライバ
  * SPI通信を用いてセンサデータの保存・読み出しを行う
- * 4バイトアドレスモードを使用し、リングバッファとして管理する
+ * 4バイトアドレスモードを使用し、満杯停止方式 (古いデータは上書きしない) で管理する
+ *
+ * ファイル名は歴史的経緯で w25q512.* のまま (旧 W25Q512 から差し替え)。
+ * W25Q シリーズはコマンド体系が共通なので関数群は流用可、容量定数 FLASH_TOTAL_SIZE
+ * のみ 32MB に変更してある。
  */
 
 #ifndef W25Q512_H
@@ -27,9 +31,9 @@ extern "C" {
 #define RECS_PER_PAGE    11   // 1ページに入るレコード数 (256 / 22 = 11 余り 14)
 #define DATA_START_ADDR  4096 // データ領域の開始位置 (最初の4KBは管理領域として飛ばす)
 #define PAGE_SIZE        256  // Flashのページサイズ
-#define FLASH_TOTAL_SIZE 0x4000000 // 64MB (フラッシュの総容量 (Byte))
+#define FLASH_TOTAL_SIZE 0x2000000 // 32MB (W25Q256 の総容量 (Byte))
 #define DATA_AREA_SIZE   (FLASH_TOTAL_SIZE - DATA_START_ADDR) // データ領域の総容量 = 総容量 - 予約領域(4KB)
-#define MAX_RECORD_COUNT ((DATA_AREA_SIZE / PAGE_SIZE) * RECS_PER_PAGE) // 保存可能な最大レコード数
+#define MAX_RECORD_COUNT ((DATA_AREA_SIZE / PAGE_SIZE) * RECS_PER_PAGE) // 保存可能な最大レコード数 (≒ 1.44M)
     
 // ビットフラグの定義
 #define FLAG_ILLUMINANCE (1 << 0) // 0bit目: 照度
@@ -66,6 +70,13 @@ uint32_t W25_GetAddressFromRecordIndex(uint32_t index);
  * @param address 4バイト物理アドレス (4096の倍数)
  */
 void W25_SectorErase(uint32_t address);
+
+/**
+ * @brief チップ全体を消去する (Chip Erase, 0xC7)。
+ *        BUSY ビットが 0 になるまで blocking で待つため、約 80 秒〜最大 250 秒戻らない。
+ *        通常運用では呼ばない (erase_flash コマンドからのみ呼ばれる)。
+ */
+void W25_ChipErase(void);
 
 /**
  * @brief 指定したアドレスから任意のバイト数を読み出す (生データ読み出し)

@@ -24,6 +24,7 @@ static const pd_command_t s_commands[] = {
     { "start_logging",  ph_start_logging  },
     { "stop_logging",   ph_stop_logging   },
     { "clear_data",     ph_clear_data     },
+    { "erase_flash",    ph_erase_flash    },
     { "calibrate_co2",  ph_calibrate_co2  },
     { "dump",           ph_dump           },
     { "echo",           ph_echo           },

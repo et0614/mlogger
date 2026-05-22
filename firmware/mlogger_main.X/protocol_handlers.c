@@ -6,7 +6,8 @@
 #include "logger_control.h"    // LC_IsLogging, LC_SetCurrentTime, LC_GetCurrentTime, LC_StartLoggingTask, LC_EndLoggingTask, LC_ClearData, LC_FactoryResetCO2, LC_CalibrateCO2
 #include "eeprom_manager.h"    // EM_mlName, EM_cFactors, EM_mSettings, EM_save*
 #include "usb_extension.h"     // USB_StartRecordStream, USB_SetStreamDoneCallback, rec_latest
-#include "w25q512.h"           // SensorData_t (record_size 算出用)
+#include "w25q256.h"           // SensorData_t (record_size 算出用), W25_ChipErase
+#include "hal_io.h"            // turnOnRedLED / turnOffRedLED (erase_flash 中の処理中通知)
 
 #include <avr/io.h>            // SIGROW
 #include <stdio.h>
@@ -396,6 +397,37 @@ void ph_stop_logging(int32_t id, const char *json, const jsmntok_t *tokens, int 
 void ph_clear_data(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     (void)json; (void)tokens; (void)ntokens; (void)params_tok;
     LC_ClearData();
+    send_empty_result(id, src);
+}
+
+// ============================================================
+// erase_flash (USB-CDC専用)
+//   W25Q256 を chip erase で完全初期化 + EM_generationNumber を 1 にリセット。
+//   firmware 書き換え時や generation 番号が破損した場合の復旧手段。
+//   約 40~80 秒の blocking、処理中は赤 LED を点灯し続けて視覚的に通知する。
+// ============================================================
+void ph_erase_flash(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+
+    if (src != SRC_USB) {
+        send_simple_error(id, src, "unsupported_transport", "erase_flash is USB-CDC only");
+        return;
+    }
+    if (LC_IsLogging()) {
+        send_simple_error(id, src, "busy", "logging in progress");
+        return;
+    }
+
+    // 処理中通知: 赤 LED を消去完了まで点灯し続ける
+    turnOnRedLED();
+    W25_ChipErase();
+    turnOffRedLED();
+
+    // 工場初期化相当 (initMemory) の generation/rec_latest 状態に揃える
+    EM_generationNumber = 1;
+    EM_saveGenerationNumber();
+    rec_latest = 0;
+
     send_empty_result(id, src);
 }
 

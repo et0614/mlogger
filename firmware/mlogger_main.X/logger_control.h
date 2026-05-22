@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#include "w25q512.h"
+#include "w25q256.h"
 #include "command_handler.h"
 
 #include <time.h>

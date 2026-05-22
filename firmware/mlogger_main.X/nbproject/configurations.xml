@@ -20,11 +20,11 @@
       <logicalFolder name="f3" displayName="Drivers" projectFiles="true">
         <itemPath>eeprom_manager.h</itemPath>
         <itemPath>xbee_controller.h</itemPath>
-        <itemPath>w25q512.h</itemPath>
         <itemPath>i2c_master.h</itemPath>
         <itemPath>usb_extension.h</itemPath>
         <itemPath>adc0_extension.h</itemPath>
         <itemPath>hal_io.h</itemPath>
+        <itemPath>w25q256.h</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
@@ -154,12 +154,12 @@
         <itemPath>diag_usb.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="Drivers" projectFiles="true">
-        <itemPath>w25q512.c</itemPath>
         <itemPath>xbee_controller.c</itemPath>
         <itemPath>eeprom_manager.c</itemPath>
         <itemPath>i2c_master.c</itemPath>
         <itemPath>usb_extension.c</itemPath>
         <itemPath>adc0_extension.c</itemPath>
+        <itemPath>w25q256.c</itemPath>
       </logicalFolder>
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"

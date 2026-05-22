@@ -14,7 +14,7 @@ extern "C" {
     
 #include <stdbool.h>
 #include <time.h>
-#include "w25q512.h" //内蔵フラッシュ
+#include "w25q256.h" //内蔵フラッシュ
     
 bool isLowBattery(void);
     

@@ -28,6 +28,7 @@ void ph_set_correction (int32_t id, const char *json, const jsmntok_t *tokens, i
 void ph_start_logging  (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_stop_logging   (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_clear_data     (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
+void ph_erase_flash    (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_calibrate_co2  (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_dump           (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 

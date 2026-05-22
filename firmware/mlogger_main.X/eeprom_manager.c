@@ -180,7 +180,7 @@ static void initMSettings(){
 		false, //汎用AD2の計測真偽
 		false, //汎用AD3の計測真偽
 		false, //近接センサの計測真偽
-		false, //CO2の計測真偽
+		true,  //CO2の計測真偽 (v4 はデフォルト有効)
 		1, //乾球温度の計測間隔[sec]
 		1, //グローブ温度の計測間隔[sec]
 		1, //風速の計測間隔[sec]

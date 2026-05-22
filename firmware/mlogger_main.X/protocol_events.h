@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "w25q512.h"   // SensorData_t
+#include "w25q256.h"   // SensorData_t
 
 #ifdef __cplusplus
 extern "C" {

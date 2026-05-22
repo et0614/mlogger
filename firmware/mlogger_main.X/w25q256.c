@@ -1,18 +1,13 @@
 /*
  * File:   w25q512.c
+ *
+ * 容量・サイズ系定数 (PAGE_SIZE / FLASH_TOTAL_SIZE / DATA_AREA_SIZE / MAX_RECORD_COUNT)
+ * は w25q512.h に集約済み。重複定義は撤去。
  */
 
-#include "w25q512.h"
+#include "w25q256.h"
 #include "mcc_generated_files/system/system.h"
 #include "mcc_generated_files/spi/spi0.h"
-
-// ==========================================
-// 定数定義 (内部設定)
-// ==========================================
-#define PAGE_SIZE        256  // Flashのページサイズ
-#define FLASH_TOTAL_SIZE 0x4000000 // 64MB (フラッシュの総容量 (Byte))
-#define DATA_AREA_SIZE   (FLASH_TOTAL_SIZE - DATA_START_ADDR) // データ領域の総容量 = 総容量 - 予約領域(4KB)
-#define MAX_RECORD_COUNT ((DATA_AREA_SIZE / PAGE_SIZE) * RECS_PER_PAGE) // 保存可能な最大レコード数
 
 // ==========================================
 // 設定：CSピンのマクロ
@@ -28,6 +23,7 @@
 #define CMD_SECTOR_ERASE_4B   0x21
 #define CMD_PAGE_PROGRAM_4B   0x12
 #define CMD_READ_DATA_4B      0x13
+#define CMD_CHIP_ERASE        0xC7
 
 // ==========================================
 // 内部ヘルパー関数 (static)
@@ -104,6 +100,27 @@ uint32_t W25_GetAddressFromRecordIndex(uint32_t index) {
     return (pageNum * PAGE_SIZE) + (offset * RECORD_SIZE) + DATA_START_ADDR;
 }
 
+// チップ全体消去 (W25Q256 で約 40 秒〜最大 80 秒の blocking)。
+// 完了まで BUSY (Status Reg1 bit0) を polling し続けるためタイムアウトは設けない。
+// 呼び出し側は実行前に LED 等で「処理中」を示し、終わるまで待つこと。
+void W25_ChipErase(void) {
+    W25_WriteEnable();
+
+    SPI_CS_SetLow();
+    SPI0_ByteExchange(CMD_CHIP_ERASE);
+    SPI_CS_SetHigh();
+
+    // chip erase の最大時間は数十秒級。W25_WaitForReady の固定タイムアウトでは足りないので
+    // ここで専用の長時間 polling を行う。
+    uint8_t status;
+    do {
+        SPI_CS_SetLow();
+        SPI0_ByteExchange(CMD_READ_STATUS_REG1);
+        status = SPI0_ByteExchange(0x00);
+        SPI_CS_SetHigh();
+    } while (status & 0x01);
+}
+
 // 4KBセクタ消去 (4バイトアドレス指定)
 void W25_SectorErase(uint32_t address) {
     W25_WriteEnable();
@@ -144,7 +161,7 @@ bool W25_ReadData(uint32_t address, uint8_t *buffer, uint16_t len) {
 bool W25_WriteRecord(uint32_t recordIndex, SensorData_t *data) {
     uint32_t addr = W25_GetAddressFromRecordIndex(recordIndex);
     
-    // セクタの先頭（4096の倍数）かどうかチェック。W25Q512は一旦消去しないと適切に上書きできない
+    // セクタの先頭（4096の倍数）かどうかチェック。W25Q シリーズは一旦消去しないと適切に上書きできない
     if ((addr % 4096) == 0)
     {
         W25_SectorErase(addr);
