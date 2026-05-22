@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Maui.Dispatching;
+using Microsoft.Maui.Graphics;
 using MLLib.Protocol;
 using MLS_Mobile.Services;
 using Popolo.Core.ThermalComfort;
@@ -28,6 +30,19 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     /// <summary>計測値が無い場合のデフォルト値</summary>
     private const double DEF_TEMP = 25, DEF_RH = 50, DEF_VEL = 0.1, DEF_GLB = 25;
+
+    // 警告色 (XAML の Dark_G = ForestGreen と揃える)
+    private static readonly Color NormalColor = Colors.ForestGreen;
+    private static readonly Color WarnColor   = Colors.DarkOrange;
+    private static readonly Color DangerColor = Colors.Red;
+
+    // CO2 [ppm] の警告/危険閾値 (一般的な室内空気質基準)
+    private const int CO2_WARN_PPM   = 1000;
+    private const int CO2_DANGER_PPM = 2000;
+
+    // WBGT [°C] の警告/危険閾値 (日本生気象学会の熱中症予防指針: 25=警戒, 31=危険)
+    private const double WBGT_WARN_C   = 25.0;
+    private const double WBGT_DANGER_C = 31.0;
 
     #endregion
 
@@ -68,7 +83,22 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     [ObservableProperty] private DateTime _lastCommunicated_ILL;
     [ObservableProperty] private DateTime _lastCommunicated_CO2;
 
+    // 表示用の相対時刻文字列 ("now", "5s ago", "3m ago", "2h ago", >24h は絶対時刻)。
+    // 毎秒のタイマーと OnSample 受信時に RecomputeRelativeTexts で再計算する。
+    [ObservableProperty] private string _lastCommunicatedRelative_DBT = "—";
+    [ObservableProperty] private string _lastCommunicatedRelative_HMD = "—";
+    [ObservableProperty] private string _lastCommunicatedRelative_GLB = "—";
+    [ObservableProperty] private string _lastCommunicatedRelative_VEL = "—";
+    [ObservableProperty] private string _lastCommunicatedRelative_ILL = "—";
+    [ObservableProperty] private string _lastCommunicatedRelative_CO2 = "—";
+
     [ObservableProperty] private bool _hasCO2LevelSensor;
+
+    // 警告色 (OOR / 高 CO2 / 高 WBGT のとき変化)
+    [ObservableProperty] private Color _velocityColor     = NormalColor;
+    [ObservableProperty] private Color _co2Color          = NormalColor;
+    [ObservableProperty] private Color _wbgtIndoorColor   = NormalColor;
+    [ObservableProperty] private Color _wbgtOutdoorColor  = NormalColor;
 
     #endregion
 
@@ -112,7 +142,19 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         _live.SetConnection(true, baseName);
 
         _samplesSub = System.ObservableExtensions.Subscribe(protocol.Samples, OnSample);
+
+        // 「5s ago」等の相対時刻表示を秒ごとに再計算するタイマー。
+        // Page の Dispose 経路で _relativeTicker?.Stop() する。
+        _relativeTicker = Application.Current?.Dispatcher.CreateTimer();
+        if (_relativeTicker != null)
+        {
+            _relativeTicker.Interval = TimeSpan.FromSeconds(1);
+            _relativeTicker.Tick += (_, _) => RecomputeRelativeTexts();
+            _relativeTicker.Start();
+        }
     }
+
+    private readonly IDispatcherTimer? _relativeTicker;
 
     #endregion
 
@@ -144,7 +186,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         }
         if (s.Velocity is double vel)
         {
-            _velocity             = (_velocityOorThreshold < vel) ? "OOR" : FormatF(vel, 2);
+            bool oor = _velocityOorThreshold < vel;
+            _velocity             = oor ? "OOR" : FormatF(vel, 2);
+            _velocityColor        = oor ? DangerColor : NormalColor;
             _lastCommunicated_VEL = local;
         }
         if (s.Illuminance is int ill)
@@ -155,6 +199,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         if (s.Co2 is int co2)
         {
             _cO2Level             = co2.ToString(CultureInfo.InvariantCulture);
+            _co2Color             = co2 >= CO2_DANGER_PPM ? DangerColor
+                                  : co2 >= CO2_WARN_PPM   ? WarnColor
+                                  : NormalColor;
             _lastCommunicated_CO2 = local;
         }
 
@@ -164,10 +211,50 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         // 派生指標を field 直書き (個別通知なし)
         RecalcThermalIndicesNoNotify();
 
+        // 受信直後に「now」表示にするため相対時刻も同時に再計算 (こちらも field 直書き)
+        RecomputeRelativeTextsNoNotify();
+
         // 1 度だけ全 binding refresh
         OnPropertyChanged(string.Empty);
 
         AppendCsvV4(s);
+    }
+
+    /// <summary>
+    /// 1 秒タイマーから呼ばれる相対時刻文字列の再計算。
+    /// field 直書きで内部状態を更新し、最後に 1 度だけ通知。
+    /// </summary>
+    private void RecomputeRelativeTexts()
+    {
+        RecomputeRelativeTextsNoNotify();
+        OnPropertyChanged(string.Empty);
+    }
+
+    private void RecomputeRelativeTextsNoNotify()
+    {
+        var now = DateTime.Now;
+        _lastCommunicatedRelative_DBT = FormatRelative(now, _lastCommunicated_DBT);
+        _lastCommunicatedRelative_HMD = FormatRelative(now, _lastCommunicated_HMD);
+        _lastCommunicatedRelative_GLB = FormatRelative(now, _lastCommunicated_GLB);
+        _lastCommunicatedRelative_VEL = FormatRelative(now, _lastCommunicated_VEL);
+        _lastCommunicatedRelative_ILL = FormatRelative(now, _lastCommunicated_ILL);
+        _lastCommunicatedRelative_CO2 = FormatRelative(now, _lastCommunicated_CO2);
+    }
+
+    /// <summary>
+    /// 受信時刻からの経過を短い文字列で返す ("now" / "5s ago" / "3m ago" / 絶対時刻)。
+    /// 5 秒未満は "now" 固定にし、1 秒間隔計測でも "now" が継続するようにしている
+    /// (1 秒以下のウィンドウだと "now" と "1s ago" がチカチカ入れ替わる)。
+    /// </summary>
+    private static string FormatRelative(DateTime now, DateTime t)
+    {
+        if (t == default) return "—";   // 未受信
+        var diff = now - t;
+        if (diff.TotalSeconds < 5)    return "now";
+        if (diff.TotalSeconds < 60)   return $"{(int)diff.TotalSeconds}s ago";
+        if (diff.TotalMinutes < 60)   return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours   < 24)   return $"{(int)diff.TotalHours}h ago";
+        return t.ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture);
     }
 
     #endregion
@@ -197,12 +284,22 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         double glb150 = dbt + (1 + 1.13 * Math.Pow(GLOBE_DIAMETER, -0.4) * Math.Pow(vel, 0.6))
                               / (1 + 2.41 * Math.Pow(vel, 0.6)) * (glb - dbt);
 
+        double wbgtIn  = 0.7 * wbt + 0.3 * glb150;
+        double wbgtOut = 0.7 * wbt + 0.2 * glb150 + 0.1 * dbt;
+
         _meanRadiantTemperature = FormatF(mrt, 1);
         _pMV                    = FormatF(pmv, 2);
         _pPD                    = FormatF(ppd, 1);
         _sETStar                = FormatF(set, 1);
-        _wBGT_Indoor            = FormatF(0.7 * wbt + 0.3 * glb150, 1);
-        _wBGT_Outdoor           = FormatF(0.7 * wbt + 0.2 * glb150 + 0.1 * dbt, 1);
+        _wBGT_Indoor            = FormatF(wbgtIn, 1);
+        _wBGT_Outdoor           = FormatF(wbgtOut, 1);
+
+        _wbgtIndoorColor  = wbgtIn  >= WBGT_DANGER_C ? DangerColor
+                          : wbgtIn  >= WBGT_WARN_C   ? WarnColor
+                          : NormalColor;
+        _wbgtOutdoorColor = wbgtOut >= WBGT_DANGER_C ? DangerColor
+                          : wbgtOut >= WBGT_WARN_C   ? WarnColor
+                          : NormalColor;
     }
 
     /// <summary>
@@ -307,6 +404,7 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _relativeTicker?.Stop();
         _samplesSub?.Dispose();
         _live.SetConnection(false, null);
     }
