@@ -78,11 +78,11 @@ public partial class MLoggerScanner : ContentPage
   {
     base.OnAppearing();
 
-    //スキャン実行
-    refView.Command.Execute(null);
-
-    //BLE有効化を確認（Androidのみ）
+    // BLE 権限を確認してからスキャン開始。順序が逆だと Android 12+ で
+    // SecurityException("Need android.permission.BLUETOOTH_SCAN") が発生する。
     await checkBLEPermission();
+
+    refView.Command.Execute(null);
   }
 
   private async void scanXBees()
@@ -154,30 +154,32 @@ public partial class MLoggerScanner : ContentPage
 
   private async Task checkBLEPermission()
   {
-    if (!bleChecked)
-    {
+    if (bleChecked) return;
 
 #if ANDROID
-      //Bluetoothに関わる権限
-      var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
-      if (status == PermissionStatus.Granted) return;
+    // 位置情報権限 (Android 11 以前は BLE スキャンに必須、12+ では不要だが念のため確認しておく)
+    var locStatus = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+    if (locStatus != PermissionStatus.Granted)
+    {
       if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
         await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_Bluetooth, "OK");
+      await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+    }
 
-      status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-
-      //付近のデバイス（NearByDevice）に関わる権限
-      status = await Permissions.CheckStatusAsync<PermissionNearByDevice>();
-      if (status == PermissionStatus.Granted) return;
+    // 付近のデバイス権限 (= BLUETOOTH_SCAN / BLUETOOTH_CONNECT、Android 12+ で必須)。
+    // ※ 位置情報が Granted でも、こちらが Denied のまま BLE スキャンを呼ぶと
+    //    SecurityException("Need android.permission.BLUETOOTH_SCAN") になるため、
+    //    早期 return せず必ず request まで通すこと。
+    var nbStatus = await Permissions.CheckStatusAsync<PermissionNearByDevice>();
+    if (nbStatus != PermissionStatus.Granted)
+    {
       if (Permissions.ShouldShowRationale<PermissionNearByDevice>())
         await Shell.Current.DisplayAlert("Needs permissions", MLSResource.SC_NearByDevice, "OK");
-
-      status = await Permissions.RequestAsync<PermissionNearByDevice>();
-
+      await Permissions.RequestAsync<PermissionNearByDevice>();
+    }
 #endif
 
-      bleChecked = true;
-    }
+    bleChecked = true;
   }
 
   #region インジケータの操作
