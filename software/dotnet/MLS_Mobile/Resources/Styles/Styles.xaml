@@ -65,13 +65,13 @@
                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Light_G}, Dark={StaticResource Light_G}}" />
                         </VisualState.Setters>
                     </VisualState>
-                    <!--押されたとき-->
+                    <!--押されたとき (色は反転せず同系を 1 段濃く + 軽い縮小で押下感)-->
                     <VisualState x:Name="Pressed">
                         <VisualState.Setters>
                             <Setter Property="Scale" Value="0.95" />
-                            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource Dark_O}, Dark={StaticResource Dark_O}}" />
-                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Dark_O}, Dark={StaticResource Dark_O}}" />
-                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Light_O}, Dark={StaticResource Light_O}}" />
+                            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Darkest_G}}" />
+                            <Setter Property="TextColor" Value="{AppThemeBinding Light=White, Dark=White}" />
+                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Dark_G}}" />
                         </VisualState.Setters>
                     </VisualState>
                     <!--無効時-->

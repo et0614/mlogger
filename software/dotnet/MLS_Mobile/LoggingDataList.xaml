@@ -17,19 +17,19 @@
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Reveal">
                                 <SwipeItem Text="{x:Static res:MLSResource.LD_Delete}"
-                                           BackgroundColor="{StaticResource Light_O}"
+                                           BackgroundColor="{StaticResource Status_Danger}"
                                            Command="{Binding DeleteCommand}"
                                            CommandParameter="{Binding .}">
                                     <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="16" Color="Black"/>
+                                        <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="16" Color="White"/>
                                     </SwipeItem.IconImageSource>
                                 </SwipeItem>
                                 <SwipeItem Text="{x:Static res:MLSResource.LD_Share}"
-                                           BackgroundColor="{StaticResource Light_G}"
+                                           BackgroundColor="{StaticResource Dark_G}"
                                            Command="{Binding ShareCommand}"
                                            CommandParameter="{Binding .}">
                                     <SwipeItem.IconImageSource>
-                                        <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="Black"/>
+                                        <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="White"/>
                                     </SwipeItem.IconImageSource>
                                 </SwipeItem>
                             </SwipeItems>
