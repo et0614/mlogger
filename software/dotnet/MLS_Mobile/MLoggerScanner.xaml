@@ -7,10 +7,11 @@
              Title="{x:Static res:MLSResource.SC_Title}">
 
     <RefreshView x:Name="refView">
-        <Grid RowDefinitions="Auto,*">
-            <!-- Demo モード: 実機なしで UI 確認用 (DummyMLProtocol 経由) -->
-            <Button Grid.Row="0" Text="Open Demo Device" Clicked="DemoButton_Clicked"
-                    Margin="10,5" Padding="5"
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Demo モード: 実機なしで UI 確認用 (DummyMLProtocol 経由)。
+                 通常時は非表示で、シェイクで切り替え -->
+            <Button x:Name="demoBtn" Grid.Row="0" Text="Open Demo Device" Clicked="DemoButton_Clicked"
+                    Margin="10,5" Padding="5" IsVisible="False"
                     BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
             <CollectionView Grid.Row="1"
                 x:Name="mlList" ItemsSource="{ Binding MLXBees }" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
@@ -21,15 +22,15 @@
                 </CollectionView.ItemTemplate>
 
                 <CollectionView.EmptyView>
-                    <Grid 
-                        Padding="5" 
+                    <Grid
+                        Padding="5"
                         RowDefinitions="Auto, *"
-                        ColumnDefinitions="*" 
+                        ColumnDefinitions="*"
                         RowSpacing="5"
                         ColumnSpacing="5">
-                        <Label 
+                        <Label
                             Grid.Row="0" Grid.Column="0"
-                            Text="{x:Static res:MLSResource.SC_Empty}" 
+                            Text="{x:Static res:MLSResource.SC_Empty}"
                             FontSize="18"
                             HorizontalOptions="Start"
                             VerticalOptions="Center" Padding="5"/>
@@ -37,9 +38,22 @@
                 </CollectionView.EmptyView>
             </CollectionView>
 
+            <!--公式サイトリンク (控えめにフッタに配置)-->
+            <Label Grid.Row="2"
+                   Text="mlogger.jp"
+                   FontSize="12"
+                   TextColor="{StaticResource Dark_G}"
+                   TextDecorations="Underline"
+                   HorizontalTextAlignment="Center"
+                   Padding="0,8,0,8">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSiteLinkTapped"/>
+                </Label.GestureRecognizers>
+            </Label>
+
             <!--インジケータ (Grid 全体を覆う)-->
-            <ContentView x:Name="grayback" Grid.RowSpan="2" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-            <Border x:Name="indicator" Grid.RowSpan="2" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+            <ContentView x:Name="grayback" Grid.RowSpan="3" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
+            <Border x:Name="indicator" Grid.RowSpan="3" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
                 <StackLayout BackgroundColor="White">
                     <ActivityIndicator Color="Black" IsRunning="True"/>
                     <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>

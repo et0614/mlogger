@@ -1,6 +1,7 @@
 namespace MLS_Mobile;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Devices.Sensors;
 using MLLib;
 using MLS_Mobile.Resources.i18n;
 using Plugin.BLE;
@@ -17,6 +18,9 @@ public partial class MLoggerScanner : ContentPage
   #region インスタンス変数・プロパティ・定数宣言
 
   private bool bleChecked = false;
+
+  /// <summary>Demo ボタンの表示状態。シェイクでトグルされる (画面遷移後も維持)。</summary>
+  private static bool _isDemoVisible = false;
 
   /// <summary>XBeeを探索する時間[msec]</summary>
   private const int SCAN_TIME = 2000;
@@ -83,6 +87,30 @@ public partial class MLoggerScanner : ContentPage
     await checkBLEPermission();
 
     refView.Command.Execute(null);
+
+    // シェイク検出: 起動時の状態を反映してから Accelerometer を購読
+    demoBtn.IsVisible = _isDemoVisible;
+    if (Accelerometer.Default.IsSupported && !Accelerometer.Default.IsMonitoring)
+    {
+      Accelerometer.Default.ShakeDetected += Accelerometer_ShakeDetected;
+      Accelerometer.Default.Start(SensorSpeed.UI);
+    }
+  }
+
+  protected override void OnDisappearing()
+  {
+    base.OnDisappearing();
+    if (Accelerometer.Default.IsSupported && Accelerometer.Default.IsMonitoring)
+    {
+      Accelerometer.Default.Stop();
+      Accelerometer.Default.ShakeDetected -= Accelerometer_ShakeDetected;
+    }
+  }
+
+  private void Accelerometer_ShakeDetected(object sender, EventArgs e)
+  {
+    _isDemoVisible = !_isDemoVisible;
+    Dispatcher.Dispatch(() => demoBtn.IsVisible = _isDemoVisible);
   }
 
   private async void scanXBees()
@@ -158,6 +186,19 @@ public partial class MLoggerScanner : ContentPage
     string lowAddress = await MLUtility.UseDummyProtocolAsync();
     await Shell.Current.GoToAsync(nameof(DeviceSetting),
       new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
+  }
+
+  /// <summary>フッタの公式サイトリンクを OS の外部ブラウザで開く。</summary>
+  private async void OnSiteLinkTapped(object sender, TappedEventArgs e)
+  {
+    try
+    {
+      await Browser.Default.OpenAsync(new Uri("https://mlogger.jp"), BrowserLaunchMode.External);
+    }
+    catch
+    {
+      // 外部ブラウザが開けない場合は静かに諦める (極めて稀なケース)
+    }
   }
 
   private async Task checkBLEPermission()
