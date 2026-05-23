@@ -19,20 +19,6 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="local:Activity">
                     <Grid Padding="8" RowDefinitions="Auto,Auto,Auto" HorizontalOptions="Fill">
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Property="BackgroundColor" Value="Transparent"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Selected">
-                                    <VisualState.Setters>
-                                        <Setter Property="BackgroundColor" Value="{StaticResource Light_G}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
                         <Border Grid.Row="0"
                                 StrokeShape="RoundRectangle 12"
                                 Stroke="{StaticResource Dark_G}"

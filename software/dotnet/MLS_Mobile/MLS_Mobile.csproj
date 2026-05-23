@@ -22,8 +22,8 @@
 		<ApplicationIdGuid>ED4E93F9-84C1-4B33-9703-E27553D4DCF9</ApplicationIdGuid>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.2.52</ApplicationDisplayVersion>
-		<ApplicationVersion>55</ApplicationVersion>
+		<ApplicationDisplayVersion>1.3.0</ApplicationDisplayVersion>
+		<ApplicationVersion>58</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
@@ -53,26 +53,6 @@
 		<!--MAUIでDebugで動くがReleaseで動かない場合は次を参照して追記
 		https://iemma.it/blog/maui-mobile-app-crash-on-testflight-sigabrt
 		-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.54</ApplicationDisplayVersion>
-	  <ApplicationVersion>57</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.54</ApplicationDisplayVersion>
-	  <ApplicationVersion>57</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-ios|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.54</ApplicationDisplayVersion>
-	  <ApplicationVersion>57</ApplicationVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
-	  <ApplicationDisplayVersion>1.2.54</ApplicationDisplayVersion>
-	  <ApplicationVersion>57</ApplicationVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
