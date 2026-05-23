@@ -56,11 +56,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- App icon for all other platforms （スケールなし）-->
+		<!-- App icon (base、全プラットフォーム共通) -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" />
-
-		<!-- App icon for android （小さい）-->
-		<MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Update="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="White" ForegroundScale="0.6" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="ForestGreen" BaseSize="128,128" />
@@ -77,7 +74,15 @@
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
-	
+
+	<!-- Android: アダプティブアイコンの安全領域内に foreground を収めるため
+	     ForegroundScale を縮小。アプリアイコンも splash の中央アイコンも
+	     Android 12+ ではこの adaptive icon の foreground を使うので、
+	     スケールを下げないと丸マスクからはみ出る -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<MauiIcon Update="Resources\AppIcon\appicon.svg" ForegroundScale="0.6" />
+	</ItemGroup>
+
 	<ItemGroup>
 	  <AndroidResource Remove="bin\**" />
 	  <AndroidResource Remove="obj\**" />
