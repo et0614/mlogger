@@ -69,6 +69,6 @@ docs/mobile_manual/
 
 ## バージョン運用
 
-- アプリの `ApplicationDisplayVersion` (例: 1.3.0) に対応してマニュアルを更新します
+- アプリの `ApplicationDisplayVersion` (例: 1.3.1) に対応してマニュアルを更新します
 - 公開時は `mlogger.jp/{ja|en}/mobile/v1.3/` のようにバージョン番号付きのパスへ配置します
 - 過去バージョンのマニュアルは消さず残します

@@ -25,6 +25,32 @@ public sealed class LegacyV3Protocol : IMLProtocol
     /// <summary>line-level 診断 sink (各受信行を opt-in でログ出力)。MLServer などで使う。</summary>
     public static Action<string>? DiagnosticLineSink { get; set; }
 
+    // ============================================================
+    // 自動リトライ設定 (旧 firmware の取りこぼし対策, "P2")
+    // ============================================================
+    // 第1期 (3.3.17) / 第2期 (3.3.20) firmware は UART RX ISR の中で
+    // append_command → solve_command (EEPROM 書込み含む) まで実行するため、
+    // 処理が長くなると hardware FIFO (2 byte) overrun で host から来たバイトを
+    // ロストする。これは LMS/CMS/SCF 等の通常通信でも発生し得る。
+    //
+    // host 側の救済策として、各 SendAsync を per-attempt timeout で
+    // 区切り、応答が返らなければコマンドを再送する。SendAsync は元々
+    // 先頭に \r を付けて送るので、再送 1 発目で firmware cmdBuff も flush される。
+    //
+    // 第3期 (3.3.40) 以降は ring buffer + 軽 ISR にリファクタされ取りこぼしが
+    // 発生しないので、retry は実質的に発火しない (正常応答が per-attempt
+    // timeout 内に必ず返る) → 出荷数最多の 3.3.40 機の UX には影響しない。
+
+    /// <summary>各 attempt の応答待ち上限。これを超えると次の attempt へ。
+    /// 正常応答は数十〜数百ms (EEPROM 書込み系でも ~100ms) なので、1.5s は安全側の余裕。</summary>
+    public static TimeSpan SendRetryPerAttemptTimeout { get; set; } = TimeSpan.FromMilliseconds(1500);
+
+    /// <summary>1 回の SendAsync で試す最大回数 (初回 + リトライ含む)。</summary>
+    public static int SendRetryMaxAttempts { get; set; } = 3;
+
+    /// <summary>attempt 間の待機時間。firmware / BLE スタックが落ち着く猶予。</summary>
+    public static TimeSpan SendRetryInterAttemptDelay { get; set; } = TimeSpan.FromMilliseconds(150);
+
     private readonly ISerialTransport _transport;
     private readonly IDisposable _rxSubscription;
     private readonly LineBuffer _lineBuffer = new();
@@ -99,15 +125,20 @@ public sealed class LegacyV3Protocol : IMLProtocol
             var versionStr = ver.Substring(4).TrimEnd('\r', '\n');
             var nameStr    = name.Substring(4).TrimEnd('\r', '\n').TrimEnd('\0');
 
-            // HCS で CO2 センサ有無を probe。応答は "HCS:t" / "HCS:f"。
-            // 未対応 firmware (probe 失敗) は false 扱い。
+            // CO2 センサ機能は 3.3.20 で追加された (HCS コマンド・CMS/LMS の CO2 フィールド・DTT の CO2 フィールド)。
+            // 3.3.19 以前は HCS 未対応で SendAsync が retry 後に timeout 例外で抜けるが、これは
+            // 5s 弱の無駄な待ちになるので version で先回り skip する。
             bool hasCo2 = false;
-            try
+            bool tryHcs = !Version.TryParse(versionStr, out var fwVer) || fwVer >= new Version(3, 3, 20);
+            if (tryHcs)
             {
-                var hcs = await p.SendAsync("HCS\r", "HCS:", ct).ConfigureAwait(false);
-                hasCo2 = hcs.Substring(4).TrimStart().StartsWith("t", StringComparison.OrdinalIgnoreCase);
+                try
+                {
+                    var hcs = await p.SendAsync("HCS\r", "HCS:", ct).ConfigureAwait(false);
+                    hasCo2 = hcs.Substring(4).TrimStart().StartsWith("t", StringComparison.OrdinalIgnoreCase);
+                }
+                catch { /* HCS 非対応のエッジケース、false のまま */ }
             }
-            catch { /* 古い v3 firmware は HCS 非対応の可能性、false のまま */ }
 
             p._device = new DeviceInfo(
                 Device:          "M-Logger",
@@ -150,22 +181,55 @@ public sealed class LegacyV3Protocol : IMLProtocol
     /// 注: v3 firmware は受信バッファに以前の garbage (v4 hello probe の残骸など) が
     /// あると新コマンドを認識しないため、旧 MLogger.Make*Command パターンに倣って
     /// 自動で先頭に \r を付加し、受信バッファを flush させる。
+    ///
+    /// 旧 firmware (3.3.20 以前) では UART ISR overrun でコマンドがロストし得るので、
+    /// <see cref="SendRetryPerAttemptTimeout"/> 以内に応答が無ければ最大
+    /// <see cref="SendRetryMaxAttempts"/> 回まで再送する。SendOnceAsync が常に
+    /// 先頭 \r を付けるので、再送だけで firmware cmdBuff の garbage も flush される。
+    /// caller の <paramref name="ct"/> が cancel されたら retry せず即 bubble up。
     /// </summary>
     private async Task<string> SendAsync(string cmd, string expectedPrefix, CancellationToken ct)
     {
         await _commandLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _pendingPrefix = expectedPrefix;
-            _pendingResponse = tcs;
-
-            using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-            await _transport.SendAsync(Ascii.GetBytes("\r" + cmd), ct).ConfigureAwait(false);
-            try { return await tcs.Task.ConfigureAwait(false); }
-            finally { _pendingResponse = null; _pendingPrefix = null; }
+            int maxAttempts = Math.Max(1, SendRetryMaxAttempts);
+            Exception? lastEx = null;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                attemptCts.CancelAfter(SendRetryPerAttemptTimeout);
+                try
+                {
+                    return await SendOnceAsync(cmd, expectedPrefix, attemptCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested && attempt < maxAttempts)
+                {
+                    // per-attempt timeout: 旧 firmware で ISR overrun → コマンドがロストの可能性が高い。
+                    // 次回 SendOnceAsync 先頭 \r が firmware cmdBuff も flush するので、
+                    // ここでは firmware が現在処理中の何かを終えるまで少し待つだけ。
+                    lastEx = new TimeoutException(
+                        $"{expectedPrefix} no response within {SendRetryPerAttemptTimeout.TotalMilliseconds:F0}ms (attempt {attempt}/{maxAttempts})");
+                    DiagnosticLineSink?.Invoke($"[retry] {expectedPrefix} attempt {attempt} timed out, retrying");
+                    await Task.Delay(SendRetryInterAttemptDelay, ct).ConfigureAwait(false);
+                }
+            }
+            throw lastEx ?? new TimeoutException($"{expectedPrefix} failed after {maxAttempts} attempts");
         }
         finally { _commandLock.Release(); }
+    }
+
+    /// <summary>1 attempt 分の生送受信。retry / timeout は呼び出し側 (<see cref="SendAsync"/>) が管理する。</summary>
+    private async Task<string> SendOnceAsync(string cmd, string expectedPrefix, CancellationToken ct)
+    {
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingPrefix = expectedPrefix;
+        _pendingResponse = tcs;
+
+        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+        await _transport.SendAsync(Ascii.GetBytes("\r" + cmd), ct).ConfigureAwait(false);
+        try { return await tcs.Task.ConfigureAwait(false); }
+        finally { _pendingResponse = null; _pendingPrefix = null; }
     }
 
     /// <summary>応答を期待しないコマンド送信 (leading \r は SendAsync と同様に自動付加)。</summary>
@@ -391,16 +455,26 @@ public sealed class LegacyV3Protocol : IMLProtocol
 
     private static Settings ParseMeasurementSettings(string line)
     {
-        // "(LMS|CMS):m_th,i_th,m_glb,i_glb,m_vel,i_vel,m_ill,i_ill,start_dt,m_AD1,i_AD1,m_AD2,i_AD2,m_AD3,i_AD3,m_Prox,m_co2,i_co2"
+        // "(LMS|CMS):m_th,i_th,m_glb,i_glb,m_vel,i_vel,m_ill,i_ill,start_dt,m_AD1,i_AD1,m_AD2,i_AD2,m_AD3,i_AD3,m_Prox[,m_co2,i_co2]"
+        // 3.3.19 以前は CO2 無し (16 fields)、3.3.20+ は CO2 有り (18 fields)。
         var body = line.Substring(line.IndexOf(':') + 1).TrimEnd('\r', '\n');
         var f = body.Split(',');
-        if (f.Length < 18) throw new InvalidDataException($"unexpected LMS/CMS field count: {f.Length}");
+        if (f.Length < 16) throw new InvalidDataException($"unexpected LMS/CMS field count: {f.Length}");
         bool mTh   = f[0] == "1";   uint iTh   = uint.Parse(f[1], CultureInfo.InvariantCulture);
         bool mGlb  = f[2] == "1";   uint iGlb  = uint.Parse(f[3], CultureInfo.InvariantCulture);
         bool mVel  = f[4] == "1";   uint iVel  = uint.Parse(f[5], CultureInfo.InvariantCulture);
         bool mIll  = f[6] == "1";   uint iIll  = uint.Parse(f[7], CultureInfo.InvariantCulture);
         long startDt = long.Parse(f[8], CultureInfo.InvariantCulture);
-        bool mCo2  = f[16] == "1";  uint iCo2  = uint.Parse(f[17], CultureInfo.InvariantCulture);
+        bool mCo2; uint iCo2;
+        if (f.Length >= 18)
+        {
+            mCo2 = f[16] == "1";
+            iCo2 = uint.Parse(f[17], CultureInfo.InvariantCulture);
+        }
+        else
+        {
+            mCo2 = false; iCo2 = 0;
+        }
         return new Settings(
             DrybulbTemperature: new SensorSetting(mTh, iTh),
             RelativeHumidity:   new SensorSetting(mTh, iTh),   // v3 共有
@@ -558,10 +632,11 @@ public sealed class LegacyV3Protocol : IMLProtocol
     // ============================================================
     private static Sample? ParseDtt(string line)
     {
-        // "DTT:yyyy,MM/dd,HH:mm:ss,t_dry,humidity,t_glb,velocity,illuminance,glb_volt(0),vel_volt,n/a,n/a,n/a,co2"
+        // "DTT:yyyy,MM/dd,HH:mm:ss,t_dry,humidity,t_glb,velocity,illuminance,glb_volt(0),vel_volt,n/a,n/a,n/a[,co2]"
+        // 3.3.19 以前は CO2 無し (13 fields)、3.3.20+ は CO2 有り (14 fields)。
         var body = line.Substring(4).TrimEnd('\r', '\n');
         var f = body.Split(',');
-        if (f.Length < 14) return null;
+        if (f.Length < 13) return null;
 
         // 日時の組み立て (デバイス側ローカル時刻と仮定)
         DateTimeOffset ts;
@@ -592,7 +667,7 @@ public sealed class LegacyV3Protocol : IMLProtocol
             GlobeTemperature:   D(5),
             Velocity:           D(6),
             Illuminance:        f[7] == "n/a" ? null : (int)Math.Round(double.Parse(f[7], CultureInfo.InvariantCulture)),
-            Co2:                I(13));
+            Co2:                f.Length >= 14 ? I(13) : null);
     }
 
     private static Co2CalibrationProgress? ParseCcl(string line)

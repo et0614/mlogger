@@ -2,7 +2,7 @@
 
 This manual explains how to operate the indoor thermal-environment measurement system **M-Logger** from an iPhone or Android smartphone.
 
-This manual covers app **version 1.3.0**.
+This manual covers app **version 1.3.1**.
 
 ## Downloading the app
 

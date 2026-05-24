@@ -143,7 +143,10 @@ namespace MLS_Mobile
 
       try
       {
-        Protocol = await ProtocolFactory.DetectAsync(_bleTransport, cts.Token);
+        // XBee の LowAddress を device key として cache。同じ機体に再接続する際に
+        // 前回検出した protocol kind から始められる → 旧 v3 機で v4 hello timeout (~2s)
+        // を skip でき、再接続が体感数秒速くなる。stale 時は ProtocolFactory 側で自動 fallback。
+        Protocol = await ProtocolFactory.DetectAsync(_bleTransport, Logger?.LowAddress, cts.Token);
         var dev = Protocol.Device;
         WriteLog($"Connected: {(string.IsNullOrEmpty(dev.Name) ? Logger?.LocalName : dev.Name)} " +
           $"({(dev.ProtocolVersion >= 1 ? "v4" : "v3")} FW {dev.FirmwareVersion})");
