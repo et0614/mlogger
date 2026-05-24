@@ -1,0 +1,72 @@
+site_name: M-Logger Smartphone Operation Manual
+site_url: https://mlogger.jp/en/mobile/v1.3/
+site_description: How to operate M-Logger from an iPhone or Android smartphone
+site_author: Eisuke Togashi
+copyright: Copyright &copy; 2022-2026 Eisuke Togashi
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  font:
+    text: Roboto
+    code: JetBrains Mono
+
+nav:
+  - Introduction: index.md
+  - Installation and first launch: installation.md
+  - Screen layout: overview.md
+  - Finding an M-Logger: scanner.md
+  - Measurement settings: settings.md
+  - During measurement: logging.md
+  - Reviewing measured data: data.md
+  - Thermal comfort and moist air calculators: calculators.md
+  - Advanced settings and permanent mode: advanced.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search:
+      lang: en
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://mlogger.jp
+      name: M-Logger official site

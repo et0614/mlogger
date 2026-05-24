@@ -1,0 +1,38 @@
+# M-Logger スマートフォン操作マニュアル
+
+このマニュアルは、室内温熱環境計測システム **M-Logger** を iPhone または Android スマートフォンから操作する方法を説明します。
+
+このマニュアルはアプリ **バージョン 1.3.0** に対応しています。
+
+## アプリのダウンロード
+
+| OS | ダウンロード先 |
+|---|---|
+| iPhone / iPad | [App Store](https://apps.apple.com/us/app/mlogger-server/id1599907037) |
+| Android | [Google Play](https://play.google.com/store/apps/details?id=net.hvacsimulator.mls) |
+
+無料でダウンロードできます。アプリ名は **MLogger Server** です。
+
+## このマニュアルの構成
+
+1. [インストールと初回起動](installation.md) — ダウンロードと起動時の権限設定
+2. [画面の構成](overview.md) — 4 つのタブと共通 UI の使い方
+3. [M-Logger を見つける](scanner.md) — スキャンして接続する
+4. [計測の設定](settings.md) — 記録先・センサ・開始日時の設定
+5. [計測中の表示](logging.md) — リアルタイム計測値、着衣量と代謝量
+6. [計測データの確認](data.md) — 保存データの閲覧・共有・削除
+7. [熱的快適性・湿り空気の計算](calculators.md) — PMV / PPD / SET\* と湿り空気物性
+8. [詳細設定と常設モード](advanced.md) — 補正係数、CO2 校正、PC との通信、常設モード
+
+## このマニュアルが扱わないもの
+
+このマニュアルは **スマートフォン操作** に絞っています。以下については別マニュアルを参照してください。
+
+- **M-Logger 本体の操作・LED の意味・MMC/フラッシュメモリ仕様**: [ハードウェア操作マニュアル (PDF)](https://mlogger.jp/ja/document_3.4.1.pdf)
+- **PC + Zigbee による複数台同時運用**: PC 運用マニュアル (準備中)
+- **独自ソフトから M-Logger を制御するための通信仕様**: 通信仕様書 (準備中)
+
+## サポート
+
+- 公式サイト: [https://mlogger.jp](https://mlogger.jp)
+- お問い合わせ: e.togashi@gmail.com

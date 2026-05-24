@@ -1,0 +1,72 @@
+site_name: M-Logger スマートフォン操作マニュアル
+site_url: https://mlogger.jp/ja/mobile/v1.3/
+site_description: M-Logger を iPhone / Android スマートフォンから操作する方法
+site_author: 富樫英介
+copyright: Copyright &copy; 2022-2026 Eisuke Togashi
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: ja
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切替
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切替
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  font:
+    text: Noto Sans JP
+    code: JetBrains Mono
+
+nav:
+  - はじめに: index.md
+  - インストールと初回起動: installation.md
+  - 画面の構成: overview.md
+  - M-Logger を見つける: scanner.md
+  - 計測の設定: settings.md
+  - 計測中の表示: logging.md
+  - 計測データの確認: data.md
+  - 熱的快適性・湿り空気の計算: calculators.md
+  - 詳細設定と常設モード: advanced.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search:
+      lang: ja
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://mlogger.jp
+      name: M-Logger 公式サイト
