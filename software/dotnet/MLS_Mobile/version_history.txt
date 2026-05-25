@@ -45,4 +45,5 @@
 1.2.52(55)  CO2ロギング処理追加（バグ修正版）
 1.2.53(56)  iOS26の起動クラッシュバグに対応
 1.2.54(57)  計測データ受信時のイベント解除ミスによる二重記録バグを修正
-1.3.1(59)  旧 firmware (~3.3.19) との互換性修正: LMS/DTT の field 数差異 (CO2 未対応) を許容、HCS probe を CO2 非搭載 firmware では skip、SendAsync に per-attempt timeout + retry を追加、protocol 検出結果を device 別にキャッシュして再接続を高速化
+1.3.0(58)  通信仕様をJSONに変更。旧通信仕様と互換性を維持。
+1.3.1(59)  旧 firmware (~3.3.19) との互換性修正: LMS/DTT の field 数差異 (CO2 未対応) を許容、HCS probe を CO2 非搭載 firmware では skip、SendAsync に per-attempt timeout + retry を追加、protocol 検出結果を device 別にキャッシュして再接続を高速化、アプリ表示名を MLS_Mobile から M-Logger に変更

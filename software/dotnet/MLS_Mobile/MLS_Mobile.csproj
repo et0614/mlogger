@@ -15,7 +15,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 
 		<!-- Display name -->
-		<ApplicationTitle>MLS_Mobile</ApplicationTitle>
+		<ApplicationTitle>M-Logger</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>net.hvacsimulator.mls</ApplicationId>
