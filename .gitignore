@@ -16,6 +16,10 @@
 **/nbproject/Makefile-*
 **/nbproject/Package-*
 
+# MCC autosave/manifest (毎回更新されて diff noise になる)
+**/mcc-manifest-autosave.yml
+**/mcc-manifest-generated-success.yml
+
 ##### Python (software/) 用の除外設定 #####
 **/__pycache__/
 **/*.py[cod]
