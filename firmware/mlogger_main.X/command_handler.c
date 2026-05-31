@@ -2,7 +2,6 @@
 #include "xbee_controller.h"
 #include "usb_extension.h"
 #include "protocol_dispatch.h"   // v4 JSON ディスパッチャ
-#include "diag_usb.h"            // 診断用 USB-CDC ロガー
 
 #include <string.h>
 
@@ -71,14 +70,12 @@ void CH_AppendString(const char *str, CommandSource_t src) {
 
 // v4 では JSON コマンドのみ受け付ける ('{' 始まり以外は無視)
 void CH_ProcessCommand(const char *command, CommandSource_t src) {
-    int len = (int)strlen(command);
-    // DIAG: dispatch されるコマンド本体を USB に吐く (src と先頭バイト列)
-    diag_usb_logf("DISPATCH src=%d len=%d first=0x%02X", (int)src, len,
-                  (unsigned)(uint8_t)command[0]);
-    diag_usb_hex("DISPATCH_DATA", (const uint8_t*)command, len, 200);
-
+    // 旧 DIAG: dispatch ごとに 2 行の '#' ログを吐いていたが、入力サイズに比例した
+    // hex dump (DISPATCH_DATA) が USB-CDC TX buffer (512B) を食って大きな応答
+    // (set_settings/echo size>=300) を truncate する原因になっていたため削除。
+    // dispatch のデバッグは ble_trace.py 等で別に行う方針。
     if (command[0] == '{') {
-        pd_dispatch(command, len, src);
+        pd_dispatch(command, (int)strlen(command), src);
     }
     // 旧 v3 の 3文字 ASCII コマンドはサポート終了 (応答せず破棄)
 }

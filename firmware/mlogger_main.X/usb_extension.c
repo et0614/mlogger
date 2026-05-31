@@ -72,16 +72,25 @@ static uint16_t getFreeSpace(void)
 uint16_t USB_CDC_SendString(const char *str)
 {
     uint16_t count = 0;
-    while (*str) 
+    // バッファフル時の総待機時間上限 [ms]。下記の理由で長めに取る:
+    //  - 大きなレスポンス (~500B) を 1 packet (64B) ずつ送るのに数 ms 単位かかる
+    //  - 旧実装は break で即諦めて silent truncate していたため、size>=300 の
+    //    echo や set_settings の応答が ~270-322B で切れる bug を踏んでいた
+    int budget_ms = 100;
+    while (*str)
     {
-        // バッファがいっぱいになったらループを抜ける（または待機処理を入れる）
         if (USB_CDCWrite((uint8_t)*str) == CDC_SUCCESS)
         {
             str++;
             count++;
         }
-        //バッファフルなら抜ける
-        else break; 
+        else
+        {
+            // バッファフル: USB スタックを駆動してドレインを進める
+            USB_CDCVirtualSerialPortHandler();
+            if (budget_ms-- <= 0) break;
+            DELAY_milliseconds(1);
+        }
     }
     return count;
 }
