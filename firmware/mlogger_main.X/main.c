@@ -46,8 +46,6 @@
 #include "anemometer.h" //風速計
 #include "protocol_events.h" //v4 ready ハートビート
 
-#include "sht4x.h" //debug
-
 //標準ヘッダ
 #include <avr/sleep.h>
 

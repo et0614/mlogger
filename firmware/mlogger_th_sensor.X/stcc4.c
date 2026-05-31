@@ -1,6 +1,6 @@
 #include "mcc_generated_files/system/clock.h" //F_CPUの設定
 #include "mcc_generated_files/timer/delay.h"
-#include "Stcc4.h"
+#include "stcc4.h"
 #include "i2c_master.h"
 #include "crc.h"
 
@@ -67,7 +67,8 @@ bool STCC4_isConnected(){
 
 bool STCC4_initialize(){
 	const uint8_t command = CMD_SOFT_RESET;
-	I2C_Write(0x00, &command, 1); //初期化はジェネラルコール
+	// 初期化はジェネラルコール (addr 0x00) での SOFT_RESET
+	if (!I2C_Write(0x00, &command, 1)) return false;
 	DELAY_milliseconds(10); //待機
 
 	return true; // 成功
@@ -137,11 +138,13 @@ bool STCC4_enterSleep(){
 
 bool STCC4_exitSleep(){
 	const uint8_t command = CMD_EXIT_SLEEP;
-	if (!I2C_WriteByteAndStop(ADDRESS, command)) 
-		return false;
-
+	// STCC4 は sleep 中、wake-up 用のダミーアドレス送信を NACK で返す (datasheet 仕様)。
+	// したがって I2C_Write の戻り値 (NACK = false) は無視。
+	// 必ず 5ms 待機して STCC4 が完全に awake してから次のコマンドを受け付ける状態にする。
+	// この待機を省くと次の measureSingleShot 等で NACK され、measureOnce が
+	// STATUS1_ALL_STALE を返してしまう (2026/05 mlogger_th_sensor で実機確認)。
+	(void)I2C_WriteByteAndStop(ADDRESS, command);
 	DELAY_milliseconds(5); //待機
-
 	return true; // 成功
 }
 

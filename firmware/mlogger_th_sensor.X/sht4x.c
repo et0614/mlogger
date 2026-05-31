@@ -2,7 +2,7 @@
 #include "mcc_generated_files/timer/delay.h"
 #include "sht4x.h"
 #include "i2c_master.h"
-#include "crc.h"
+#include "utility.h"
 
 #define CMD_MEASURE_HIGHEST 0xFD
 #define CMD_MEASURE_MEDIUM 0xF6
@@ -41,8 +41,8 @@ bool SHT4x_ReadValue(float *tempValue, float *humiValue, SHT4XType type)
     if (!I2C_Read(addr, buffer, 6)) return false;
 
     // CRCチェック
-    if (CRC_calc8(&buffer[0], 2) != buffer[2]) return false;
-    if (CRC_calc8(&buffer[3], 2) != buffer[5]) return false;
+    if (calc_crc8(&buffer[0], 2) != buffer[2]) return false;
+    if (calc_crc8(&buffer[3], 2) != buffer[5]) return false;
 
     // 温度変換
     uint16_t raw_t = ((uint16_t)buffer[0] << 8) | buffer[1];
@@ -71,8 +71,8 @@ bool SHT4x_ReadSerial(uint32_t *serialNumber, SHT4XType type)
 
 	// 受信したデータのCRCチェック
 	// データは2バイトのデータと1バイトのCRCが2セット
-	uint8_t crc_word1 = CRC_calc8(&buffer[0], 2);
-	uint8_t crc_word2 = CRC_calc8(&buffer[3], 2);
+	uint8_t crc_word1 = calc_crc8(&buffer[0], 2);
+	uint8_t crc_word2 = calc_crc8(&buffer[3], 2);
 	if (crc_word1 != buffer[2] || crc_word2 != buffer[5]) 
 		return false; // CRCエラー
 

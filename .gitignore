@@ -20,6 +20,9 @@
 **/mcc-manifest-autosave.yml
 **/mcc-manifest-generated-success.yml
 
+# MCC (Melody) のモジュール競合解決アーティファクト
+**/.melody-conflicts/
+
 ##### Python (software/) 用の除外設定 #####
 **/__pycache__/
 **/*.py[cod]

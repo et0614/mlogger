@@ -4,8 +4,7 @@
 #include "eeprom_manager.h"
 #include "xbee_controller.h"
 #include "smAverage.h" //平均化ユーティリティ
-#include "stcc4.h" //CO2センサ
-#include "sht4x.h" //温湿度センサ
+#include "th_probe.h" //温湿度+CO2+グローブ温度プローブ (mlogger_th_sensor 子機)
 #include "opt3001.h" //照度センサ
 #include "anemometer.h"
 #include "adc0_extension.h" //AD変換拡張
@@ -85,13 +84,21 @@ static uint8_t blinkCount = 0;
 static MeasurementPassCounters pass_counters = {0};
 
 //CO2センサ関連
-static bool hasCO2Sensor = false;        //CO2センサを持つか否か
-static uint8_t co2_connection_check_timer = 0; //CO2センサの接続確認用タイマ
-volatile static uint8_t co2_condition_time = 0;	 //CO2センサの通電時起動時間[sec]
-static uint32_t co2InitializingTime = 0; //CO2センサの12時間初期化の残り時間[sec]
-static uint8_t co2CalibratingTime = 0;   //CO2校正残時間
-static uint16_t reforcedCO2Level = 400;  //強制校正CO2濃度[ppm]
-static SmAverage smaCO2; // 60秒平均を計算するインスタンス
+static bool hasCO2Sensor = false;
+static uint8_t co2_connection_check_timer = 0;
+volatile static uint8_t co2_condition_time = 0;	 //perform_conditioning 進行残[sec]
+static uint32_t co2InitializingTime = 0;         //安定化(任意秒)→FRC モード残り秒数
+static uint16_t reforcedCO2Level = 400;          //強制校正CO2濃度[ppm]
+static SmAverage smaCO2;                         //60秒平均
+
+// FRC 進行管理 (子機 stcc4_state を polling)
+typedef enum { FRC_PHASE_IDLE = 0, FRC_PHASE_RUNNING } FrcPhase_t;
+static FrcPhase_t frcPhase = FRC_PHASE_IDLE;
+static uint8_t    frcProgressSec = 0;
+
+//温湿度+CO2+グローブ温度プローブ (mlogger_th_sensor 子機)
+static ThProbe_t th_probe;
+static bool th_trigger_pending = false;          //true なら次 sec で ThProbe_Read
 
 //風速センサ
 Anemometer_t anemometer;
@@ -123,11 +130,9 @@ inline static float min(float x, float y)
 
 // <editor-fold defaultstate="collapsed" desc="内部関数の定義">
 
-// (旧 create_sensor_string は v4 移行で削除。protocol_events.c の pe_emit_smp が JSON で送出)
-
 //きりの良い時刻になるように最初の計測時間間隔を調整する
 static int getNormTime(struct tm time, unsigned int interval)
-{	
+{
 	if(interval == 1) return interval; //1secの場合には直ちに計測
 	if(interval <= 5) return interval - (5 - time.tm_sec % 5);
 	else if(interval <= 10) return interval - (10 - time.tm_sec % 10);
@@ -135,68 +140,43 @@ static int getNormTime(struct tm time, unsigned int interval)
 	else return interval - (60 - time.tm_sec % 60);
 }
 
-// (旧 calibrateVelocityVoltage は v4 移行で削除: 風速校正は風速プローブ側 MCU に移管)
-
-static void calibrateCO2Level()
+// CO2 FRC: 子機内で 30sec 連続測定 + perform_forced_recalibration ~5sec が完結する。
+// 本体は ThProbe_GetState() を毎秒 polling して完了/失敗を検知し progress イベントを送る。
+static void pollCO2Calibration(void)
 {
-	//LED点灯
-	blinkGreenAndRedLED(1);
-	
-	co2CalibratingTime--;
-	
-	//現在のCO2濃度を取得
-	uint16_t co2_u = 0;
-	float tmp_f = 0;
-	float hmd_f = 0;
-    STCC4_readMeasurement(&co2_u, &tmp_f, &hmd_f);
-	
-	//校正終了
-	if(co2CalibratingTime == 0){
-		STCC4_stopContinuousMeasurement();
-		_delay_ms(1500); //連続計測の停止まで1200msecの待機が必要
+    blinkGreenAndRedLED(1);
+    uint8_t state = ThProbe_GetState();
+    uint16_t co2_now = th_probe.co2_valid ? th_probe.co2_ppm : 0;
 
-		int16_t correction_val = 0;
-		const char *state = "fail";
-		if(STCC4_performForcedRecalibration(reforcedCO2Level, &correction_val))
-		{
-			if (correction_val == (int16_t)0xFFFF) {
-				state = "fail";
-				correction_val = 0;
-			} else {
-				state = "pass";
-			}
-		}
+    if (state == TH_PROBE_STATE_FRC_DONE) {
+        pe_emit_co2_calibration_progress(0, "pass", ThProbe_GetFrcCorrection(), co2_now);
+        frcPhase = FRC_PHASE_IDLE;
+        frcProgressSec = 0;
+        return;
+    }
+    if (state == TH_PROBE_STATE_FRC_FAIL) {
+        pe_emit_co2_calibration_progress(0, "fail", 0, co2_now);
+        frcPhase = FRC_PHASE_IDLE;
+        frcProgressSec = 0;
+        return;
+    }
 
-		STCC4_startContinuousMeasurement(); //連続計測再開
-		pe_emit_co2_calibration_progress(0, state, correction_val, co2_u);
-	}
-	else
-	{
-		//残り時間を出力
-		pe_emit_co2_calibration_progress(co2CalibratingTime, "measuring", 0, co2_u);
-	}
+    // 進行中: 経過秒を進めて progress イベント (30 sec 想定 + FRC ~5 sec の余裕)
+    frcProgressSec++;
+    uint8_t remaining = (frcProgressSec < 35) ? (35 - frcProgressSec) : 1;
+    pe_emit_co2_calibration_progress(remaining, "measuring", 0, co2_now);
 }
 
-static void performCO2InitializationProcess(){
-	//LED点灯
-	blinkGreenAndRedLED(1);
-	
-	co2InitializingTime--;
-	
-	//現在のCO2濃度を取得
-	uint16_t co2_u = 0;
-	float tmp_f = 0;
-	float hmd_f = 0;
-    STCC4_readMeasurement(&co2_u, &tmp_f, &hmd_f);
-	
-	//12時間が経過したら設定濃度で初期化
-	if(co2InitializingTime == 0){
-		STCC4_stopContinuousMeasurement();
-		_delay_ms(1500); //連続計測終了には1200msecの待機が必要
-		int16_t correction_val;
-		STCC4_performForcedRecalibration(reforcedCO2Level, &correction_val);
-		STCC4_startContinuousMeasurement(); //連続測定再開
-	}
+// 任意秒安定化フェーズ。0 到達で FRC へ移行 (以降は pollCO2Calibration が引き継ぐ)
+static void pollCO2Initialization(void)
+{
+    blinkGreenAndRedLED(1);
+    co2InitializingTime--;
+    if (co2InitializingTime == 0) {
+        ThProbe_StartFrc(reforcedCO2Level);
+        frcPhase = FRC_PHASE_RUNNING;
+        frcProgressSec = 0;
+    }
 }
 
 void execLogging(void)
@@ -248,70 +228,52 @@ void execLogging(void)
         }
     }
 
-	//CO2測定************
-	pass_counters.co2++;
-	bool mesCO2 = hasCO2Sensor && EM_mSettings.measure_co2 && co2_condition_time == 0;
-	if(mesCO2){
-        
-		//常に移動平均は取り続ける
-		uint16_t co2_u = 0;
-		float tmp_f = 0;
-		float hmd_f = 0;
-		if(STCC4_readMeasurement(&co2_u, &tmp_f, &hmd_f))
-            SMA_Add(&smaCO2, co2_u);
-		
-		//出力するか否か
-		if((int)EM_mSettings.interval_co2 <= pass_counters.co2){
-            send_needed = true;
-			pass_counters.co2 = 0;
-            
-            uint16_t co2Ave = SMA_GetAverage(&smaCO2);
-            data.co2_ppm = co2Ave;
-            data.valid_flags |= FLAG_CO2_PPM;            
-		}		
-	}
-	
-	//温湿度測定************
+	//温湿度・CO2・グローブ温度測定 (th_probe 一括取得) ****************************
+	// pre-trigger 方式: 前 sec で Trigger 済みのデータを今 sec で読み出す。
+	// 補正は子機側 (製造校正) と本体側 EM_cFactors (ユーザー任意オフセット) の二段適用。
 	pass_counters.th++;
-	//CO2計測する場合には温湿度を通知する必要がある
-	bool mesTH = EM_mSettings.measure_th && (int)EM_mSettings.interval_th <= pass_counters.th;
-    if(mesTH)
-    {
-        send_needed = true;
-        pass_counters.th = 0;
-    }
-	if(mesCO2 || mesTH)
-	{
-		float tmp_f = 0;
-		float hmd_f = 0;
-		if(SHT4x_ReadValue(&tmp_f, &hmd_f, SHT4_BD))
-		{
-			if(mesCO2) STCC4_setRHTCompensation(tmp_f, hmd_f);
-			if(mesTH)
-			{
-                data.temp_dry = 100 * max(-40,min(99,EM_cFactors.dbtA *(tmp_f) + EM_cFactors.dbtB));
-                data.humidity = 100 * max(0,min(100,EM_cFactors.hmdA *(hmd_f) + EM_cFactors.hmdB));
-                data.valid_flags |= (FLAG_TEMP_DRY | FLAG_HUMIDITY);
+	pass_counters.co2++;
+	pass_counters.glb++;
+	bool mesTH  = EM_mSettings.measure_th  && (int)EM_mSettings.interval_th  <= pass_counters.th;
+	bool mesCO2 = hasCO2Sensor && EM_mSettings.measure_co2 && co2_condition_time == 0
+	              && (int)EM_mSettings.interval_co2 <= pass_counters.co2;
+	bool mesGlb = EM_mSettings.measure_glb && (int)EM_mSettings.interval_glb <= pass_counters.glb;
+
+	if (mesTH || mesCO2 || mesGlb) {
+		ThProbe_Read(&th_probe);
+		th_trigger_pending = false;
+
+		if (mesTH) {
+			send_needed = true;
+			pass_counters.th = 0;
+			if (th_probe.t_valid) {
+				data.temp_dry = 100 * max(-40, min(99, EM_cFactors.dbtA * th_probe.temp_c + EM_cFactors.dbtB));
+				data.valid_flags |= FLAG_TEMP_DRY;
+			}
+			if (th_probe.rh_valid) {
+				data.humidity = 100 * max(0, min(100, EM_cFactors.hmdA * th_probe.rh_pct + EM_cFactors.hmdB));
+				data.valid_flags |= FLAG_HUMIDITY;
+			}
+		}
+		if (mesCO2) {
+			send_needed = true;
+			pass_counters.co2 = 0;
+			if (th_probe.co2_valid) {
+				SMA_Add(&smaCO2, th_probe.co2_ppm);
+				data.co2_ppm = SMA_GetAverage(&smaCO2);
+				data.valid_flags |= FLAG_CO2_PPM;
+			}
+		}
+		if (mesGlb) {
+			send_needed = true;
+			pass_counters.glb = 0;
+			if (th_probe.glb_valid) {
+				data.temp_globe = 100 * max(-40, min(99, EM_cFactors.glbA * th_probe.glb_c + EM_cFactors.glbB));
+				data.valid_flags |= FLAG_TEMP_GLOBE;
 			}
 		}
 	}
-	
-	//グローブ温度測定************
-	pass_counters.glb++;
-	if(EM_mSettings.measure_glb && (int)EM_mSettings.interval_glb <= pass_counters.glb)
-	{
-        send_needed = true;
-		pass_counters.glb = 0;
-        
-		float glbt_f = 0;
-		float glbh_f = 0;
-		if(SHT4x_ReadValue(&glbt_f, &glbh_f, SHT4_AD))
-		{
-            data.temp_globe = 100 * max(-40,min(99,EM_cFactors.glbA * glbt_f + EM_cFactors.glbB));
-            data.valid_flags |= FLAG_TEMP_GLOBE;
-		}
-	}
-	
+
 	//照度センサ測定**************
 	pass_counters.ill++;
 	if(EM_mSettings.measure_ill && (int)EM_mSettings.interval_ill <= pass_counters.ill)
@@ -358,6 +320,16 @@ void execLogging(void)
             }
 		}
 	}
+	//次 sec が計測時刻なら今 sec のうちに pre-trigger 発行 (子機の single-shot は ~520ms)
+	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int)EM_mSettings.interval_th;
+	bool nextCO2 = hasCO2Sensor && EM_mSettings.measure_co2 && co2_condition_time == 0
+	               && (pass_counters.co2 + 1) >= (int)EM_mSettings.interval_co2;
+	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int)EM_mSettings.interval_glb;
+	if (nextTH || nextCO2 || nextGlb) {
+		ThProbe_Trigger();
+		th_trigger_pending = true;
+	}
+
 	//UART送信が終わったら10msec待ってXBeeをスリープさせる(XBee側の送信が終わるまで待ちたいので)
 	//本来、ここはCTSを使って受信可能になったタイミングでスリープか？フローコントロールを検討。
 	_delay_ms(10); //このスリープはXBeeの通信終了待ち目的。試行錯誤で用意した値なので、根拠が曖昧。そもそもここではないようにも思う
@@ -369,18 +341,13 @@ void execLogging(void)
 
 void LC_InitSensors(void){
     SMA_Init(&smaCO2); //CO2センサ平均化インスタンスの初期化
-    
-	hasCO2Sensor = STCC4_isConnected();
-    if(hasCO2Sensor) {
-		STCC4_initialize(); //CO2センサ
-		STCC4_exitSleep(); //スリープ解除
-		STCC4_performConditioning(); //起動用処理。22秒かかる
-		co2_condition_time = CO2_CONDITIONING_SECONDS;
-	}
-    SHT4x_Initialize(SHT4_BD); //温湿度センサ
-	SHT4x_Initialize(SHT4_AD); //グローブ温度センサ
+
+    // 温湿度+CO2+グローブ温度プローブ (子機 firmware は起動時に STCC4 を扱える状態へ自動遷移する)
+    ThProbe_Init(&th_probe);
+    hasCO2Sensor = ThProbe_IsConnected();
+
     OPT3001_Initialize(); //照度計
-    
+
     //データ数を取得
     rec_latest = W25_Count_Record(EM_generationNumber);
 }
@@ -473,23 +440,9 @@ void LC_ProcessTimeSyncTask(void){
 void LC_CheckCO2Connection(void){
     co2_connection_check_timer++;
 	if (CO2_CHECK_INTERVAL <= co2_connection_check_timer) {
-		co2_connection_check_timer = 0; // タイマーをリセット
-
-		// センサーが接続されているか定期的に確認
-		bool is_currently_connected = STCC4_isConnected();
-
-		//接続状態が変わった場合
-		if(is_currently_connected != hasCO2Sensor){
-			hasCO2Sensor = is_currently_connected;
-			//再接続の場合には初期化処理
-			if(is_currently_connected) {
-				STCC4_initialize();
-				STCC4_exitSleep();
-				STCC4_performConditioning();
-				co2_condition_time = CO2_CONDITIONING_SECONDS;
-			}
-			// (v3 では HCS:0/1 を自発送信していたが v4 では削除: CO2 センサは仕様上固定実装)
-		}
+		co2_connection_check_timer = 0;
+		// 子機側で再接続時の conditioning は自動完結するので、本体は flag 更新だけ。
+		hasCO2Sensor = ThProbe_IsConnected();
 	}
 }
 
@@ -514,10 +467,9 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     pass_counters.ill = getNormTime(lastSavedTime, EM_mSettings.interval_ill);
     pass_counters.ad1 = getNormTime(lastSavedTime, EM_mSettings.interval_AD1);
     pass_counters.co2 = getNormTime(lastSavedTime, EM_mSettings.interval_co2);
-    
-    //CO2計測不要の場合はスリープ
-    if(!EM_mSettings.measure_co2 && !LC_IsInitializingCO2())
-        STCC4_stopContinuousMeasurement();
+
+    // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
+    th_trigger_pending = false;
 
     //ロギング開始
     logging = true;
@@ -534,8 +486,7 @@ void LC_EndLoggingTask(void){
     logging=false;	//ロギング停止
     Anemometer_Sleep(); //風速センサを停止
 
-    //CO2連続測定再開
-    STCC4_startContinuousMeasurement();
+    th_trigger_pending = false;
 
     // 時刻同期スケジュールも停止
     time_sync_next_unix = 0;
@@ -543,29 +494,13 @@ void LC_EndLoggingTask(void){
     time_sync_emit_pending = false;
 }
 
-void LC_ProcessSensingTask(void){    
-    //CO2センサの初期化待機中
-	if(0 < co2_condition_time) 
-	{
-		co2_condition_time--;
-		//0秒にたどり着いた場合
-		if(co2_condition_time == 0)
-		{
-			//既に計測を始めていてCO2が不要の場合には停止
-			if(LC_IsLogging() && !EM_mSettings.measure_co2) STCC4_stopContinuousMeasurement();
-			//その他の場合には連続計測開始
-			else STCC4_startContinuousMeasurement();
-		}
-	}
-    
+void LC_ProcessSensingTask(void){
+    if (0 < co2_condition_time) co2_condition_time--;
+
     hasTask = true;
-    //CO2センサ校正処理
-	if(0 < co2CalibratingTime) calibrateCO2Level();
-	//CO2センサ初期化処理
-	else if(co2InitializingTime) performCO2InitializationProcess();
-	//ロギング処理
-	else if(logging) execLogging();
-    //タスクなし
+    if (frcPhase == FRC_PHASE_RUNNING) pollCO2Calibration();
+    else if (0 < co2InitializingTime) pollCO2Initialization();
+    else if (logging) execLogging();
     else hasTask = false;
 }
 
@@ -590,21 +525,25 @@ bool LC_HasCO2Sensor(void)
     return hasCO2Sensor;
 }
 
+// 任意秒安定化 → FRC モード。子機に factory_reset → time 秒カウントダウン (pollCO2Initialization)
+// → 0 到達で FRC 依頼 → pollCO2Calibration が完了/失敗判定。
 void LC_FactoryResetCO2(uint16_t co2Level, uint16_t time)
 {
-    if(hasCO2Sensor && STCC4_performFactoryReset()){
-        STCC4_startContinuousMeasurement(); //連続測定再開
-        reforcedCO2Level = co2Level;
-        co2InitializingTime = time; //初期化には12時間の連続測定が必要
-    }
+    if (!hasCO2Sensor) return;
+    ThProbe_StartFactoryReset();
+    reforcedCO2Level = co2Level;
+    co2InitializingTime = time;
 }
 
+// 30 sec 連続測定 → FRC モード (子機内部で完結、本体は state を polling)
 void LC_CalibrateCO2(uint16_t co2Level, uint16_t time)
 {
-    if(hasCO2Sensor){
-        reforcedCO2Level = co2Level;		
-        co2CalibratingTime = 30;
-    }
+    (void)time; // 30sec は子機側で固定
+    if (!hasCO2Sensor) return;
+    reforcedCO2Level = co2Level;
+    ThProbe_StartFrc(co2Level);
+    frcPhase = FRC_PHASE_RUNNING;
+    frcProgressSec = 0;
 }
 
 // </editor-fold>
