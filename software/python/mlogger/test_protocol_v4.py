@@ -84,8 +84,30 @@ def find_device_port():
     return None
 
 
+def _read_json_line(ser, deadline):
+    """ser から '#' で始まる diag 行と空行を skip して JSON ('{') 行を取得する。
+    deadline まで待っても来なければ None。"""
+    while time.time() < deadline:
+        line_bytes = ser.readline()
+        if not line_bytes:
+            continue
+        line_str = line_bytes.decode('utf-8', errors='ignore').strip()
+        if not line_str:
+            continue
+        if line_str.startswith('#'):
+            # firmware の diag 行 (diag_usb_logf 由来)、verbose 出力で見せる
+            print(f"<<< [diag] {line_str}")
+            continue
+        if not line_str.startswith('{'):
+            print(f"<<< [skip non-json] {line_str!r}")
+            continue
+        return line_str
+    return None
+
+
 def send_json(ser, payload, label=None):
-    """JSONメッセージを送信し、応答1行を読んで返す。"""
+    """JSONメッセージを送信し、応答1行を読んで返す。
+    firmware の diag '# ...' 行は skip して JSON 応答を待つ。"""
     msg = json.dumps(payload, ensure_ascii=False) + '\n'
     if label:
         print(f"\n--- {label} ---")
@@ -95,12 +117,11 @@ def send_json(ser, payload, label=None):
     ser.reset_input_buffer()
     ser.write(msg.encode('utf-8'))
 
-    line_bytes = ser.readline()
-    if not line_bytes:
-        print("<<< (no response)")
+    line_str = _read_json_line(ser, time.time() + TIMEOUT_SEC)
+    if line_str is None:
+        print("<<< (no JSON response)")
         return None
 
-    line_str = line_bytes.decode('utf-8', errors='ignore').strip()
     print(f"<<< Received ({len(line_str)} bytes):")
     print(f"    {line_str}")
 
@@ -121,12 +142,11 @@ def send_raw(ser, raw_bytes, label=None):
     ser.reset_input_buffer()
     ser.write(raw_bytes)
 
-    line_bytes = ser.readline()
-    if not line_bytes:
-        print("<<< (no response)")
+    line_str = _read_json_line(ser, time.time() + TIMEOUT_SEC)
+    if line_str is None:
+        print("<<< (no JSON response)")
         return None
 
-    line_str = line_bytes.decode('utf-8', errors='ignore').strip()
     print(f"<<< Received ({len(line_str)} bytes):")
     print(f"    {line_str}")
 
@@ -215,8 +235,8 @@ def _do_echo(ser, id_, size, verbose=False):
     msg = json.dumps({"v": 1, "id": id_, "command": "echo", "params": {"size": size}}) + '\n'
     ser.reset_input_buffer()
     ser.write(msg.encode('utf-8'))
-    line = ser.readline().decode('utf-8', errors='ignore').strip()
-    if not line:
+    line = _read_json_line(ser, time.time() + TIMEOUT_SEC)
+    if line is None:
         if verbose: print(f"    id={id_} size={size}: NO RESPONSE")
         return False
     try:
