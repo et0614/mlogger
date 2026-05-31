@@ -1,4 +1,4 @@
-<config configName="default" projectName="VelocitySensor" configVersion="1.3" device="AVR128DB32" deviceLibraryClass="com.microchip.mcc.melody.Library" coreVersion="5.8.3" spaHostVersion="1.2.0">
+<config configName="default" projectName="VelocitySensor" configVersion="1.3" device="AVR128DB32" deviceLibraryClass="com.microchip.mcc.melody.Library" coreVersion="5.8.4" spaHostVersion="1.2.1">
    <usedPackages class="java.util.ArrayList">
       <package packageName="@mchp-mcc/avr-8bit" version="4.14.2" contentType="MELODY">
          <modules class="java.util.ArrayList"/>
