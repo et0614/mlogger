@@ -39,6 +39,27 @@ static void (*IO_M_SDA_InterruptHandler)(void);
 static void (*IO_S_SCL_InterruptHandler)(void);
 static void (*IO_S_SDA_InterruptHandler)(void);
 static void (*IO_RESET_InterruptHandler)(void);
+static void (*IO_PA0_InterruptHandler)(void);
+static void (*IO_PA1_InterruptHandler)(void);
+static void (*IO_PA4_InterruptHandler)(void);
+static void (*IO_PA5_InterruptHandler)(void);
+static void (*IO_PA6_InterruptHandler)(void);
+static void (*IO_PA7_InterruptHandler)(void);
+static void (*IO_PC0_InterruptHandler)(void);
+static void (*IO_PC1_InterruptHandler)(void);
+static void (*IO_PC2_InterruptHandler)(void);
+static void (*IO_PC3_InterruptHandler)(void);
+static void (*IO_PD1_InterruptHandler)(void);
+static void (*IO_PD2_InterruptHandler)(void);
+static void (*IO_PD3_InterruptHandler)(void);
+static void (*IO_PD4_InterruptHandler)(void);
+static void (*IO_PD5_InterruptHandler)(void);
+static void (*IO_PD7_InterruptHandler)(void);
+static void (*IO_PF0_InterruptHandler)(void);
+static void (*IO_PF1_InterruptHandler)(void);
+static void (*IO_PF4_InterruptHandler)(void);
+static void (*IO_PF5_InterruptHandler)(void);
+static void (*IO_PF6_InterruptHandler)(void);
 
 void PIN_MANAGER_Initialize()
 {
@@ -50,10 +71,10 @@ void PIN_MANAGER_Initialize()
     PORTF.OUT = 0x0;
 
   /* DIR Registers Initialization */
-    PORTA.DIR = 0x0;
-    PORTC.DIR = 0x0;
-    PORTD.DIR = 0x0;
-    PORTF.DIR = 0x0;
+    PORTA.DIR = 0xF3;
+    PORTC.DIR = 0xF;
+    PORTD.DIR = 0xBE;
+    PORTF.DIR = 0x73;
 
   /* PINxCTRL registers Initialization */
     PORTA.PIN0CTRL = 0x0;
@@ -107,6 +128,27 @@ void PIN_MANAGER_Initialize()
     IO_S_SCL_SetInterruptHandler(IO_S_SCL_DefaultInterruptHandler);
     IO_S_SDA_SetInterruptHandler(IO_S_SDA_DefaultInterruptHandler);
     IO_RESET_SetInterruptHandler(IO_RESET_DefaultInterruptHandler);
+    IO_PA0_SetInterruptHandler(IO_PA0_DefaultInterruptHandler);
+    IO_PA1_SetInterruptHandler(IO_PA1_DefaultInterruptHandler);
+    IO_PA4_SetInterruptHandler(IO_PA4_DefaultInterruptHandler);
+    IO_PA5_SetInterruptHandler(IO_PA5_DefaultInterruptHandler);
+    IO_PA6_SetInterruptHandler(IO_PA6_DefaultInterruptHandler);
+    IO_PA7_SetInterruptHandler(IO_PA7_DefaultInterruptHandler);
+    IO_PC0_SetInterruptHandler(IO_PC0_DefaultInterruptHandler);
+    IO_PC1_SetInterruptHandler(IO_PC1_DefaultInterruptHandler);
+    IO_PC2_SetInterruptHandler(IO_PC2_DefaultInterruptHandler);
+    IO_PC3_SetInterruptHandler(IO_PC3_DefaultInterruptHandler);
+    IO_PD1_SetInterruptHandler(IO_PD1_DefaultInterruptHandler);
+    IO_PD2_SetInterruptHandler(IO_PD2_DefaultInterruptHandler);
+    IO_PD3_SetInterruptHandler(IO_PD3_DefaultInterruptHandler);
+    IO_PD4_SetInterruptHandler(IO_PD4_DefaultInterruptHandler);
+    IO_PD5_SetInterruptHandler(IO_PD5_DefaultInterruptHandler);
+    IO_PD7_SetInterruptHandler(IO_PD7_DefaultInterruptHandler);
+    IO_PF0_SetInterruptHandler(IO_PF0_DefaultInterruptHandler);
+    IO_PF1_SetInterruptHandler(IO_PF1_DefaultInterruptHandler);
+    IO_PF4_SetInterruptHandler(IO_PF4_DefaultInterruptHandler);
+    IO_PF5_SetInterruptHandler(IO_PF5_DefaultInterruptHandler);
+    IO_PF6_SetInterruptHandler(IO_PF6_DefaultInterruptHandler);
 }
 
 /**
@@ -174,6 +216,279 @@ void IO_RESET_DefaultInterruptHandler(void)
     // add your IO_RESET interrupt custom code
     // or set custom function using IO_RESET_SetInterruptHandler()
 }
+/**
+  Allows selecting an interrupt handler for IO_PA0 at application runtime
+*/
+void IO_PA0_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA0_InterruptHandler = interruptHandler;
+}
+
+void IO_PA0_DefaultInterruptHandler(void)
+{
+    // add your IO_PA0 interrupt custom code
+    // or set custom function using IO_PA0_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PA1 at application runtime
+*/
+void IO_PA1_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA1_InterruptHandler = interruptHandler;
+}
+
+void IO_PA1_DefaultInterruptHandler(void)
+{
+    // add your IO_PA1 interrupt custom code
+    // or set custom function using IO_PA1_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PA4 at application runtime
+*/
+void IO_PA4_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA4_InterruptHandler = interruptHandler;
+}
+
+void IO_PA4_DefaultInterruptHandler(void)
+{
+    // add your IO_PA4 interrupt custom code
+    // or set custom function using IO_PA4_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PA5 at application runtime
+*/
+void IO_PA5_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA5_InterruptHandler = interruptHandler;
+}
+
+void IO_PA5_DefaultInterruptHandler(void)
+{
+    // add your IO_PA5 interrupt custom code
+    // or set custom function using IO_PA5_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PA6 at application runtime
+*/
+void IO_PA6_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA6_InterruptHandler = interruptHandler;
+}
+
+void IO_PA6_DefaultInterruptHandler(void)
+{
+    // add your IO_PA6 interrupt custom code
+    // or set custom function using IO_PA6_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PA7 at application runtime
+*/
+void IO_PA7_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PA7_InterruptHandler = interruptHandler;
+}
+
+void IO_PA7_DefaultInterruptHandler(void)
+{
+    // add your IO_PA7 interrupt custom code
+    // or set custom function using IO_PA7_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PC0 at application runtime
+*/
+void IO_PC0_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PC0_InterruptHandler = interruptHandler;
+}
+
+void IO_PC0_DefaultInterruptHandler(void)
+{
+    // add your IO_PC0 interrupt custom code
+    // or set custom function using IO_PC0_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PC1 at application runtime
+*/
+void IO_PC1_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PC1_InterruptHandler = interruptHandler;
+}
+
+void IO_PC1_DefaultInterruptHandler(void)
+{
+    // add your IO_PC1 interrupt custom code
+    // or set custom function using IO_PC1_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PC2 at application runtime
+*/
+void IO_PC2_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PC2_InterruptHandler = interruptHandler;
+}
+
+void IO_PC2_DefaultInterruptHandler(void)
+{
+    // add your IO_PC2 interrupt custom code
+    // or set custom function using IO_PC2_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PC3 at application runtime
+*/
+void IO_PC3_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PC3_InterruptHandler = interruptHandler;
+}
+
+void IO_PC3_DefaultInterruptHandler(void)
+{
+    // add your IO_PC3 interrupt custom code
+    // or set custom function using IO_PC3_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD1 at application runtime
+*/
+void IO_PD1_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD1_InterruptHandler = interruptHandler;
+}
+
+void IO_PD1_DefaultInterruptHandler(void)
+{
+    // add your IO_PD1 interrupt custom code
+    // or set custom function using IO_PD1_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD2 at application runtime
+*/
+void IO_PD2_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD2_InterruptHandler = interruptHandler;
+}
+
+void IO_PD2_DefaultInterruptHandler(void)
+{
+    // add your IO_PD2 interrupt custom code
+    // or set custom function using IO_PD2_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD3 at application runtime
+*/
+void IO_PD3_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD3_InterruptHandler = interruptHandler;
+}
+
+void IO_PD3_DefaultInterruptHandler(void)
+{
+    // add your IO_PD3 interrupt custom code
+    // or set custom function using IO_PD3_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD4 at application runtime
+*/
+void IO_PD4_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD4_InterruptHandler = interruptHandler;
+}
+
+void IO_PD4_DefaultInterruptHandler(void)
+{
+    // add your IO_PD4 interrupt custom code
+    // or set custom function using IO_PD4_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD5 at application runtime
+*/
+void IO_PD5_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD5_InterruptHandler = interruptHandler;
+}
+
+void IO_PD5_DefaultInterruptHandler(void)
+{
+    // add your IO_PD5 interrupt custom code
+    // or set custom function using IO_PD5_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PD7 at application runtime
+*/
+void IO_PD7_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PD7_InterruptHandler = interruptHandler;
+}
+
+void IO_PD7_DefaultInterruptHandler(void)
+{
+    // add your IO_PD7 interrupt custom code
+    // or set custom function using IO_PD7_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PF0 at application runtime
+*/
+void IO_PF0_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PF0_InterruptHandler = interruptHandler;
+}
+
+void IO_PF0_DefaultInterruptHandler(void)
+{
+    // add your IO_PF0 interrupt custom code
+    // or set custom function using IO_PF0_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PF1 at application runtime
+*/
+void IO_PF1_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PF1_InterruptHandler = interruptHandler;
+}
+
+void IO_PF1_DefaultInterruptHandler(void)
+{
+    // add your IO_PF1 interrupt custom code
+    // or set custom function using IO_PF1_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PF4 at application runtime
+*/
+void IO_PF4_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PF4_InterruptHandler = interruptHandler;
+}
+
+void IO_PF4_DefaultInterruptHandler(void)
+{
+    // add your IO_PF4 interrupt custom code
+    // or set custom function using IO_PF4_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PF5 at application runtime
+*/
+void IO_PF5_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PF5_InterruptHandler = interruptHandler;
+}
+
+void IO_PF5_DefaultInterruptHandler(void)
+{
+    // add your IO_PF5 interrupt custom code
+    // or set custom function using IO_PF5_SetInterruptHandler()
+}
+/**
+  Allows selecting an interrupt handler for IO_PF6 at application runtime
+*/
+void IO_PF6_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    IO_PF6_InterruptHandler = interruptHandler;
+}
+
+void IO_PF6_DefaultInterruptHandler(void)
+{
+    // add your IO_PF6 interrupt custom code
+    // or set custom function using IO_PF6_SetInterruptHandler()
+}
 ISR(PORTA_PORT_vect)
 { 
     // Call the interrupt handler for the callback registered at runtime
@@ -185,12 +500,53 @@ ISR(PORTA_PORT_vect)
     {
        IO_S_SDA_InterruptHandler(); 
     }
+    if(VPORTA.INTFLAGS & PORT_INT0_bm)
+    {
+       IO_PA0_InterruptHandler(); 
+    }
+    if(VPORTA.INTFLAGS & PORT_INT1_bm)
+    {
+       IO_PA1_InterruptHandler(); 
+    }
+    if(VPORTA.INTFLAGS & PORT_INT4_bm)
+    {
+       IO_PA4_InterruptHandler(); 
+    }
+    if(VPORTA.INTFLAGS & PORT_INT5_bm)
+    {
+       IO_PA5_InterruptHandler(); 
+    }
+    if(VPORTA.INTFLAGS & PORT_INT6_bm)
+    {
+       IO_PA6_InterruptHandler(); 
+    }
+    if(VPORTA.INTFLAGS & PORT_INT7_bm)
+    {
+       IO_PA7_InterruptHandler(); 
+    }
     /* Clear interrupt flags */
     VPORTA.INTFLAGS = 0xff;
 }
 
 ISR(PORTC_PORT_vect)
 { 
+    // Call the interrupt handler for the callback registered at runtime
+    if(VPORTC.INTFLAGS & PORT_INT0_bm)
+    {
+       IO_PC0_InterruptHandler(); 
+    }
+    if(VPORTC.INTFLAGS & PORT_INT1_bm)
+    {
+       IO_PC1_InterruptHandler(); 
+    }
+    if(VPORTC.INTFLAGS & PORT_INT2_bm)
+    {
+       IO_PC2_InterruptHandler(); 
+    }
+    if(VPORTC.INTFLAGS & PORT_INT3_bm)
+    {
+       IO_PC3_InterruptHandler(); 
+    }
     /* Clear interrupt flags */
     VPORTC.INTFLAGS = 0xff;
 }
@@ -201,6 +557,30 @@ ISR(PORTD_PORT_vect)
     if(VPORTD.INTFLAGS & PORT_INT6_bm)
     {
        IO_RESET_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT1_bm)
+    {
+       IO_PD1_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT2_bm)
+    {
+       IO_PD2_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT3_bm)
+    {
+       IO_PD3_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT4_bm)
+    {
+       IO_PD4_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT5_bm)
+    {
+       IO_PD5_InterruptHandler(); 
+    }
+    if(VPORTD.INTFLAGS & PORT_INT7_bm)
+    {
+       IO_PD7_InterruptHandler(); 
     }
     /* Clear interrupt flags */
     VPORTD.INTFLAGS = 0xff;
@@ -216,6 +596,26 @@ ISR(PORTF_PORT_vect)
     if(VPORTF.INTFLAGS & PORT_INT2_bm)
     {
        IO_M_SDA_InterruptHandler(); 
+    }
+    if(VPORTF.INTFLAGS & PORT_INT0_bm)
+    {
+       IO_PF0_InterruptHandler(); 
+    }
+    if(VPORTF.INTFLAGS & PORT_INT1_bm)
+    {
+       IO_PF1_InterruptHandler(); 
+    }
+    if(VPORTF.INTFLAGS & PORT_INT4_bm)
+    {
+       IO_PF4_InterruptHandler(); 
+    }
+    if(VPORTF.INTFLAGS & PORT_INT5_bm)
+    {
+       IO_PF5_InterruptHandler(); 
+    }
+    if(VPORTF.INTFLAGS & PORT_INT6_bm)
+    {
+       IO_PF6_InterruptHandler(); 
     }
     /* Clear interrupt flags */
     VPORTF.INTFLAGS = 0xff;

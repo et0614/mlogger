@@ -52,6 +52,26 @@
 
 // </editor-fold>
 
+// <editor-fold defaultstate="collapsed" desc="消費電流計測用 テストモード">
+
+// 消費電流計測用のテストモード切替。本番リリース時は TEST_MODE_NONE に戻すこと。
+//   TEST_MODE_NONE   : 通常 firmware (本番動作)
+//   TEST_MODE_SLEEP  : 初期化完了後 POWER-DOWN sleep に固定 (B モード測定用)
+//                      WDT は disable する (POWER-DOWN だと wake できず WDT reset
+//                      されて測定にならないため)。I2C ピンは pull-up (= VDD 直結)
+//                      で外部からアクセスしない前提。
+//   TEST_MODE_ACTIVE : measureOnce() を sleep 挟まず連続実行 (C モード測定用)
+//                      STCC4 は exitSleep 〜 enterSleep を毎回繰り返す。WDT 有効。
+#define TEST_MODE_NONE       0
+#define TEST_MODE_SLEEP      1
+#define TEST_MODE_ACTIVE     2
+
+#ifndef TEST_MODE
+#define TEST_MODE TEST_MODE_NONE
+#endif
+
+// </editor-fold>
+
 // <editor-fold defaultstate="collapsed" desc="定数">
 
 // グローブ用 SHT4x のアドレス (STCC4 配下の SHT4x_amb とは別バスなので衝突しない)
@@ -295,6 +315,31 @@ int main(void)
     RTC_SetOVFIsrCallback(secHandler);   // 1 sec tick (RTC OVF, 32768/32768)
     I2C_Slave_Init();                    // TWI0 client
 
+#if TEST_MODE == TEST_MODE_SLEEP
+    // ----- 消費電流テスト: SLEEP モード -----
+    // 全初期化完了後、WDT を disable してから POWER-DOWN 固定で停止。
+    // POWER-DOWN だと TWI ADDR_MATCH 以外 wake できないため、master 接続なしでは
+    // wdt_reset() を呼ぶ機会がない → WDT を一旦切る必要がある。
+    // 計測中は SDA/SCL を VDD 直結すること (floating だと spurious wake する)。
+    _PROTECTED_WRITE(WDT.CTRLA, 0);
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+    sei();
+    while (1) { sleep_mode(); }
+
+#elif TEST_MODE == TEST_MODE_ACTIVE
+    // ----- 消費電流テスト: ACTIVE モード -----
+    // measureOnce() を sleep を挟まず連続実行。各 iter で STCC4 exitSleep →
+    // single shot 500ms → readMeasurement → enterSleep + SHT4x_glb 1 回。
+    // 実運用での「計測中の平均電流」を見る。WDT は有効のまま (measureOnce ~520ms
+    // < WDT 4.1sec)。
+    sei();
+    while (1) {
+        wdt_reset();
+        (void)measureOnce();
+    }
+
+#else
+    // ----- 本番動作 (TEST_MODE_NONE) -----
     // 待機中は POWER-DOWN (TWI address match で wake、校正中は IDLE に切替える)
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     sei();
@@ -399,6 +444,7 @@ int main(void)
         }
         sleep_mode();
     }
+#endif // TEST_MODE
 }
 
 // </editor-fold>

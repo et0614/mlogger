@@ -411,6 +411,8 @@
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="0-ffff"/>
         <property key="poweroptions.powerenable" value="true"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/git_repositories/mlogger/firmware/mlogger_th_sensor.X/debug/default/poem_temperature_sensor_ptg"/>
         <property key="programmerToGoImageName" value="poem_temperature_sensor_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
