@@ -15,6 +15,7 @@ static char s_err_buf[160];
 // コマンドテーブル
 static const pd_command_t s_commands[] = {
     { "hello",          ph_hello          },
+    { "get_battery",    ph_get_battery    },
     { "set_name",       ph_set_name       },
     { "set_time",       ph_set_time       },
     { "get_settings",   ph_get_settings   },

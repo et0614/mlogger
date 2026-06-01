@@ -15,6 +15,7 @@ extern "C" {
 
 // Phase A
 void ph_hello          (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
+void ph_get_battery    (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 
 // Phase B: get/set 系
 void ph_set_name       (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);

@@ -84,22 +84,12 @@
                     </Image>
                 </HorizontalStackLayout>
 
-                <!--温湿度計-->
+                <!--general (温湿度 + グローブ温度 + CO2 一括)-->
                 <Grid Margin="10,5,0,0" ColumnDefinitions="60,*,80,30" IsVisible="True">
-                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_th" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_th" Text="{x:Static res:MLSResource.DS_TemperatureAndHumidity}" VerticalTextAlignment="Center" LineBreakMode="WordWrap"/>
+                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_gen" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
+                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_gen" Text="{x:Static res:MLSResource.DS_GeneralMeasurement}" VerticalTextAlignment="Center" LineBreakMode="WordWrap"/>
                     <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_th" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large"  ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                    </Border>
-                    <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
-                </Grid>
-
-                <!--グローブ温度計-->
-                <Grid Margin="10,0,0,0" ColumnDefinitions="60,*,80,30" IsVisible="True">
-                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_glb" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_glb" Text="{x:Static res:MLSResource.GlobeTemperature}" VerticalTextAlignment="Center"/>
-                    <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_glb" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large"  ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
+                        <Entry x:Name="ent_gen" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large"  ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
                 </Grid>
@@ -120,16 +110,6 @@
                     <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_lux" Text="{x:Static res:MLSResource.Illuminance}" VerticalTextAlignment="Center"/>
                     <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
                         <Entry x:Name="ent_lux" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
-                    </Border>
-                    <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
-                </Grid>
-
-                <!--CO2濃度計-->
-                <Grid Margin="10,0,0,0" ColumnDefinitions="60,*,80,30" x:Name="co2LevelGrid" IsVisible="False">
-                    <Switch Grid.Row="0" Grid.Column="0" x:Name="cbx_co2" IsToggled="True" Toggled="cbx_Toggled" VerticalOptions="Center"/>
-                    <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_co2" Text="{x:Static res:MLSResource.CO2level}" VerticalTextAlignment="Center"/>
-                    <Border Grid.Row="0" Grid.Column="2" Margin="5,2,5,2">
-                        <Entry x:Name="ent_co2" Keyboard="Numeric" VerticalTextAlignment="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" Text="60" FontSize="Large" ClearButtonVisibility="WhileEditing" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" TextChanged="ent_TextChanged"/>
                     </Border>
                     <Label Grid.Row="0" Grid.Column="3" Text="sec" VerticalTextAlignment="Center"/>
                 </Grid>
@@ -156,6 +136,33 @@
                         <FontImageSource Glyph="&#xf56d;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
+
+                <!--電池情報パネル (v4 firmware 専用、v3 では IsVisible=false で非表示)-->
+                <VerticalStackLayout x:Name="batteryPanel" IsVisible="False">
+                    <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
+                        <Label Text="{x:Static res:MLSResource.DS_BatteryInfo}"
+                               FontSize="Subtitle" FontAttributes="Bold"
+                               TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                               VerticalOptions="Center"/>
+                        <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                            <Image.Source>
+                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            </Image.Source>
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="TapGestureRecognizer_Battery_Tapped"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                    </HorizontalStackLayout>
+                    <Grid Margin="10,5,0,0" ColumnDefinitions="*,2*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="2">
+                        <Label Grid.Row="0" Grid.Column="0" Text="{x:Static res:MLSResource.DS_BatteryVoltage}" VerticalTextAlignment="Center"/>
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="lbl_batVoltage" Text="-" VerticalTextAlignment="Center" FontAttributes="Bold"/>
+                        <Label Grid.Row="1" Grid.Column="0" Text="{x:Static res:MLSResource.DS_BatteryType}" VerticalTextAlignment="Center"/>
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_batType" Text="-" VerticalTextAlignment="Center" FontAttributes="Bold"/>
+                        <Label Grid.Row="2" Grid.Column="0" Text="{x:Static res:MLSResource.DS_EstimatedRuntime}" VerticalTextAlignment="Center"/>
+                        <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_batRuntime" Text="-" VerticalTextAlignment="Center" FontAttributes="Bold"/>
+                        <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="lbl_batWarning" Text="" TextColor="{StaticResource Status_Warn}" IsVisible="False" FontSize="Small"/>
+                    </Grid>
+                </VerticalStackLayout>
 
                 <!--その他の設定-->
                 <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">

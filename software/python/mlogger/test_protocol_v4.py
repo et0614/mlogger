@@ -188,6 +188,29 @@ def test_hello(ser):
     return True
 
 
+def test_get_battery(ser):
+    resp = send_json(ser, {"v": 1, "id": 50, "command": "get_battery"},
+                     "Test get_battery")
+    if resp is None or "result" not in resp:
+        print(f"    [FAIL] {resp}")
+        return False
+    r = resp["result"]
+    if "voltage_mv" not in r or "low_battery" not in r:
+        print(f"    [FAIL] missing keys: {r}")
+        return False
+    if not isinstance(r["voltage_mv"], int):
+        print(f"    [FAIL] voltage_mv not int: {r['voltage_mv']}")
+        return False
+    if not isinstance(r["low_battery"], bool):
+        print(f"    [FAIL] low_battery not bool: {r['low_battery']}")
+        return False
+    # 妥当性チェック (500mV〜4000mV の範囲)
+    if not (500 <= r["voltage_mv"] <= 4000):
+        print(f"    [WARN] voltage_mv out of expected range: {r['voltage_mv']} mV")
+    print(f"    [OK] voltage={r['voltage_mv']} mV, low_battery={r['low_battery']}")
+    return True
+
+
 def test_unknown_command(ser):
     resp = send_json(ser, {"v": 1, "id": 2, "command": "no_such_command"},
                      "Test 2: unknown command (expect error)")
@@ -329,7 +352,7 @@ def test_legacy_v3_removed(ser):
 # ============================================================
 # Phase B tests: get/set 系
 # ============================================================
-SENSOR_NAMES = ["t_dry", "humidity", "t_glb", "velocity", "illuminance", "co2"]
+SETTINGS_CATEGORIES = ["general", "velocity", "illuminance"]
 CORRECTION_SENSORS = ["t_dry", "humidity", "t_glb", "illuminance", "velocity"]
 
 
@@ -340,20 +363,20 @@ def test_get_settings(ser):
         print(f"    [FAIL] {resp}")
         return False
     r = resp["result"]
-    missing = [s for s in SENSOR_NAMES if s not in r]
+    missing = [s for s in SETTINGS_CATEGORIES if s not in r]
     if missing:
-        print(f"    [FAIL] missing sensors: {missing}")
+        print(f"    [FAIL] missing categories: {missing}")
         return False
     if "start_ts" not in r:
         print(f"    [FAIL] missing 'start_ts'")
         return False
-    for s in SENSOR_NAMES:
+    for s in SETTINGS_CATEGORIES:
         v = r[s]
         if not isinstance(v, dict) or "enabled" not in v or "interval" not in v:
             print(f"    [FAIL] {s} malformed: {v}")
             return False
     print(f"    [OK]")
-    for s in SENSOR_NAMES:
+    for s in SETTINGS_CATEGORIES:
         print(f"      {s:>12}: {r[s]}")
     print(f"      {'start_ts':>12}: {r['start_ts']}")
     return True
@@ -557,13 +580,12 @@ def test_smp_event_stream(ser):
     print("\n--- Test FINAL: smp event stream (Phase D) ---")
 
     # ロギング設定の interval を 1 秒に揃えておく (PATCH)
+    # general カテゴリは内部で t_dry/humidity/t_glb/co2 を一括 enable する。
+    # CO2 子機が未接続でも実害なし (logger_control 側で hasCO2Sensor を別途見ている)。
     send_json(ser, {"v": 1, "id": 300, "command": "set_settings",
-                    "params": {"t_dry":       {"enabled": True, "interval": 1},
-                               "humidity":    {"enabled": True, "interval": 1},
-                               "t_glb":       {"enabled": True, "interval": 1},
+                    "params": {"general":     {"enabled": True, "interval": 1},
                                "velocity":    {"enabled": True, "interval": 1},
-                               "illuminance": {"enabled": True, "interval": 1},
-                               "co2":         {"enabled": False, "interval": 1}}})
+                               "illuminance": {"enabled": True, "interval": 1}}})
     time.sleep(0.2)
 
     try:
@@ -628,7 +650,8 @@ def test_smp_event_stream(ser):
     if "data" not in first or not isinstance(first["data"], dict):
         print(f"    [FAIL] malformed smp: {first}")
         return False
-    expected_keys = {"t", "h", "g", "vel", "l"}  # co2 disabled, may be absent
+    # general カテゴリ ⇒ t/h/g (+ CO2 子機接続時のみ c)、velocity ⇒ vel、illuminance ⇒ l
+    expected_keys = {"t", "h", "g", "vel", "l"}  # c は CO2 子機未接続時に欠落しうる
     got_keys = set(first["data"].keys())
     common = expected_keys & got_keys
     if len(common) < 3:
@@ -699,15 +722,24 @@ def test_calibrate_co2_validation(ser):
 
 
 def test_dump(ser):
-    """JSON ヘッダ受信 → 続くバイナリストリームをレコード数分だけ吸い出す"""
+    """JSON ヘッダ受信 → 続くバイナリストリームをレコード数分だけ吸い出す。
+
+    大量レコード時 (例: 40000 record × 22B = ~900KB) はストリーム送信時間が
+    数十秒〜数分になるので、転送速度から動的に timeout を計算し、確実に
+    最後まで読み切る。dump 完了前に return すると firmware が dump 送信中の
+    まま USB CDC RX を読まなくなり、後続テストの ser.write() が永久 hang する。
+    """
     print("\n--- Test 16: dump (USB-CDC binary stream) ---")
     ser.reset_input_buffer()
     msg = json.dumps({"v": 1, "id": 20, "command": "dump"}) + '\n'
     print(f">>> Sent: {msg.strip()}")
     ser.write(msg.encode('utf-8'))
 
-    # ヘッダJSON
-    line = ser.readline().decode('utf-8', errors='ignore').strip()
+    # ヘッダJSON (diag '#' 行も skip)
+    line = _read_json_line(ser, time.time() + TIMEOUT_SEC)
+    if line is None:
+        print(f"    [FAIL] no JSON header")
+        return False
     print(f"<<< Header: {line}")
     try:
         hdr = json.loads(line)
@@ -725,29 +757,88 @@ def test_dump(ser):
         print(f"    [FAIL] header malformed")
         return False
 
-    # バイナリストリーム
+    # バイナリストリーム (chunk 単位で進捗表示しつつ最後まで読む)
     total = count * rec_size
     print(f"    expecting {total} bytes of binary records...")
+    data = b''
     if total > 0:
-        data = ser.read(total)
-        print(f"    received {len(data)} bytes")
+        # USB-CDC FS の m-logger 実測スループット (concervative ~8000 B/sec)
+        # 安全側に小さめを仮定。実際はもっと速い (~30000 B/sec) ことが多い。
+        BYTES_PER_SEC = 8000
+        CHUNK_SIZE = 4096
+        # 1 chunk あたりの timeout (最低 2sec)
+        chunk_timeout = max(2.0, CHUNK_SIZE / BYTES_PER_SEC + 1.0)
+        # 進捗表示の刻み (10% 単位、最低 100KB)
+        progress_step = max(total // 10, 100 * 1024)
+
+        saved_timeout = ser.timeout
+        ser.timeout = chunk_timeout
+        try:
+            received = bytearray()
+            next_progress = progress_step
+            while len(received) < total:
+                want = min(CHUNK_SIZE, total - len(received))
+                chunk = ser.read(want)
+                if not chunk:
+                    # この chunk がタイムアウト = stream 中断
+                    print(f"    [WARN] chunk timeout at {len(received)}/{total} bytes ({100*len(received)/total:.1f}%)")
+                    break
+                received.extend(chunk)
+                if len(received) >= next_progress:
+                    pct = 100 * len(received) / total
+                    print(f"    progress: {len(received)}/{total} bytes ({pct:.1f}%)")
+                    next_progress += progress_step
+            data = bytes(received)
+        finally:
+            ser.timeout = saved_timeout
+        print(f"    received {len(data)} bytes total")
         if len(data) != total:
-            print(f"    [WARN] expected {total}, got {len(data)} (timeout?)")
+            print(f"    [WARN] expected {total}, got {len(data)} bytes")
         if data[:rec_size]:
             print(f"    first record (hex): {data[:rec_size].hex()}")
     else:
         print(f"    no records to dump (fresh device)")
 
-    # dump_end イベントを消費 (Phase D)
-    end_line = ser.readline().decode('utf-8', errors='ignore').strip()
+    # dump_end イベントを待つ (firmware が record stream 完了後に emit)
+    # ※ 上で binary read が timeout した場合、ここで dump_end も来ない可能性大。
+    saved_timeout = ser.timeout
+    ser.timeout = 5.0
     try:
-        end_ev = json.loads(end_line)
-        if end_ev.get("event") == "dump_end":
-            print(f"    dump_end: data={end_ev.get('data')}")
-        else:
-            print(f"    [WARN] expected dump_end event, got: {end_ev}")
-    except json.JSONDecodeError:
-        print(f"    [WARN] dump_end not received: {end_line!r}")
+        end_line = _read_json_line(ser, time.time() + 5.0)
+    finally:
+        ser.timeout = saved_timeout
+    if end_line is None:
+        print(f"    [WARN] dump_end not received (likely incomplete dump)")
+    else:
+        try:
+            end_ev = json.loads(end_line)
+            if end_ev.get("event") == "dump_end":
+                print(f"    dump_end: data={end_ev.get('data')}")
+            else:
+                print(f"    [WARN] expected dump_end event, got: {end_ev}")
+        except json.JSONDecodeError:
+            print(f"    [WARN] dump_end JSON parse fail: {end_line!r}")
+
+    # 残バイト drain (次テストへの干渉防止)
+    # firmware が dump streaming 中なら、ここで残データを捨てる必要がある。
+    # buffer drain ループで残バイトがゼロになるまで待つ。
+    print(f"    draining any residual bytes...")
+    drained = 0
+    saved_timeout = ser.timeout
+    ser.timeout = 0.5
+    try:
+        while True:
+            residual = ser.read(4096)
+            if not residual:
+                break
+            drained += len(residual)
+            if drained > 10 * 1024 * 1024:  # safety: max 10MB drain
+                print(f"    [WARN] excessive residual data ({drained} bytes), abort drain")
+                break
+    finally:
+        ser.timeout = saved_timeout
+    if drained > 0:
+        print(f"    drained {drained} residual bytes")
 
     print(f"    [OK]")
     return True
@@ -771,6 +862,7 @@ def run_test(com_port):
             results = []
             # Phase A
             results.append(("hello",           test_hello(ser)))
+            results.append(("get_battery",     test_get_battery(ser)))
             results.append(("unknown_command", test_unknown_command(ser)))
             results.append(("invalid_json",    test_invalid_json(ser)))
             results.append(("legacy_v3_removed", test_legacy_v3_removed(ser)))

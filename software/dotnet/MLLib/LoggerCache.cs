@@ -125,18 +125,19 @@ public sealed class LoggerCache : ImmutableMLogger
     /// <summary>外部から呼ばれる用 (Settings 応答などで設定情報を反映)。</summary>
     public void ApplySettings(Settings s)
     {
-        DrybulbTemperature.Measure  = s.DrybulbTemperature.Enabled;
-        DrybulbTemperature.Interval = (int)s.DrybulbTemperature.Interval;
-        RelativeHumdity.Measure     = s.RelativeHumidity.Enabled;
-        RelativeHumdity.Interval    = (int)s.RelativeHumidity.Interval;
-        GlobeTemperature.Measure    = s.GlobeTemperature.Enabled;
-        GlobeTemperature.Interval   = (int)s.GlobeTemperature.Interval;
+        // v4: General カテゴリ (温湿度+グローブ温度+CO2 一括) を 4 つの MeasurementInfo に展開
+        DrybulbTemperature.Measure  = s.General.Enabled;
+        DrybulbTemperature.Interval = (int)s.General.Interval;
+        RelativeHumdity.Measure     = s.General.Enabled;
+        RelativeHumdity.Interval    = (int)s.General.Interval;
+        GlobeTemperature.Measure    = s.General.Enabled;
+        GlobeTemperature.Interval   = (int)s.General.Interval;
+        CO2Level.Measure            = s.General.Enabled;
+        CO2Level.Interval           = (int)s.General.Interval;
         Velocity.Measure            = s.Velocity.Enabled;
         Velocity.Interval           = (int)s.Velocity.Interval;
         Illuminance.Measure         = s.Illuminance.Enabled;
         Illuminance.Interval        = (int)s.Illuminance.Interval;
-        CO2Level.Measure            = s.Co2.Enabled;
-        CO2Level.Interval           = (int)s.Co2.Interval;
         StartMeasuringDateTime      = s.StartTime.LocalDateTime;
         MeasuringSettingLoaded      = true;
         MeasurementSettingReceivedEvent?.Invoke(this, EventArgs.Empty);

@@ -210,6 +210,42 @@
   <data name="DS_TemperatureAndHumidity" xml:space="preserve">
     <value>Temperature and relative humidity</value>
   </data>
+  <data name="DS_GeneralMeasurement" xml:space="preserve">
+    <value>Temp / humidity / globe / CO2</value>
+  </data>
+  <data name="DS_BatteryInfo" xml:space="preserve">
+    <value>Battery</value>
+  </data>
+  <data name="DS_BatteryVoltage" xml:space="preserve">
+    <value>Voltage</value>
+  </data>
+  <data name="DS_BatteryType" xml:space="preserve">
+    <value>Battery type</value>
+  </data>
+  <data name="DS_BatteryTypeAlkaline" xml:space="preserve">
+    <value>Alkaline</value>
+  </data>
+  <data name="DS_BatteryTypeNiMH" xml:space="preserve">
+    <value>NiMH</value>
+  </data>
+  <data name="DS_BatteryTypeUnknown" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="DS_EstimatedRuntime" xml:space="preserve">
+    <value>Estimated runtime</value>
+  </data>
+  <data name="DS_RuntimeDays" xml:space="preserve">
+    <value>{0} days {1} hours</value>
+  </data>
+  <data name="DS_RuntimeHours" xml:space="preserve">
+    <value>{0} hours</value>
+  </data>
+  <data name="DS_RuntimeLong" xml:space="preserve">
+    <value>3 months or more</value>
+  </data>
+  <data name="DS_LowBatteryWarning" xml:space="preserve">
+    <value>Battery low — replace soon</value>
+  </data>
   <data name="DS_Title" xml:space="preserve">
     <value>Measurement settings</value>
   </data>

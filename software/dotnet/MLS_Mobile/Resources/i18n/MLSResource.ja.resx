@@ -210,6 +210,42 @@
   <data name="DS_TemperatureAndHumidity" xml:space="preserve">
     <value>乾球温度と相対湿度</value>
   </data>
+  <data name="DS_GeneralMeasurement" xml:space="preserve">
+    <value>温湿度 / グローブ温度 / CO2</value>
+  </data>
+  <data name="DS_BatteryInfo" xml:space="preserve">
+    <value>電池</value>
+  </data>
+  <data name="DS_BatteryVoltage" xml:space="preserve">
+    <value>電圧</value>
+  </data>
+  <data name="DS_BatteryType" xml:space="preserve">
+    <value>電池種別</value>
+  </data>
+  <data name="DS_BatteryTypeAlkaline" xml:space="preserve">
+    <value>アルカリ</value>
+  </data>
+  <data name="DS_BatteryTypeNiMH" xml:space="preserve">
+    <value>ニッケル水素</value>
+  </data>
+  <data name="DS_BatteryTypeUnknown" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="DS_EstimatedRuntime" xml:space="preserve">
+    <value>連続計測可能時間</value>
+  </data>
+  <data name="DS_RuntimeDays" xml:space="preserve">
+    <value>約 {0} 日 {1} 時間</value>
+  </data>
+  <data name="DS_RuntimeHours" xml:space="preserve">
+    <value>約 {0} 時間</value>
+  </data>
+  <data name="DS_RuntimeLong" xml:space="preserve">
+    <value>3 か月以上</value>
+  </data>
+  <data name="DS_LowBatteryWarning" xml:space="preserve">
+    <value>電池残量が少なくなっています。早めに交換してください。</value>
+  </data>
   <data name="DS_Title" xml:space="preserve">
     <value>測定方法の設定</value>
   </data>

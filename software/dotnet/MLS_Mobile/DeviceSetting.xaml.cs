@@ -208,19 +208,14 @@ public partial class DeviceSetting : ContentPage
   private async void updateMeasurementSetting() => await updateMeasurementSettingV4();
 
   private bool isInputsCorrect
-  (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
+  (out int genSpan, out int velSpan, out int luxSpan)
   {
     bool hasError = false;
     string alert = "";
-    if (!int.TryParse(ent_th.Text, out thSpan))
+    if (!int.TryParse(ent_gen.Text, out genSpan))
     {
       hasError = true;
-      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.DrybulbTemperature + ")\r\n";
-    }
-    if (!int.TryParse(ent_glb.Text, out glbSpan))
-    {
-      hasError = true;
-      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.GlobeTemperature + ")\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.DS_GeneralMeasurement + ")\r\n";
     }
     if (!int.TryParse(ent_vel.Text, out velSpan))
     {
@@ -231,11 +226,6 @@ public partial class DeviceSetting : ContentPage
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
-    }
-    if (!int.TryParse(ent_co2.Text, out co2Span))
-    {
-      hasError = true;
-      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.CO2level + ")\r\n";
     }
 
     if (hasError)
@@ -339,6 +329,12 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
   private async Task initInfoV4()
   {
+    // 電池パネルは v4 firmware (get_battery 対応) でのみ表示。v3 では panel ごと非表示。
+    bool isV4 = MLUtility.Protocol.Device.ProtocolVersion >= 1;
+    Application.Current?.Dispatcher.Dispatch(() => batteryPanel.IsVisible = isV4);
+    // 電池情報は時間と共に変わるので _initInfoV4Done に拘わらず毎回取得する
+    if (isV4) _ = refreshBatteryAsync();
+
     if (_initInfoV4Done) return;
     _initInfoV4Done = true;
     var dev = MLUtility.Protocol.Device;
@@ -348,7 +344,8 @@ public partial class DeviceSetting : ContentPage
       spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
       spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
       spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
-      co2LevelGrid.IsVisible = dev.HasCo2Sensor;
+      // CO2 は General カテゴリの一部として一括設定するため、独立 UI 行は無くなった。
+      // CO2 子機の有無で CO2 校正ボタンの表示を切り替えるため、HasCo2Sensor だけ別途利用する。
     });
 
     try
@@ -371,21 +368,96 @@ public partial class DeviceSetting : ContentPage
     _ = MLUtility.SyncDeviceTimeAsync();
   }
 
+  /// <summary>get_battery を叩いて電池パネルを更新する (best-effort)。</summary>
+  private async Task refreshBatteryAsync()
+  {
+    try
+    {
+      MLUtility.WriteLog("[battery] GetBatteryAsync start");
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      _battery = await MLUtility.Protocol.GetBatteryAsync(cts.Token);
+      MLUtility.WriteLog($"[battery] GetBatteryAsync OK: {_battery.VoltageMv}mV low={_battery.IsLow}");
+      Application.Current?.Dispatcher.Dispatch(updateBatteryPanel);
+    }
+    catch (Exception ex)
+    {
+      _battery = null;
+      MLUtility.WriteLog($"[battery] GetBatteryAsync FAIL: {ex.GetType().Name}: {ex.Message}");
+    }
+  }
+
+  /// <summary>直近の get_battery 応答 (null = 未取得 / 取得失敗)。</summary>
+  private BatteryInfo? _battery;
+
+  /// <summary>電池情報パネル (電圧/種別/連続計測可能時間) を現在の UI 入力と _battery から再描画。</summary>
+  private void updateBatteryPanel()
+  {
+    if (_battery is null)
+    {
+      lbl_batVoltage.Text   = "-";
+      lbl_batType.Text      = MLSResource.DS_BatteryTypeUnknown;
+      lbl_batRuntime.Text   = "-";
+      lbl_batWarning.IsVisible = false;
+      return;
+    }
+    lbl_batVoltage.Text = (_battery.VoltageMv / 1000.0).ToString("F2") + " V";
+
+    var type = BatteryEstimator.DetectType(_battery.VoltageMv);
+    lbl_batType.Text = type switch
+    {
+      BatteryType.Alkaline => MLSResource.DS_BatteryTypeAlkaline,
+      BatteryType.NiMH     => MLSResource.DS_BatteryTypeNiMH,
+      _                    => MLSResource.DS_BatteryTypeUnknown,
+    };
+
+    // UI 入力値で消費電力を計算 (入力不正なら estimate を出さない)
+    if (!int.TryParse(ent_gen.Text, out int genSpan) ||
+        !int.TryParse(ent_vel.Text, out int velSpan) ||
+        !int.TryParse(ent_lux.Text, out int luxSpan) ||
+        genSpan <= 0 || velSpan <= 0 || luxSpan <= 0)
+    {
+      lbl_batRuntime.Text = "-";
+    }
+    else
+    {
+      var s = new Settings(
+        General:     new SensorSetting(cbx_gen.IsToggled, (uint)genSpan),
+        Velocity:    new SensorSetting(cbx_vel.IsToggled, (uint)velSpan),
+        Illuminance: new SensorSetting(cbx_lux.IsToggled, (uint)luxSpan),
+        StartTime:   DateTimeOffset.Now);
+      double pMw = BatteryEstimator.EstimatePowerMw(s);
+      var runtime = BatteryEstimator.EstimateContinuousRuntime(pMw, _battery.VoltageMv);
+      lbl_batRuntime.Text = formatRuntime(runtime);
+    }
+
+    lbl_batWarning.IsVisible = _battery.IsLow;
+    lbl_batWarning.Text      = MLSResource.DS_LowBatteryWarning;
+  }
+
+  private static string formatRuntime(TimeSpan t)
+  {
+    if (t.TotalHours <= 0) return "-";
+    int totalDays = (int)t.TotalDays;
+    if (totalDays >= 90) return MLSResource.DS_RuntimeLong;
+    if (totalDays >= 1)
+    {
+      int hours = t.Hours;
+      return string.Format(MLSResource.DS_RuntimeDays, totalDays, hours);
+    }
+    return string.Format(MLSResource.DS_RuntimeHours, Math.Max(1, (int)t.TotalHours));
+  }
+
   /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>
   private async Task updateMeasurementSettingV4()
   {
-    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
+    if (!isInputsCorrect(out int genSpan, out int velSpan, out int luxSpan)) return;
 
-    var thSetting  = new SensorSettingPatch(cbx_th.IsToggled,  (uint)thSpan);
     var patch = new SettingsPatch
     {
-      DrybulbTemperature = thSetting,
-      RelativeHumidity   = thSetting,                                              // RH shares with DBT in current UI
-      GlobeTemperature   = new SensorSettingPatch(cbx_glb.IsToggled, (uint)glbSpan),
-      Velocity           = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
-      Illuminance        = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
-      Co2                = new SensorSettingPatch(cbx_co2.IsToggled, (uint)co2Span),
-      StartTime          = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
+      General     = new SensorSettingPatch(cbx_gen.IsToggled, (uint)genSpan),
+      Velocity    = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
+      Illuminance = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
+      StartTime   = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
     };
 
     try
@@ -431,16 +503,12 @@ public partial class DeviceSetting : ContentPage
   /// <summary>Copy Settings (server response) into the UI controls.</summary>
   private void applySettingsToUI(Settings s)
   {
-    cbx_th.IsToggled  = s.DrybulbTemperature.Enabled;
-    ent_th.Text       = s.DrybulbTemperature.Interval.ToString();
-    cbx_glb.IsToggled = s.GlobeTemperature.Enabled;
-    ent_glb.Text      = s.GlobeTemperature.Interval.ToString();
+    cbx_gen.IsToggled = s.General.Enabled;
+    ent_gen.Text      = s.General.Interval.ToString();
     cbx_vel.IsToggled = s.Velocity.Enabled;
     ent_vel.Text      = s.Velocity.Interval.ToString();
     cbx_lux.IsToggled = s.Illuminance.Enabled;
     ent_lux.Text      = s.Illuminance.Interval.ToString();
-    cbx_co2.IsToggled = s.Co2.Enabled;
-    ent_co2.Text      = s.Co2.Interval.ToString();
     var local         = s.StartTime.LocalDateTime;
     dpck_start.Date   = local.Date;
     tpck_start.Time   = local.TimeOfDay;
@@ -563,20 +631,18 @@ public partial class DeviceSetting : ContentPage
 
   private void cbx_Toggled(object sender, ToggledEventArgs e)
   {
-    if (sender.Equals(cbx_th)) lbl_th.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = UnsavedColor;
+    if (sender.Equals(cbx_gen)) lbl_gen.TextColor = UnsavedColor;
     else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = UnsavedColor;
     else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = UnsavedColor;
+    updateBatteryPanel();
   }
 
   private void ent_TextChanged(object sender, TextChangedEventArgs e)
   {
-    if (sender.Equals(ent_th)) lbl_th.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_glb)) lbl_glb.TextColor = UnsavedColor;
+    if (sender.Equals(ent_gen)) lbl_gen.TextColor = UnsavedColor;
     else if (sender.Equals(ent_vel)) lbl_vel.TextColor = UnsavedColor;
     else if (sender.Equals(ent_lux)) lbl_lux.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = UnsavedColor;
+    updateBatteryPanel();
   }
 
   private void dpck_start_DateSelected(object sender, DateChangedEventArgs e)
@@ -599,12 +665,10 @@ public partial class DeviceSetting : ContentPage
 
   private void resetTextColor()
   {
-    lbl_th.TextColor =
-      lbl_glb.TextColor =
+    lbl_gen.TextColor =
       lbl_vel.TextColor =
       lbl_lux.TextColor =
       lbl_stdtime.TextColor =
-      lbl_co2.TextColor =
       Colors.DarkGreen;
   }
 
@@ -664,6 +728,12 @@ public partial class DeviceSetting : ContentPage
   private async void TapGestureRecognizer_Other_Tapped(object sender, TappedEventArgs e)
   {
     var popup = new DescriptionPopup(DescriptionText.OtherSetting);
+    var result = await this.ShowPopupAsync(popup);
+  }
+
+  private async void TapGestureRecognizer_Battery_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.BatteryInfo);
     var result = await this.ShowPopupAsync(popup);
   }
 

@@ -364,7 +364,50 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("DS_TemperatureAndHumidity", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Temp / humidity / globe / CO2 に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_GeneralMeasurement {
+            get {
+                return ResourceManager.GetString("DS_GeneralMeasurement", resourceCulture);
+            }
+        }
+
+        internal static string DS_BatteryInfo {
+            get { return ResourceManager.GetString("DS_BatteryInfo", resourceCulture); }
+        }
+        internal static string DS_BatteryVoltage {
+            get { return ResourceManager.GetString("DS_BatteryVoltage", resourceCulture); }
+        }
+        internal static string DS_BatteryType {
+            get { return ResourceManager.GetString("DS_BatteryType", resourceCulture); }
+        }
+        internal static string DS_BatteryTypeAlkaline {
+            get { return ResourceManager.GetString("DS_BatteryTypeAlkaline", resourceCulture); }
+        }
+        internal static string DS_BatteryTypeNiMH {
+            get { return ResourceManager.GetString("DS_BatteryTypeNiMH", resourceCulture); }
+        }
+        internal static string DS_BatteryTypeUnknown {
+            get { return ResourceManager.GetString("DS_BatteryTypeUnknown", resourceCulture); }
+        }
+        internal static string DS_EstimatedRuntime {
+            get { return ResourceManager.GetString("DS_EstimatedRuntime", resourceCulture); }
+        }
+        internal static string DS_RuntimeDays {
+            get { return ResourceManager.GetString("DS_RuntimeDays", resourceCulture); }
+        }
+        internal static string DS_RuntimeHours {
+            get { return ResourceManager.GetString("DS_RuntimeHours", resourceCulture); }
+        }
+        internal static string DS_RuntimeLong {
+            get { return ResourceManager.GetString("DS_RuntimeLong", resourceCulture); }
+        }
+        internal static string DS_LowBatteryWarning {
+            get { return ResourceManager.GetString("DS_LowBatteryWarning", resourceCulture); }
+        }
+
         /// <summary>
         ///   Measurement settings に類似しているローカライズされた文字列を検索します。
         /// </summary>

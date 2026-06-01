@@ -169,27 +169,29 @@ static void initVCCoefficients(){
 }
 
 static void initMSettings(){
+	// v4 デフォルト: 全カテゴリ (general/velocity/illuminance) を enabled、
+	// interval=60sec (Eneloop 想定での電池寿命と粒度のバランス)
 	EM_mSettings = (MeasurementSettings){
         1,		//バージョン
 		false, //自動測定開始
-		true, //乾球温度の計測真偽
-		true, //グローブ温度の計測真偽
-		true, //風速の計測真偽
-		true, //照度の計測真偽
-		false, //汎用AD1の計測真偽
-		false, //汎用AD2の計測真偽
-		false, //汎用AD3の計測真偽
-		false, //近接センサの計測真偽
-		true,  //CO2の計測真偽 (v4 はデフォルト有効)
-		1, //乾球温度の計測間隔[sec]
-		1, //グローブ温度の計測間隔[sec]
-		1, //風速の計測間隔[sec]
-		1, //照度の計測間隔[sec]
-		1, //汎用AD1の計測間隔[sec]
-		1, //汎用AD2の計測間隔[sec]
-		1, //汎用AD3の計測間隔[sec]
-		1, //近接センサの計測間隔[sec]
-		1, //CO2の計測間隔[sec]
+		true, //乾球温度の計測真偽 (general)
+		true, //グローブ温度の計測真偽 (general)
+		true, //風速の計測真偽 (velocity)
+		true, //照度の計測真偽 (illuminance)
+		false, //汎用AD1の計測真偽 (v4 未使用)
+		false, //汎用AD2の計測真偽 (v4 未使用)
+		false, //汎用AD3の計測真偽 (v4 未使用)
+		false, //近接センサの計測真偽 (v4 未使用)
+		true,  //CO2の計測真偽 (general)
+		60, //乾球温度の計測間隔[sec]
+		60, //グローブ温度の計測間隔[sec]
+		60, //風速の計測間隔[sec]
+		60, //照度の計測間隔[sec]
+		1, //汎用AD1の計測間隔[sec] (v4 未使用)
+		1, //汎用AD2の計測間隔[sec] (v4 未使用)
+		1, //汎用AD3の計測間隔[sec] (v4 未使用)
+		1, //近接センサの計測間隔[sec] (v4 未使用)
+		60, //CO2の計測間隔[sec]
 		1609459200,	//計測開始日時 (UNIX時間,UTC時差0で2021/1/1 00:00:00)
 		0		//CRC（一旦0で初期化）
 	};

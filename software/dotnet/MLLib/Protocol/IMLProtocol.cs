@@ -31,6 +31,12 @@ public interface IMLProtocol : IDisposable
     Task<string> SetNameAsync(string name, CancellationToken ct = default);
     Task<DateTimeOffset> SetTimeAsync(DateTimeOffset time, CancellationToken ct = default);
 
+    /// <summary>
+    /// 電池電圧と low-battery フラグを取得。連続計測可能時間の試算は <see cref="BatteryEstimator"/> で行う。
+    /// v3 (LegacyV3Protocol) は本コマンド未対応のため <see cref="MLProtocolException"/> (code=unsupported)。
+    /// </summary>
+    Task<BatteryInfo> GetBatteryAsync(CancellationToken ct = default);
+
     Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default);
     Task StopLoggingAsync(CancellationToken ct = default);
 

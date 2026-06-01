@@ -8,6 +8,7 @@
 #include "usb_extension.h"     // USB_StartRecordStream, USB_SetStreamDoneCallback, rec_latest
 #include "w25q256.h"           // SensorData_t (record_size 算出用), W25_ChipErase
 #include "hal_io.h"            // turnOnRedLED / turnOffRedLED (erase_flash 中の処理中通知)
+#include "main.h"              // getBatteryVoltage_mV (= ph_get_battery)
 
 #include <avr/io.h>            // SIGROW
 #include <stdio.h>
@@ -45,26 +46,74 @@ static void send_simple_error(int32_t id, CommandSource_t src, const char *code,
 static bool in_range_f(float v, float lo, float hi) { return v >= lo && v <= hi; }
 
 // ============================================================
-// センサ ⇔ 設定/補正のマッピング
+// センサカテゴリ ⇔ 設定のマッピング (v4 set_settings は 3 カテゴリ)
 // (PATCH 適用 + 応答生成の両方で使う)
 // ============================================================
+// "general"     = 温湿度 + グローブ温度 + CO2 (th_probe 一括計測なので 1 つの設定で十分)
+// "velocity"    = 風速
+// "illuminance" = 照度
+//
+// 内部 EEPROM struct は v3 互換のため measure_th/glb/co2 等を個別に保持しているが、
+// v4 protocol では "general" 1 つで th/glb/co2 を同時に on/off / interval 設定する。
+typedef enum {
+    SC_GENERAL = 0,
+    SC_VELOCITY,
+    SC_ILLUMINANCE,
+} SensorCategory_t;
+
 typedef struct {
     const char *name;
-    bool *enabled_ptr;
-    unsigned int *interval_ptr;
+    SensorCategory_t category;
 } sensor_setting_t;
 
-// 注: t_dry と humidity はハードウェア (SHT4x) 上で同一の measure_th/interval_th を共有
-// プロトコル上では分けて見えるが、片方を変えるともう片方も変わる
 static const sensor_setting_t SENSOR_SETTINGS[] = {
-    { "t_dry",       &EM_mSettings.measure_th,  &EM_mSettings.interval_th  },
-    { "humidity",    &EM_mSettings.measure_th,  &EM_mSettings.interval_th  },
-    { "t_glb",       &EM_mSettings.measure_glb, &EM_mSettings.interval_glb },
-    { "velocity",    &EM_mSettings.measure_vel, &EM_mSettings.interval_vel },
-    { "illuminance", &EM_mSettings.measure_ill, &EM_mSettings.interval_ill },
-    { "co2",         &EM_mSettings.measure_co2, &EM_mSettings.interval_co2 },
+    { "general",     SC_GENERAL     },
+    { "velocity",    SC_VELOCITY    },
+    { "illuminance", SC_ILLUMINANCE },
 };
 #define NUM_SENSOR_SETTINGS (sizeof(SENSOR_SETTINGS) / sizeof(SENSOR_SETTINGS[0]))
+
+static bool get_category_enabled(SensorCategory_t c) {
+    switch (c) {
+        case SC_GENERAL:     return EM_mSettings.measure_th;   // th/glb/co2 は常に同値で保持
+        case SC_VELOCITY:    return EM_mSettings.measure_vel;
+        case SC_ILLUMINANCE: return EM_mSettings.measure_ill;
+    }
+    return false;
+}
+
+static unsigned int get_category_interval(SensorCategory_t c) {
+    switch (c) {
+        case SC_GENERAL:     return EM_mSettings.interval_th;  // th/glb/co2 は常に同値で保持
+        case SC_VELOCITY:    return EM_mSettings.interval_vel;
+        case SC_ILLUMINANCE: return EM_mSettings.interval_ill;
+    }
+    return 0;
+}
+
+static void set_category_enabled(SensorCategory_t c, bool v) {
+    switch (c) {
+        case SC_GENERAL:
+            EM_mSettings.measure_th  = v;
+            EM_mSettings.measure_glb = v;
+            EM_mSettings.measure_co2 = v;
+            break;
+        case SC_VELOCITY:    EM_mSettings.measure_vel = v; break;
+        case SC_ILLUMINANCE: EM_mSettings.measure_ill = v; break;
+    }
+}
+
+static void set_category_interval(SensorCategory_t c, unsigned int v) {
+    switch (c) {
+        case SC_GENERAL:
+            EM_mSettings.interval_th  = v;
+            EM_mSettings.interval_glb = v;
+            EM_mSettings.interval_co2 = v;
+            break;
+        case SC_VELOCITY:    EM_mSettings.interval_vel = v; break;
+        case SC_ILLUMINANCE: EM_mSettings.interval_ill = v; break;
+    }
+}
 
 typedef struct {
     const char *name;
@@ -90,8 +139,8 @@ static void write_settings_body(pc_writer_t *w) {
     for (size_t i = 0; i < NUM_SENSOR_SETTINGS; i++) {
         pc_key(w, SENSOR_SETTINGS[i].name);
         pc_obj_begin(w);
-        pc_key(w, "enabled");  pc_bool(w, *SENSOR_SETTINGS[i].enabled_ptr);
-        pc_key(w, "interval"); pc_uint(w, *SENSOR_SETTINGS[i].interval_ptr);
+        pc_key(w, "enabled");  pc_bool(w, get_category_enabled(SENSOR_SETTINGS[i].category));
+        pc_key(w, "interval"); pc_uint(w, get_category_interval(SENSOR_SETTINGS[i].category));
         pc_obj_end(w);
     }
     pc_key(w, "start_ts"); pc_uint(w, (uint32_t)EM_mSettings.start_dt);
@@ -140,6 +189,23 @@ void ph_hello(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens
     pc_key(&w, "hardware_id");      pc_str(&w, hw_id);
     pc_key(&w, "name");             pc_str(&w, EM_mlName);
     pc_key(&w, "logging");          pc_bool(&w, LC_IsLogging());
+    pc_end_result(&w);
+
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+}
+
+// ============================================================
+// get_battery
+// ============================================================
+void ph_get_battery(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+
+    uint16_t vbat_mv = getBatteryVoltage_mV();
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    pc_key(&w, "voltage_mv");  pc_uint(&w, vbat_mv);
+    pc_key(&w, "low_battery"); pc_bool(&w, vbat_mv < 1800);
     pc_end_result(&w);
 
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
@@ -213,7 +279,7 @@ void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
 
     bool changed = false;
 
-    // 各センサについてキーが指定されていれば PATCH
+    // 各カテゴリについてキーが指定されていれば PATCH
     for (size_t i = 0; i < NUM_SENSOR_SETTINGS; i++) {
         int s_tok = pc_obj_get(json, tokens, ntokens, params_tok, SENSOR_SETTINGS[i].name);
         if (s_tok < 0) continue;
@@ -229,7 +295,7 @@ void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
                 send_simple_error(id, src, "invalid_params", "enabled must be boolean");
                 return;
             }
-            *SENSOR_SETTINGS[i].enabled_ptr = en;
+            set_category_enabled(SENSOR_SETTINGS[i].category, en);
             changed = true;
         }
         // interval
@@ -240,7 +306,7 @@ void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
                 send_simple_error(id, src, "out_of_range", "interval must be 0-99999");
                 return;
             }
-            *SENSOR_SETTINGS[i].interval_ptr = (unsigned int)iv;
+            set_category_interval(SENSOR_SETTINGS[i].category, (unsigned int)iv);
             changed = true;
         }
     }

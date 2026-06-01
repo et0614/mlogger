@@ -111,5 +111,14 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("OtherSetting", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Battery information に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string BatteryInfo {
+            get {
+                return ResourceManager.GetString("BatteryInfo", resourceCulture);
+            }
+        }
     }
 }

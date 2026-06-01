@@ -13,9 +13,12 @@ extern "C" {
 #endif
     
 #include <stdbool.h>
+#include <stdint.h>
 #include <time.h>
 #include "w25q256.h" //内蔵フラッシュ
-    
+
+uint16_t getBatteryVoltage_mV(void);
+
 bool isLowBattery(void);
     
 void showError(short int errNum);

@@ -291,14 +291,12 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
 
     public async Task<Settings> SetSettingsAsync(SettingsPatch patch, CancellationToken ct = default)
     {
+        // v4 protocol は 3 カテゴリ (general/velocity/illuminance) で送受信
         var p = new JsonObject();
-        if (patch.DrybulbTemperature is not null) p["t_dry"]       = BuildSensorPatch(patch.DrybulbTemperature);
-        if (patch.RelativeHumidity   is not null) p["humidity"]    = BuildSensorPatch(patch.RelativeHumidity);
-        if (patch.GlobeTemperature   is not null) p["t_glb"]       = BuildSensorPatch(patch.GlobeTemperature);
-        if (patch.Velocity           is not null) p["velocity"]    = BuildSensorPatch(patch.Velocity);
-        if (patch.Illuminance        is not null) p["illuminance"] = BuildSensorPatch(patch.Illuminance);
-        if (patch.Co2                is not null) p["co2"]         = BuildSensorPatch(patch.Co2);
-        if (patch.StartTime          is not null) p["start_ts"]    = patch.StartTime.Value.ToUnixTimeSeconds();
+        if (patch.General     is not null) p["general"]     = BuildSensorPatch(patch.General);
+        if (patch.Velocity    is not null) p["velocity"]    = BuildSensorPatch(patch.Velocity);
+        if (patch.Illuminance is not null) p["illuminance"] = BuildSensorPatch(patch.Illuminance);
+        if (patch.StartTime   is not null) p["start_ts"]    = patch.StartTime.Value.ToUnixTimeSeconds();
 
         var result = RequireResult<JsonObject>(await CallAsync("set_settings", p, ct));
         return ParseSettings(result);
@@ -334,6 +332,14 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         var result = RequireResult<JsonObject>(
             await CallAsync("set_time", new JsonObject { ["ts"] = time.ToUnixTimeSeconds() }, ct));
         return DateTimeOffset.FromUnixTimeSeconds(result["ts"]?.GetValue<long>() ?? 0);
+    }
+
+    public async Task<BatteryInfo> GetBatteryAsync(CancellationToken ct = default)
+    {
+        var result = RequireResult<JsonObject>(await CallAsync("get_battery", null, ct));
+        return new BatteryInfo(
+            VoltageMv: result["voltage_mv"]?.GetValue<int>() ?? 0,
+            IsLow:     result["low_battery"]?.GetValue<bool>() ?? false);
     }
 
     public async Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default)
@@ -461,13 +467,10 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         Interval: obj["interval"]?.GetValue<uint>() ?? 0);
 
     private static Settings ParseSettings(JsonObject result) => new(
-        DrybulbTemperature: ParseSensorSetting((JsonObject)result["t_dry"]!),
-        RelativeHumidity:   ParseSensorSetting((JsonObject)result["humidity"]!),
-        GlobeTemperature:   ParseSensorSetting((JsonObject)result["t_glb"]!),
-        Velocity:           ParseSensorSetting((JsonObject)result["velocity"]!),
-        Illuminance:        ParseSensorSetting((JsonObject)result["illuminance"]!),
-        Co2:                ParseSensorSetting((JsonObject)result["co2"]!),
-        StartTime:          DateTimeOffset.FromUnixTimeSeconds(result["start_ts"]?.GetValue<long>() ?? 0));
+        General:     ParseSensorSetting((JsonObject)result["general"]!),
+        Velocity:    ParseSensorSetting((JsonObject)result["velocity"]!),
+        Illuminance: ParseSensorSetting((JsonObject)result["illuminance"]!),
+        StartTime:   DateTimeOffset.FromUnixTimeSeconds(result["start_ts"]?.GetValue<long>() ?? 0));
 
     private static CorrectionCoefficients ParseCorrectionPair(JsonObject obj) => new(
         A: obj["a"]?.GetValue<float>() ?? 1.0f,

@@ -248,26 +248,28 @@ void executeSecondlyTask(void)
     }
 }
 
-//電池残量が小さくなったか否か
-bool isLowBattery(void)
-{    
-    //debug
-    return false;
-    
-    // 基準電圧を「VDD (3.3V)」に設定
+// 電池電圧計測 (PD3 = ADC0 AIN3 に VBAT が直接接続されている前提)
+// 基準電圧は VDD (3.3V regulated)、8 sample 積算で精度確保。
+// 戻り値: VBAT [mV]
+uint16_t getBatteryVoltage_mV(void)
+{
     ADC0_SetReferenceVoltage(ADC_VREF_VDD);
+    ADC0_SampleRepeatCountSet(ADC_8_SAMPLES_ACCUMULATED);
+    ADC0_ChannelSelect(ADC0_CHANNEL_AIN3);
+    ADC0_ConversionStart();
+    while(!ADC0_IsConversionDone());
+    adc_accumulate_t acc_val = ADC0_AccumulatedResultGet();
 
-    ADC0_SampleRepeatCountSet(ADC_8_SAMPLES_ACCUMULATED); //積算回数
-    ADC0_ChannelSelect(ADC0_CHANNEL_AIN3); // チャンネルを選択
-    ADC0_ConversionStart(); // 変換開始
-    while(!ADC0_IsConversionDone()); // 完了待ち (BUSYフラグが落ちるのを待つ)
-    adc_accumulate_t acc_val = ADC0_AccumulatedResultGet(); // 結果を取得
-    
-    // 電圧計算（基準電圧=3300mV）
-    uint32_t battery_mv = (uint32_t)acc_val * 3300 / 8192; //1024*8 (10bit,8回平均)
-    
-    //1.8V（0.9V/本)以下で電池不足と判定
-    return battery_mv < 1800;
+    // 10bit ADC * 8 回積算 → 0..8192 のレンジ。基準 3.3V (= 3300mV)
+    uint32_t battery_mv = (uint32_t)acc_val * 3300 / 8192;
+    if (battery_mv > 0xFFFF) battery_mv = 0xFFFF;
+    return (uint16_t)battery_mv;
+}
+
+// 電池残量が小さくなったか否か (1.8V = 0.9V/本以下で true)
+bool isLowBattery(void)
+{
+    return getBatteryVoltage_mV() < 1800;
 }
 
 //エラー表示
