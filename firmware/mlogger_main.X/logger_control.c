@@ -210,7 +210,7 @@ void execLogging(void)
         {
             send_needed = true;
             pass_counters.vel = 0;
-            
+
             LC_Update_Anemometer();
             // 子機切断 / status1 異常時は valid_flag を立てない
             // (= load_data.py 等で空欄になり、ゴミ値 65000 等が混入しない)
@@ -457,7 +457,7 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     outputToFM = toFlash;
     outputToUSB = toUSB;
     
-    //計測日時が正時になるように微調整    
+    //計測日時が正時になるように微調整
     struct tm lastSavedTime; //最後に保存した日時（UNIX時間）
     time_t ct = LC_GetCurrentTime() - UNIX_OFFSET;
     gmtime_r(&ct, &lastSavedTime);
@@ -467,6 +467,19 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     pass_counters.ill = getNormTime(lastSavedTime, EM_mSettings.interval_ill);
     pass_counters.ad1 = getNormTime(lastSavedTime, EM_mSettings.interval_AD1);
     pass_counters.co2 = getNormTime(lastSavedTime, EM_mSettings.interval_co2);
+
+    // 風速プローブの第一回計測まで V_WAKEUP_TIME 以上の余裕を確保する。
+    // getNormTime は round 秒に揃える設計だが、開始秒が悪い (例 sec%60=59) と
+    // 第一回 Wake (Anemometer_Wakeup → XCL102 起動) と Update (POLL read) が
+    // 同 tick で連続発火する。低 VBAT では XCL102 inrush 中の POLL read が
+    // cascade collapse で I2C 失敗するので、必ず V_WAKEUP_TIME 以上の warmup
+    // 期間を取れるよう pass_counters.vel を巻き戻す。
+    if (EM_mSettings.interval_vel >= V_WAKEUP_TIME) {
+        int max_vel = (int)EM_mSettings.interval_vel - V_WAKEUP_TIME;
+        if (pass_counters.vel > max_vel) pass_counters.vel = max_vel;
+    }
+    // interval_vel < V_WAKEUP_TIME の場合は熱線常時 ON 運用で別途設計、ここでは
+    // 巻き戻ししない。
 
     // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
     th_trigger_pending = false;
