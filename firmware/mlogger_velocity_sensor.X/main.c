@@ -24,6 +24,25 @@
 #include <string.h>
 #include <math.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
+
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc="消費電流計測用 テストモード">
+
+// 消費電流計測用のテストモード切替。本番リリース時は TEST_MODE_NONE に戻すこと。
+//   TEST_MODE_NONE   : 通常 firmware (本番動作)
+//   TEST_MODE_SLEEP  : 初期化後 SLP low (熱線回路 OFF) + POWER-DOWN 固定 (B-off)
+//   TEST_MODE_HEAT   : 初期化後 SLP high (熱線回路 ON) + IDLE 待機 (B-on)
+//   TEST_MODE_ACTIVE : SLP high + ADC 連続変換 (C)
+#define TEST_MODE_NONE       0
+#define TEST_MODE_SLEEP      1
+#define TEST_MODE_HEAT       2
+#define TEST_MODE_ACTIVE     3
+
+#ifndef TEST_MODE
+#define TEST_MODE TEST_MODE_NONE
+#endif
 
 // </editor-fold>
 
@@ -157,10 +176,14 @@ int main(void)
     for (uint8_t i = 0; i < 8; i++) SharedMemory.reg.value[i] = 0.0f;
 
     // ===== 拡張領域の初期化 ===================================================
-    SharedMemory.reg.enable = 1;
+    // 起動直後は熱線 OFF (sleep) 状態にしておき、親機からの enable=1 指示で
+    // 加熱を開始する。デフォルト enable=1 / SLP=high にすると、電源 ON 即時に
+    // 熱線が ON になり、親機が measure_vel=false でも熱線が永久 ON のまま電池を
+    // 食い続ける (= 安定化電源だと UVLO まで電流引きっぱなしになる)。
+    SharedMemory.reg.enable = 0;
 
-    // 風速回路起動
-    SLP_SetHigh();
+    // 風速回路を sleep 状態で開始 (熱線 OFF)
+    SLP_SetLow();
 
     // イベントハンドラ登録
     RTC_SetOVFIsrCallback(msecHandler);
@@ -171,6 +194,37 @@ int main(void)
     // 風速電圧平滑化フィルタの初期化
     SF_Init(&velFilter, SharedMemory.reg.filter_n, 0);
 
+#if TEST_MODE == TEST_MODE_SLEEP
+    // ----- B-off: 熱線回路 OFF + POWER-DOWN sleep -----
+    // I2C ピンは VDD 直結すること。WDT を切ってから POWER-DOWN 固定。
+    SLP_SetLow();
+    _PROTECTED_WRITE(WDT.CTRLA, 0);
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+    sei();
+    while (1) { sleep_mode(); }
+
+#elif TEST_MODE == TEST_MODE_HEAT
+    // ----- B-on: 熱線回路 ON (定常) + IDLE 待機 -----
+    // 熱線がウォームアップ完了するまで HEATING_MSEC 待ってから測定。
+    SLP_SetHigh();
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    sei();
+    while (1) {
+        wdt_reset();
+        sleep_mode();
+    }
+
+#elif TEST_MODE == TEST_MODE_ACTIVE
+    // ----- C: 熱線 ON + ADC 連続変換ループ -----
+    SLP_SetHigh();
+    sei();
+    while (1) {
+        wdt_reset();
+        (void)updateVelocityVoltage();   // ADC 変換 + フィルタ
+    }
+
+#else
+    // ----- 本番動作 -----
     set_sleep_mode(SLEEP_MODE_IDLE);
     sei();
 
@@ -262,6 +316,7 @@ int main(void)
         }
         sleep_mode();
     }
+#endif // TEST_MODE
 }
 
 // </editor-fold>
