@@ -25,8 +25,8 @@ Choose where measurement values are saved: Phone, PC, or Flash.
 - **Flash**: saved to the M-Logger's onboard flash memory. Allows long-term standalone operation with no smartphone or PC connection.
 
 !!! note "Retrieval method differs between v3 and v4"
-    - On **v4**, data recorded to Flash can also be retrieved over Bluetooth from the smartphone (see [Recorded data](#recorded-data) below).
-    - On **v3**, the smartphone cannot retrieve Flash data; connect a PC via **USB Type-C** after the measurement ends.
+    - **v4** uses internal flash, so after a measurement the data can be retrieved either from the **smartphone (Bluetooth)** or from a **PC (USB Type-C)**. The Bluetooth path is described in [Recorded data](#recorded-data) below.
+    - **v3** uses a removable memory card. After a measurement, physically remove the card from the body and read it on a PC with a card reader. Retrieval over smartphone or USB cable is not supported.
 
 ## Active sensors and intervals
 
@@ -63,8 +63,9 @@ Use this for scheduled measurements (e.g. "start at 9 a.m. tomorrow").
 ## Recorded data
 
 !!! note "v4 firmware only"
-    This section is only shown on v4 firmware. On v3 firmware, retrieving the
-    internal flash requires a USB Type-C connection to a PC.
+    This section is only shown on v4 firmware. On v3 firmware, retrieval is done
+    by physically removing the memory card from the body and reading it on a PC
+    with a card reader.
 
 Download or clear the data recorded in the device's internal flash.
 
