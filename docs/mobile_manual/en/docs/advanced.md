@@ -15,6 +15,8 @@ Useful for distinguishing units when running several at once.
 Each unit is calibrated at the factory, so you normally do not need to touch this.
 If you want to compensate for sensor drift after long-term use, the per-sensor gain and offset can be adjusted linearly.
 
+On both v3 and v4 firmware, correction coefficients are set independently for the **five sensors** (drybulb temperature, relative humidity, globe temperature, illuminance, velocity — CO2 is excluded because it uses factory calibration + automatic self-calibration). Even though v4 collapses the measurement settings into 3 categories, correction coefficients remain per-sensor.
+
 ## CO2 sensor calibration / initialization
 
 The CO2 sensor has an **Automatic Self-Calibration (ASC)** feature: as long as it is exposed roughly once a day to fresh outdoor-equivalent air (about 400 ppm), it auto-calibrates against that level.

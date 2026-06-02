@@ -24,6 +24,24 @@ The app is free. Its name is **MLogger Server**.
 7. [Thermal comfort and moist air calculators](calculators.md) — PMV / PPD / SET\* and moist-air properties
 8. [Advanced settings and permanent mode](advanced.md) — correction coefficients, CO2 calibration, PC communication, permanent mode
 
+## Which firmware version is on your M-Logger
+
+M-Loggers ship with one of two firmware lineages, and the app shows slightly
+different screens depending on which firmware your unit runs.
+
+| Firmware | Differences |
+|---------|-------------|
+| **v4 (new)** | Sensor settings collapsed into 3 categories / battery info shown / recorded data can be downloaded and cleared from the phone |
+| **v3 (legacy)** | Sensor settings shown as 5 rows / no battery or data-management section / retrieving recorded data requires PC + USB |
+
+When you scan and connect, **the app auto-detects the firmware and switches the
+UI accordingly**. To check explicitly, look at the **M-Logger version** displayed
+in the "Other settings" section of the [Measurement settings](settings.md) screen
+— `4.x.x` is v4, `3.x.x` is v3.
+
+Where this manual shows different screens, both versions are presented in tabs.
+Pick the tab matching your device.
+
 ## Out of scope
 
 This manual is limited to **smartphone operation**. For other topics, see the following:

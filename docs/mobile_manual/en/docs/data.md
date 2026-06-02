@@ -5,10 +5,26 @@ The data is stored on the smartphone itself, so you can browse and share it with
 
 ## Data list
 
-![Measured data list](assets/screenshots/data_files_list.png){ width="280" }
+=== "v4 firmware (new)"
 
-Data is grouped by M-Logger, with each day's file listed below it together with its file size.
-If you measure more than once on the same day, the new data is appended to the file for that day.
+    ![Measured data list (v4)](assets/screenshots/data_files_list_v4.png){ width="280" }
+
+    Data is grouped by M-Logger, with each day's file listed below it together with
+    its file size. If you measure more than once on the same day, the new data is
+    appended to the file for that day.
+
+    Rows marked with **`-M` suffix and a light-blue background** are records
+    downloaded from the device's internal flash (i.e. measured first, then
+    retrieved in bulk later). They are distinguished from data measured directly
+    by the smartphone.
+
+=== "v3 firmware (legacy)"
+
+    ![Measured data list (v3)](assets/screenshots/data_files_list.png){ width="280" }
+
+    Data is grouped by M-Logger, with each day's file listed below it together with
+    its file size. If you measure more than once on the same day, the new data is
+    appended to the file for that day.
 
 ## Sharing and deleting
 
@@ -20,6 +36,7 @@ Swipe a row to the left to reveal **Share** and **Delete** buttons.
 - **Delete**: permanently delete the data. **Deletion cannot be undone**.
 
 The CSV file contains one sample per row with timestamp and each sensor value. It opens directly in Excel or any analysis script.
+CSV files measured directly on the phone and CSV files downloaded from the device (v4, `-M` suffix) share the same format, so analysis tools can treat them identically.
 
 ## Detail view
 
