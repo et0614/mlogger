@@ -11,7 +11,7 @@
 */
 
 /*
-? [2025] Microchip Technology Inc. and its subsidiaries.
+? [2026] Microchip Technology Inc. and its subsidiaries.
 
     Subject to your compliance with these terms, you may use Microchip 
     software and any derivatives exclusively with Microchip products. 
@@ -135,8 +135,8 @@ void USART0_Initialize(void)
 
     // Set the USART0 module to the options selected in the user interface.
 
-    //BAUD 10000; 
-    USART0.BAUD = (uint16_t)USART0_BAUD_RATE(9600UL);
+    //BAUD 833; 
+    USART0.BAUD = (uint16_t)USART0_BAUD_RATE(115200UL);
 	
     // ABEIE disabled; DREIE disabled; LBME disabled; RS485 DISABLE; RXCIE enabled; RXSIE enabled; TXCIE enabled; 
     USART0.CTRLA = 0xD0;
@@ -381,9 +381,9 @@ void USART0_ReceiveISR(void)
     }
     
     USART0_RTSFlowControl();
-    /*else {
+    //else {
         // Do Nothing. Added for MISRA C Compliant.
-    }*/
+    //}
 }
 
 void USART0_Write(uint8_t txData)

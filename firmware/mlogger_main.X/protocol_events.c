@@ -92,16 +92,20 @@ void pe_emit_co2_calibration_progress(uint16_t remaining_s, const char *state,
 }
 
 // ============================================================
-// dump_end イベント (USB-CDC)
+// dump_end イベント (dump 開始時の transport に送出)
 // ============================================================
-void pe_emit_dump_end(uint32_t records_sent) {
+void pe_emit_dump_end(uint32_t records_sent, CommandSource_t dest) {
     pc_writer_t w;
     begin_event(&w, "dump_end");
     pc_key(&w, "sent"); pc_uint(&w, records_sent);
     end_event(&w);
 
     if (!pc_ok(&w)) return;
-    USB_CDC_SendString(s_evt_buf);
+    switch (dest) {
+        case SRC_USB:  USB_CDC_SendString(s_evt_buf); break;
+        case SRC_XBEE: Xbee_TxChars(s_evt_buf);       break;
+        case SRC_BLE:  Xbee_BlChars(s_evt_buf);       break;
+    }
 }
 
 // ============================================================

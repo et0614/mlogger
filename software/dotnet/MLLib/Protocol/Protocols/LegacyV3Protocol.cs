@@ -335,6 +335,13 @@ public sealed class LegacyV3Protocol : IMLProtocol
         throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_battery is v4-only");
     }
 
+    public Task<DumpResult> GetCountAsync(CancellationToken ct = default)
+    {
+        // v3 firmware は count 取得コマンドを持たない (v4 で新設)。
+        // v3 のスマホ dump は元々サポート外なので親機側でガードする想定。
+        throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_count is v4-only");
+    }
+
     public async Task<DateTimeOffset> SetTimeAsync(DateTimeOffset time, CancellationToken ct = default)
     {
         // v3 firmware は RTC を timezone 不明な naive 時刻として扱い、DTT 応答も

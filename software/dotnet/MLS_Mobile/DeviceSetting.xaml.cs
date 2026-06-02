@@ -8,6 +8,7 @@ using MLLib;
 using MLLib.Protocol;
 using MLS_Mobile.Resources.i18n;
 using System;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -573,6 +574,7 @@ public partial class DeviceSetting : ContentPage
       row_glb.IsVisible = false;
       row_co2.IsVisible = false;
       batteryPanel.IsVisible = true;
+      dumpPanel.IsVisible    = true;
     }
     else
     {
@@ -580,6 +582,8 @@ public partial class DeviceSetting : ContentPage
       row_glb.IsVisible = true;
       row_co2.IsVisible = hasCo2;
       batteryPanel.IsVisible = false;
+      // v3 firmware は MLS_Mobile からの dump 未対応 (GetCount/Dump が unknown_command)
+      dumpPanel.IsVisible    = false;
     }
   }
 
@@ -663,6 +667,157 @@ public partial class DeviceSetting : ContentPage
     }
     return refLevel;
   }
+
+  // ============================================================
+  // dump (内蔵フラッシュのデータをスマホに吸い出して CSV 保存)
+  // ============================================================
+
+  // BLE 実効スループット (KB/sec)。所要時間試算用、firmware/docs/power_consumption.md 周辺
+  // と一致させる目安値。BLE 1.7 KB/sec ≈ 77 records/sec。
+  private const double BLE_THROUGHPUT_BYTES_PER_SEC = 1700.0;
+
+  private async void DumpButton_Clicked(object sender, EventArgs e) => await dumpV4Async();
+
+  private async Task dumpV4Async()
+  {
+    // 1) get_count で件数を確認
+    DumpResult header;
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+      header = await MLUtility.Protocol.GetCountAsync(cts.Token);
+    }
+    catch (MLProtocolException ex) when (ex.Code == MLProtocolErrorCodes.Busy)
+    {
+      await DisplayAlert(MLSResource.ERR_AlertTitle, MLSResource.DS_DumpStopLogging, "OK");
+      return;
+    }
+    catch (Exception ex)
+    {
+      await MLUtility.ShowErrorAsync(this, MLSResource.DS_DumpFailed, ex);
+      return;
+    }
+
+    if (header.RecordCount <= 0)
+    {
+      await DisplayAlert(MLSResource.ERR_AlertTitle, MLSResource.DS_DumpNoData, "OK");
+      return;
+    }
+
+    // 2) 件数と所要時間を提示してユーザー確認
+    int totalBytes = header.RecordCount * header.RecordSize;
+    int etaMinutes = Math.Max(1, (int)Math.Ceiling(totalBytes / BLE_THROUGHPUT_BYTES_PER_SEC / 60.0));
+    bool proceed = await DisplayAlert(
+      MLSResource.DS_DumpConfirmTitle,
+      string.Format(MLSResource.DS_DumpConfirmBody, header.RecordCount, etaMinutes),
+      MLSResource.Yes,
+      MLSResource.Cancel);
+    if (!proceed) return;
+
+    // 3) dump 実行 (画面遷移ブロック: indicator を被せて全画面を覆う)
+    string fileName = $"{Logger.XBeeName}_{DateTime.Now:yyyyMMdd_HHmmss}_M.txt";
+    int savedCount = 0;
+    // dump 中はスクリーンスリープ抑止 (スリープ → BLE 切断 → dump 失敗 を防ぐ)
+    DeviceDisplay.Current.KeepScreenOn = true;
+    try
+    {
+      // 進捗付き indicator
+      var progress = new Progress<int>(bytesReceived =>
+      {
+        int recv = bytesReceived / header.RecordSize;
+        Application.Current?.Dispatcher.Dispatch(() =>
+        {
+          indicatorLabel.Text = string.Format(MLSResource.DS_DumpInProgress, recv, header.RecordCount);
+        });
+      });
+      showIndicator(string.Format(MLSResource.DS_DumpInProgress, 0, header.RecordCount));
+
+      // 所要時間に応じた timeout (実効 ETA + 余裕 50%、最低 60sec)
+      int timeoutSec = Math.Max(60, etaMinutes * 60 * 3 / 2);
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSec));
+      var result = await MLUtility.Protocol.DumpAsync(progress, cts.Token);
+
+      // 4) binary を decode → CSV にして保存
+      savedCount = await Task.Run(() => saveDumpAsCsv(result, fileName));
+    }
+    catch (Exception ex)
+    {
+      Application.Current?.Dispatcher.Dispatch(hideIndicator);
+      await MLUtility.ShowErrorAsync(this, MLSResource.DS_DumpFailed, ex);
+      return;
+    }
+    finally
+    {
+      DeviceDisplay.Current.KeepScreenOn = false;
+      Application.Current?.Dispatcher.Dispatch(hideIndicator);
+    }
+
+    // 5) 完了通知
+    await DisplayAlert(
+      MLSResource.DS_DumpConfirmTitle,
+      string.Format(MLSResource.DS_DumpDone, savedCount, fileName),
+      "OK");
+    MLUtility.WriteLog($"[dump] {savedCount} records → {fileName}");
+  }
+
+  /// <summary>dump 結果 (binary) を CSV にして DataFiles に保存。返り値は書き込んだ件数。</summary>
+  private static int saveDumpAsCsv(DumpResult result, string fileName)
+  {
+    int count = 0;
+    var sb = new StringBuilder();
+    foreach (var r in DumpDecoder.Decode(result.Data, result.RecordSize))
+    {
+      var t = r.Timestamp.LocalDateTime;
+      sb.Clear();
+      sb.Append(t.ToString("yyyy/M/d,HH:mm:ss")).Append(',');
+      sb.Append(FmtNA(r.DrybulbTemperature, "F1")).Append(',');
+      sb.Append(FmtNA(r.RelativeHumidity,   "F1")).Append(',');
+      sb.Append(FmtNA(r.GlobeTemperature,   "F2")).Append(',');
+      sb.Append(FmtNA(r.Velocity,           "F3")).Append(',');
+      sb.Append(FmtNA(r.Illuminance,        "F2")).Append(',');
+      // DataReceive と同形式: voltage と globe_voltage は n/a 列で揃える
+      sb.Append("n/a,n/a,");
+      sb.Append(r.Co2Ppm.HasValue ? r.Co2Ppm.Value.ToString(CultureInfo.InvariantCulture) : "n/a").Append(',');
+      // memo 列 (dump では空)
+      sb.Append(Environment.NewLine);
+      MLUtility.AppendData(fileName, sb.ToString());
+      count++;
+    }
+    return count;
+  }
+
+  // ============================================================
+  // clear_data (機器内蔵フラッシュの記録データを消去)
+  // ============================================================
+  private async void ClearDataButton_Clicked(object sender, EventArgs e) => await clearDataV4Async();
+
+  private async Task clearDataV4Async()
+  {
+    bool proceed = await DisplayAlert(
+      MLSResource.DS_ClearDataConfirmTitle,
+      MLSResource.DS_ClearDataConfirmBody,
+      MLSResource.Yes,
+      MLSResource.Cancel);
+    if (!proceed) return;
+
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+      await MLUtility.Protocol.ClearDataAsync(cts.Token);
+      MLUtility.WriteLog("[clear_data] OK");
+      await DisplayAlert(
+        MLSResource.DS_ClearDataConfirmTitle,
+        MLSResource.DS_ClearDataDone,
+        "OK");
+    }
+    catch (Exception ex)
+    {
+      await MLUtility.ShowErrorAsync(this, MLSResource.DS_ClearDataFailed, ex);
+    }
+  }
+
+  private static string FmtNA(double? v, string fmt)
+    => v.HasValue ? v.Value.ToString(fmt, CultureInfo.InvariantCulture) : "n/a";
 
   private async Task calibrateCo2V4(Co2CalibrationMode mode, int refLevel, bool navigateToCalibrator)
   {
@@ -809,6 +964,12 @@ public partial class DeviceSetting : ContentPage
   private async void TapGestureRecognizer_Battery_Tapped(object sender, TappedEventArgs e)
   {
     var popup = new DescriptionPopup(DescriptionText.BatteryInfo);
+    var result = await this.ShowPopupAsync(popup);
+  }
+
+  private async void TapGestureRecognizer_Data_Tapped(object sender, TappedEventArgs e)
+  {
+    var popup = new DescriptionPopup(DescriptionText.DataManagement);
     var result = await this.ShowPopupAsync(popup);
   }
 

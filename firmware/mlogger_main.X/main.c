@@ -13,6 +13,11 @@
  *      SN:Number of Cyclic Sleep Periods = 3600
  *      これで3600×3=3hourはネットワークから外れない
  *   4) AP:API Mode Without Escapes[1]
+ *   5) BD:Baud Rate = 115200 [7]  ← AVR の USART0 baud と一致させること
+ *      9600 (デフォルト [3]) では dump スループット 1.2 KB/sec で頭打ち。
+ *      115200 (14.4 KB/sec) に上げると BLE 側 (~5-10 KB/sec 実効) が次の律速点になる。
+ *      変更手順: XCTU で BD を 7 に書き換え → write/reset → AVR firmware を flash
+ *      順序を間違えて baud 不一致になったら XCTU の "Recovery Mode" で復旧
  * ・親機のみ
  *   1) CE:Coordinator Enable = Enabled
  *   2) SM:Sleep Mode = No sleep
@@ -48,6 +53,8 @@
 
 //標準ヘッダ
 #include <avr/sleep.h>
+#include <avr/wdt.h>     // _PROTECTED_WRITE for WDT.CTRLA (XBEE_QUIET_MODE 用)
+#include <avr/io.h>      // USART0 register access (XBEE_QUIET_MODE 用)
 
 // </editor-fold>
 
@@ -75,16 +82,44 @@ static uint8_t reset_timer = 0;
 
 // <editor-fold defaultstate="collapsed" desc="main">
 
+// ============================================================
+// XBEE_QUIET_MODE: 1 にすると USART0 を完全に無効化し、XBee へ一切の通信を行わない。
+// AVR は LED 点滅だけして待機する (Digi 公式アプリ等で XBee の BD を BLE 経由で
+// 書き換える間、AVR からのノイズで XBee が乱れるのを防ぐ目的)。
+//
+// 使い方:
+//   1. このフラグを 1 にしてビルド → AVR に書き込み → LED が点滅し始める
+//   2. Digi XBee Mobile (BLE) や XCTU で XBee の BD を 7 (115200) に変更
+//   3. フラグを 0 に戻して USART0 baud も 115200 に設定してビルド → 書き込み
+//   4. 通常動作に復帰
+// ============================================================
+#define XBEE_QUIET_MODE  0
+
 int main(void)
 {
-    SYSTEM_Initialize();    
-    
+    SYSTEM_Initialize();
+
+#if XBEE_QUIET_MODE
+    // USART0 を完全に停止 (TXEN/RXEN OFF、割込み OFF) して XBee に何も送らない。
+    USART0.CTRLB = 0;
+    USART0.CTRLA = 0;
+
+    // 起動を示すため LED をゆっくり点滅させ続ける。WDT も切る (loop が長いので)。
+    _PROTECTED_WRITE(WDT.CTRLA, 0);
+    while (1) {
+        turnOnGreenLED();
+        DELAY_milliseconds(200);
+        turnOffGreenLED();
+        DELAY_milliseconds(800);
+    }
+#endif
+
     //風速ADCの初期化
     ADC_VEL_Initialize();
-    
+
     // SPIモジュールを有効化
     SPI0_Open(SPI0_DEFAULT);
-    
+
     //EEPROMロード
     EM_loadEEPROM();
         
@@ -164,7 +199,10 @@ int main(void)
             //USBの接続状況を確認
             USBDevice_Handle(); // USB通信基本タスク
             USB_CDCVirtualSerialPortHandler(); // CDCタスク
-            if (USB_DescriptorActiveConfigurationValueGet() == 1) USB_Stream_Task(); // コマンド処理
+            // USB_Stream_Task はコマンド受信 (USB) + dump バイナリ送出 (USB/BLE/Zigbee) を担う。
+            // BLE/Zigbee dump を USB 未接続環境でも駆動するため、USB 構成済みか否かに関わらず
+            // 必ず呼ぶ (USB-specific 操作は内部で USB 接続を検査する)。
+            USB_Stream_Task();
         }
     }
     
@@ -236,15 +274,23 @@ void executeSecondlyTask(void)
         Anemometer_Sleep(); //風速計を停止
 
 		//ハートビート: 60秒毎に ready イベントを XBee+BLE に送出 (旧 WFC + 接続維持空パケット 統合)
+		// ただし BLE/Zigbee dump 中はその channel を抑止 (binary stream と干渉して受信側
+		// の line buffer / dump parser が破綻するため)。
 		if(ready_timer == 0)
 		{
-			pe_emit_ready(uptime_s, false, true, true);
+			bool sendZb  = !USB_IsStreamingTo(SRC_XBEE);
+			bool sendBle = !USB_IsStreamingTo(SRC_BLE);
+			if (sendZb || sendBle) pe_emit_ready(uptime_s, false, sendZb, sendBle);
 			ready_timer = 60;
 		}
 		ready_timer--;
 
-		// Reset押し込み中でなければ明滅
-		if(RST_GetValue()) blinkGreenLED(1);
+		// Reset押し込み中でなければ明滅。dump streaming 中は赤 LED で「操作不能」を示す
+		// (他コマンドを受け付けても処理されず、本体が反応しないように見えるため明示)。
+		if(RST_GetValue()) {
+			if (USB_IsStreaming()) blinkRedLED(1);
+			else                   blinkGreenLED(1);
+		}
     }
 }
 

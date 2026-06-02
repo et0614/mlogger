@@ -149,6 +149,15 @@ Shaking the device unlocks additional maintenance options, including editing sen
 
 These operations directly affect measurement accuracy, so use them at your own risk.</value>
   </data>
+  <data name="DataManagement" xml:space="preserve">
+    <value>Recorded data on the device
+
+Download: Reads all data stored in the device's internal flash and saves it as a CSV file in the Data Files tab (marked with -M and a light blue background). Bluetooth transfer takes some time depending on how much data is stored.
+
+Clear: Erases all recorded data on the device, freeing space for new measurements. Download any data you want to keep first — there is no way to recover data after clearing.
+
+The device automatically stops recording when the internal flash becomes full (about 1.4 million records). Periodically downloading and clearing keeps capacity available for new measurements.</value>
+  </data>
   <data name="BatteryInfo" xml:space="preserve">
     <value>Battery information
 

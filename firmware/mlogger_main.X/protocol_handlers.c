@@ -541,15 +541,34 @@ void ph_calibrate_co2(int32_t id, const char *json, const jsmntok_t *tokens, int
 }
 
 // ============================================================
-// dump (USB-CDC専用)
-//   JSON ヘッダ送信後、バイナリストリームに切り替え
-//   dump_end イベントは Phase D で実装予定 (現状はクライアント側で count*record_size を受け切ったら完了とみなす)
+// get_count
+//   dump 実行前に件数 / record_size / format を取得して、所要時間予測と
+//   ユーザー確認に使う。USB / BLE / Zigbee すべてで動作。
+// ============================================================
+void ph_get_count(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    pc_key(&w, "count");       pc_uint(&w, rec_latest);
+    pc_key(&w, "record_size"); pc_uint(&w, sizeof(SensorData_t));
+    pc_key(&w, "format");      pc_str(&w, "<BIBIhhHHHH>");
+    pc_end_result(&w);
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+}
+
+// ============================================================
+// dump
+//   JSON ヘッダ送信後、バイナリストリームに切り替え。USB / BLE / Zigbee すべてで動作。
+//   ロギング中は busy エラー (BLE/Zigbee dump は同 channel で smp event と干渉するため)。
+//   USB-CDC: async stream (USB_Stream_Task が main loop で駆動)
+//   BLE/Zigbee: blocking 風だが内部で wdt_reset/main loop pump
 // ============================================================
 void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     (void)json; (void)tokens; (void)ntokens; (void)params_tok;
 
-    if (src != SRC_USB) {
-        send_simple_error(id, src, "unsupported_transport", "dump is USB-CDC only");
+    if (LC_IsLogging()) {
+        send_simple_error(id, src, "busy", "stop logging before dump");
         return;
     }
 
@@ -563,11 +582,11 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
 
-    // 完了時に dump_end イベントを送出するよう登録
+    // 完了時に dump_end イベントを送出するよう登録 (transport は dump 開始時の src と一致)
     USB_SetStreamDoneCallback(pe_emit_dump_end);
 
-    // バイナリストリーム開始 (USB_Stream_Task が非同期にレコードを送出)
-    USB_StartRecordStream();
+    // バイナリストリーム開始。transport に応じて stream destination を切替。
+    USB_StartRecordStream(src);
 }
 
 // ============================================================

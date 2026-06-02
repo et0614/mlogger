@@ -246,6 +246,53 @@
   <data name="DS_LowBatteryWarning" xml:space="preserve">
     <value>電池残量が少なくなっています。早めに交換してください。</value>
   </data>
+  <data name="DS_DataRetrieval" xml:space="preserve">
+    <value>記録データの取得</value>
+  </data>
+  <data name="DS_DataManagement" xml:space="preserve">
+    <value>記録データの管理</value>
+  </data>
+  <data name="DS_ClearDataButton" xml:space="preserve">
+    <value>記録データを消去</value>
+  </data>
+  <data name="DS_ClearDataConfirmTitle" xml:space="preserve">
+    <value>記録データの消去</value>
+  </data>
+  <data name="DS_ClearDataConfirmBody" xml:space="preserve">
+    <value>機器内の記録データをすべて消去します。必要な場合は先にダウンロードしてください。実行しますか？</value>
+  </data>
+  <data name="DS_ClearDataFailed" xml:space="preserve">
+    <value>記録データの消去に失敗しました。</value>
+  </data>
+  <data name="DS_ClearDataDone" xml:space="preserve">
+    <value>記録データを消去しました。</value>
+  </data>
+  <data name="DS_DumpButton" xml:space="preserve">
+    <value>記録データをダウンロード</value>
+  </data>
+  <data name="DS_DumpConfirmTitle" xml:space="preserve">
+    <value>記録データのダウンロード</value>
+  </data>
+  <data name="DS_DumpConfirmBody" xml:space="preserve">
+    <value>{0} 件のデータをダウンロードします。Bluetooth 経由のため約 {1} 分かかります。
+
+転送中は画面を切り替えたり、アプリを閉じたりしないでください。続行しますか？</value>
+  </data>
+  <data name="DS_DumpInProgress" xml:space="preserve">
+    <value>ダウンロード中… {0} / {1} 件</value>
+  </data>
+  <data name="DS_DumpStopLogging" xml:space="preserve">
+    <value>記録データをダウンロードする前にロギングを停止してください。</value>
+  </data>
+  <data name="DS_DumpNoData" xml:space="preserve">
+    <value>機器に記録データがありません。</value>
+  </data>
+  <data name="DS_DumpFailed" xml:space="preserve">
+    <value>記録データのダウンロードに失敗しました。</value>
+  </data>
+  <data name="DS_DumpDone" xml:space="preserve">
+    <value>{0} 件のデータを {1} として保存しました。</value>
+  </data>
   <data name="DS_Title" xml:space="preserve">
     <value>測定方法の設定</value>
   </data>

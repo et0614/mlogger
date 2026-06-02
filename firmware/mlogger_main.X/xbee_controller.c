@@ -576,7 +576,13 @@ void Xbee_TxChars(const char *data)
 // 1 つの USER_DATA_RELAY フレーム (BLE 宛) を送信するヘルパ。
 // data: 送信バイト先頭, len: 送信バイト数 (この呼び出しで送るバイト数のみ)。
 // 呼び出し側で Wakeup/Sleep/g_communicating の管理を行う。
-static void xbee_bl_send_chunk(const char *data, int len)
+//
+// requestStatus=true:  Frame ID 非ゼロで送出 → XBee から TX_STATUS が返ってくる
+//                      のを最大 200ms 待機 (JSON 応答などの 1 発送信向け、確実性優先)。
+// requestStatus=false: Frame ID = 0 で送出 → XBee は TX_STATUS を返さず、AVR も
+//                      待たない fire-and-forget (dump の連続 binary 送信向け、速度優先)。
+//                      XBee 内部 buffer に複数 chunk を積んで、BLE 配信は XBee に任せる。
+static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
 {
     int chkSum = 0;
 
@@ -587,11 +593,17 @@ static void xbee_bl_send_chunk(const char *data, int len)
     USART0_Write(XB_FRAME_USER_DATA_RELAY);
     chkSum = addCsum(chkSum, XB_FRAME_USER_DATA_RELAY);
 
-    g_txStatusReceived = false;
-    g_lastFrameId++;
-    if(g_lastFrameId == 0) g_lastFrameId = 0x01;
-    USART0_Write(g_lastFrameId);
-    chkSum = addCsum(chkSum, g_lastFrameId);
+    uint8_t frameId;
+    if (requestStatus) {
+        g_txStatusReceived = false;
+        g_lastFrameId++;
+        if(g_lastFrameId == 0) g_lastFrameId = 0x01;
+        frameId = g_lastFrameId;
+    } else {
+        frameId = 0x00;  // XBee は応答しない
+    }
+    USART0_Write(frameId);
+    chkSum = addCsum(chkSum, frameId);
 
     USART0_Write(XB_UDR_INTERFACE_BLUETOOTH);
     chkSum = addCsum(chkSum, XB_UDR_INTERFACE_BLUETOOTH);
@@ -603,14 +615,21 @@ static void xbee_bl_send_chunk(const char *data, int len)
 
     USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
 
-    waitTxCompletion(200);
+    if (requestStatus) waitTxCompletion(200);
+}
+
+// 後方互換: Xbee_BlChars (JSON 応答) などから使う既存呼び出し向け
+static void xbee_bl_send_chunk(const char *data, int len)
+{
+    xbee_bl_send_chunk_ex(data, len, true);
 }
 
 // XBee 3 の BLE GATT notification MTU (~244B) を超える単一フレームは
-// モジュールが silently drop してしまうため、安全側で 150B/chunk に分割して
+// モジュールが silently drop してしまうため、安全側で 220B/chunk に分割して
 // 複数の USER_DATA_RELAY フレームで送る。受信側 (MAUI LineBuffer 等) は \n
 // まで連結するので分割は透過的。
-#define XB_BL_MAX_CHUNK_BYTES 150
+// dump 用に 200B 超でも安定送信できることを実機で確認 (244B 上限に対し ~25B 余裕)。
+#define XB_BL_MAX_CHUNK_BYTES 220
 
 void Xbee_BlChars(const char *data)
 {
@@ -644,6 +663,55 @@ void Xbee_BlTxChars(const char *data)
 {
     Xbee_TxChars(data);
     Xbee_BlChars(data);
+}
+
+// バイナリ送信 (BLE)。Xbee_BlChars の binary-safe 版。\0 を含むデータでも len バイト全てを送る。
+// dump 用 (内蔵フラッシュからレコードを binary stream として書き出す目的)。
+// fire-and-forget: TX_STATUS は要求せず連続送信。pacing は呼び出し側 (USB_Stream_Task)
+// で 1 chunk ずつ呼んで chunk 間 delay を入れる方式 (XBee 内部 buffer overflow 防止)。
+void Xbee_BlBytes(const uint8_t *data, int len)
+{
+    g_communicating = true;
+    bool wasSleeping = Xbee_IsSleeping();
+    if(wasSleeping)
+    {
+        Xbee_Wakeup();
+        DELAY_microseconds(150);
+    }
+
+    int offset = 0;
+    while (offset < len) {
+        int chunk = len - offset;
+        if (chunk > XB_BL_MAX_CHUNK_BYTES) chunk = XB_BL_MAX_CHUNK_BYTES;
+        xbee_bl_send_chunk_ex((const char*)(data + offset), chunk, false);
+        offset += chunk;
+    }
+
+    if(wasSleeping || g_shouldSleep) sleepXBee();
+    g_communicating = false;
+}
+
+// バイナリ送信 (Zigbee)。Xbee_TxChars の binary-safe 版。
+void Xbee_TxBytes(const uint8_t *data, int len)
+{
+    g_communicating = true;
+    bool wasSleeping = Xbee_IsSleeping();
+    if(wasSleeping)
+    {
+        Xbee_Wakeup();
+        DELAY_microseconds(150);
+    }
+
+    int offset = 0;
+    while (offset < len) {
+        int chunk = len - offset;
+        if (chunk > XB_TX_MAX_CHUNK_BYTES) chunk = XB_TX_MAX_CHUNK_BYTES;
+        xbee_zb_send_chunk((const char*)(data + offset), chunk);
+        offset += chunk;
+    }
+
+    if(wasSleeping || g_shouldSleep) sleepXBee();
+    g_communicating = false;
 }
 
 void Xbee_SendAtCmd(const char *data)

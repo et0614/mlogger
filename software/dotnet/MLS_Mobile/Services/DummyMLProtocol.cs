@@ -211,8 +211,67 @@ public sealed class DummyMLProtocol : IMLProtocol
         return Task.CompletedTask;
     }
 
+    // Demo 用に少数のダミーレコード (60 件、1 分間隔) を返す
+    private byte[]? _dummyDump;
+    private const int DUMMY_RECORD_COUNT = 60;
+
+    private byte[] BuildDummyDump()
+    {
+        if (_dummyDump != null) return _dummyDump;
+        const int recSize = 22;
+        var buf = new byte[DUMMY_RECORD_COUNT * recSize];
+        var rng = new Random(123);
+        long ts0 = DateTimeOffset.Now.AddMinutes(-DUMMY_RECORD_COUNT).ToUnixTimeSeconds();
+        for (int i = 0; i < DUMMY_RECORD_COUNT; i++)
+        {
+            int o = i * recSize;
+            buf[o] = 1; // generation
+            uint ts = (uint)(ts0 + i * 60);
+            buf[o + 1] = (byte)(ts & 0xFF);
+            buf[o + 2] = (byte)((ts >> 8) & 0xFF);
+            buf[o + 3] = (byte)((ts >> 16) & 0xFF);
+            buf[o + 4] = (byte)((ts >> 24) & 0xFF);
+            buf[o + 5] = 0x7F; // valid_flags: all 7 fields valid
+            // illuminance: uint32 little endian, scaled lux*10
+            uint ill = (uint)(rng.Next(300, 700) * 10);
+            buf[o + 6] = (byte)(ill & 0xFF);
+            buf[o + 7] = (byte)((ill >> 8) & 0xFF);
+            buf[o + 8] = (byte)((ill >> 16) & 0xFF);
+            buf[o + 9] = (byte)((ill >> 24) & 0xFF);
+            // temp_dry int16, °C*100
+            short dbt = (short)(2500 + rng.Next(-200, 200));
+            buf[o + 10] = (byte)(dbt & 0xFF);
+            buf[o + 11] = (byte)((dbt >> 8) & 0xFF);
+            // temp_globe int16
+            short glb = (short)(2600 + rng.Next(-200, 200));
+            buf[o + 12] = (byte)(glb & 0xFF);
+            buf[o + 13] = (byte)((glb >> 8) & 0xFF);
+            // humidity uint16, %*100
+            ushort rh = (ushort)(5500 + rng.Next(-1000, 1000));
+            buf[o + 14] = (byte)(rh & 0xFF);
+            buf[o + 15] = (byte)((rh >> 8) & 0xFF);
+            // wind_speed uint16, m/s*10000
+            ushort vel = (ushort)Math.Max(0, 2000 + rng.Next(-2000, 2000));
+            buf[o + 16] = (byte)(vel & 0xFF);
+            buf[o + 17] = (byte)((vel >> 8) & 0xFF);
+            // voltage uint16
+            ushort vlt = (ushort)(2500 + rng.Next(-100, 100));
+            buf[o + 18] = (byte)(vlt & 0xFF);
+            buf[o + 19] = (byte)((vlt >> 8) & 0xFF);
+            // co2 uint16
+            ushort co2 = (ushort)Math.Max(400, 700 + rng.Next(-200, 400));
+            buf[o + 20] = (byte)(co2 & 0xFF);
+            buf[o + 21] = (byte)((co2 >> 8) & 0xFF);
+        }
+        _dummyDump = buf;
+        return buf;
+    }
+
+    public Task<DumpResult> GetCountAsync(CancellationToken ct = default)
+        => Task.FromResult(new DumpResult(DUMMY_RECORD_COUNT, 22, "<BIBIhhHHHH>", ReadOnlyMemory<byte>.Empty));
+
     public Task<DumpResult> DumpAsync(IProgress<int>? progress = null, CancellationToken ct = default)
-        => Task.FromResult(new DumpResult(0, 22, "<BIBIhhHHHH>", ReadOnlyMemory<byte>.Empty));
+        => Task.FromResult(new DumpResult(DUMMY_RECORD_COUNT, 22, "<BIBIhhHHHH>", BuildDummyDump()));
 
     public void Dispose()
     {

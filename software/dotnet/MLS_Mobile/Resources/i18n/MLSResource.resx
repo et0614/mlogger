@@ -246,6 +246,53 @@
   <data name="DS_LowBatteryWarning" xml:space="preserve">
     <value>Battery low — replace soon</value>
   </data>
+  <data name="DS_DataRetrieval" xml:space="preserve">
+    <value>Data retrieval</value>
+  </data>
+  <data name="DS_DataManagement" xml:space="preserve">
+    <value>Recorded data</value>
+  </data>
+  <data name="DS_ClearDataButton" xml:space="preserve">
+    <value>Clear recorded data</value>
+  </data>
+  <data name="DS_ClearDataConfirmTitle" xml:space="preserve">
+    <value>Clear recorded data</value>
+  </data>
+  <data name="DS_ClearDataConfirmBody" xml:space="preserve">
+    <value>All recorded data on the device will be cleared. Download any data you want to keep first. Continue?</value>
+  </data>
+  <data name="DS_ClearDataFailed" xml:space="preserve">
+    <value>Failed to clear recorded data.</value>
+  </data>
+  <data name="DS_ClearDataDone" xml:space="preserve">
+    <value>Recorded data was cleared.</value>
+  </data>
+  <data name="DS_DumpButton" xml:space="preserve">
+    <value>Download recorded data</value>
+  </data>
+  <data name="DS_DumpConfirmTitle" xml:space="preserve">
+    <value>Download recorded data</value>
+  </data>
+  <data name="DS_DumpConfirmBody" xml:space="preserve">
+    <value>{0} records will be downloaded. This will take about {1} minute(s) over Bluetooth.
+
+Do not switch screens or close the app during the transfer. Continue?</value>
+  </data>
+  <data name="DS_DumpInProgress" xml:space="preserve">
+    <value>Downloading… {0} / {1} records</value>
+  </data>
+  <data name="DS_DumpStopLogging" xml:space="preserve">
+    <value>Stop logging before downloading recorded data.</value>
+  </data>
+  <data name="DS_DumpNoData" xml:space="preserve">
+    <value>No recorded data on the device.</value>
+  </data>
+  <data name="DS_DumpFailed" xml:space="preserve">
+    <value>Failed to download recorded data.</value>
+  </data>
+  <data name="DS_DumpDone" xml:space="preserve">
+    <value>Downloaded {0} records and saved as {1}.</value>
+  </data>
   <data name="DS_Title" xml:space="preserve">
     <value>Measurement settings</value>
   </data>

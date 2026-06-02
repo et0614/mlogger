@@ -78,6 +78,17 @@ void Xbee_BlChars(const char *data);
 void Xbee_BlTxChars(const char *data);
 
 /**
+ * @brief バイナリ列を Bluetooth で送信 (dump 用、binary-safe)
+ *        Xbee_BlChars と異なり \0 を含むデータも len バイト全て送る。
+ */
+void Xbee_BlBytes(const uint8_t *data, int len);
+
+/**
+ * @brief バイナリ列を Zigbee で送信 (dump 用、binary-safe)
+ */
+void Xbee_TxBytes(const uint8_t *data, int len);
+
+/**
  * @brief ATコマンドを直接送信 (APIフレームではない生コマンド用)
  */
 void Xbee_SendAtCmd(const char *data);

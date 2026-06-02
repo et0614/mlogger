@@ -16,7 +16,9 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "mcc_generated_files/usb/usb_cdc/usb_cdc_virtual_serial_port.h"
+#include "command_handler.h"   // CommandSource_t (SRC_USB / SRC_BLE / SRC_XBEE)
 
 // ==========================================
 // 外部共有変数 (main.c等でvolatileで実体を定義する)
@@ -48,8 +50,21 @@ void USB_Stream_Task(void);
  * @brief 内蔵メモリのレコードストリーム送信を開始する (v4 dump 用: 件数prefix無し)
  *        ヘッダは呼び出し側で別途送信すること。
  *        実際の転送は USB_Stream_Task() が非同期に行う。
+ * @param dest 送出先 transport (SRC_USB / SRC_BLE / SRC_XBEE)
  */
-void USB_StartRecordStream(void);
+void USB_StartRecordStream(CommandSource_t dest);
+
+/**
+ * @brief stream が現在 active で、引数の dest に dump を送出中かどうか。
+ *        ready event など他のイベント emit を抑止して binary 列の干渉を防ぐ目的。
+ */
+bool USB_IsStreamingTo(CommandSource_t dest);
+
+/**
+ * @brief 現在 dump streaming 中かどうか (transport 問わず)。
+ *        UI フィードバック (赤 LED 点滅で「操作不能」を示す等) に使う。
+ */
+bool USB_IsStreaming(void);
 
 /**
  * @brief USB CDC 送信バッファの中身を強制 flush する (TX完了まで待機)
@@ -61,8 +76,9 @@ void USB_Flush(void);
 /**
  * @brief レコードストリーム送信完了時に呼ばれるコールバック型
  * @param records_sent 送信完了したレコード数
+ * @param dest 送出 transport (dump_end イベントを正しい transport に送る用)
  */
-typedef void (*USB_StreamDoneFn)(uint32_t records_sent);
+typedef void (*USB_StreamDoneFn)(uint32_t records_sent, CommandSource_t dest);
 
 /**
  * @brief レコードストリーム完了コールバックを登録 (NULL でクリア)

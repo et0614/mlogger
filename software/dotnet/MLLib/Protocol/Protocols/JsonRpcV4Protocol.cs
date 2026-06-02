@@ -32,6 +32,13 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     private int _dumpRemaining;
     private TaskCompletionSource? _dumpBytesReceived;
     private TaskCompletionSource<int>? _dumpEndReceived;
+    // 進捗報告先 (DumpAsync の IProgress<int> を OnBytesReceived から呼ぶ用)
+    private IProgress<int>? _dumpProgress;
+    // dump 応答の id (OnLine が同期的に binary mode へ切替える際の照合用)。-1 は dump 待機無し。
+    // BLE では JSON header の直後に binary chunk が到着する場合があり、DumpAsync 側で
+    // 非同期に _dumpRemaining を立てる従来方式だと race で binary bytes が line buffer に
+    // 流れて捨てられるため、OnLine 内で同期的に _dumpBuffer/_dumpRemaining を確定する。
+    private int _dumpPendingId = -1;
 
     private DeviceInfo? _device;
 
@@ -180,12 +187,20 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                 _dumpBytesRead += toRead;
                 _dumpRemaining -= toRead;
                 offset += toRead;
+                _dumpProgress?.Report(_dumpBytesRead);
                 if (_dumpRemaining == 0) _dumpBytesReceived?.TrySetResult();
             }
             else
             {
-                _lineBuffer.Append(data.Span[offset..], OnLine);
-                offset = data.Length;
+                // dump response 受信時に OnLine が _dumpRemaining を立てたら即座に
+                // 行解釈を中断し、残りバイトを dump buffer 経路に流す。これをしないと
+                // JSON header と binary chunk が同一 BLE notification に乗ったときに
+                // binary が line buffer に詰まって捨てられる。
+                int consumed = _lineBuffer.Append(
+                    data.Span[offset..],
+                    OnLine,
+                    () => _dumpRemaining > 0);
+                offset += consumed;
             }
         }
     }
@@ -206,6 +221,25 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         if (obj.TryGetPropertyValue("id", out var idNode) && idNode is not null)
         {
             int id = idNode.GetValue<int>();
+
+            // dump 応答 = header と同時に binary mode へ同期的に切替える (BLE 用 race 回避)。
+            // DumpAsync が _dumpPendingId を立てた状態でこの id の result が届くと、
+            // count/record_size から buffer を確保し _dumpRemaining を立てる。これを
+            // OnLine 内で行うことで、同一 BLE notification に同梱された binary chunk
+            // も正しく dump buffer に流れる。
+            if (id == _dumpPendingId
+                && obj.TryGetPropertyValue("result", out var dumpResNode)
+                && dumpResNode is JsonObject dumpResult)
+            {
+                int count   = dumpResult["count"]?.GetValue<int>() ?? 0;
+                int recSize = dumpResult["record_size"]?.GetValue<int>() ?? 0;
+                int total   = count * recSize;
+                _dumpBuffer    = new byte[total];
+                _dumpBytesRead = 0;
+                _dumpRemaining = total;
+                // total == 0 の edge case (record 0 件) は DumpAsync 側で扱う。
+            }
+
             if (!_pending.TryRemove(id, out var tcs)) return;
 
             if (obj.TryGetPropertyValue("error", out var errNode) && errNode is JsonObject err)
@@ -407,47 +441,77 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         await CallAsync("calibrate_co2", p, ct);
     }
 
-    public async Task<DumpResult> DumpAsync(IProgress<int>? progress = null, CancellationToken ct = default)
+    public async Task<DumpResult> GetCountAsync(CancellationToken ct = default)
     {
-        // 1) dump コマンドを送り、JSON ヘッダ {count, record_size, format} を取得
-        var header = RequireResult<JsonObject>(await CallAsync("dump", null, ct));
+        var header = RequireResult<JsonObject>(await CallAsync("get_count", null, ct));
         int count       = header["count"]?.GetValue<int>() ?? 0;
         int recordSize  = header["record_size"]?.GetValue<int>() ?? 0;
         string format   = header["format"]?.GetValue<string>() ?? "";
+        return new DumpResult(count, recordSize, format, ReadOnlyMemory<byte>.Empty);
+    }
 
-        // 2) バイナリ受信モードに遷移
-        int total = count * recordSize;
-        _dumpBuffer       = new byte[total];
-        _dumpBytesRead    = 0;
-        _dumpRemaining    = total;
+    public async Task<DumpResult> DumpAsync(IProgress<int>? progress = null, CancellationToken ct = default)
+    {
+        // CallAsync を使わず、id を先に確定してから _dumpPendingId に登録する。これで
+        // header response 受信時に OnLine が同期的に _dumpBuffer/_dumpRemaining を立て、
+        // 同一 BLE notification 内の binary chunk (BLE では JSON と binary が混在しうる)
+        // も dump buffer に正しく流れる。
+        int id = Interlocked.Increment(ref _nextId);
+        var tcs = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pending[id] = tcs;
+        _dumpPendingId = id;
+
         _dumpBytesReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _dumpEndReceived  = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _dumpEndReceived   = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _dumpProgress      = progress;
+
+        using var registration = ct.Register(() =>
+        {
+            if (_pending.TryRemove(id, out var t)) t.TrySetCanceled(ct);
+            _dumpBytesReceived?.TrySetCanceled();
+            _dumpEndReceived?.TrySetCanceled();
+        });
 
         try
         {
-            // 3) バイナリ受信完了まで待機 (0件なら即解決)
-            if (total == 0) _dumpBytesReceived.TrySetResult();
-            using (ct.Register(() =>
+            // 1) dump コマンドを送信 (id は予約済み)
+            var envelope = new JsonObject
             {
-                _dumpBytesReceived?.TrySetCanceled();
-                _dumpEndReceived?.TrySetCanceled();
-            }))
-            {
-                await _dumpBytesReceived.Task.ConfigureAwait(false);
-                // 4) dump_end イベント待ち
-                await _dumpEndReceived.Task.ConfigureAwait(false);
-            }
+                ["v"]       = 1,
+                ["id"]      = id,
+                ["command"] = "dump",
+            };
+            var json = envelope.ToJsonString();
+            DiagnosticSink?.Invoke($"TX id={id} cmd=dump len={json.Length}: {json}");
+            await _transport.SendAsync(Encoding.UTF8.GetBytes(json + "\n"), ct).ConfigureAwait(false);
 
-            var data = _dumpBuffer;
+            // 2) header (JSON) 受信待ち。OnLine が同期的に _dumpBuffer/_dumpRemaining を立てる。
+            var resp = await tcs.Task.ConfigureAwait(false);
+            if (resp is not JsonObject header)
+                throw new InvalidDataException("dump header was not a JSON object");
+            int count       = header["count"]?.GetValue<int>() ?? 0;
+            int recordSize  = header["record_size"]?.GetValue<int>() ?? 0;
+            string format   = header["format"]?.GetValue<string>() ?? "";
+
+            // 3) バイナリ受信完了待ち (0件なら即解決)
+            if (count * recordSize == 0) _dumpBytesReceived.TrySetResult();
+            await _dumpBytesReceived.Task.ConfigureAwait(false);
+
+            // 4) dump_end イベント待ち
+            await _dumpEndReceived.Task.ConfigureAwait(false);
+
+            var data = _dumpBuffer ?? Array.Empty<byte>().AsMemory();
             return new DumpResult(count, recordSize, format, data);
         }
         finally
         {
+            _dumpPendingId = -1;
             _dumpBuffer = null;
             _dumpBytesRead = 0;
             _dumpRemaining = 0;
             _dumpBytesReceived = null;
             _dumpEndReceived = null;
+            _dumpProgress = null;
         }
     }
 

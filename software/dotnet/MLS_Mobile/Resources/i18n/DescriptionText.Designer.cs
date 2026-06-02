@@ -120,5 +120,14 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("BatteryInfo", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Recorded data management に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DataManagement {
+            get {
+                return ResourceManager.GetString("DataManagement", resourceCulture);
+            }
+        }
     }
 }

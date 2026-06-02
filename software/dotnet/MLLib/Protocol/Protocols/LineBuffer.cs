@@ -14,11 +14,16 @@ internal sealed class LineBuffer
 
     /// <summary>
     /// バイト列を末尾に追加し、完成した行を1つずつ <paramref name="lineHandler"/> に渡す。
+    /// <paramref name="shouldStopAfterLine"/> を指定すると、各行処理後に true を返した
+    /// 時点で残りバイトを処理せず、その時点までの消費 byte 数を返す (caller が mode を
+    /// 切替えて続きを別経路で処理する用途、特に dump バイナリストリームへの遷移)。
     /// </summary>
-    public void Append(ReadOnlySpan<byte> data, Action<string> lineHandler)
+    /// <returns>処理 (消費) した byte 数。指定無しの通常呼び出しでは data.Length。</returns>
+    public int Append(ReadOnlySpan<byte> data, Action<string> lineHandler, Func<bool>? shouldStopAfterLine = null)
     {
-        foreach (var b in data)
+        for (int i = 0; i < data.Length; i++)
         {
+            var b = data[i];
             if (b == (byte)'\n' || b == (byte)'\r')
             {
                 if (_buf.Count > 0)
@@ -26,6 +31,10 @@ internal sealed class LineBuffer
                     var line = System.Text.Encoding.UTF8.GetString(_buf.ToArray());
                     _buf.Clear();
                     lineHandler(line);
+                    if (shouldStopAfterLine != null && shouldStopAfterLine())
+                    {
+                        return i + 1;
+                    }
                 }
             }
             else
@@ -33,5 +42,6 @@ internal sealed class LineBuffer
                 _buf.Add(b);
             }
         }
+        return data.Length;
     }
 }

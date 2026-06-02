@@ -47,7 +47,18 @@ public interface IMLProtocol : IDisposable
     /// </summary>
     Task CalibrateCo2Async(Co2CalibrationMode mode, int targetPpm, CancellationToken ct = default);
 
-    /// <summary>USB-CDC 専用。XBee/BLE 経由で呼ぶと <see cref="MLProtocolException"/> (code=unsupported_transport)。</summary>
+    /// <summary>
+    /// 記録件数とレコードフォーマットを取得 (dump 実行前の所要時間試算用、軽量)。
+    /// USB / BLE / Zigbee すべてで動作。v3 (LegacyV3Protocol) は未対応で <see cref="MLProtocolException"/> を throw。
+    /// </summary>
+    Task<DumpResult> GetCountAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// 内蔵フラッシュのデータを全件取得。v4 firmware は USB / BLE / Zigbee すべて対応。
+    /// BLE / Zigbee は実効スループットが ~1.7 KB/sec のため、事前に
+    /// <see cref="GetCountAsync"/> で件数を確認してユーザーに確認させること。
+    /// ロギング中は <see cref="MLProtocolException"/> (code=busy) を throw。
+    /// </summary>
     Task<DumpResult> DumpAsync(IProgress<int>? progress = null, CancellationToken ct = default);
 
     // ============================================================

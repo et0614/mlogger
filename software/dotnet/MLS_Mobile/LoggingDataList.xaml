@@ -41,13 +41,13 @@
                             </Border.GestureRecognizers>
                             <Grid Padding="5"
                               RowDefinitions="Auto"
-                              ColumnDefinitions="Auto, Auto" 
+                              ColumnDefinitions="Auto, Auto"
                               RowSpacing="5"
                               ColumnSpacing="5"
-                              BackgroundColor="White">
+                              BackgroundColor="{Binding RowBackgroundColor}">
 
                                 <Label Grid.Row="0" Grid.Column="0"
-                               Text="{Binding Path=DTime, StringFormat='{0:yyyy/MM/dd}'}" 
+                               Text="{Binding Path=DTimeDisplay}"
                                FontSize="18" Padding="10,5"
                                HorizontalOptions="Start" VerticalOptions="Center"/>
                                 <Label Grid.Row="0" Grid.Column="1"

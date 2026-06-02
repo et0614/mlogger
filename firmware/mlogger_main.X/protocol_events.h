@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "w25q256.h"   // SensorData_t
+#include "command_handler.h"   // CommandSource_t
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,10 +37,11 @@ void pe_emit_co2_calibration_progress(uint16_t remaining_s, const char *state,
                                       int16_t correction_ppm, uint16_t current_ppm);
 
 /**
- * @brief dump 完了イベントを送出 (USB-CDC)。
- *        usb_extension の stream-done コールバックから呼ばれる。
+ * @brief dump 完了イベントを dest で指定された transport (USB/BLE/Zigbee) に送出。
+ *        usb_extension の stream-done コールバックから呼ばれ、dest は dump 開始時の
+ *        送出 transport と一致する。
  */
-void pe_emit_dump_end(uint32_t records_sent);
+void pe_emit_dump_end(uint32_t records_sent, CommandSource_t dest);
 
 /**
  * @brief ready ハートビートを送出 (現状未配線)。

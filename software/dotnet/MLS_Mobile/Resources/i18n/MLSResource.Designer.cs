@@ -407,6 +407,51 @@ namespace MLS_Mobile.Resources.i18n {
         internal static string DS_LowBatteryWarning {
             get { return ResourceManager.GetString("DS_LowBatteryWarning", resourceCulture); }
         }
+        internal static string DS_DataRetrieval {
+            get { return ResourceManager.GetString("DS_DataRetrieval", resourceCulture); }
+        }
+        internal static string DS_DumpButton {
+            get { return ResourceManager.GetString("DS_DumpButton", resourceCulture); }
+        }
+        internal static string DS_DumpConfirmTitle {
+            get { return ResourceManager.GetString("DS_DumpConfirmTitle", resourceCulture); }
+        }
+        internal static string DS_DumpConfirmBody {
+            get { return ResourceManager.GetString("DS_DumpConfirmBody", resourceCulture); }
+        }
+        internal static string DS_DumpInProgress {
+            get { return ResourceManager.GetString("DS_DumpInProgress", resourceCulture); }
+        }
+        internal static string DS_DumpStopLogging {
+            get { return ResourceManager.GetString("DS_DumpStopLogging", resourceCulture); }
+        }
+        internal static string DS_DumpNoData {
+            get { return ResourceManager.GetString("DS_DumpNoData", resourceCulture); }
+        }
+        internal static string DS_DumpFailed {
+            get { return ResourceManager.GetString("DS_DumpFailed", resourceCulture); }
+        }
+        internal static string DS_DumpDone {
+            get { return ResourceManager.GetString("DS_DumpDone", resourceCulture); }
+        }
+        internal static string DS_DataManagement {
+            get { return ResourceManager.GetString("DS_DataManagement", resourceCulture); }
+        }
+        internal static string DS_ClearDataButton {
+            get { return ResourceManager.GetString("DS_ClearDataButton", resourceCulture); }
+        }
+        internal static string DS_ClearDataConfirmTitle {
+            get { return ResourceManager.GetString("DS_ClearDataConfirmTitle", resourceCulture); }
+        }
+        internal static string DS_ClearDataConfirmBody {
+            get { return ResourceManager.GetString("DS_ClearDataConfirmBody", resourceCulture); }
+        }
+        internal static string DS_ClearDataFailed {
+            get { return ResourceManager.GetString("DS_ClearDataFailed", resourceCulture); }
+        }
+        internal static string DS_ClearDataDone {
+            get { return ResourceManager.GetString("DS_ClearDataDone", resourceCulture); }
+        }
 
         /// <summary>
         ///   Measurement settings に類似しているローカライズされた文字列を検索します。

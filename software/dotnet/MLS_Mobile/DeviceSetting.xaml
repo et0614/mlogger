@@ -166,6 +166,38 @@
                     </Button.ImageSource>
                 </Button>
 
+                <!--データ管理 (内蔵フラッシュからの dump + clear、v4 firmware 専用)-->
+                <VerticalStackLayout x:Name="dumpPanel" IsVisible="False">
+                    <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
+                        <Label Text="{x:Static res:MLSResource.DS_DataManagement}"
+                               FontSize="Subtitle" FontAttributes="Bold"
+                               TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                               VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="TapGestureRecognizer_Data_Tapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                        <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
+                            <Image.Source>
+                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            </Image.Source>
+                            <Image.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="TapGestureRecognizer_Data_Tapped"/>
+                            </Image.GestureRecognizers>
+                        </Image>
+                    </HorizontalStackLayout>
+                    <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_DumpButton}" Clicked="DumpButton_Clicked">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                    <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ClearDataButton}" Clicked="ClearDataButton_Clicked">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        </Button.ImageSource>
+                    </Button>
+                </VerticalStackLayout>
+
                 <!--電池情報パネル (v4 firmware 専用、v3 では IsVisible=false で非表示)-->
                 <VerticalStackLayout x:Name="batteryPanel" IsVisible="False">
                     <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
