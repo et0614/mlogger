@@ -449,8 +449,35 @@
   <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
     <value>CO2センサを校正する</value>
   </data>
+  <data name="DS_ResetCO2Sensor" xml:space="preserve">
+    <value>CO2センサを工場リセット</value>
+  </data>
   <data name="DS_InitializeCO2Sensor" xml:space="preserve">
-    <value>CO2センサを初期化する</value>
+    <value>CO2センサを完全初期化</value>
+  </data>
+  <data name="DS_ResetCO2ConfirmTitle" xml:space="preserve">
+    <value>CO2センサの工場リセット</value>
+  </data>
+  <data name="DS_ResetCO2ConfirmBody" xml:space="preserve">
+    <value>CO2 センサの ASC / FRC 履歴を消去して工場出荷時の状態に戻します。実行しますか？</value>
+  </data>
+  <data name="DS_ResetCO2Done" xml:space="preserve">
+    <value>CO2 センサを工場リセットしました。</value>
+  </data>
+  <data name="DS_ResetCO2Failed" xml:space="preserve">
+    <value>CO2 センサの工場リセットに失敗しました。</value>
+  </data>
+  <data name="DR_WarmupBanner" xml:space="preserve">
+    <value>ウォームアップ中: {0}</value>
+  </data>
+  <data name="DR_WarmupGeneral" xml:space="preserve">
+    <value>温湿度 / CO2</value>
+  </data>
+  <data name="DR_DisconnectGeneral" xml:space="preserve">
+    <value>温湿度 / グローブ温度 / CO2</value>
+  </data>
+  <data name="DR_DisconnectBanner" xml:space="preserve">
+    <value>センサ未接続: {0}</value>
   </data>
   <data name="DS_PermanentConfirmTitle" xml:space="preserve">
     <value>常設モード</value>

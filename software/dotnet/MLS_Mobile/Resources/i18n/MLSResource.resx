@@ -449,8 +449,35 @@ Do not switch screens or close the app during the transfer. Continue?</value>
   <data name="DS_CalibrateCO2Sensor" xml:space="preserve">
     <value>Calibrate CO2 Sensor</value>
   </data>
+  <data name="DS_ResetCO2Sensor" xml:space="preserve">
+    <value>Factory Reset CO2 Sensor</value>
+  </data>
   <data name="DS_InitializeCO2Sensor" xml:space="preserve">
-    <value>Initialize CO2 Sensor</value>
+    <value>Fully Initialize CO2 Sensor</value>
+  </data>
+  <data name="DS_ResetCO2ConfirmTitle" xml:space="preserve">
+    <value>Factory Reset CO2 Sensor</value>
+  </data>
+  <data name="DS_ResetCO2ConfirmBody" xml:space="preserve">
+    <value>This clears the ASC / FRC history of the CO2 sensor and returns it to the factory state. Continue?</value>
+  </data>
+  <data name="DS_ResetCO2Done" xml:space="preserve">
+    <value>CO2 sensor was factory-reset.</value>
+  </data>
+  <data name="DS_ResetCO2Failed" xml:space="preserve">
+    <value>Failed to reset the CO2 sensor.</value>
+  </data>
+  <data name="DR_WarmupBanner" xml:space="preserve">
+    <value>Warming up: {0}</value>
+  </data>
+  <data name="DR_WarmupGeneral" xml:space="preserve">
+    <value>Temp / humidity / CO2</value>
+  </data>
+  <data name="DR_DisconnectGeneral" xml:space="preserve">
+    <value>Temp / humidity / globe / CO2</value>
+  </data>
+  <data name="DR_DisconnectBanner" xml:space="preserve">
+    <value>Sensor not connected: {0}</value>
   </data>
   <data name="DS_PermanentConfirmTitle" xml:space="preserve">
     <value>Permanent Mode</value>

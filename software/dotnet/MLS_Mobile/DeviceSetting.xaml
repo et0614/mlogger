@@ -266,14 +266,21 @@
                     </Button.ImageSource>
                 </Button>
 
-                <!--CO2センサの校正-->
+                <!--CO2センサの校正 (forced recalibration、30 秒モード)-->
                 <Button x:Name="calCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CalibrateCO2Sensor}" Clicked="CO2CalibrationButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
                         <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
                     </Button.ImageSource>
                 </Button>
 
-                <!--CO2センサの初期化-->
+                <!--CO2センサの工場リセット (factory_reset 単独、~90ms で完了)-->
+                <Button x:Name="resetCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ResetCO2Sensor}" Clicked="CO2ResetButton_Clicked" HorizontalOptions="FillAndExpand">
+                    <Button.ImageSource>
+                        <FontImageSource Glyph="&#xf2f1;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    </Button.ImageSource>
+                </Button>
+
+                <!--CO2センサの完全初期化 (factory_reset + 12 時間 + FRC)-->
                 <Button x:Name="initCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_InitializeCO2Sensor}" Clicked="CO2InitializeButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
                         <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>

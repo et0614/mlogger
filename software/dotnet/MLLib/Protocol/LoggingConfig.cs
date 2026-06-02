@@ -16,12 +16,17 @@ public enum LoggingMode
 /// <summary><see cref="IMLProtocol.StartLoggingAsync"/> のパラメータ。</summary>
 public sealed record LoggingConfig(Transports Tx, LoggingMode Mode);
 
-/// <summary>CO2 校正モード。</summary>
+/// <summary>CO2 校正モード。Sensirion STCC4 の各コマンドを組合せた 3 種類の操作。</summary>
 public enum Co2CalibrationMode
 {
-    /// <summary>強制校正 (30秒モード)。安定 CO2 環境で短時間校正。</summary>
+    /// <summary>校正 — 30秒連続測定 + forced_recalibration。既知 CO2 濃度の下に置いて即時校正。</summary>
     Forced,
 
-    /// <summary>ファクトリ初期化 (12時間モード)。センサ完全リセット。</summary>
-    Factory
+    /// <summary>完全初期化 — factory_reset → 12時間安定化 → forced_recalibration の compound 操作。
+    /// Sensirion datasheet §1.1.4 "Initial Operation" を後付けで再現する。</summary>
+    Factory,
+
+    /// <summary>工場リセット — factory_reset 単独 (~90ms)。ASC/FRC 履歴を消去して bypass phase を
+    /// 再開する。target_ppm は不要。</summary>
+    Reset
 }

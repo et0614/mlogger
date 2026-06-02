@@ -11,6 +11,18 @@
     <Grid BackgroundColor="{StaticResource Lightest_G}">
         <ScrollView Orientation="Vertical" VerticalScrollBarVisibility="Never">
             <StackLayout Margin="20,20,20,0">
+                <!--ウォームアップ中インジケータ (smp.data.wu が非空の間のみ表示)-->
+                <Border Margin="0,0,0,10" Padding="10,6" IsVisible="{Binding IsWarmingUp}"
+                        BackgroundColor="{StaticResource Status_Warn}" StrokeShape="RoundRectangle 6">
+                    <Label Text="{Binding WarmupIndicator}" TextColor="White" FontSize="Small" FontAttributes="Bold"/>
+                </Border>
+
+                <!--センサ未接続インジケータ (smp.data.dc が非空の間のみ表示)-->
+                <Border Margin="0,0,0,10" Padding="10,6" IsVisible="{Binding IsDisconnected}"
+                        BackgroundColor="{StaticResource Status_Danger}" StrokeShape="RoundRectangle 6">
+                    <Label Text="{Binding DisconnectIndicator}" TextColor="White" FontSize="Small" FontAttributes="Bold"/>
+                </Border>
+
                 <!--乾球温度-->
                 <Grid Margin="0,0,0,10" RowDefinitions="20,45" ColumnDefinitions="*,*,40">
                     <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Text ="{x:Static res:MLSResource.DrybulbTemperature}" VerticalTextAlignment="Start" FontSize="Large"/>

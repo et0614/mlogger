@@ -499,7 +499,11 @@ void ph_erase_flash(int32_t id, const char *json, const jsmntok_t *tokens, int n
 
 // ============================================================
 // calibrate_co2
-//   params: { mode: "forced"|"factory", target_ppm: int }
+//   params: { mode: "forced"|"factory"|"reset", target_ppm: int? }
+//
+//   mode="forced":   30秒連続測定 → FRC (LC_CalibrateCO2)、target_ppm 必須
+//   mode="factory":  factory_reset → 12時間安定化 → FRC (LC_FactoryResetCO2)、target_ppm 必須
+//   mode="reset":    factory_reset 単独 (LC_FactoryResetCO2Only)、target_ppm 不要・無視
 // ============================================================
 void ph_calibrate_co2(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     if (params_tok < 0) {
@@ -512,31 +516,39 @@ void ph_calibrate_co2(int32_t id, const char *json, const jsmntok_t *tokens, int
         send_simple_error(id, src, "invalid_params", "missing or invalid 'mode'");
         return;
     }
-    int target_tok = pc_obj_get(json, tokens, ntokens, params_tok, "target_ppm");
-    if (target_tok < 0 || tokens[target_tok].type != JSMN_PRIMITIVE) {
-        send_simple_error(id, src, "invalid_params", "missing or invalid 'target_ppm'");
-        return;
-    }
-    int32_t target = pc_tok_int(json, &tokens[target_tok]);
-    if (target < 0 || target > 65535) {
-        send_simple_error(id, src, "out_of_range", "target_ppm must be 0-65535");
-        return;
-    }
 
     bool is_forced  = pc_tok_eq(json, &tokens[mode_tok], "forced");
     bool is_factory = pc_tok_eq(json, &tokens[mode_tok], "factory");
-    if (!is_forced && !is_factory) {
-        send_simple_error(id, src, "invalid_params", "mode must be 'forced' or 'factory'");
+    bool is_reset   = pc_tok_eq(json, &tokens[mode_tok], "reset");
+    if (!is_forced && !is_factory && !is_reset) {
+        send_simple_error(id, src, "invalid_params", "mode must be 'forced', 'factory', or 'reset'");
         return;
+    }
+
+    // reset 以外は target_ppm が必須
+    int32_t target = 0;
+    if (!is_reset) {
+        int target_tok = pc_obj_get(json, tokens, ntokens, params_tok, "target_ppm");
+        if (target_tok < 0 || tokens[target_tok].type != JSMN_PRIMITIVE) {
+            send_simple_error(id, src, "invalid_params", "missing or invalid 'target_ppm'");
+            return;
+        }
+        target = pc_tok_int(json, &tokens[target_tok]);
+        if (target < 0 || target > 65535) {
+            send_simple_error(id, src, "out_of_range", "target_ppm must be 0-65535");
+            return;
+        }
     }
 
     if (is_forced) {
         LC_CalibrateCO2((uint16_t)target, 30);                // 30秒モード
-    } else {
+    } else if (is_factory) {
         LC_FactoryResetCO2((uint16_t)target, 12U * 3600U);    // 12時間モード
+    } else { // is_reset
+        LC_FactoryResetCO2Only();                             // factory_reset 単独 (~90ms)
     }
 
-    // 即時 ACK (進捗は co2_calibration_progress event で送出 — Phase D)
+    // 即時 ACK (進捗は co2_calibration_progress event で送出 — forced/factory のみ)
     send_empty_result(id, src);
 }
 

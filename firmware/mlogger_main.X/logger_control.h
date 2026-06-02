@@ -147,6 +147,10 @@ void LC_FactoryResetCO2(uint16_t co2Level, uint16_t time);
 
 void LC_CalibrateCO2(uint16_t co2Level, uint16_t time);
 
+// 工場リセット単独 (Sensirion STCC4 perform_factory_reset、~90ms で完了)。
+// ASC / FRC 履歴を消去して bypass phase を再開する。長時間 conditioning + FRC は伴わない。
+void LC_FactoryResetCO2Only(void);
+
 // </editor-fold>
 
 void LC_ClearData(void);

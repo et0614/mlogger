@@ -650,8 +650,8 @@ def test_smp_event_stream(ser):
     if "data" not in first or not isinstance(first["data"], dict):
         print(f"    [FAIL] malformed smp: {first}")
         return False
-    # general カテゴリ ⇒ t/h/g (+ CO2 子機接続時のみ c)、velocity ⇒ vel、illuminance ⇒ l
-    expected_keys = {"t", "h", "g", "vel", "l"}  # c は CO2 子機未接続時に欠落しうる
+    # general カテゴリ ⇒ t/h/g (+ CO2 子機接続時のみ c)、velocity ⇒ v、illuminance ⇒ l
+    expected_keys = {"t", "h", "g", "v", "l"}  # c は CO2 子機未接続時に欠落しうる
     got_keys = set(first["data"].keys())
     common = expected_keys & got_keys
     if len(common) < 3:

@@ -33,7 +33,10 @@ static void end_event(pc_writer_t *w) {
 // smp イベント
 //   data: {t,h,g,vel,l,c} 計測しないキーは省略
 // ============================================================
-void pe_emit_smp(const SensorData_t *data, bool toZigbee, bool toBLE, bool toUSB) {
+void pe_emit_smp(const SensorData_t *data,
+                 bool warmingGeneral, bool warmingVelocity,
+                 bool disconnectedGeneral, bool disconnectedVelocity,
+                 bool toZigbee, bool toBLE, bool toUSB) {
     pc_writer_t w;
     pc_init(&w, s_evt_buf, sizeof(s_evt_buf));
     pc_obj_begin(&w);
@@ -53,7 +56,7 @@ void pe_emit_smp(const SensorData_t *data, bool toZigbee, bool toBLE, bool toUSB
         pc_key(&w, "g");   pc_float(&w, (float)data->temp_globe / 100.0f,   2);
     }
     if (data->valid_flags & FLAG_WIND_SPEED) {
-        pc_key(&w, "vel"); pc_float(&w, (float)data->wind_speed / 10000.0f, 3);
+        pc_key(&w, "v"); pc_float(&w, (float)data->wind_speed / 10000.0f, 3);
     }
     if (data->valid_flags & FLAG_ILLUMINANCE) {
         // illuminance は 0.1 lx 単位 → 整数 lx に丸める
@@ -61,6 +64,29 @@ void pe_emit_smp(const SensorData_t *data, bool toZigbee, bool toBLE, bool toUSB
     }
     if (data->valid_flags & FLAG_CO2_PPM) {
         pc_key(&w, "c");   pc_uint(&w, data->co2_ppm);
+    }
+
+    // ウォームアップ中カテゴリ一覧 (該当ある時のみ). MAUI 側で「ウォームアップ中」表示用。
+    // カテゴリ ID は計測設定 3 カテゴリ (general/velocity/illuminance) と smp キーを揃え:
+    //   "g" = 一般 (CO2/th_probe)、t/h/g/c の欠損は warmup によるものと判別可能
+    //   "v" = 風速 (熱線 wake-up 中)
+    //   "l" = 照度 (将来予約)
+    if (warmingGeneral || warmingVelocity) {
+        pc_key(&w, "wu");
+        pc_arr_begin(&w);
+        if (warmingGeneral)  pc_str(&w, "g");
+        if (warmingVelocity) pc_str(&w, "v");
+        pc_arr_end(&w);
+    }
+
+    // 切断中カテゴリ一覧 (該当ある時のみ). 計測対象だが probe が応答しない状態。
+    // MAUI 側で「センサ未接続」表示用。
+    if (disconnectedGeneral || disconnectedVelocity) {
+        pc_key(&w, "dc");
+        pc_arr_begin(&w);
+        if (disconnectedGeneral)  pc_str(&w, "g");
+        if (disconnectedVelocity) pc_str(&w, "v");
+        pc_arr_end(&w);
     }
 
     pc_obj_end(&w);

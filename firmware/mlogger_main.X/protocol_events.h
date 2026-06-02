@@ -23,8 +23,20 @@ extern "C" {
 /**
  * @brief 計測サンプル smp イベントを送出。
  *        計測しないセンサのキーは省略 (spec 5.2 準拠)。
+ *        warmup 中のカテゴリは smp.data.wu 配列、切断中のカテゴリは smp.data.dc 配列で通知:
+ *          - "g": 一般 (温湿度/グローブ温度/CO2)
+ *          - "v": 風速
+ *          - "l": 照度 (将来予約)
+ * @param data               計測値 + valid_flags
+ * @param warmingGeneral     一般カテゴリ (CO2/th_probe) が warmup 中なら true
+ * @param warmingVelocity    風速 (熱線) が warmup 中なら true
+ * @param disconnectedGeneral 一般 probe が切断されている (測定試みたが全 invalid) なら true
+ * @param disconnectedVelocity 風速 probe が切断されている なら true
  */
-void pe_emit_smp(const SensorData_t *data, bool toZigbee, bool toBLE, bool toUSB);
+void pe_emit_smp(const SensorData_t *data,
+                 bool warmingGeneral, bool warmingVelocity,
+                 bool disconnectedGeneral, bool disconnectedVelocity,
+                 bool toZigbee, bool toBLE, bool toUSB);
 
 /**
  * @brief CO2 校正進捗イベントを送出 (XBee+BLE)。

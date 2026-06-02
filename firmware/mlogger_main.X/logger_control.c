@@ -103,6 +103,30 @@ static bool th_trigger_pending = false;          //true なら次 sec で ThProb
 //風速センサ
 Anemometer_t anemometer;
 
+// プローブ切断状態のキャッシュ。measurement attempt のたびに更新し、smp emit 時に
+// 参照する。これがないと measurement tick 以外の smp で false が報告されて banner
+// が flicker する (例: 風速 5sec / 他 1sec で、4 回の smp で false → 1 回で true → ...)。
+//
+// 加えて probe boot 中の wind_valid 不安定 (一瞬 true → false → true ...) を吸収する
+// ためヒステリシスを入れる:
+//   - 1 回でも失敗したら即 disconnect 表示 (反応の早さ優先)
+//   - 解除には連続 2 回の成功が必要 (誤検知を避ける)
+static bool lastDisconnectedGeneral = false;
+static bool lastDisconnectedVelocity = false;
+static uint8_t velSuccessStreak = 0;   // 風速 連続成功回数 (ヒステリシス用)
+static uint8_t genSuccessStreak = 0;   // 一般 連続成功回数
+#define DC_CLEAR_THRESHOLD  2          // 連続 N 回成功で disconnect 解除
+
+// ウォームアップ表示の persistence。
+// state == CONDITIONING_RUNNING だけで warmingGeneral を判定すると、conditioning 終了
+// (state = DONE) の瞬間にバナーが消えるが、次の measureOnce が完了するまでの 1 sec は
+// まだ STCC4 から値が来ない (status1=STALE のまま or STCC4 失敗で stale)。その結果
+// 「バナーが消えた瞬間に値が空 or 0、次秒で実値」という 1 テンポずれ症状が出る。
+// → CONDITIONING_RUNNING に入った瞬間に flag を立て、co2_valid を最初に受信した時に
+//    flag を倒す。warmingGeneral = (running || flag) で「実値が来るまで」バナー継続。
+static bool waitingForFirstValidCO2 = false;
+static uint8_t prevThProbeState = TH_PROBE_STATE_IDLE;
+
 static bool hasTask = false;
 
 /**
@@ -223,6 +247,16 @@ void execLogging(void)
                 data.valid_flags |= FLAG_VOLTAGE;
             }
 
+            // 切断状態キャッシュ更新 (ヒステリシス: 失敗で即立てるが、解除には連続成功が必要)
+            // probe boot 中の wind_valid 不安定 (true → false → true ...) を吸収する
+            if (anemometer.wind_valid) {
+                if (velSuccessStreak < DC_CLEAR_THRESHOLD) velSuccessStreak++;
+                if (velSuccessStreak >= DC_CLEAR_THRESHOLD) lastDisconnectedVelocity = false;
+            } else {
+                velSuccessStreak = 0;
+                lastDisconnectedVelocity = true;
+            }
+
             //次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
             if(V_WAKEUP_TIME <= EM_mSettings.interval_vel) Anemometer_Sleep();
         }
@@ -243,14 +277,53 @@ void execLogging(void)
 		ThProbe_Read(&th_probe);
 		th_trigger_pending = false;
 
+		// 切断状態キャッシュ更新 (warmup 中は t_glb が valid なので区別可能)
+		// ヒステリシス: 失敗で即立てるが、解除には連続成功が必要 (boot 中 flicker 吸収)
+		bool genValidNow = th_probe.t_valid || th_probe.rh_valid
+		                  || th_probe.glb_valid || th_probe.co2_valid;
+		if (genValidNow) {
+			if (genSuccessStreak < DC_CLEAR_THRESHOLD) genSuccessStreak++;
+			if (genSuccessStreak >= DC_CLEAR_THRESHOLD) lastDisconnectedGeneral = false;
+		} else {
+			genSuccessStreak = 0;
+			lastDisconnectedGeneral = true;
+		}
+
+		// ウォームアップ状態追跡 (バナー persistence 用)
+		// CONDITIONING_RUNNING に入る瞬間を検知して flag を立てる。
+		// post-conditioning の最初の measureOnce で「非ゼロの実測値」が来た時点で flag を倒す。
+		//
+		// なぜ「非ゼロ」が必要か:
+		//   STCC4 は conditioning_done 直後の数サンプル (実測 ~3 sec) で
+		//   "valid=true, value=0,0,0,0" を返すことが観測されている (おそらく内部 averaging が
+		//   出荷時状態の 0 から始まるため)。これを「初回 valid」とみなして flag を倒すと、
+		//   バナーが消えた瞬間に 0 が表示されて 1 テンポずれが発生する。
+		//   t,h,co2 のいずれかが非ゼロを返した時点を真の安定化とみなす。
+		// glb は warmup 中も独立 SHT4x で valid なので判定に使わない。
+		uint8_t curThProbeState = ThProbe_GetState();
+		if (prevThProbeState != TH_PROBE_STATE_CONDITIONING_RUNNING
+		    && curThProbeState == TH_PROBE_STATE_CONDITIONING_RUNNING) {
+			waitingForFirstValidCO2 = true;
+		}
+		prevThProbeState = curThProbeState;
+		bool gotRealMeasurement = (th_probe.t_valid   && th_probe.temp_c  != 0.0f)
+		                       || (th_probe.rh_valid  && th_probe.rh_pct  != 0.0f)
+		                       || (th_probe.co2_valid && th_probe.co2_ppm != 0);
+		if (gotRealMeasurement) {
+			waitingForFirstValidCO2 = false;
+		}
+
+		// waitingForFirstValidCO2 中は STCC4 系の値 (t/h/c) を smp に乗せない。
+		// 子機が valid=true で 0 を返してきても初回安定化前の bogus とみなして握り潰す。
+		// glb は STCC4 と無関係 (独立 SHT4x_glb) なので warmup と関係なく送る。
 		if (mesTH) {
 			send_needed = true;
 			pass_counters.th = 0;
-			if (th_probe.t_valid) {
+			if (th_probe.t_valid && !waitingForFirstValidCO2) {
 				data.temp_dry = 100 * max(-40, min(99, EM_cFactors.dbtA * th_probe.temp_c + EM_cFactors.dbtB));
 				data.valid_flags |= FLAG_TEMP_DRY;
 			}
-			if (th_probe.rh_valid) {
+			if (th_probe.rh_valid && !waitingForFirstValidCO2) {
 				data.humidity = 100 * max(0, min(100, EM_cFactors.hmdA * th_probe.rh_pct + EM_cFactors.hmdB));
 				data.valid_flags |= FLAG_HUMIDITY;
 			}
@@ -258,7 +331,7 @@ void execLogging(void)
 		if (mesCO2) {
 			send_needed = true;
 			pass_counters.co2 = 0;
-			if (th_probe.co2_valid) {
+			if (th_probe.co2_valid && !waitingForFirstValidCO2) {
 				SMA_Add(&smaCO2, th_probe.co2_ppm);
 				data.co2_ppm = SMA_GetAverage(&smaCO2);
 				data.valid_flags |= FLAG_CO2_PPM;
@@ -296,7 +369,38 @@ void execLogging(void)
         //無線/USB出力 (v4 smp イベント)
 		if(outputToZigbee || outputToBLE || outputToUSB)
         {
-            pe_emit_smp(&data, outputToZigbee, outputToBLE, outputToUSB);
+            // 一般カテゴリ (CO2/th_probe) が conditioning 中か (起動直後 ~22 秒)。
+            // ThProbe_GetState() == CONDITIONING_RUNNING の間 + 終了後も最初の有効な
+            // t/h/co2 値が来るまで (waitingForFirstValidCO2) は warmup 扱い。これで「バナー
+            // 消失と実値表示が同 smp で同時に起こる」ようになり 1 テンポずれが消える。
+            // CO2 設定 OFF でも t/h は probe 側で conditioning 待ちなので measure_co2 は不問。
+            // disconnect 中は dc banner が出るので warmup banner は出さない (二重表示防止)。
+            bool warmingGeneral = hasCO2Sensor
+                                  && !lastDisconnectedGeneral
+                                  && (prevThProbeState == TH_PROBE_STATE_CONDITIONING_RUNNING
+                                      || waitingForFirstValidCO2);
+
+            // 風速ウォームアップ: 熱線 wakeup 開始から実計測までの V_WAKEUP_TIME 秒間。
+            // interval <= V_WAKEUP_TIME の場合は熱線常時 ON で warmup 概念なし (banner 不要)。
+            // interval > V_WAKEUP_TIME の通常運用では、計測直後 (pass_counters.vel=0) は
+            // 「測定完了済み」なので warmup 表示しない。wakeup 期間中 (interval-vel <= WAKEUP)
+            // かつ未測定 (vel < interval) のときだけ true。
+            bool warmingVelocity = EM_mSettings.measure_vel
+                && (int)EM_mSettings.interval_vel > V_WAKEUP_TIME
+                && (int)EM_mSettings.interval_vel - (int)pass_counters.vel <= V_WAKEUP_TIME
+                && (int)pass_counters.vel < (int)EM_mSettings.interval_vel;
+
+            // 切断状態は measurement tick で更新されたキャッシュを参照。これにより
+            // measurement tick 以外の smp (例: 他センサ 1sec、本センサ 5sec) でも
+            // 直近の状態が維持され、banner の flicker を防ぐ。
+            // 設定で OFF のセンサについては banner 表示意味がないので strip。
+            bool disconnectedGeneral  = EM_mSettings.measure_th  || EM_mSettings.measure_co2 || EM_mSettings.measure_glb
+                                        ? lastDisconnectedGeneral : false;
+            bool disconnectedVelocity = EM_mSettings.measure_vel ? lastDisconnectedVelocity : false;
+
+            pe_emit_smp(&data, warmingGeneral, warmingVelocity,
+                        disconnectedGeneral, disconnectedVelocity,
+                        outputToZigbee, outputToBLE, outputToUSB);
         }
 
         //FM出力 (内蔵フラッシュ書き込み)
@@ -484,6 +588,19 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
     th_trigger_pending = false;
 
+    // 切断状態キャッシュもリセット (新セッション開始時は「初期状態 = 未確認 = 接続済とみなす」)
+    // 最初の measurement tick で実際の状態に更新される。
+    lastDisconnectedGeneral = false;
+    lastDisconnectedVelocity = false;
+    velSuccessStreak = 0;
+    genSuccessStreak = 0;
+
+    // セッション開始時はまず warmup 表示にしておき (子機がまだ conditioning 中の可能性)、
+    // 最初の co2_valid 受信で解除させる。CO2 未使用時は warmingGeneral 側で短絡されるので
+    // 副作用なし。
+    waitingForFirstValidCO2 = true;
+    prevThProbeState = TH_PROBE_STATE_IDLE;
+
     //ロギング開始
     logging = true;
 
@@ -557,6 +674,17 @@ void LC_CalibrateCO2(uint16_t co2Level, uint16_t time)
     ThProbe_StartFrc(co2Level);
     frcPhase = FRC_PHASE_RUNNING;
     frcProgressSec = 0;
+}
+
+// 工場リセット単独 (Sensirion STCC4 perform_factory_reset)。
+// ASC / FRC 履歴をクリアし bypass phase を再開する (~90ms で完了)。
+// 完全初期化 (LC_FactoryResetCO2) と違い、その後の長時間 conditioning + FRC は
+// 実行しない。ユーザーが「センサを工場出荷時の状態に戻したい」だけのときに使う。
+void LC_FactoryResetCO2Only(void)
+{
+    if (!hasCO2Sensor) return;
+    ThProbe_StartFactoryReset();
+    // ~90ms で完了するため frcPhase 等の polling は不要 (fire-and-forget)。
 }
 
 // </editor-fold>

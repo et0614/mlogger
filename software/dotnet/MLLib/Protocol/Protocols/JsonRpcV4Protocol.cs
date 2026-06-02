@@ -433,11 +433,16 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
 
     public async Task CalibrateCo2Async(Co2CalibrationMode mode, int targetPpm, CancellationToken ct = default)
     {
-        var p = new JsonObject
+        string modeStr = mode switch
         {
-            ["mode"]       = mode == Co2CalibrationMode.Factory ? "factory" : "forced",
-            ["target_ppm"] = targetPpm,
+            Co2CalibrationMode.Forced  => "forced",
+            Co2CalibrationMode.Factory => "factory",
+            Co2CalibrationMode.Reset   => "reset",
+            _ => throw new ArgumentException($"unknown Co2CalibrationMode: {mode}"),
         };
+        var p = new JsonObject { ["mode"] = modeStr };
+        // reset 以外は target_ppm が必要
+        if (mode != Co2CalibrationMode.Reset) p["target_ppm"] = targetPpm;
         await CallAsync("calibrate_co2", p, ct);
     }
 
@@ -567,14 +572,31 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         Illuminance:        ParseCorrectionPair((JsonObject)result["illuminance"]!),
         Velocity:           ParseCorrectionPair((JsonObject)result["velocity"]!));
 
-    private static Sample ParseSample(JsonObject data, DateTimeOffset ts) => new(
-        Timestamp:          ts,
-        DrybulbTemperature: data["t"]?.GetValue<double>(),
-        RelativeHumidity:   data["h"]?.GetValue<double>(),
-        GlobeTemperature:   data["g"]?.GetValue<double>(),
-        Velocity:           data["vel"]?.GetValue<double>(),
-        Illuminance:        data["l"]?.GetValue<int>(),
-        Co2:                data["c"]?.GetValue<int>());
+    private static Sample ParseSample(JsonObject data, DateTimeOffset ts)
+    {
+        return new Sample(
+            Timestamp:              ts,
+            DrybulbTemperature:     data["t"]?.GetValue<double>(),
+            RelativeHumidity:       data["h"]?.GetValue<double>(),
+            GlobeTemperature:       data["g"]?.GetValue<double>(),
+            Velocity:               data["v"]?.GetValue<double>(),
+            Illuminance:            data["l"]?.GetValue<int>(),
+            Co2:                    data["c"]?.GetValue<int>(),
+            WarmupCategories:       ParseStringArray(data["wu"]),
+            DisconnectedCategories: ParseStringArray(data["dc"]));
+    }
+
+    /// <summary>data の wu/dc 配列を List&lt;string&gt; に変換。null / 非配列なら null。</summary>
+    private static List<string>? ParseStringArray(JsonNode? node)
+    {
+        if (node is not JsonArray arr) return null;
+        var list = new List<string>(arr.Count);
+        foreach (var item in arr)
+        {
+            if (item?.GetValue<string>() is string s) list.Add(s);
+        }
+        return list;
+    }
 
     private static ReadyEvent ParseReadyEvent(JsonObject data, DateTimeOffset ts) => new(
         Timestamp: ts,

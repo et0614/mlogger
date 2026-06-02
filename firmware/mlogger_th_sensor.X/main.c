@@ -296,9 +296,16 @@ int main(void)
     SharedMemory.reg.unit_type[1]  = UNIT_PERCENT_RELATIVE_HUMID; // value[1] = RH
     SharedMemory.reg.unit_type[2]  = UNIT_PARTS_PER_MILLION;      // value[2] = CO2
     SharedMemory.reg.unit_type[3]  = UNIT_DEGREES_CELSIUS;        // value[3] = T_glb
-    SharedMemory.reg.status1       = 0;
+    // 全 STALE で開始する。boot 直後 (CONDITIONING 開始前) に親機が POLL 読み出ししても
+    // 「value=0 が valid」として誤受信されるのを防ぐ。最初の measureOnce / partial 読み出しで
+    // 必要なビットだけ clear される。
+    SharedMemory.reg.status1       = STATUS1_ALL_STALE;
     SharedMemory.reg.status2       = 0;
-    SharedMemory.reg.stcc4_cmd     = STCC4_CMD_NONE;
+    // 起動時に自動で perform_conditioning を実行 (datasheet §1.1.3: 3 時間以上 idle
+    // 後の感度低下を回復するための warmup、~22 秒)。main loop が最初の iteration
+    // で PHASE_IDLE → cmd 検出 → CONDITIONING へ遷移する。これにより親機が初回計測
+    // を要求するまでに STCC4 が warm-up を完了している可能性が高い。
+    SharedMemory.reg.stcc4_cmd     = STCC4_CMD_CONDITIONING;
     SharedMemory.reg.stcc4_state   = STCC4_STATE_IDLE;
     SharedMemory.reg.frc_correction = 0;
     for (uint8_t i = 0; i < 8; i++) SharedMemory.reg.value[i] = 0.0f;
@@ -408,6 +415,32 @@ int main(void)
                 break;
 
             case PHASE_CONDITIONING:
+                // STCC4 は warmup 中で T/RH/CO2 計測不可だが、グローブ用 SHT4x は
+                // STCC4 とは別 I2C バスにあるので独立に計測できる。親機からの計測要求
+                // (status2=0) があれば SHT4x_glb のみ部分計測して T_glb を返す。
+                // T/RH/CO2 は status1 で stale を立てて「未計測」として扱わせる。
+                {
+                    uint8_t s2;
+                    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { s2 = SharedMemory.reg.status2; }
+                    if (s2 == 0) {
+                        float t_glb = 0.0f, dummy_h = 0.0f;
+                        bool ok_glb = SHT4x_ReadValue(&t_glb, &dummy_h, SHT4X_GLB_TYPE);
+                        uint8_t stale = STATUS1_STALE_T | STATUS1_STALE_RH | STATUS1_STALE_CO2;
+                        if (ok_glb) {
+                            float ca, cb;
+                            readCoefs(3, &ca, &cb);
+                            ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+                                SharedMemory.reg.value[VAL_IDX_GLOBE_TEMP] = ca * t_glb + cb;
+                            }
+                        } else {
+                            stale |= STATUS1_STALE_T_GLB;
+                        }
+                        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+                            SharedMemory.reg.status1 = stale;
+                            SharedMemory.reg.status2 = 1;   // 部分サンプル READY
+                        }
+                    }
+                }
                 if (g_one_sec_tick) {
                     g_one_sec_tick = false;
                     g_phase_timer++;

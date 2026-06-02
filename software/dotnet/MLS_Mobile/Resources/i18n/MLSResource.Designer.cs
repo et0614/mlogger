@@ -238,6 +238,33 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("DS_InitializeCO2Sensor", resourceCulture);
             }
         }
+        internal static string DS_ResetCO2Sensor {
+            get { return ResourceManager.GetString("DS_ResetCO2Sensor", resourceCulture); }
+        }
+        internal static string DS_ResetCO2ConfirmTitle {
+            get { return ResourceManager.GetString("DS_ResetCO2ConfirmTitle", resourceCulture); }
+        }
+        internal static string DS_ResetCO2ConfirmBody {
+            get { return ResourceManager.GetString("DS_ResetCO2ConfirmBody", resourceCulture); }
+        }
+        internal static string DS_ResetCO2Done {
+            get { return ResourceManager.GetString("DS_ResetCO2Done", resourceCulture); }
+        }
+        internal static string DS_ResetCO2Failed {
+            get { return ResourceManager.GetString("DS_ResetCO2Failed", resourceCulture); }
+        }
+        internal static string DR_WarmupBanner {
+            get { return ResourceManager.GetString("DR_WarmupBanner", resourceCulture); }
+        }
+        internal static string DR_WarmupGeneral {
+            get { return ResourceManager.GetString("DR_WarmupGeneral", resourceCulture); }
+        }
+        internal static string DR_DisconnectGeneral {
+            get { return ResourceManager.GetString("DR_DisconnectGeneral", resourceCulture); }
+        }
+        internal static string DR_DisconnectBanner {
+            get { return ResourceManager.GetString("DR_DisconnectBanner", resourceCulture); }
+        }
         
         /// <summary>
         ///   Invalid number に類似しているローカライズされた文字列を検索します。

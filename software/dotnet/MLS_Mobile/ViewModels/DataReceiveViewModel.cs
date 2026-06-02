@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Maui.Dispatching;
 using Microsoft.Maui.Graphics;
 using MLLib.Protocol;
+using MLS_Mobile.Resources.i18n;
 using MLS_Mobile.Services;
 using Popolo.Core.ThermalComfort;
 using Popolo.Core.Physics;
@@ -82,6 +83,15 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _velocity = "";
     [ObservableProperty] private string _illuminance = "";
     [ObservableProperty] private string _cO2Level = "";
+
+    // ウォームアップ中インジケータ。空文字 = 表示なし。warmup 中は「ウォームアップ中: 温湿度・CO2 ...」等。
+    // smp イベントの data.wu (カテゴリ ID 配列) から導出。
+    [ObservableProperty] private string _warmupIndicator = "";
+    [ObservableProperty] private bool _isWarmingUp = false;
+
+    // 切断中インジケータ。smp イベントの data.dc から導出。プローブを抜いたとき等。
+    [ObservableProperty] private string _disconnectIndicator = "";
+    [ObservableProperty] private bool _isDisconnected = false;
 
     [ObservableProperty] private DateTime _lastCommunicated_DBT;
     [ObservableProperty] private DateTime _lastCommunicated_HMD;
@@ -178,26 +188,102 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         _lastSample = s;
         // 初回サンプル到着で indicator を消す (最初の 1 回だけ意味あり、以後 no-op)
         if (_isWaitingForFirstSample) _isWaitingForFirstSample = false;
-        var local = s.Timestamp.LocalDateTime;
+        // LastCommunicated_* には MAUI 到着時刻 (DateTime.Now) を使う。
+        // ファームウェア ts (s.Timestamp) を使うと、ファームウェア RTC と MAUI 時刻の
+        // skew (set_time 後でも transmission latency による数百 ms ズレ) で diff が秒境界
+        // をまたいで揺れ、relative text が「9s ago ↔ 10s ago」と振動する。
+        // 「データの鮮度」を表したいだけなら、最後に値が届いた MAUI 側の時刻で十分。
+        var local = DateTime.Now;
+
+        // wu / dc (warmup / disconnect categories) を解釈してインジケータ文字列を組み立てる
+        var wu = s.WarmupCategories;
+        if (wu != null && wu.Count > 0)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (wu.Contains("g")) parts.Add(MLSResource.DR_WarmupGeneral);
+            if (wu.Contains("v")) parts.Add(MLSResource.Velocity);
+            if (wu.Contains("l")) parts.Add(MLSResource.Illuminance);
+            _warmupIndicator = string.Format(MLSResource.DR_WarmupBanner, string.Join(" / ", parts));
+            _isWarmingUp = true;
+        }
+        else
+        {
+            _warmupIndicator = "";
+            _isWarmingUp = false;
+        }
+
+        var dc = s.DisconnectedCategories;
+        if (dc != null && dc.Count > 0)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            // dc は probe 全体未接続なので glb 含む全 general 値が無効
+            if (dc.Contains("g")) parts.Add(MLSResource.DR_DisconnectGeneral);
+            if (dc.Contains("v")) parts.Add(MLSResource.Velocity);
+            if (dc.Contains("l")) parts.Add(MLSResource.Illuminance);
+            _disconnectIndicator = string.Format(MLSResource.DR_DisconnectBanner, string.Join(" / ", parts));
+            _isDisconnected = true;
+        }
+        else
+        {
+            _disconnectIndicator = "";
+            _isDisconnected = false;
+        }
 
         // [ObservableProperty] の自動 setter (= SetProperty 経由で個別 PropertyChanged 発火)
         // を使わず field を直接書き換える。OnSample 1 回で 12 個の通知が連鎖していたのを、
         // 末尾の OnPropertyChanged(string.Empty) で全 binding を 1 度だけ refresh させる形に
         // まとめる。これがサンプル受信時の UI カクつきの主要因。
+        //
+        // wu/dc 指示時に value が来ない場合は、表示値と LastCommunicated を default にリセットする。
+        // こうしないと「value: --」なのに「relative: 5 sec ago」というチグハグな表示になる
+        // (古い値由来の relative time が残り続けるため)。
+        bool dcGeneral  = dc != null && dc.Contains("g");
+        bool dcVelocity = dc != null && dc.Contains("v");
+        bool dcLight    = dc != null && dc.Contains("l");
+        bool wuGeneral  = wu != null && wu.Contains("g");
+        bool wuVelocity = wu != null && wu.Contains("v");
+        bool wuLight    = wu != null && wu.Contains("l");
+
+        // wu / dc の解釈ポリシー:
+        //   - smp に値が来ている → そのまま表示 (glb は warmup 中も独立センサで有効、信用する)
+        //   - smp に値が来ていない & (wu または dc) → "—" + LC=default
+        //   - smp に値が来ていない & wu/dc なし → 古い値据え置き (該当 sensor が単に measure 周期外)
+        // 「warmup 中は category 全部 — にする」と glb の有効値が隠れて違和感が出るのでやらない。
+        // 子機 firmware が「glb=valid 値あり / t/h/c=stale で値なし」を I2C で送り分けている
+        // 仕様なので、その送り分けを MAUI 側でも素直に反映する。
         if (s.DrybulbTemperature is double dbt)
         {
             _drybulbTemperature   = FormatF(dbt, 1);
             _lastCommunicated_DBT = local;
+        }
+        else if (dcGeneral || wuGeneral)
+        {
+            _drybulbTemperature   = "—";
+            _lastCommunicated_DBT = default;
         }
         if (s.RelativeHumidity is double rh)
         {
             _relativeHumdity      = FormatF(rh, 1);
             _lastCommunicated_HMD = local;
         }
+        else if (dcGeneral || wuGeneral)
+        {
+            _relativeHumdity      = "—";
+            _lastCommunicated_HMD = default;
+        }
         if (s.GlobeTemperature is double glb)
         {
             _globeTemperature     = FormatF(glb, 1);
             _lastCommunicated_GLB = local;
+        }
+        else if (dcGeneral)
+        {
+            // 切断時のみクリア。glb は STCC4 conditioning と無関係 (独立 SHT4x_glb) なので
+            // wuGeneral では clear しない。wu 中で g が smp に来ない tick もあるが
+            // (interval_glb > 1 など)、それは「単に今 tick で計測周期外」だけなので
+            // 前回値を据え置きで OK。次の glb 計測周期で実値に更新される。
+            _globeTemperature     = "—";
+            _lastCommunicated_GLB = default;
         }
         if (s.Velocity is double vel)
         {
@@ -206,10 +292,21 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
             _velocityColor        = oor ? DangerColor : NormalColor;
             _lastCommunicated_VEL = local;
         }
+        else if (dcVelocity || wuVelocity)
+        {
+            _velocity             = "—";
+            _velocityColor        = NormalColor;
+            _lastCommunicated_VEL = default;
+        }
         if (s.Illuminance is int ill)
         {
             _illuminance          = ill.ToString(CultureInfo.InvariantCulture);
             _lastCommunicated_ILL = local;
+        }
+        else if (dcLight || wuLight)
+        {
+            _illuminance          = "—";
+            _lastCommunicated_ILL = default;
         }
         if (s.Co2 is int co2)
         {
@@ -218,6 +315,12 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
                                   : co2 >= CO2_WARN_PPM   ? WarnColor
                                   : NormalColor;
             _lastCommunicated_CO2 = local;
+        }
+        else if (dcGeneral || wuGeneral)
+        {
+            _cO2Level             = "—";
+            _co2Color             = NormalColor;
+            _lastCommunicated_CO2 = default;
         }
 
         // 共有モデル (内部で 1 回だけ PropertyChanged を発火)

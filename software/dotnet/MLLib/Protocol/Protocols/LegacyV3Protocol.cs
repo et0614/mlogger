@@ -581,6 +581,11 @@ public sealed class LegacyV3Protocol : IMLProtocol
     // ============================================================
     public async Task CalibrateCo2Async(Co2CalibrationMode mode, int targetPpm, CancellationToken ct = default)
     {
+        if (mode == Co2CalibrationMode.Reset)
+        {
+            // v3 firmware は factory_reset 単独コマンドを持たない (v4 で新設)
+            throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "Co2 factory reset is v4-only");
+        }
         if (targetPpm < 0 || targetPpm > 65535)
             throw new MLProtocolException(MLProtocolErrorCodes.OutOfRange, "target_ppm must be 0-65535");
         if (mode == Co2CalibrationMode.Factory)

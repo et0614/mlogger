@@ -139,7 +139,7 @@ public partial class DeviceSetting : ContentPage
   private void Accelerometer_ShakeDetected(object sender, EventArgs e)
   {
     //一般的ではないボタン群の表示・非表示切り替え
-    isDeveloperMode = calvBtnA.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = !calvBtnA.IsVisible;
+    isDeveloperMode = calvBtnA.IsVisible = calCo2Btn.IsVisible = resetCo2Btn.IsVisible = initCo2Btn.IsVisible = !calvBtnA.IsVisible;
   }
 
   #endregion
@@ -155,7 +155,7 @@ public partial class DeviceSetting : ContentPage
     Accelerometer.Start(SensorSpeed.UI);
 
     //校正ボタンの表示・非表示
-    calvBtnA.IsVisible = calCo2Btn.IsVisible = initCo2Btn.IsVisible = isDeveloperMode;
+    calvBtnA.IsVisible = calCo2Btn.IsVisible = resetCo2Btn.IsVisible = initCo2Btn.IsVisible = isDeveloperMode;
 
     //基本は測定を停止させる
     isStopLogging = true;
@@ -268,6 +268,8 @@ public partial class DeviceSetting : ContentPage
 
   private async void CO2CalibrationButton_Clicked(object sender, EventArgs e) => await calibrateCo2V4ForcedAsync();
 
+  private async void CO2ResetButton_Clicked(object sender, EventArgs e) => await calibrateCo2V4ResetAsync();
+
   private async void CO2InitializeButton_Clicked(object sender, EventArgs e) => await calibrateCo2V4FactoryAsync();
 
   private async void SetNameButton_Clicked(object sender, EventArgs e)
@@ -318,13 +320,20 @@ public partial class DeviceSetting : ContentPage
 
       MLUtility.WriteLog(Logger.XBeeName + "; Start logging (v4); mode=" + lMode);
 
-      Application.Current.Dispatcher.Dispatch(() =>
+      Application.Current.Dispatcher.Dispatch(async () =>
       {
-        if (lMode == loggingMode.bluetooth)
-          Shell.Current.GoToAsync(nameof(DataReceive),
-            new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
-        else
-          Shell.Current.GoToAsync("..");
+        try
+        {
+          if (lMode == loggingMode.bluetooth)
+            await Shell.Current.GoToAsync(nameof(DataReceive),
+              new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
+          else
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception navEx)
+        {
+          MLUtility.WriteLog($"[nav] GoToAsync FAIL: {navEx.GetType().Name}: {navEx.Message}");
+        }
       });
     }
     catch (Exception ex)
@@ -364,8 +373,10 @@ public partial class DeviceSetting : ContentPage
         spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
       });
 
-      // 初回のみ時刻同期 (settings 後で BLE link が落ち着いたタイミングで安全に打てる)
-      _ = MLUtility.SyncDeviceTimeAsync();
+      // 初回のみ時刻同期。fire-and-forget だと直後にユーザーが start_logging を押したとき
+      // BLE 競合で timeout する事象があるため、settings の後に短い間隔を空けて await で待つ。
+      await Task.Delay(300);
+      await MLUtility.SyncDeviceTimeAsync();
     }
   }
 
@@ -653,13 +664,40 @@ public partial class DeviceSetting : ContentPage
     await calibrateCo2V4(Co2CalibrationMode.Forced, level, navigateToCalibrator: true);
   }
 
-  /// <summary>v4 path of CO2InitializeButton_Clicked (factory reset).</summary>
+  /// <summary>v4 path of CO2InitializeButton_Clicked (full initialization = factory reset + 12h + FRC).</summary>
   private async Task calibrateCo2V4FactoryAsync()
   {
     var popup = new TextInputPopup(MLSResource.DS_PromptCo2RefLevel,"400", Keyboard.Numeric);
     int? refLevel = await PromptCo2LevelAsync(popup);
     if (refLevel is not int level) return;
     await calibrateCo2V4(Co2CalibrationMode.Factory, level, navigateToCalibrator: false);
+  }
+
+  /// <summary>v4 path of CO2ResetButton_Clicked (Sensirion factory_reset 単独、~90ms)。</summary>
+  private async Task calibrateCo2V4ResetAsync()
+  {
+    bool proceed = await DisplayAlert(
+      MLSResource.DS_ResetCO2ConfirmTitle,
+      MLSResource.DS_ResetCO2ConfirmBody,
+      MLSResource.Yes,
+      MLSResource.Cancel);
+    if (!proceed) return;
+
+    try
+    {
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      // target_ppm は reset モードでは無視されるが、API 互換のため 0 を渡す
+      await MLUtility.Protocol.CalibrateCo2Async(Co2CalibrationMode.Reset, 0, cts.Token);
+      MLUtility.WriteLog("[co2] factory reset OK");
+      await DisplayAlert(
+        MLSResource.DS_ResetCO2ConfirmTitle,
+        MLSResource.DS_ResetCO2Done,
+        "OK");
+    }
+    catch (Exception ex)
+    {
+      await MLUtility.ShowErrorAsync(this, MLSResource.DS_ResetCO2Failed, ex);
+    }
   }
 
   /// <summary>

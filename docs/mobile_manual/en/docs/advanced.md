@@ -17,28 +17,36 @@ If you want to compensate for sensor drift after long-term use, the per-sensor g
 
 On both v3 and v4 firmware, correction coefficients are set independently for the **five sensors** (drybulb temperature, relative humidity, globe temperature, illuminance, velocity — CO2 is excluded because it uses factory calibration + automatic self-calibration). Even though v4 collapses the measurement settings into 3 categories, correction coefficients remain per-sensor.
 
-## CO2 sensor calibration / initialization
+## CO2 sensor calibration, reset, and full initialization
 
-The CO2 sensor has an **Automatic Self-Calibration (ASC)** feature: as long as it is exposed roughly once a day to fresh outdoor-equivalent air (about 400 ppm), it auto-calibrates against that level.
+The CO2 sensor (Sensirion STCC4) has an **Automatic Self-Calibration (ASC)** feature: as long as it is exposed roughly once a day to fresh outdoor-equivalent air (about 400 ppm), it auto-calibrates against that level.
 In normal indoor measurement — with daily ventilation, window opening, or carrying the device outdoors — ASC works without any special action.
 
-For long-term measurement in continuously high CO2 environments (sealed rooms, greenhouses, experimental chambers, etc.) ASC never gets a chance to fire, and the output drifts away from the true value.
-In that case, calibrate manually using one of the operations below.
+For long-term measurement in continuously high CO2 environments (sealed rooms, greenhouses, experimental chambers, etc.) or when sensor output drift becomes noticeable, use one of the manual operations below. Each maps to a different command in the Sensirion datasheet (ICD01).
+
+| Button | Operation | Duration | Datasheet |
+|--------|-----------|---------|-----------|
+| **Calibrate CO2 Sensor** | 30 s measurement + forced recalibration to the entered known concentration | ~35 s | §3.4.15 `perform_forced_recalibration` |
+| **Factory Reset CO2 Sensor** | Erases ASC / FRC history and re-enables the bypass phase (returns the sensor to a fresh-out-of-the-box state) | ~90 ms | §3.4.11 `perform_factory_reset` |
+| **Fully Initialize CO2 Sensor** | Factory reset → 12-hour stabilization run → forced recalibration (reproduces datasheet §1.1.4 "Initial Operation") | ~12 h | combination of the above |
 
 ### Calibrate CO2 Sensor
 
 Place the sensor under a clearly known CO2 concentration, enter that value, and calibrate.
 
 - The reference CO2 concentration should be a value verified with another calibrated CO2 meter or with a known reference gas
-- The calibration operation takes about **30 seconds**. Keep the sensor and surrounding conditions (CO2 concentration, temperature, humidity, power) stable during that time
+- The calibration operation takes about **35 seconds**. Keep the sensor and surrounding conditions (CO2 concentration, temperature, humidity, power) stable during that time
 
-### Initialize CO2 Sensor
+### Factory Reset CO2 Sensor
 
-Resets the auto-calibration history that has accumulated during long-term measurement and re-anchors the sensor to a specified CO2 concentration.
-Pressing this button performs a **24-hour stabilization measurement** and then resets the sensor to the specified CO2 concentration.
+Clears the ASC / FRC history accumulated inside the sensor and returns it to the same state as a brand-new unit. Completes immediately (~90 ms).
 
-!!! note "Currently a custom procedure, not the manufacturer factory reset"
-    The app's "Initialize CO2 Sensor" is not the literal factory-reset command of the CO2 sensor (Sensirion STCC4); it is a custom procedure that combines a 24-hour stabilization phase with the recalibration. A future update will align this with the manufacturer's factory-reset behaviour.
+Use this if sensor output is clearly wrong after long-term use (e.g. ASC has converged on an incorrect baseline). After the reset, the sensor re-enters the "Initial Operation" phase described in datasheet §1.1.4 and rebuilds accuracy through 12 hours of continuous operation combined with exposure to fresh air.
+
+### Fully Initialize CO2 Sensor
+
+Performs the **factory reset above + 12-hour continuous stabilization run + forced recalibration to the specified CO2 concentration**, all sequenced automatically by the app.
+You don't have to wait 12 hours manually, but the M-Logger is occupied by this measurement during that time, so it cannot be used for other measurements. Run this only in an environment where the specified CO2 concentration (typically 400 ppm fresh air) can be maintained for the full duration.
 
 ## Communication with PC
 
