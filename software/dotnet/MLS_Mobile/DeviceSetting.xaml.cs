@@ -685,9 +685,11 @@ public partial class DeviceSetting : ContentPage
   // dump (内蔵フラッシュのデータをスマホに吸い出して CSV 保存)
   // ============================================================
 
-  // BLE 実効スループット (KB/sec)。所要時間試算用、firmware/docs/power_consumption.md 周辺
-  // と一致させる目安値。BLE 1.7 KB/sec ≈ 77 records/sec。
-  private const double BLE_THROUGHPUT_BYTES_PER_SEC = 1700.0;
+  // BLE 実効スループット (KB/sec)。所要時間試算用。
+  // 2026/06/02 実測: 10000 records (220 KB) を 90 秒 ≈ 2.4 KB/sec。
+  // 安全側で 2.2 KB/sec を採用 (実機ばらつきと先頭/末尾オーバーヘッドを考慮、
+  // 表示時間が実態より若干長めに出る)。
+  private const double BLE_THROUGHPUT_BYTES_PER_SEC = 2200.0;
 
   private async void DumpButton_Clicked(object sender, EventArgs e) => await dumpV4Async();
 
