@@ -342,39 +342,52 @@ public partial class DeviceSetting : ContentPage
   {
     var dev = MLUtility.Protocol.Device;
     bool isV4 = dev.ProtocolVersion >= 1;
-    // 電池パネルは v4 firmware (get_battery 対応) でのみ表示。v3 では panel ごと非表示。
-    // 電池情報は時間と共に変わるので _initInfoV4Done に拘わらず毎回取得する。
+    // 電池パネル / settings は時間と共に (firmware 側で別 client が変えるなど) 変わりうる
+    // ため _initInfoV4Done に拘わらず毎回取得する。spec ラベルや時刻同期は初回のみで OK。
     Application.Current?.Dispatcher.Dispatch(() => applyProtocolModeToUI(isV4, dev.HasCo2Sensor));
-    if (isV4) _ = refreshBatteryAsync();
 
-    if (_initInfoV4Done) return;
-    _initInfoV4Done = true;
-    Application.Current?.Dispatcher.Dispatch(() =>
+    // 接続直後の RPC は順次発火 (battery → settings → set_time)。BLE link で 3 つ
+    // 並行に投げると後発分が timeout する事象を回避するため。await で順番に流す。
+    // さらに各 RPC の間に短い間隔を空けて XBee/firmware 側の処理完了を待つ
+    // (battery 直後に settings を投げると settings 応答が来ない事象への対策)。
+    if (isV4) { await refreshBatteryAsync();  await Task.Delay(300); }
+    await refreshSettingsAsync();
+
+    if (!_initInfoV4Done)
     {
-      spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
-      spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
-      spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
-      spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
-    });
+      _initInfoV4Done = true;
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
+        spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
+        spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
+        spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
+      });
 
+      // 初回のみ時刻同期 (settings 後で BLE link が落ち着いたタイミングで安全に打てる)
+      _ = MLUtility.SyncDeviceTimeAsync();
+    }
+  }
+
+  /// <summary>get_settings を叩いて UI に反映 (毎回呼ばれる)。</summary>
+  private async Task refreshSettingsAsync()
+  {
     try
     {
+      MLUtility.WriteLog("[settings] GetSettingsAsync start");
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
       var s = await MLUtility.Protocol.GetSettingsAsync(cts.Token);
+      MLUtility.WriteLog("[settings] GetSettingsAsync OK");
       Application.Current?.Dispatcher.Dispatch(() =>
       {
         applySettingsToUI(s);
         resetTextColor();
       });
     }
-    catch
+    catch (Exception ex)
     {
-      // best-effort; leave UI defaults
+      MLUtility.WriteLog($"[settings] GetSettingsAsync FAIL: {ex.GetType().Name}: {ex.Message}");
     }
-
-    // After GetSettings succeeds the BLE link has settled enough that set_time
-    // is reliably accepted by firmware. fire-and-forget; failure is logged only.
-    _ = MLUtility.SyncDeviceTimeAsync();
   }
 
   /// <summary>get_battery を叩いて電池パネルを更新する (best-effort)。</summary>
