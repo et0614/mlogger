@@ -9,10 +9,15 @@
     <RefreshView x:Name="refView">
         <Grid RowDefinitions="Auto,*,Auto">
             <!-- Demo モード: 実機なしで UI 確認用 (DummyMLProtocol 経由)。
-                 通常時は非表示で、シェイクで切り替え -->
-            <Button x:Name="demoBtn" Grid.Row="0" Text="Open Demo Device" Clicked="DemoButton_Clicked"
-                    Margin="10,5" Padding="5" IsVisible="False"
-                    BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
+                 通常時は非表示で、シェイクで切り替え。v3/v4 firmware 相当の UI 切替を確認可能。 -->
+            <Grid x:Name="demoBtn" Grid.Row="0" IsVisible="False" ColumnDefinitions="*,*" Margin="10,5" ColumnSpacing="5">
+                <Button Grid.Column="0" Text="Demo (v4)" Clicked="DemoButtonV4_Clicked"
+                        Padding="5"
+                        BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
+                <Button Grid.Column="1" Text="Demo (v3)" Clicked="DemoButtonV3_Clicked"
+                        Padding="5"
+                        BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
+            </Grid>
             <CollectionView Grid.Row="1"
                 x:Name="mlList" ItemsSource="{ Binding MLXBees }" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
                 <CollectionView.ItemTemplate>

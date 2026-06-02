@@ -27,14 +27,9 @@ namespace MLS_Mobile.Services;
 /// </summary>
 public sealed class DummyMLProtocol : IMLProtocol
 {
-    public DeviceInfo Device { get; } = new DeviceInfo(
-        Device:           "M-Logger",
-        FirmwareVersion:  "demo",
-        ProtocolVersion:  1,
-        HardwareId:       "DEMO0000",
-        Name:             "Demo Device",
-        IsLogging:        true,
-        HasCo2Sensor:     true);
+    private readonly int _protocolVersion;
+
+    public DeviceInfo Device { get; }
 
     public bool IsLogging { get; private set; } = true;
 
@@ -42,10 +37,13 @@ public sealed class DummyMLProtocol : IMLProtocol
     // in-memory state
     // ============================================================
     private Settings _settings = new(
-        General:     new SensorSetting(true, 60),
-        Velocity:    new SensorSetting(true, 60),
-        Illuminance: new SensorSetting(true, 60),
-        StartTime:   DateTimeOffset.Now);
+        DrybulbTemperature: new SensorSetting(true, 60),
+        RelativeHumidity:   new SensorSetting(true, 60),
+        GlobeTemperature:   new SensorSetting(true, 60),
+        Velocity:           new SensorSetting(true, 60),
+        Illuminance:        new SensorSetting(true, 60),
+        Co2:                new SensorSetting(true, 60),
+        StartTime:          DateTimeOffset.Now);
 
     private CorrectionFactors _corrections = new(
         DrybulbTemperature: new CorrectionCoefficients(1.0f, 0.0f),
@@ -70,8 +68,23 @@ public sealed class DummyMLProtocol : IMLProtocol
     public IObservable<Co2CalibrationProgress> Co2CalibrationUpdates => _co2cal;
     public IObservable<TimeSyncRequest> TimeSyncRequests             => Observable.Empty<TimeSyncRequest>();
 
-    public DummyMLProtocol()
+    /// <summary>
+    /// <paramref name="protocolVersion"/> に 0 を渡すと v3 firmware 相当 (3 letter コマンド)
+    /// として振る舞う ⇒ DeviceSetting UI が旧 5 行レイアウト + 電池パネル非表示になる。
+    /// 1 以上で v4 firmware 相当 ⇒ 3 行レイアウト + 電池パネル表示。
+    /// </summary>
+    public DummyMLProtocol(int protocolVersion = 1)
     {
+        _protocolVersion = protocolVersion;
+        Device = new DeviceInfo(
+            Device:           "M-Logger",
+            FirmwareVersion:  protocolVersion >= 1 ? "demo (v4)" : "demo (v3.3.20)",
+            ProtocolVersion:  protocolVersion,
+            HardwareId:       "DEMO0000",
+            Name:             "Demo Device",
+            IsLogging:        true,
+            HasCo2Sensor:     true);
+
         _sampleTimer = Application.Current?.Dispatcher.CreateTimer();
         if (_sampleTimer != null)
         {
@@ -112,10 +125,13 @@ public sealed class DummyMLProtocol : IMLProtocol
     public Task<Settings> SetSettingsAsync(SettingsPatch patch, CancellationToken ct = default)
     {
         _settings = new Settings(
-            General:     Patch(_settings.General,     patch.General),
-            Velocity:    Patch(_settings.Velocity,    patch.Velocity),
-            Illuminance: Patch(_settings.Illuminance, patch.Illuminance),
-            StartTime:   patch.StartTime ?? _settings.StartTime);
+            DrybulbTemperature: Patch(_settings.DrybulbTemperature, patch.DrybulbTemperature),
+            RelativeHumidity:   Patch(_settings.RelativeHumidity,   patch.RelativeHumidity),
+            GlobeTemperature:   Patch(_settings.GlobeTemperature,   patch.GlobeTemperature),
+            Velocity:           Patch(_settings.Velocity,           patch.Velocity),
+            Illuminance:        Patch(_settings.Illuminance,        patch.Illuminance),
+            Co2:                Patch(_settings.Co2,                patch.Co2),
+            StartTime:          patch.StartTime ?? _settings.StartTime);
         return Task.FromResult(_settings);
     }
 
@@ -147,9 +163,14 @@ public sealed class DummyMLProtocol : IMLProtocol
     public Task<DateTimeOffset> SetTimeAsync(DateTimeOffset time, CancellationToken ct = default)
         => Task.FromResult(time);
 
-    // Demo 用に Alkaline 新品相当の電圧を返す (BatteryEstimator.DetectType の閾値 2850mV 超)
+    // v4: Alkaline 新品相当の電圧を返す (BatteryEstimator.DetectType の閾値 2850mV 超)
+    // v3: LegacyV3Protocol と同様 unknown_command で throw (v3 firmware に get_battery 無し)
     public Task<BatteryInfo> GetBatteryAsync(CancellationToken ct = default)
-        => Task.FromResult(new BatteryInfo(VoltageMv: 3050, IsLow: false));
+    {
+        if (_protocolVersion < 1)
+            throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_battery is v4-only");
+        return Task.FromResult(new BatteryInfo(VoltageMv: 3050, IsLow: false));
+    }
 
     public Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default)
     {

@@ -17,10 +17,17 @@ public partial class MLoggerScanner : ContentPage
 
   #region インスタンス変数・プロパティ・定数宣言
 
+  /// <summary>
+  /// 開発時に Demo (v3/v4) ボタンを起動直後から常時表示するかどうか。
+  /// true にしてビルドすると、シェイク不要で emulator でも Demo モードに入れる。
+  /// 本番リリース時は必ず false に戻すこと。
+  /// </summary>
+  private const bool FORCE_SHOW_DEMO = false;
+
   private bool bleChecked = false;
 
   /// <summary>Demo ボタンの表示状態。シェイクでトグルされる (画面遷移後も維持)。</summary>
-  private static bool _isDemoVisible = false;
+  private static bool _isDemoVisible = FORCE_SHOW_DEMO;
 
   /// <summary>XBeeを探索する時間[msec]</summary>
   private const int SCAN_TIME = 2000;
@@ -180,10 +187,15 @@ public partial class MLoggerScanner : ContentPage
 
   #endregion
 
-  /// <summary>Demo モード起動: DummyMLProtocol を活性化して DeviceSetting へ navigate。</summary>
-  private async void DemoButton_Clicked(object sender, EventArgs e)
+  /// <summary>Demo v4 モード起動: DummyMLProtocol (ProtocolVersion=1) を活性化。</summary>
+  private async void DemoButtonV4_Clicked(object sender, EventArgs e) => await openDemoAsync(1);
+
+  /// <summary>Demo v3 モード起動: DummyMLProtocol (ProtocolVersion=0) を活性化。</summary>
+  private async void DemoButtonV3_Clicked(object sender, EventArgs e) => await openDemoAsync(0);
+
+  private async Task openDemoAsync(int protocolVersion)
   {
-    string lowAddress = await MLUtility.UseDummyProtocolAsync();
+    string lowAddress = await MLUtility.UseDummyProtocolAsync(protocolVersion);
     await Shell.Current.GoToAsync(nameof(DeviceSetting),
       new Dictionary<string, object> { { "mlLowAddress", lowAddress } });
   }

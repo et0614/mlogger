@@ -291,9 +291,17 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
 
     public async Task<Settings> SetSettingsAsync(SettingsPatch patch, CancellationToken ct = default)
     {
-        // v4 protocol は 3 カテゴリ (general/velocity/illuminance) で送受信
+        // v4 wire は 3 カテゴリ (general/velocity/illuminance)。本 protocol 実装は
+        // 内部 model (6 センサ) との変換を担う。MAUI 側 v4 UI は t_dry/humidity/t_glb/co2
+        // を常に同値で構成して patch に詰める前提なので、ここでは t_dry を優先的に
+        // general の値として採用 (なければ humidity → t_glb → co2 の順にフォールバック)。
+        var generalPatch = patch.DrybulbTemperature
+                        ?? patch.RelativeHumidity
+                        ?? patch.GlobeTemperature
+                        ?? patch.Co2;
+
         var p = new JsonObject();
-        if (patch.General     is not null) p["general"]     = BuildSensorPatch(patch.General);
+        if (generalPatch      is not null) p["general"]     = BuildSensorPatch(generalPatch);
         if (patch.Velocity    is not null) p["velocity"]    = BuildSensorPatch(patch.Velocity);
         if (patch.Illuminance is not null) p["illuminance"] = BuildSensorPatch(patch.Illuminance);
         if (patch.StartTime   is not null) p["start_ts"]    = patch.StartTime.Value.ToUnixTimeSeconds();
@@ -466,11 +474,23 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         Enabled:  obj["enabled"]?.GetValue<bool>() ?? false,
         Interval: obj["interval"]?.GetValue<uint>() ?? 0);
 
-    private static Settings ParseSettings(JsonObject result) => new(
-        General:     ParseSensorSetting((JsonObject)result["general"]!),
-        Velocity:    ParseSensorSetting((JsonObject)result["velocity"]!),
-        Illuminance: ParseSensorSetting((JsonObject)result["illuminance"]!),
-        StartTime:   DateTimeOffset.FromUnixTimeSeconds(result["start_ts"]?.GetValue<long>() ?? 0));
+    private static Settings ParseSettings(JsonObject result)
+    {
+        // v4 wire の general (= 温湿度+グローブ温度+CO2 一括) を、内部 6 センサ model の
+        // t_dry/humidity/t_glb/co2 の 4 つに同値で fan-out する。MAUI 側 v4 UI は
+        // t_dry のみを表示してこの値を編集する設計。
+        var general     = ParseSensorSetting((JsonObject)result["general"]!);
+        var velocity    = ParseSensorSetting((JsonObject)result["velocity"]!);
+        var illuminance = ParseSensorSetting((JsonObject)result["illuminance"]!);
+        return new Settings(
+            DrybulbTemperature: general,
+            RelativeHumidity:   general,
+            GlobeTemperature:   general,
+            Velocity:           velocity,
+            Illuminance:        illuminance,
+            Co2:                general,
+            StartTime:          DateTimeOffset.FromUnixTimeSeconds(result["start_ts"]?.GetValue<long>() ?? 0));
+    }
 
     private static CorrectionCoefficients ParseCorrectionPair(JsonObject obj) => new(
         A: obj["a"]?.GetValue<float>() ?? 1.0f,

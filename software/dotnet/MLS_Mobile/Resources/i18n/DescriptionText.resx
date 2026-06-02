@@ -152,12 +152,12 @@ These operations directly affect measurement accuracy, so use them at your own r
   <data name="BatteryInfo" xml:space="preserve">
     <value>Battery information
 
-Voltage: VBAT measured at the AVR ADC. Updated when this screen opens.
+Voltage: Read when this screen opens.
 
-Battery type: estimated from the initial voltage assuming fresh cells (Alkaline is above 2.85V, NiMH is at or below). If the displayed type does not match the actual cells you inserted, the cells may not be fresh or may be defective.
+Battery type: Estimated from the initial voltage assuming fresh cells (Alkaline above 2.85V, NiMH at or below). If the displayed type does not match the cells you actually inserted, the cells may not be fresh or may be defective.
 
-Estimated runtime: continuous measurement time for the current settings, assuming a fresh 2000mAh battery, with a 20% safety margin applied. Power consumption is determined by the chosen sensors and intervals — the wind sensor's heater wire dominates, so increasing the velocity interval has the largest impact on battery life.
+Estimated runtime: continuous measurement time for the current settings, assuming a fresh 2000mAh battery. Power consumption is determined by the chosen sensors and intervals — the wind sensor's heater wire dominates, so increasing the velocity interval extends the runtime the most. If your battery has a capacity other than 2000mAh, scale the displayed time by (actual capacity / 2000).
 
-This is a reference value. Actual runtime varies by about ±30% depending on temperature, self-discharge, and individual cell variation. The firmware will automatically stop logging if VBAT drops below 1.8V.</value>
+This is a reference value. Actual runtime varies by about ±30% depending on temperature, self-discharge, and individual cell variation. Logging stops automatically if VBAT drops below 1.8V.</value>
   </data>
 </root>

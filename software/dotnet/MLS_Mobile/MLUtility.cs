@@ -217,8 +217,9 @@ namespace MLS_Mobile
     /// Demo 用: BLE 接続なしに <see cref="DummyMLProtocol"/> を活性化する。
     /// 戻り値の lowAddress を <c>DeviceSetting?mlLowAddress=...</c> に渡せば既存フローで
     /// DataReceive まで進める。実機接続中なら先に切断する。
+    /// <paramref name="protocolVersion"/> で v3 (0) / v4 (1) 相当の挙動を切り替え可能。
     /// </summary>
-    public static async Task<string> UseDummyProtocolAsync()
+    public static async Task<string> UseDummyProtocolAsync(int protocolVersion = 1)
     {
       await CloseXbeeAsync();
 
@@ -228,7 +229,7 @@ namespace MLS_Mobile
       // LoggingDataList の prefix フィルタ (StartsWith("MLogger_")) を通らず
       // ダミー計測の CSV が一覧に出てこない
       Logger.LocalName = Logger.XBeeName = "MLogger_DEMO";
-      Protocol = new DummyMLProtocol();
+      Protocol = new DummyMLProtocol(protocolVersion);
       ConnectedDevice = MLDevice.MLogger;
 
       return Logger.LowAddress;

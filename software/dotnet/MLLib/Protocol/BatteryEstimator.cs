@@ -55,17 +55,24 @@ public static class BatteryEstimator
 
     /// <summary>
     /// 指定設定での消費電力 (mW) を計算。
+    /// 注: 本試算は v4 firmware 接続を前提とする。v4 では <see cref="Settings.DrybulbTemperature"/> /
+    /// <see cref="Settings.RelativeHumidity"/> / <see cref="Settings.GlobeTemperature"/> /
+    /// <see cref="Settings.Co2"/> が同値で構成され、th_probe で 1 回の measureOnce にまとめて
+    /// 計測されるため、ここでは <see cref="Settings.DrybulbTemperature"/> を General カテゴリの
+    /// 代表値として使う。
     /// </summary>
-    /// <param name="settings">計測設定 (3 カテゴリ)。</param>
+    /// <param name="settings">計測設定 (内部 6 センサ shape)。</param>
     /// <param name="ledBlinkEnabled">5sec 周期 LED 点滅の有無 (現状 firmware は常時 ON)。</param>
     public static double EstimatePowerMw(Settings settings, bool ledBlinkEnabled = true)
     {
         double p = PBaselineMw;
         if (!ledBlinkEnabled) p -= PLedBlinkMw;
 
-        if (settings.General.Enabled && settings.General.Interval > 0)
+        // General カテゴリ (= t_dry/humidity/t_glb/co2 一括) は DrybulbTemperature を代表値で使う
+        var general = settings.DrybulbTemperature;
+        if (general.Enabled && general.Interval > 0)
         {
-            double duty = Math.Min(TGeneralActiveSec / settings.General.Interval, 1.0);
+            double duty = Math.Min(TGeneralActiveSec / general.Interval, 1.0);
             p += PGeneralActiveMw * duty;
         }
 

@@ -208,14 +208,19 @@ public partial class DeviceSetting : ContentPage
   private async void updateMeasurementSetting() => await updateMeasurementSettingV4();
 
   private bool isInputsCorrect
-  (out int genSpan, out int velSpan, out int luxSpan)
+  (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
   {
     bool hasError = false;
     string alert = "";
-    if (!int.TryParse(ent_gen.Text, out genSpan))
+    if (!int.TryParse(ent_th.Text, out thSpan))
     {
       hasError = true;
-      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.DS_GeneralMeasurement + ")\r\n";
+      alert += MLSResource.DS_InvalidNumber + "(" + lbl_th.Text + ")\r\n";
+    }
+    if (!int.TryParse(ent_glb.Text, out glbSpan))
+    {
+      hasError = true;
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.GlobeTemperature + ")\r\n";
     }
     if (!int.TryParse(ent_vel.Text, out velSpan))
     {
@@ -226,6 +231,11 @@ public partial class DeviceSetting : ContentPage
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
+    }
+    if (!int.TryParse(ent_co2.Text, out co2Span))
+    {
+      hasError = true;
+      alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.CO2level + ")\r\n";
     }
 
     if (hasError)
@@ -329,23 +339,21 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of initInfo - populates UI from cached DeviceInfo + GetSettingsAsync.</summary>
   private async Task initInfoV4()
   {
+    var dev = MLUtility.Protocol.Device;
+    bool isV4 = dev.ProtocolVersion >= 1;
     // 電池パネルは v4 firmware (get_battery 対応) でのみ表示。v3 では panel ごと非表示。
-    bool isV4 = MLUtility.Protocol.Device.ProtocolVersion >= 1;
-    Application.Current?.Dispatcher.Dispatch(() => batteryPanel.IsVisible = isV4);
-    // 電池情報は時間と共に変わるので _initInfoV4Done に拘わらず毎回取得する
+    // 電池情報は時間と共に変わるので _initInfoV4Done に拘わらず毎回取得する。
+    Application.Current?.Dispatcher.Dispatch(() => applyProtocolModeToUI(isV4, dev.HasCo2Sensor));
     if (isV4) _ = refreshBatteryAsync();
 
     if (_initInfoV4Done) return;
     _initInfoV4Done = true;
-    var dev = MLUtility.Protocol.Device;
     Application.Current?.Dispatcher.Dispatch(() =>
     {
       spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
       spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
       spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
       spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
-      // CO2 は General カテゴリの一部として一括設定するため、独立 UI 行は無くなった。
-      // CO2 子機の有無で CO2 校正ボタンの表示を切り替えるため、HasCo2Sensor だけ別途利用する。
     });
 
     try
@@ -410,21 +418,28 @@ public partial class DeviceSetting : ContentPage
       _                    => MLSResource.DS_BatteryTypeUnknown,
     };
 
-    // UI 入力値で消費電力を計算 (入力不正なら estimate を出さない)
-    if (!int.TryParse(ent_gen.Text, out int genSpan) ||
+    // UI 入力値で消費電力を計算 (入力不正なら estimate を出さない)。電池パネルは
+    // v4 接続時のみ表示されるので、ここでは th 行 (= General カテゴリ) を代表値とする。
+    if (!int.TryParse(ent_th.Text,  out int thSpan)  ||
         !int.TryParse(ent_vel.Text, out int velSpan) ||
         !int.TryParse(ent_lux.Text, out int luxSpan) ||
-        genSpan <= 0 || velSpan <= 0 || luxSpan <= 0)
+        thSpan <= 0 || velSpan <= 0 || luxSpan <= 0)
     {
       lbl_batRuntime.Text = "-";
     }
     else
     {
+      // BatteryEstimator は DrybulbTemperature を General 代表値として使うので、
+      // th 行の値を th/humidity/t_glb/co2 に展開して Settings を組み立てる。
+      var thSetting = new SensorSetting(cbx_th.IsToggled, (uint)thSpan);
       var s = new Settings(
-        General:     new SensorSetting(cbx_gen.IsToggled, (uint)genSpan),
-        Velocity:    new SensorSetting(cbx_vel.IsToggled, (uint)velSpan),
-        Illuminance: new SensorSetting(cbx_lux.IsToggled, (uint)luxSpan),
-        StartTime:   DateTimeOffset.Now);
+        DrybulbTemperature: thSetting,
+        RelativeHumidity:   thSetting,
+        GlobeTemperature:   thSetting,
+        Velocity:           new SensorSetting(cbx_vel.IsToggled, (uint)velSpan),
+        Illuminance:        new SensorSetting(cbx_lux.IsToggled, (uint)luxSpan),
+        Co2:                thSetting,
+        StartTime:          DateTimeOffset.Now);
       double pMw = BatteryEstimator.EstimatePowerMw(s);
       var runtime = BatteryEstimator.EstimateContinuousRuntime(pMw, _battery.VoltageMv);
       lbl_batRuntime.Text = formatRuntime(runtime);
@@ -450,15 +465,40 @@ public partial class DeviceSetting : ContentPage
   /// <summary>v4 path of updateMeasurementSetting - builds SettingsPatch from UI and calls SetSettingsAsync.</summary>
   private async Task updateMeasurementSettingV4()
   {
-    if (!isInputsCorrect(out int genSpan, out int velSpan, out int luxSpan)) return;
+    if (!isInputsCorrect(out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)) return;
 
-    var patch = new SettingsPatch
+    bool isV4 = MLUtility.Protocol.Device.ProtocolVersion >= 1;
+    var thSetting  = new SensorSettingPatch(cbx_th.IsToggled, (uint)thSpan);
+    SettingsPatch patch;
+    if (isV4)
     {
-      General     = new SensorSettingPatch(cbx_gen.IsToggled, (uint)genSpan),
-      Velocity    = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
-      Illuminance = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
-      StartTime   = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
-    };
+      // v4: 一般行 (cbx_th/ent_th) のみが意味を持ち、JsonRpcV4Protocol が t_dry を代表値として
+      // wire 上の general に packing する。t_dry/humidity/t_glb/co2 を同値で構成しておく。
+      patch = new SettingsPatch
+      {
+        DrybulbTemperature = thSetting,
+        RelativeHumidity   = thSetting,
+        GlobeTemperature   = thSetting,
+        Co2                = thSetting,
+        Velocity           = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
+        Illuminance        = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
+        StartTime          = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
+      };
+    }
+    else
+    {
+      // v3: 6 センサ個別 (t_dry と humidity はハード上で共有のため同一 patch)
+      patch = new SettingsPatch
+      {
+        DrybulbTemperature = thSetting,
+        RelativeHumidity   = thSetting,
+        GlobeTemperature   = new SensorSettingPatch(cbx_glb.IsToggled, (uint)glbSpan),
+        Velocity           = new SensorSettingPatch(cbx_vel.IsToggled, (uint)velSpan),
+        Illuminance        = new SensorSettingPatch(cbx_lux.IsToggled, (uint)luxSpan),
+        Co2                = new SensorSettingPatch(cbx_co2.IsToggled, (uint)co2Span),
+        StartTime          = new DateTimeOffset(dpck_start.Date.Add(tpck_start.Time)),
+      };
+    }
 
     try
     {
@@ -503,15 +543,44 @@ public partial class DeviceSetting : ContentPage
   /// <summary>Copy Settings (server response) into the UI controls.</summary>
   private void applySettingsToUI(Settings s)
   {
-    cbx_gen.IsToggled = s.General.Enabled;
-    ent_gen.Text      = s.General.Interval.ToString();
+    cbx_th.IsToggled  = s.DrybulbTemperature.Enabled;
+    ent_th.Text       = s.DrybulbTemperature.Interval.ToString();
+    cbx_glb.IsToggled = s.GlobeTemperature.Enabled;
+    ent_glb.Text      = s.GlobeTemperature.Interval.ToString();
     cbx_vel.IsToggled = s.Velocity.Enabled;
     ent_vel.Text      = s.Velocity.Interval.ToString();
     cbx_lux.IsToggled = s.Illuminance.Enabled;
     ent_lux.Text      = s.Illuminance.Interval.ToString();
+    cbx_co2.IsToggled = s.Co2.Enabled;
+    ent_co2.Text      = s.Co2.Interval.ToString();
     var local         = s.StartTime.LocalDateTime;
     dpck_start.Date   = local.Date;
     tpck_start.Time   = local.TimeOfDay;
+  }
+
+  /// <summary>
+  /// protocol version に応じて UI mode を切替。
+  /// - v4 (ProtocolVersion >= 1): th 行を "General" ラベルにして 1 つで温湿度+グローブ+CO2 を制御、
+  ///   グローブ行・CO2 行を非表示。電池パネルを表示。
+  /// - v3: 旧 5 行 (温湿度 / グローブ温度 / 風速 / 照度 / CO2) を表示 (CO2 は HasCo2Sensor 次第)、
+  ///   電池パネル非表示。v3 ユーザーの体験は従来と変わらないようにする。
+  /// </summary>
+  private void applyProtocolModeToUI(bool isV4, bool hasCo2)
+  {
+    if (isV4)
+    {
+      lbl_th.Text       = MLSResource.DS_GeneralMeasurement;
+      row_glb.IsVisible = false;
+      row_co2.IsVisible = false;
+      batteryPanel.IsVisible = true;
+    }
+    else
+    {
+      lbl_th.Text       = MLSResource.DS_TemperatureAndHumidity;
+      row_glb.IsVisible = true;
+      row_co2.IsVisible = hasCo2;
+      batteryPanel.IsVisible = false;
+    }
   }
 
   /// <summary>v4 path of loadMeasurementSetting -- GetSettingsAsync + UI 反映。</summary>
@@ -631,17 +700,21 @@ public partial class DeviceSetting : ContentPage
 
   private void cbx_Toggled(object sender, ToggledEventArgs e)
   {
-    if (sender.Equals(cbx_gen)) lbl_gen.TextColor = UnsavedColor;
+    if (sender.Equals(cbx_th)) lbl_th.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = UnsavedColor;
     else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = UnsavedColor;
     else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = UnsavedColor;
+    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = UnsavedColor;
     updateBatteryPanel();
   }
 
   private void ent_TextChanged(object sender, TextChangedEventArgs e)
   {
-    if (sender.Equals(ent_gen)) lbl_gen.TextColor = UnsavedColor;
+    if (sender.Equals(ent_th)) lbl_th.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_glb)) lbl_glb.TextColor = UnsavedColor;
     else if (sender.Equals(ent_vel)) lbl_vel.TextColor = UnsavedColor;
     else if (sender.Equals(ent_lux)) lbl_lux.TextColor = UnsavedColor;
+    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = UnsavedColor;
     updateBatteryPanel();
   }
 
@@ -665,9 +738,11 @@ public partial class DeviceSetting : ContentPage
 
   private void resetTextColor()
   {
-    lbl_gen.TextColor =
+    lbl_th.TextColor =
+      lbl_glb.TextColor =
       lbl_vel.TextColor =
       lbl_lux.TextColor =
+      lbl_co2.TextColor =
       lbl_stdtime.TextColor =
       Colors.DarkGreen;
   }

@@ -413,36 +413,48 @@ public sealed class LegacyV3Protocol : IMLProtocol
 
     private static Settings ApplyPatch(Settings cur, SettingsPatch p)
     {
-        var gen = cur.General;
-        if (p.General is { } a) gen = new SensorSetting(a.Enabled ?? gen.Enabled, a.Interval ?? gen.Interval);
+        // 注: v3 は m_th が t_dry と humidity 共有。両方指定なら humidity が後勝ち。
+        var th  = cur.DrybulbTemperature;
+        if (p.DrybulbTemperature is { } a) th = new SensorSetting(a.Enabled ?? th.Enabled, a.Interval ?? th.Interval);
+        if (p.RelativeHumidity   is { } b) th = new SensorSetting(b.Enabled ?? th.Enabled, b.Interval ?? th.Interval);
+
+        var glb = cur.GlobeTemperature;
+        if (p.GlobeTemperature is { } c) glb = new SensorSetting(c.Enabled ?? glb.Enabled, c.Interval ?? glb.Interval);
 
         var vel = cur.Velocity;
-        if (p.Velocity is { } b) vel = new SensorSetting(b.Enabled ?? vel.Enabled, b.Interval ?? vel.Interval);
+        if (p.Velocity is { } d) vel = new SensorSetting(d.Enabled ?? vel.Enabled, d.Interval ?? vel.Interval);
 
         var ill = cur.Illuminance;
-        if (p.Illuminance is { } c) ill = new SensorSetting(c.Enabled ?? ill.Enabled, c.Interval ?? ill.Interval);
+        if (p.Illuminance is { } e) ill = new SensorSetting(e.Enabled ?? ill.Enabled, e.Interval ?? ill.Interval);
+
+        var co2 = cur.Co2;
+        if (p.Co2 is { } f) co2 = new SensorSetting(f.Enabled ?? co2.Enabled, f.Interval ?? co2.Interval);
 
         var st = p.StartTime ?? cur.StartTime;
 
-        return new Settings(gen, vel, ill, st);
+        return new Settings(th, th, glb, vel, ill, co2, st);
     }
 
     private static string BuildCmsCommand(Settings s)
     {
         // フォーマット (固定長): CMS<t/f>{iiiii}<t/f>{iiiii}<t/f>{iiiii}<t/f>{iiiii}{yyyyyyyyyy}f00000f00000f00000f<t/f>{iiiii}\r
-        // 注: v3 wire は m_th/m_glb/m_co2 が個別。General カテゴリは 3 つに fan-out 送信。
         char TF(bool b) => b ? 't' : 'f';
         string IV(uint v) => Math.Min(v, 99999u).ToString("D5", CultureInfo.InvariantCulture);
         long unix = s.StartTime.ToUnixTimeSeconds();
         // 19 文字の legacy ダミー領域 (AD1/2/3/Prox)
         var sb = new StringBuilder("CMS");
-        sb.Append(TF(s.General.Enabled));    sb.Append(IV(s.General.Interval));    // m_th  / i_th
-        sb.Append(TF(s.General.Enabled));    sb.Append(IV(s.General.Interval));    // m_glb / i_glb (= General)
-        sb.Append(TF(s.Velocity.Enabled));   sb.Append(IV(s.Velocity.Interval));
-        sb.Append(TF(s.Illuminance.Enabled));sb.Append(IV(s.Illuminance.Interval));
+        sb.Append(TF(s.DrybulbTemperature.Enabled));
+        sb.Append(IV(s.DrybulbTemperature.Interval));
+        sb.Append(TF(s.GlobeTemperature.Enabled));
+        sb.Append(IV(s.GlobeTemperature.Interval));
+        sb.Append(TF(s.Velocity.Enabled));
+        sb.Append(IV(s.Velocity.Interval));
+        sb.Append(TF(s.Illuminance.Enabled));
+        sb.Append(IV(s.Illuminance.Interval));
         sb.Append(unix.ToString("D10", CultureInfo.InvariantCulture));
         sb.Append("f00000f00000f00000f");
-        sb.Append(TF(s.General.Enabled));    sb.Append(IV(s.General.Interval));    // m_co2 / i_co2 (= General)
+        sb.Append(TF(s.Co2.Enabled));
+        sb.Append(IV(s.Co2.Interval));
         sb.Append('\r');
         return sb.ToString();
     }
@@ -451,21 +463,32 @@ public sealed class LegacyV3Protocol : IMLProtocol
     {
         // "(LMS|CMS):m_th,i_th,m_glb,i_glb,m_vel,i_vel,m_ill,i_ill,start_dt,m_AD1,i_AD1,m_AD2,i_AD2,m_AD3,i_AD3,m_Prox[,m_co2,i_co2]"
         // 3.3.19 以前は CO2 無し (16 fields)、3.3.20+ は CO2 有り (18 fields)。
-        // v4 Settings に集約する: General = m_th (代表値、v3 機器では th/glb/co2 が個別だが、
-        // 通常は同一に揃えて運用されている前提。差異がある場合は th の値で代表させ、次回
-        // SetSettings でユーザー値に均一化される)。
         var body = line.Substring(line.IndexOf(':') + 1).TrimEnd('\r', '\n');
         var f = body.Split(',');
         if (f.Length < 16) throw new InvalidDataException($"unexpected LMS/CMS field count: {f.Length}");
         bool mTh   = f[0] == "1";   uint iTh   = uint.Parse(f[1], CultureInfo.InvariantCulture);
+        bool mGlb  = f[2] == "1";   uint iGlb  = uint.Parse(f[3], CultureInfo.InvariantCulture);
         bool mVel  = f[4] == "1";   uint iVel  = uint.Parse(f[5], CultureInfo.InvariantCulture);
         bool mIll  = f[6] == "1";   uint iIll  = uint.Parse(f[7], CultureInfo.InvariantCulture);
         long startDt = long.Parse(f[8], CultureInfo.InvariantCulture);
+        bool mCo2; uint iCo2;
+        if (f.Length >= 18)
+        {
+            mCo2 = f[16] == "1";
+            iCo2 = uint.Parse(f[17], CultureInfo.InvariantCulture);
+        }
+        else
+        {
+            mCo2 = false; iCo2 = 0;
+        }
         return new Settings(
-            General:     new SensorSetting(mTh, iTh),     // th を代表値とする
-            Velocity:    new SensorSetting(mVel, iVel),
-            Illuminance: new SensorSetting(mIll, iIll),
-            StartTime:   DateTimeOffset.FromUnixTimeSeconds(startDt));
+            DrybulbTemperature: new SensorSetting(mTh, iTh),
+            RelativeHumidity:   new SensorSetting(mTh, iTh),   // v3 共有
+            GlobeTemperature:   new SensorSetting(mGlb, iGlb),
+            Velocity:           new SensorSetting(mVel, iVel),
+            Illuminance:        new SensorSetting(mIll, iIll),
+            Co2:                new SensorSetting(mCo2, iCo2),
+            StartTime:          DateTimeOffset.FromUnixTimeSeconds(startDt));
     }
 
     // ============================================================
