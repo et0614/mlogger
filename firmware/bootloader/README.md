@@ -1,7 +1,8 @@
 # M-Logger 親機用 USB ブートローダ
 
 M-Logger v4 親機 (AVR64DU32) に USB 経由でアプリケーション firmware を書き込むためのブートローダです。
-初回のみ PICkit で本ブートローダを焼き込めば、以降のアプリ更新は USB ケーブル + `avrdude` だけで完結します。
+初回のみ PICkit で本ブートローダを焼き込めば、以降のアプリ更新は USB 接続 + `avrdude` だけで完結します。
+(USB ケーブルは PC に挿しっぱなし、M-Logger 本体の電源スイッチで bootloader/通常モードを切替)
 
 ## 出典
 
@@ -21,7 +22,7 @@ M-Logger v4 親機 (AVR64DU32) に USB 経由でアプリケーション firmwar
 - `PF2` はアプリが poll し、3 sec 長押しで自動モード解除 + SWR
 - `PD0` はアプリがステータス点滅に使用
 
-ブートローダ動作時 (= USB 接続時に `PF2` を Low に保持して電源 ON):
+ブートローダ動作時 (= `PF2` Reset ボタンを押下したまま電源スイッチ ON):
 - `PD0` の orange blink パターンで進捗表示
   - 1 回点滅: USB enumerate 待ち
   - 2 回点滅: 待機 (avrdude からの通信待ち)
@@ -78,8 +79,10 @@ avrdude -cpkobn_updi -pavr64du32 -Ufuses:w:hex\euboot_LD0_SF2.fuse:i
 
 ## アプリケーションの USB 更新手順 (PICkit 不要)
 
-1. M-Logger を USB ケーブルから抜く
-2. **`PF2` (Reset ボタン) を押しながら USB ケーブルを接続**
+USB ケーブルは PC に挿しっぱなしで OK。M-Logger 本体の **電源スイッチ** で ON/OFF します。
+
+1. **M-Logger の電源スイッチを OFF**
+2. **`PF2` (Reset ボタン) を押下したまま、電源スイッチを ON**
 3. 赤 LED が orange パターンで blink し始めるのを確認 (= ブートローダ起動)
 4. Reset ボタンは離して良い
 5. ホスト PC から `avrdude` でアプリ書き込み:
@@ -89,7 +92,9 @@ avrdude -cpkobn_updi -pavr64du32 -Ufuses:w:hex\euboot_LD0_SF2.fuse:i
      -Uflash:w:path/to/mlogger_main.production.hex:i
    ```
 
-6. 書き込み完了後、USB を抜き差しすると新しいアプリで起動
+6. 書き込み完了後、電源スイッチを一度 OFF → ON すると新しいアプリで起動
+
+`-D` (auto-erase 抑止) は **必須**。これを忘れると euboot 領域も erase されてしまい復旧に PICkit が必要になります。
 
 ## アプリ側 (`mlogger_main.X`) の必須設定
 
