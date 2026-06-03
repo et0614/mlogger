@@ -385,7 +385,8 @@
         <property key="additional-options-checksumAVR" value=""/>
         <property key="additional-options-checksumAVR2" value="0"/>
         <property key="additional-options-code-offset" value=""/>
-        <property key="additional-options-command-line" value=""/>
+        <property key="additional-options-command-line"
+                  value="-Wl,--defsym=__TEXT_REGION_ORIGIN__=0xA00"/>
         <property key="additional-options-errata" value=""/>
         <property key="additional-options-extend-address" value="false"/>
         <property key="additional-options-fillAVR2" value="0"/>

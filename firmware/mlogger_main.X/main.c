@@ -250,7 +250,13 @@ void executeSecondlyTask(void)
 			EM_mSettings.start_auto = false;
 			EM_saveMeasurementSetting();
             blinkRedLED(3);	//赤LED点滅
-            
+
+            // ボタンが解放されるまで待ってから SWR を発行する。
+            // euboot (USB bootloader) は起動時に PF2 (RST) が Low なら bootloader モードに
+            // 入る設計のため、SWR を発行した瞬間にユーザがまだ RST を押し続けていると、
+            // アプリ復帰のはずが意図せず bootloader に突入してしまう。これを防ぐ。
+            while (!RST_GetValue()) ;
+
             // マイコン自体をソフトウェアリセット
             _PROTECTED_WRITE(RSTCTRL.SWRR, RSTCTRL_SWRST_bm);
 		}
