@@ -44,6 +44,8 @@ typedef struct {
     float    rh_pct;       // 相対湿度 [%RH]
     float    glb_c;        // グローブ温度 [°C]
     uint16_t co2_ppm;      // CO2 濃度 [ppm]
+    bool     i2c_ok;       // 直近 ThProbe_Read で I2C 通信が成功したか
+                           // (probe 物理切断検知用。warmup 中 / STCC4 fail でも true になる)
     bool     t_valid;      // value[0] が有効か (I2C OK + status1 STALE_T クリア)
     bool     rh_valid;     // value[1]
     bool     co2_valid;    // value[2]

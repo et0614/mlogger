@@ -239,10 +239,7 @@ void executeSecondlyTask(void)
     //電圧確認（限界まで使うとFlashメモリのデータが破損することがある）
 	if(isLowBattery()) lowBattery_timer++;
 	else lowBattery_timer = 0;
-	
-	//CO2センサ接続確認
-    LC_CheckCO2Connection();
-	
+
 	//リセットボタン押し込み確認********************************
 	if(!RST_GetValue())
 	{

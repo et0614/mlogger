@@ -122,15 +122,15 @@
 ### interval = 60sec (現実的)
 
 - TH/CO2/Glb のみ: ~1.67 mA → **62 日** (probe duty 1.7% で baseline とほぼ同等)
-- 風速のみ: ~21 mA → **5 日** (熱線 V_WAKEUP_TIME=20sec で duty 33%)
+- 風速のみ: ~11 mA → **9 日** (熱線 V_WAKEUP_TIME=10sec で duty 17%)
 - 照度のみ: ~1.64 mA → **64 日**
-- すべて: ~22 mA → **4.7 日**
+- すべて: ~12 mA → **9 日**
 
 ### interval = 600sec (10 分)
 
 - TH/CO2/Glb のみ: ~1.65 mA → **63 日**
-- 風速のみ: ~3.6 mA → **29 日**
-- すべて: ~3.7 mA → **28 日**
+- 風速のみ: ~2.6 mA → **40 日**
+- すべて: ~2.7 mA → **39 日**
 
 ## 5. app 側 battery life 試算 (power-based)
 
@@ -153,7 +153,7 @@ active 期間の長さ (duty 計算用):
 | 定数 | 値 [sec] | 説明 |
 |------|----------|------|
 | `T_GENERAL_ACTIVE_S` | 0.52 | th_probe `measureOnce` 1 回あたりの所要時間 |
-| `T_VELOCITY_WAKEUP_S` | 20 | 風速プローブ熱線立ち上がり時間 (`V_WAKEUP_TIME`) |
+| `T_VELOCITY_WAKEUP_S` | 10 | 風速プローブ熱線立ち上がり時間 (`V_WAKEUP_TIME`) |
 | `T_ILLUMINANCE_ACTIVE_S` | 0.01 | OPT3001 read 所要 (推定、微小) |
 
 電池側:

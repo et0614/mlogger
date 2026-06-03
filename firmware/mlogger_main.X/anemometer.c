@@ -37,6 +37,7 @@
 void Anemometer_Init(Anemometer_t* anemo) {
     anemo->adc_value = 0;
     anemo->wind_speed_mps = 0.0f;
+    anemo->i2c_ok = false;
     anemo->voltage_valid = false;
     anemo->wind_valid = false;
 
@@ -56,6 +57,8 @@ void Anemometer_Update(Anemometer_t* anemo) {
 
     // 子機が物理的に外れている等で I2C が失敗したら全部 invalid。
     // 過去値もそのまま残すと誤検出になるので、ここで明示的に invalid 化する。
+    // i2c_ok は dc 判定 (probe 物理切断) 用、valid 系は warmup と切断の区別に使う。
+    anemo->i2c_ok = ok;
     if (!ok) {
         anemo->voltage_valid = false;
         anemo->wind_valid = false;

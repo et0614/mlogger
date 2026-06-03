@@ -67,6 +67,7 @@ void ThProbe_Init(ThProbe_t* p)
     p->rh_pct     = 0.0f;
     p->glb_c      = 0.0f;
     p->co2_ppm    = 0;
+    p->i2c_ok     = false;
     p->t_valid    = false;
     p->rh_valid   = false;
     p->co2_valid  = false;
@@ -97,6 +98,8 @@ void ThProbe_Read(ThProbe_t* p)
     bool ok = I2C_WriteRead(TH_PROBE_ADDRESS, &cmd, 1, buffer, POLL_BLOCK_SIZE);
 
     // I2C 失敗 = 子機が物理的に外れている等。全 valid を倒す。
+    // i2c_ok は dc 判定 (probe 物理切断) 用、valid 系は warmup/STALE 判定用。
+    p->i2c_ok = ok;
     if (!ok) {
         p->t_valid   = false;
         p->rh_valid  = false;

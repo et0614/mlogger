@@ -31,7 +31,7 @@ public static class BatteryEstimator
     public const double TGeneralActiveSec = 0.52;
 
     /// <summary>風速プローブ熱線立ち上げ時間 [sec] (firmware <c>V_WAKEUP_TIME</c>)。</summary>
-    public const double TVelocityWakeupSec = 20.0;
+    public const double TVelocityWakeupSec = 10.0;
 
     /// <summary>OPT3001 read 所要 [sec] (推定、微小)。</summary>
     public const double TIlluminanceActiveSec = 0.01;

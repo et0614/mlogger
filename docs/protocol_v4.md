@@ -158,7 +158,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 | カテゴリ | 含まれるセンサ | プローブ | 備考 |
 |---|---|---|---|
 | `general` | `t_dry` + `humidity` + `t_glb` + `co2` | mlogger_th_sensor (子機) | th_probe で 1 回の `measureOnce` (~520ms) ですべて取得するため、個別の enable/interval は持たない |
-| `velocity` | `velocity` | mlogger_velocity_sensor (子機) | 熱線立ち上げに `V_WAKEUP_TIME = 20sec` が必要 |
+| `velocity` | `velocity` | mlogger_velocity_sensor (子機) | 熱線立ち上げに `V_WAKEUP_TIME = 10sec` が必要 |
 | `illuminance` | `illuminance` | OPT3001 (本体実装) | |
 
 `smp` イベントで実際に送られる短縮キー (`t/h/g/c/v/l`) は §5.2 / §10 のまま個別キーで返るので、

@@ -33,16 +33,13 @@ typedef struct {
 // <editor-fold defaultstate="collapsed" desc="定数宣言">
 
 //熱線式風速計の立ち上げに必要な時間[sec]
-#define V_WAKEUP_TIME  20
+#define V_WAKEUP_TIME  10
 
 //照度計カバーアクリル板の透過率
 #define TRANSMITTANCE  0.60
 
 //CO2センサの初期化待機時間（22秒必要）
 #define CO2_CONDITIONING_SECONDS  25
-
-//CO2センサの接続確認時間間隔[sec]
-#define CO2_CHECK_INTERVAL  10
 
 // 時刻同期 (spec 5.4 time_sync_request)
 #define TIME_SYNC_INTERVAL_S  86400   // 24h ごとに time_sync_request を送出
@@ -84,8 +81,9 @@ static uint8_t blinkCount = 0;
 static MeasurementPassCounters pass_counters = {0};
 
 //CO2センサ関連
-static bool hasCO2Sensor = false;
-static uint8_t co2_connection_check_timer = 0;
+// v4 firmware は CO2 センサ標準搭載 (TH probe = STCC4 + SHT4x_glb)。
+// v3 時代の hasCO2Sensor / LC_CheckCO2Connection は不要なため撤去。
+// probe 物理切断は lastDisconnectedGeneral (i2c_ok ベース) で別経路で検知される。
 volatile static uint8_t co2_condition_time = 0;	 //perform_conditioning 進行残[sec]
 static uint32_t co2InitializingTime = 0;         //安定化(任意秒)→FRC モード残り秒数
 static uint16_t reforcedCO2Level = 400;          //強制校正CO2濃度[ppm]
@@ -247,9 +245,12 @@ void execLogging(void)
                 data.valid_flags |= FLAG_VOLTAGE;
             }
 
-            // 切断状態キャッシュ更新 (ヒステリシス: 失敗で即立てるが、解除には連続成功が必要)
-            // probe boot 中の wind_valid 不安定 (true → false → true ...) を吸収する
-            if (anemometer.wind_valid) {
+            // 切断状態キャッシュ更新 (i2c_ok ベース、ヒステリシス付き)
+            // wind_valid ではなく i2c_ok で判定することで、子機 warmup (status1=STALE) を
+            // 「切断」と誤検知しない。「probe 物理切断」のみを dc として扱う。
+            //   - I2C 失敗 → dc=v 即立て
+            //   - I2C 成功 2 回連続 → dc=v 解除 (boot 直後の単発失敗を吸収するため)
+            if (anemometer.i2c_ok) {
                 if (velSuccessStreak < DC_CLEAR_THRESHOLD) velSuccessStreak++;
                 if (velSuccessStreak >= DC_CLEAR_THRESHOLD) lastDisconnectedVelocity = false;
             } else {
@@ -269,7 +270,7 @@ void execLogging(void)
 	pass_counters.co2++;
 	pass_counters.glb++;
 	bool mesTH  = EM_mSettings.measure_th  && (int)EM_mSettings.interval_th  <= pass_counters.th;
-	bool mesCO2 = hasCO2Sensor && EM_mSettings.measure_co2 && co2_condition_time == 0
+	bool mesCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
 	              && (int)EM_mSettings.interval_co2 <= pass_counters.co2;
 	bool mesGlb = EM_mSettings.measure_glb && (int)EM_mSettings.interval_glb <= pass_counters.glb;
 
@@ -277,11 +278,13 @@ void execLogging(void)
 		ThProbe_Read(&th_probe);
 		th_trigger_pending = false;
 
-		// 切断状態キャッシュ更新 (warmup 中は t_glb が valid なので区別可能)
-		// ヒステリシス: 失敗で即立てるが、解除には連続成功が必要 (boot 中 flicker 吸収)
-		bool genValidNow = th_probe.t_valid || th_probe.rh_valid
-		                  || th_probe.glb_valid || th_probe.co2_valid;
-		if (genValidNow) {
+		// 切断状態キャッシュ更新 (i2c_ok ベース、ヒステリシス付き)
+		// 個別 valid フラグではなく i2c_ok で判定することで、STCC4 conditioning 中
+		// (status1=STALE_T|RH|CO2) や SHT4x_glb 一時失敗を「切断」と誤検知しない。
+		// 「probe 物理切断」のみを dc として扱う。
+		//   - I2C 失敗 → dc=g 即立て
+		//   - I2C 成功 2 回連続 → dc=g 解除
+		if (th_probe.i2c_ok) {
 			if (genSuccessStreak < DC_CLEAR_THRESHOLD) genSuccessStreak++;
 			if (genSuccessStreak >= DC_CLEAR_THRESHOLD) lastDisconnectedGeneral = false;
 		} else {
@@ -375,20 +378,21 @@ void execLogging(void)
             // 消失と実値表示が同 smp で同時に起こる」ようになり 1 テンポずれが消える。
             // CO2 設定 OFF でも t/h は probe 側で conditioning 待ちなので measure_co2 は不問。
             // disconnect 中は dc banner が出るので warmup banner は出さない (二重表示防止)。
-            bool warmingGeneral = hasCO2Sensor
-                                  && !lastDisconnectedGeneral
+            bool warmingGeneral = !lastDisconnectedGeneral
                                   && (prevThProbeState == TH_PROBE_STATE_CONDITIONING_RUNNING
                                       || waitingForFirstValidCO2);
 
-            // 風速ウォームアップ: 熱線 wakeup 開始から実計測までの V_WAKEUP_TIME 秒間。
-            // interval <= V_WAKEUP_TIME の場合は熱線常時 ON で warmup 概念なし (banner 不要)。
-            // interval > V_WAKEUP_TIME の通常運用では、計測直後 (pass_counters.vel=0) は
-            // 「測定完了済み」なので warmup 表示しない。wakeup 期間中 (interval-vel <= WAKEUP)
-            // かつ未測定 (vel < interval) のときだけ true。
+            // 風速ウォームアップ: 子機が「I2C OK + wind_valid=false (status1=STALE)」を
+            // 返している = 子機自身がまだ予熱中。子機の HEATING_MSEC をそのまま反映する形に
+            // 親機タイマ非依存で判定する。
+            // disconnect 中は dc banner が出るので warmup banner は出さない (二重表示防止)。
+            // 注: anemometer.i2c_ok / wind_valid は計測 tick でのみ更新されるので、
+            // 長 interval (例 60sec) で他センサ smp 出力時には前回計測時の状態が反映される。
+            // スマホ閲覧の典型 interval (1〜5sec) では実害なし。
             bool warmingVelocity = EM_mSettings.measure_vel
-                && (int)EM_mSettings.interval_vel > V_WAKEUP_TIME
-                && (int)EM_mSettings.interval_vel - (int)pass_counters.vel <= V_WAKEUP_TIME
-                && (int)pass_counters.vel < (int)EM_mSettings.interval_vel;
+                                   && !lastDisconnectedVelocity
+                                   && anemometer.i2c_ok
+                                   && !anemometer.wind_valid;
 
             // 切断状態は measurement tick で更新されたキャッシュを参照。これにより
             // measurement tick 以外の smp (例: 他センサ 1sec、本センサ 5sec) でも
@@ -426,7 +430,7 @@ void execLogging(void)
 	}
 	//次 sec が計測時刻なら今 sec のうちに pre-trigger 発行 (子機の single-shot は ~520ms)
 	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int)EM_mSettings.interval_th;
-	bool nextCO2 = hasCO2Sensor && EM_mSettings.measure_co2 && co2_condition_time == 0
+	bool nextCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
 	               && (pass_counters.co2 + 1) >= (int)EM_mSettings.interval_co2;
 	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int)EM_mSettings.interval_glb;
 	if (nextTH || nextCO2 || nextGlb) {
@@ -448,7 +452,6 @@ void LC_InitSensors(void){
 
     // 温湿度+CO2+グローブ温度プローブ (子機 firmware は起動時に STCC4 を扱える状態へ自動遷移する)
     ThProbe_Init(&th_probe);
-    hasCO2Sensor = ThProbe_IsConnected();
 
     OPT3001_Initialize(); //照度計
 
@@ -539,15 +542,6 @@ void LC_ProcessTimeSyncTask(void){
     time_sync_emit_pending = false;
     time_sync_window_remaining = TIME_SYNC_WINDOW_S;
     pe_emit_time_sync_request(TIME_SYNC_WINDOW_S);
-}
-
-void LC_CheckCO2Connection(void){
-    co2_connection_check_timer++;
-	if (CO2_CHECK_INTERVAL <= co2_connection_check_timer) {
-		co2_connection_check_timer = 0;
-		// 子機側で再接続時の conditioning は自動完結するので、本体は flag 更新だけ。
-		hasCO2Sensor = ThProbe_IsConnected();
-	}
 }
 
 // </editor-fold>
@@ -650,16 +644,11 @@ void LC_Update_Anemometer()
 
 // <editor-fold defaultstate="collapsed" desc="公開関数：CO2関連処理">
 
-bool LC_HasCO2Sensor(void)
-{
-    return hasCO2Sensor;
-}
-
 // 任意秒安定化 → FRC モード。子機に factory_reset → time 秒カウントダウン (pollCO2Initialization)
 // → 0 到達で FRC 依頼 → pollCO2Calibration が完了/失敗判定。
+// 子機 probe が未接続なら I2C は NACK で fire-and-forget 失敗するだけで実害なし。
 void LC_FactoryResetCO2(uint16_t co2Level, uint16_t time)
 {
-    if (!hasCO2Sensor) return;
     ThProbe_StartFactoryReset();
     reforcedCO2Level = co2Level;
     co2InitializingTime = time;
@@ -669,7 +658,6 @@ void LC_FactoryResetCO2(uint16_t co2Level, uint16_t time)
 void LC_CalibrateCO2(uint16_t co2Level, uint16_t time)
 {
     (void)time; // 30sec は子機側で固定
-    if (!hasCO2Sensor) return;
     reforcedCO2Level = co2Level;
     ThProbe_StartFrc(co2Level);
     frcPhase = FRC_PHASE_RUNNING;
@@ -682,7 +670,6 @@ void LC_CalibrateCO2(uint16_t co2Level, uint16_t time)
 // 実行しない。ユーザーが「センサを工場出荷時の状態に戻したい」だけのときに使う。
 void LC_FactoryResetCO2Only(void)
 {
-    if (!hasCO2Sensor) return;
     ThProbe_StartFactoryReset();
     // ~90ms で完了するため frcPhase 等の polling は不要 (fire-and-forget)。
 }

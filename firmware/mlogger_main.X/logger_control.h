@@ -100,11 +100,6 @@ bool LC_IsTimeSyncWindowActive(void);
  */
 void LC_ProcessTimeSyncTask(void);
 
-/**
- * @brief CO2センサの接続状況を確認する
- */
-void LC_CheckCO2Connection(void);
-
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="タスク管理">
@@ -140,8 +135,6 @@ void LC_Update_Anemometer();
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="CO2関連処理">
-
-bool LC_HasCO2Sensor(void);
 
 void LC_FactoryResetCO2(uint16_t co2Level, uint16_t time);
 
