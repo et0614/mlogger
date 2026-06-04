@@ -442,7 +442,7 @@
         <property key="remove-unused-sections" value="true"/>
       </HI-TECH-LINK>
       <PK5Tool>
-        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="AutoSelectMemRanges" value="manual"/>
         <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>
@@ -490,8 +490,8 @@
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preserveeeprom" value="false"/>
         <property key="programoptions.preserveeeprom.ranges" value="1400-14ff"/>
-        <property key="programoptions.preserveprogram.ranges" value=""/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveprogram.ranges" value="0-9ff"/>
+        <property key="programoptions.preserveprogramrange" value="true"/>
         <property key="programoptions.preserveuserid" value="false"/>
         <property key="programoptions.program.otpconfig" value="false"/>
         <property key="programoptions.programcalmem" value="false"/>
@@ -507,7 +507,7 @@
         <property key="voltagevalue" value="3.3"/>
       </PK5Tool>
       <Tool>
-        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="AutoSelectMemRanges" value="manual"/>
         <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>
@@ -565,8 +565,8 @@
                   value="${memories.dataflash.default}"/>
         <property key="programoptions.preserveeeprom" value="false"/>
         <property key="programoptions.preserveeeprom.ranges" value="1400-14ff"/>
-        <property key="programoptions.preserveprogram.ranges" value=""/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveprogram.ranges" value="0-9ff"/>
+        <property key="programoptions.preserveprogramrange" value="true"/>
         <property key="programoptions.preserveuserid" value="false"/>
         <property key="programoptions.program.otpconfig" value="false"/>
         <property key="programoptions.programcalmem" value="false"/>
