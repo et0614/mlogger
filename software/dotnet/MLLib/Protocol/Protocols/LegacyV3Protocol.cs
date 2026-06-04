@@ -678,6 +678,16 @@ public sealed class LegacyV3Protocol : IMLProtocol
         double? D(int i) => f[i] == "n/a" ? null : double.Parse(f[i], CultureInfo.InvariantCulture);
         int?    I(int i) => f[i] == "n/a" ? null : int.Parse(f[i], CultureInfo.InvariantCulture);
 
+        // f[9] = 風速プローブの電圧 [V] (v3 DTT spec)。v4 smp の "vv" は mV 整数なので
+        // ここでも mV に揃える。f.Length が古い firmware で 10 未満の可能性 (DTT 短縮版) も
+        // 想定して防御的に check する。
+        int? velVoltageMv = null;
+        if (f.Length >= 10 && f[9] != "n/a")
+        {
+            var v = double.Parse(f[9], CultureInfo.InvariantCulture);
+            velVoltageMv = (int)Math.Round(v * 1000.0);
+        }
+
         return new Sample(
             Timestamp:          ts,
             DrybulbTemperature: D(3),
@@ -685,7 +695,8 @@ public sealed class LegacyV3Protocol : IMLProtocol
             GlobeTemperature:   D(5),
             Velocity:           D(6),
             Illuminance:        f[7] == "n/a" ? null : (int)Math.Round(double.Parse(f[7], CultureInfo.InvariantCulture)),
-            Co2:                f.Length >= 14 ? I(13) : null);
+            Co2:                f.Length >= 14 ? I(13) : null,
+            VelocityVoltage:    velVoltageMv);
     }
 
     private static Co2CalibrationProgress? ParseCcl(string line)

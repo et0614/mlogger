@@ -474,8 +474,12 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         sb.Append(FormatOrNA(s.GlobeTemperature, "F2")).Append(',');
         sb.Append(FormatOrNA(s.Velocity, "F3")).Append(',');
         sb.Append(FormatOrNA(s.Illuminance, "F2")).Append(',');
-        // v4 Sample に電圧フィールドは無いため n/a で埋める (将来必要なら別途追加)
-        sb.Append("n/a,n/a,");
+        // v3 DTT 互換: 1 列目 = グローブ温度電圧 (v4 未対応で常に n/a)、
+        //              2 列目 = 風速プローブ熱線電圧 [V] (Sample.VelocityVoltage は mV)
+        sb.Append("n/a,");
+        sb.Append(s.VelocityVoltage is int vvMv
+            ? (vvMv / 1000.0).ToString("F3", CultureInfo.InvariantCulture)
+            : "n/a").Append(',');
         sb.Append(FormatOrNA(s.Co2, "F0")).Append(',');
         sb.Append(memo).Append(Environment.NewLine);
 

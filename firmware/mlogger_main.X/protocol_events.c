@@ -58,6 +58,11 @@ void pe_emit_smp(const SensorData_t *data,
     if (data->valid_flags & FLAG_WIND_SPEED) {
         pc_key(&w, "v"); pc_float(&w, (float)data->wind_speed / 10000.0f, 3);
     }
+    if (data->valid_flags & FLAG_VOLTAGE) {
+        // 風速プローブの熱線 bridge 電圧 (mV)。
+        // 風速 OOR や異常時の原因切り分け用。dump record にも同じ値が記録される。
+        pc_key(&w, "vv"); pc_uint(&w, data->voltage);
+    }
     if (data->valid_flags & FLAG_ILLUMINANCE) {
         // illuminance は 0.1 lx 単位 → 整数 lx に丸める
         pc_key(&w, "l");   pc_uint(&w, (uint32_t)(data->illuminance / 10));

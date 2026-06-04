@@ -47,3 +47,5 @@
 1.2.54(57)  計測データ受信時のイベント解除ミスによる二重記録バグを修正
 1.3.0(58)  通信仕様をJSONに変更。旧通信仕様と互換性を維持。
 1.3.1(59)  旧 firmware (~3.3.19) との互換性修正: LMS/DTT の field 数差異 (CO2 未対応) を許容、HCS probe を CO2 非搭載 firmware では skip、SendAsync に per-attempt timeout + retry を追加、protocol 検出結果を device 別にキャッシュして再接続を高速化、アプリ表示名を MLS_Mobile から M-Logger に変更
+1.3.2(60)  計測設定を3カテゴリ(general/風速/照度)に集約、電池寿命推定機能を追加、BLE経由のdump機能解禁＋通信高速化、ウォームアップ中・センサ未接続のバナー表示を追加、接続毎にGetSettingsを取得、起動時RPCの順次発火による安定化、dc/wu判定をi2c_okベースに刷新。
+1.3.2(61)  風速電圧を出力項目に追加

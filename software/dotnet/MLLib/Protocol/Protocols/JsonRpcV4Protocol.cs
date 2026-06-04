@@ -583,7 +583,8 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             Illuminance:            data["l"]?.GetValue<int>(),
             Co2:                    data["c"]?.GetValue<int>(),
             WarmupCategories:       ParseStringArray(data["wu"]),
-            DisconnectedCategories: ParseStringArray(data["dc"]));
+            DisconnectedCategories: ParseStringArray(data["dc"]),
+            VelocityVoltage:        data["vv"]?.GetValue<int>());
     }
 
     /// <summary>data の wu/dc 配列を List&lt;string&gt; に変換。null / 非配列なら null。</summary>

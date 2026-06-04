@@ -17,4 +17,5 @@ public sealed record Sample(
     int?    Illuminance, // lx
     int?    Co2,         // ppm
     IReadOnlyList<string>? WarmupCategories = null,
-    IReadOnlyList<string>? DisconnectedCategories = null);
+    IReadOnlyList<string>? DisconnectedCategories = null,
+    int?    VelocityVoltage = null);   // mV (風速プローブ熱線電圧、smp の "vv"。異常解析・校正補助用)
