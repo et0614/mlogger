@@ -1,0 +1,4 @@
+# 配布パッケージ作成時に手動配置するファイル (大容量バイナリのため git 管理外)
+avrdude.exe
+avrdude.conf
+*.hex
