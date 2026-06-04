@@ -105,6 +105,34 @@ avrdude -cpkobn_updi -pavr64du32 -Ufuses:w:hex\euboot_LD0_SF2.fuse:i
 
 `Preserve EEPROM Memory` を有効化しないと chip erase で EEPROM が wipe され、起動時に `EM_loadEEPROM()` が `initMemory()` を呼んで全 EEPROM ブロックを書き直すため、ブート遅延 (~1 秒) + EESAVE 警告ダイアログが出る。
 
+## 生産外注時の 1 ファイル書き込み (bootloader + アプリ + fuses)
+
+生産工程で「IPE 起動 → euboot 書き込み → MPLAB IDE で mlogger_main 書き込み」の 2 段階を踏むと作業費が膨らむ。`build_production_hex.py` で 1 本の `.hex` に merge すれば、生産工程は **IPE で 1 ファイル選択 → 書き込み** だけで完了する。
+
+```sh
+# mlogger_main.X を MPLAB で Build (production conf) 後、firmware/bootloader/ 配下で:
+python build_production_hex.py
+# → hex/mlogger_v4_combined.hex が生成される
+```
+
+merged hex の構成 (0xFF gap は AVR DU の chip erase 後の状態と一致するので問題なし):
+
+| アドレス範囲 | サイズ | 由来 |
+|---|---|---|
+| `0x000000-0x00093F` | 2368 B | euboot bootloader (`hex/euboot_LD0_SF2.hex`) |
+| `0x000A00-0x00EBD7` | 57816 B | mlogger_main アプリ (`dist/default/production/mlogger_main.X.production.hex`) |
+| `0x820000-0x82000B` | 12 B | fuses (mlogger_main の `config_bits.c` 由来、euboot の `.fuse` と完全一致) |
+
+生産工程での書き込みコマンド (例、avrdude/PICkit):
+
+```cmd
+avrdude -cpkobn_updi -pavr64du32 -Uflash:w:hex\mlogger_v4_combined.hex:i
+```
+
+IPE の場合は Hex File に `mlogger_v4_combined.hex` を指定、`Erase before Program` + `Program` の標準フローで全領域 + fuse が書き込まれる。
+
+出力 hex は build artifact として `.gitignore` 済み。生産ロットの正確な bytes を残したい場合は `git add -f` で版指定コミット推奨。
+
 ## アプリケーションの USB 更新手順 (PICkit 不要)
 
 USB ケーブルは PC に挿しっぱなしで OK。M-Logger 本体の **電源スイッチ** で ON/OFF します。

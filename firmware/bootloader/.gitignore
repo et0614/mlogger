@@ -3,3 +3,6 @@
 .vs*
 build/
 
+# 生産用 merged hex (build_production_hex.py の出力、必要時に手動生成)
+hex/mlogger_v4_combined.hex
+
