@@ -44,20 +44,25 @@ CALIBRATION_POINTS = [
 ]
 
 VALIDATION_POINTS = [
-    {"fan_power": 0,  "ref_velocity": 0.00},
-    {"fan_power": 7,  "ref_velocity": 0.12},
-    {"fan_power": 10, "ref_velocity": 0.30},
-    {"fan_power": 12, "ref_velocity": 0.41},
-    {"fan_power": 21, "ref_velocity": 1.06},
-    {"fan_power": 40, "ref_velocity": 2.50},
-    {"fan_power": 74, "ref_velocity": 5.00},
+    {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+    {"fan_power": 10, "ref_velocity": 0.28},   # 補間 Range A
+    {"fan_power": 21, "ref_velocity": 1.06},   # 補間 Range B
+    {"fan_power": 53, "ref_velocity": 3.46},   # 補間 Range C
+    {"fan_power": 74, "ref_velocity": 5.00},   # 再現性（上端）
 ]
 
 SLAVE_ADDRESS = 0x10
-MEASUREMENT_DURATION = 20            # 1 条件あたりの計測時間 [s]
-STABILIZATION_TIME   = 10            # 風洞とセンサの安定までの待機 [s]
-ANALYSIS_WINDOW      = MEASUREMENT_DURATION - STABILIZATION_TIME
-SPECIAL_STABILIZATION_TIME = 15      # ファン起動直後の突風安定化追加待機 [s]
+
+# 校正フェーズ (Phase 1) の時間設定
+CAL_MEASUREMENT_DURATION       = 10  # 平均化対象の計測時間 [s]
+CAL_STABILIZATION_TIME         = 10  # 計測前の安定化待機 [s]
+CAL_SPECIAL_STABILIZATION_TIME = 25  # ファン停止状態から起動した直後の安定化待機 [s]
+
+# 検証フェーズ (Phase 3) の時間設定 (校正より短時間に圧縮)
+VAL_MEASUREMENT_DURATION       = 5
+VAL_STABILIZATION_TIME         = 5
+VAL_SPECIAL_STABILIZATION_TIME = 25
+
 SAMPLING_INTERVAL    = 0.1           # センサ読み取り間隔 [s]
 FILTER_N             = 6             # EWMA フィルタ係数 (0~20)
 
@@ -111,21 +116,18 @@ def run_phase_1():
             print(f"\n[Step] Target: {ref_vel} m/s (Fan: {target_power}%)")
             fan.set_power(target_power)
 
-            if prev_power == 0 and target_power != 0:
-                print(f"Waiting {SPECIAL_STABILIZATION_TIME}s for pulse stabilization...")
-                time.sleep(SPECIAL_STABILIZATION_TIME)
+            wait_time = (CAL_SPECIAL_STABILIZATION_TIME
+                         if prev_power == 0 and target_power != 0
+                         else CAL_STABILIZATION_TIME)
+            print(f"Waiting {wait_time}s for stabilization...")
+            time.sleep(wait_time)
 
-            print(f"Measuring for {MEASUREMENT_DURATION}s "
-                  f"(averaging last {ANALYSIS_WINDOW}s)...")
+            print(f"Measuring for {CAL_MEASUREMENT_DURATION}s...")
             start = time.time()
             buf_v = []
-
-            while True:
-                elapsed = time.time() - start
-                if elapsed > MEASUREMENT_DURATION:
-                    break
+            while time.time() - start < CAL_MEASUREMENT_DURATION:
                 volt = sensor.get_voltage()
-                if volt is not None and elapsed > (MEASUREMENT_DURATION - ANALYSIS_WINDOW):
+                if volt is not None:
                     buf_v.append(volt)
                 time.sleep(SAMPLING_INTERVAL)
 
@@ -267,15 +269,15 @@ def run_phase_3():
             print(f"\n[Validation] Fan: {target}% (Ref: {ref_v} m/s)")
             fan.set_power(target)
 
-            if prev_power == 0 and target != 0:
-                print(f"Waiting {SPECIAL_STABILIZATION_TIME}s for pulse stabilization...")
-                time.sleep(SPECIAL_STABILIZATION_TIME)
-
-            print(f"Waiting {STABILIZATION_TIME}s for stabilization...")
-            time.sleep(STABILIZATION_TIME)
+            wait_time = (VAL_SPECIAL_STABILIZATION_TIME
+                         if prev_power == 0 and target != 0
+                         else VAL_STABILIZATION_TIME)
+            print(f"Waiting {wait_time}s for stabilization...")
+            time.sleep(wait_time)
 
             vels, volts = [], []
-            for _ in range(20):
+            start = time.time()
+            while time.time() - start < VAL_MEASUREMENT_DURATION:
                 vel = sensor.get_velocity()
                 vol = sensor.get_voltage()
                 if vel is not None:
