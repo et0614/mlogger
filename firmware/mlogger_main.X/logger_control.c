@@ -572,12 +572,26 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     // 同 tick で連続発火する。低 VBAT では XCL102 inrush 中の POLL read が
     // cascade collapse で I2C 失敗するので、必ず V_WAKEUP_TIME 以上の warmup
     // 期間を取れるよう pass_counters.vel を巻き戻す。
-    if (EM_mSettings.interval_vel >= V_WAKEUP_TIME) {
+    //
+    // ここで vel だけを巻き戻すと vel と他センサ (th/glb/co2/ill/ad1) の
+    // phase が永久に乖離し、同 interval (例 60sec) でも各サイクルで
+    // 別レコードとして flash に書き込まれてしまう (CSV で互い違い行となる)。
+    // 同じ delta を全カウンタに適用して全センサが同 tick で発火するよう同期。
+    // 短 interval (例 th=1sec) のカウンタに subtract しても結果は変わらない。
+    if (EM_mSettings.measure_vel && EM_mSettings.interval_vel >= V_WAKEUP_TIME) {
         int max_vel = (int)EM_mSettings.interval_vel - V_WAKEUP_TIME;
-        if (pass_counters.vel > max_vel) pass_counters.vel = max_vel;
+        if (pass_counters.vel > max_vel) {
+            int delta = pass_counters.vel - max_vel;
+            pass_counters.vel = max_vel;
+            if (pass_counters.th  > delta) pass_counters.th  -= delta; else pass_counters.th  = 0;
+            if (pass_counters.glb > delta) pass_counters.glb -= delta; else pass_counters.glb = 0;
+            if (pass_counters.ill > delta) pass_counters.ill -= delta; else pass_counters.ill = 0;
+            if (pass_counters.ad1 > delta) pass_counters.ad1 -= delta; else pass_counters.ad1 = 0;
+            if (pass_counters.co2 > delta) pass_counters.co2 -= delta; else pass_counters.co2 = 0;
+        }
     }
-    // interval_vel < V_WAKEUP_TIME の場合は熱線常時 ON 運用で別途設計、ここでは
-    // 巻き戻ししない。
+    // interval_vel < V_WAKEUP_TIME の場合 (または vel 無効時) は熱線常時 ON
+    // 運用で別途設計、ここでは巻き戻ししない。
 
     // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
     th_trigger_pending = false;
