@@ -468,14 +468,29 @@ int main(void)
         //   風速プローブ (動作実績あり) の main.c と同じ判定ロジックに統一。
         // PHASE_IDLE かつ I2C アイドル: POWER-DOWN (TWI ADDR_MATCH で wake)
         // 校正フェーズ (FRC_WARMUP, CONDITIONING): IDLE (RTC OVF が必要)
+        //
+        // POWER-DOWN 直前は WDT を一時 disable して wake 後に再有効化する。
+        // OSCULP32K 駆動の WDT は POWER-DOWN でも進行する一方、POWER-DOWN では
+        // RTC OVF が止まり main loop が wake しないため wdt_reset() の機会が無く、
+        // 4.1 sec で WDT reset → 再 boot → CONDITIONING (22sec) 突入 → 親機の
+        // polling 周期 (例 60sec) より高頻度で再起動を繰り返し、親機 trigger が
+        // CONDITIONING 中に当たると T/RH/CO2 が STALE のまま返る (CSV で n/a)。
+        // IDLE 経路は RTC OVF で毎秒 wake → ループ先頭で wdt_reset() するので
+        // 最長 sleep 1sec << WDT 4.1sec、WDT 保護は維持される。
         if (I2C_Is_Busy || I2C_KeepAlive_Ticks > 0) {
             set_sleep_mode(SLEEP_MODE_IDLE);
+            sleep_mode();
         } else if (g_phase == PHASE_IDLE) {
             set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+            _PROTECTED_WRITE(WDT.CTRLA, 0);      // WDT disable (POWER-DOWN 中)
+            sleep_mode();
+            _PROTECTED_WRITE(WDT.CTRLA, 0xA);    // WDT 4.1sec で再有効化 (MCC 初期値同等)
+            // wdt_reset() は不要: CTRLA への period set でカウンタは 0 から
+            // start し、すぐループ先頭の wdt_reset() に戻るので二重 pet になる。
         } else {
             set_sleep_mode(SLEEP_MODE_IDLE);
+            sleep_mode();
         }
-        sleep_mode();
     }
 #endif // TEST_MODE
 }
