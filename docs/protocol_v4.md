@@ -542,6 +542,7 @@ W25Q256 を chip erase で完全に初期化し、generation を 1 にリセッ�
 | `out_of_range` | 値が許容範囲外 (補正係数の範囲超過など) |
 | `unsupported_transport` | 現在のtransportでは未サポート (例: dump on XBee) |
 | `busy` | 別操作実行中 (CO2校正中に別校正コマンド等) |
+| `rtc_unset` | RTC が set_time で未同期のまま flash logging を要求 (record 全体が boot 時のダミー日付で埋まるため拒否) |
 | `internal_error` | その他、ハードエラー等 |
 
 ## 7. 後方互換性 (親機側で吸収)

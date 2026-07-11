@@ -45,12 +45,19 @@ typedef struct {
 #define TIME_SYNC_INTERVAL_S  86400   // 24h ごとに time_sync_request を送出
 #define TIME_SYNC_WINDOW_S    30      // event 送出後に親機 set_time 受信を待つ秒数
 
+// RTC が set_time で更新された最小合理値 (Unix time)。firmware ビルド年 (2026)
+// より古い値なら「未設定」と判定する。flash 記録は timestamp を後から補正
+// できないので、この判定で拒否する。
+#define RTC_MIN_VALID_UNIX    1767225600UL   // 2026-01-01 00:00:00 UTC
+
 //</editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="変数宣言">
 
-//現在時刻（UNIX時間,UTC時差0で2000/1/1 00:00:00）
-static volatile time_t currentTime = UNIX_OFFSET;
+// 現在時刻。内部表現は AVR epoch (2000-01-01 00:00:00 UTC からの秒数)。
+// LC_GetCurrentTime が UNIX_OFFSET を加算して Unix time を返す。
+// 初期値 0 = 2000-01-01 UTC (「未設定」= RTC_MIN_VALID_UNIX 未満で判定)。
+static volatile time_t currentTime = 0;
 
 //計測中か否か
 static bool logging = false;
@@ -480,6 +487,10 @@ time_t LC_GetCurrentTime(void) {
         temp = currentTime + UNIX_OFFSET;
     }
     return temp;
+}
+
+bool LC_IsRtcSet(void) {
+    return LC_GetCurrentTime() >= (time_t)RTC_MIN_VALID_UNIX;
 }
 
 void LC_TickSecond(void) {

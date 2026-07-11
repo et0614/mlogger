@@ -436,6 +436,15 @@ void ph_start_logging(int32_t id, const char *json, const jsmntok_t *tokens, int
         }
     }
 
+    // flash 記録は timestamp を後から補正できないので、RTC が set_time で
+    // 未設定 (2026-01-01 未満 = boot 直後の 2000-01-01 相当) だと bogus な
+    // 日付でレコードが埋まる。事前拒否して client に set_time を促す。
+    // live 系 (usb/ble/zigbee) は client 側で ts を補正できるので許容。
+    if (fl && !LC_IsRtcSet()) {
+        send_simple_error(id, src, "rtc_unset", "call set_time before flash logging");
+        return;
+    }
+
     EM_mSettings.start_auto = auto_restart;
     EM_saveMeasurementSetting();
 

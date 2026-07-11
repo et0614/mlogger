@@ -45,6 +45,13 @@ time_t LC_GetCurrentTime(void);
  */
 void LC_TickSecond(void);
 
+/**
+ * @brief RTC が set_time で更新済みか (= 「now」の値が合理範囲か) を判定する
+ * @return true: 設定済 (>= 2026-01-01 UTC)、false: 未設定 or ビルド年より過去
+ *         false のときは flash 記録の timestamp が意味を持たないので拒否する。
+ */
+bool LC_IsRtcSet(void);
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="状態監視">
