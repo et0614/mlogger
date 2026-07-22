@@ -828,8 +828,11 @@ public partial class DeviceSetting : ContentPage
       sb.Append(FmtNA(r.GlobeTemperature,   "F2")).Append(',');
       sb.Append(FmtNA(r.Velocity,           "F3")).Append(',');
       sb.Append(FmtNA(r.Illuminance,        "F2")).Append(',');
-      // DataReceive と同形式: voltage と globe_voltage は n/a 列で揃える
-      sb.Append("n/a,n/a,");
+      // DataReceive と同形式: globe_voltage は v4 未対応で常に n/a、velocity_voltage は mV→V。
+      sb.Append("n/a,");
+      sb.Append(r.VoltageMv.HasValue
+        ? (r.VoltageMv.Value / 1000.0).ToString("F3", CultureInfo.InvariantCulture)
+        : "n/a").Append(',');
       sb.Append(r.Co2Ppm.HasValue ? r.Co2Ppm.Value.ToString(CultureInfo.InvariantCulture) : "n/a").Append(',');
       // memo 列 (dump では空)
       sb.Append(Environment.NewLine);
