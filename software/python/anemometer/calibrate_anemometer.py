@@ -53,18 +53,56 @@ VALIDATION_POINTS = [
 
 SLAVE_ADDRESS = 0x10
 
-# 校正フェーズ (Phase 1) の時間設定
-CAL_MEASUREMENT_DURATION       = 10  # 平均化対象の計測時間 [s]
-CAL_STABILIZATION_TIME         = 10  # 計測前の安定化待機 [s]
-CAL_SPECIAL_STABILIZATION_TIME = 25  # ファン停止状態から起動した直後の安定化待機 [s]
-
-# 検証フェーズ (Phase 3) の時間設定 (校正より短時間に圧縮)
-VAL_MEASUREMENT_DURATION       = 5
-VAL_STABILIZATION_TIME         = 5
-VAL_SPECIAL_STABILIZATION_TIME = 25
+# 使用した風洞(Calibrator)識別。トレーサビリティ用に JSON へ記録する。
+CALIBRATOR_ID = 1
 
 SAMPLING_INTERVAL    = 0.1           # センサ読み取り間隔 [s]
 FILTER_N             = 6             # EWMA フィルタ係数 (0~20)
+
+# --- 計測窓（各点で平均を取る時間）。安定化待機の後にこの秒数だけ計測する。
+# 高風速は std が小さいので短く、低風速・無風は環境ノイズが大きいので長めに平均する
+# （校正のみ風速依存。検証は既に短いので 5s 一律）。
+CAL_MEAS_HIGH_WIND       = 5     # 校正: 高風速(>= MEAS_HIGH_WIND_THRESHOLD)の計測窓 [s]
+CAL_MEAS_LOW_WIND        = 10    # 校正: 低風速・無風の計測窓 [s]
+MEAS_HIGH_WIND_THRESHOLD = 2.0   # これ以上を「高風速(低ノイズ)」とみなす [m/s]
+VAL_MEASUREMENT_DURATION = 5     # 検証: 一律
+
+# --- 安定化待機は風速帯ごとに設定（降順計測前提）。
+# 高風速は数秒で整定するので短く、低風速ほど熱整定が緩慢（特に 0 m/s は無風で
+# 緩慢な尾を引く）ため長く取る。降順計測でファンを0から起動しないため、起動キックの
+# 待機は不要。
+# ※ここの秒数は E-Sensor の風速計で実測した整定時間（降順 stab_profile）に個体差の
+#   ゆとりを載せた「起点値」。本子機(OSL)の熱時定数は異なりうるので、初回は降順で
+#   各点の整定を 1 秒毎に記録して検証・調整すること。
+#   E-Sensor 実測: 高風速≈8s / 0.4帯≈15-20s(前段からの大ステップで最遅) / 0.2帯≈12s /
+#   0 m/s ≈25s（20sでまだ+13mV, 25sで+4.5mV）。
+# (ref_v 下限[m/s], 安定化[s]) を大きい順に並べ、最初に該当した帯を採用する。
+STAB_BANDS = [
+    (2.0, 10),   # 高風速
+    (0.8, 15),   # ~1 m/s 帯
+    (0.1, 20),   # 低風速 (0.1〜0.8)
+    (0.0, 25),   # 0 m/s (無風の緩慢な整定)
+]
+
+# 0 m/s 電圧がこの値[V]を下回ったら異常（回路未起動/断線等）とみなし警告する。
+# ※本子機の無風時電圧に合わせて調整すること（E-Sensor は無風 ~0.2V で 0.1V 判定）。
+ABNORMAL_NO_WIND_VOLTAGE = 0.05
+
+# 検証フェーズの最大誤差がこの値[%]以下なら合格（JSON の "pass"）。0 m/s は対象外。
+VERIFY_ERROR_THRESHOLD_PCT = 10.0
+
+
+def stabilization_time(ref_v):
+    """風速帯(STAB_BANDS)から安定化待機時間[s]を返す（降順計測前提・個体差のゆとり込み）。"""
+    for vmin, t in STAB_BANDS:
+        if ref_v >= vmin:
+            return t
+    return STAB_BANDS[-1][1]
+
+
+def measurement_duration(ref_v):
+    """校正の計測窓[s]。高風速は低ノイズなので短く、低風速・無風は長めに平均する。"""
+    return CAL_MEAS_HIGH_WIND if ref_v >= MEAS_HIGH_WIND_THRESHOLD else CAL_MEAS_LOW_WIND
 
 
 # ==========================================
@@ -104,28 +142,32 @@ def run_phase_1():
         return None
 
     results = []
-    prev_power = -1
 
     try:
         print("=== Phase 1: Data Collection Started ===")
 
-        for point in CALIBRATION_POINTS:
+        # 降順（高風速→低風速、最後に 0 m/s）で計測する。理由:
+        #  - ファンを0から起動しないので、起動キックの気流スパイクを回避できる。
+        #  - 起動直後のサージが τ の小さい高風速点で速く収まる（0 m/s では緩慢）。
+        #  - 遅い整定が必要なのは最後の 0 m/s だけになる。
+        # フィット(Phase 2)は昇順(index0=0 m/s)前提なので、計測後に並べ替える。
+        for point in sorted(CALIBRATION_POINTS,
+                            key=lambda p: p["ref_velocity"], reverse=True):
             target_power = point["fan_power"]
             ref_vel      = point["ref_velocity"]
 
             print(f"\n[Step] Target: {ref_vel} m/s (Fan: {target_power}%)")
             fan.set_power(target_power)
 
-            wait_time = (CAL_SPECIAL_STABILIZATION_TIME
-                         if prev_power == 0 and target_power != 0
-                         else CAL_STABILIZATION_TIME)
+            wait_time = stabilization_time(ref_vel)
             print(f"Waiting {wait_time}s for stabilization...")
             time.sleep(wait_time)
 
-            print(f"Measuring for {CAL_MEASUREMENT_DURATION}s...")
+            meas_dur = measurement_duration(ref_vel)
+            print(f"Measuring for {meas_dur}s...")
             start = time.time()
             buf_v = []
-            while time.time() - start < CAL_MEASUREMENT_DURATION:
+            while time.time() - start < meas_dur:
                 volt = sensor.get_voltage()
                 if volt is not None:
                     buf_v.append(volt)
@@ -144,7 +186,23 @@ def run_phase_1():
             else:
                 print("Warning: No sensor data could be collected.")
 
-            prev_power = target_power
+        # 降順で計測したので、フィット・出力のため風速昇順へ並べ替える
+        # （e0 = results[0] が 0 m/s、レンジも昇順であることを担保する）。
+        results.sort(key=lambda r: r["ref_velocity"])
+
+        # 0 m/s 電圧が異常に低くないか（回路未起動/断線の検知）
+        zero = next((r for r in results if r["ref_velocity"] == 0.0), None)
+        if zero is not None and zero["measured_avg"] < ABNORMAL_NO_WIND_VOLTAGE:
+            fan.set_power(0)
+            print("\n" + "!" * 60)
+            print(f"!! WARNING: 0 m/s 電圧が異常に低い: {zero['measured_avg']*1000:.1f} mV "
+                  f"(基準 > {ABNORMAL_NO_WIND_VOLTAGE*1000:.0f} mV)")
+            print("!! 風速計回路の不具合（未起動/断線等）が疑われます。中止を推奨。")
+            print("!" * 60)
+            ans = input("続行するには 'yes' と入力 / それ以外で中止: ").strip().lower()
+            if ans != "yes":
+                print("校正を中止しました。デバイスを確認のうえ再実行してください。")
+                return None
 
         print("\n" + "=" * 55)
         print("Phase 1: Measurement Summary")
@@ -258,20 +316,19 @@ def run_phase_3():
         return None
 
     print("\n=== Phase 3: Calibration Verification Started ===")
-    prev_power = -1
     results = []
 
     try:
-        for point in VALIDATION_POINTS:
+        # 検証も校正と同じ降順で計測（ファン起動キック回避・整定のため）。
+        for point in sorted(VALIDATION_POINTS,
+                            key=lambda p: p["ref_velocity"], reverse=True):
             target = point["fan_power"]
             ref_v  = point["ref_velocity"]
 
             print(f"\n[Validation] Fan: {target}% (Ref: {ref_v} m/s)")
             fan.set_power(target)
 
-            wait_time = (VAL_SPECIAL_STABILIZATION_TIME
-                         if prev_power == 0 and target != 0
-                         else VAL_STABILIZATION_TIME)
+            wait_time = stabilization_time(ref_v)
             print(f"Waiting {wait_time}s for stabilization...")
             time.sleep(wait_time)
 
@@ -299,7 +356,8 @@ def run_phase_3():
                     "error":     err_pct,
                 })
 
-            prev_power = target
+        # 降順計測したので、出力(JSON/プロット)のため風速昇順へ並べ替える。
+        results.sort(key=lambda r: r["ref"])
 
         print("\n" + "=" * 65)
         print("Final Accuracy Report")
@@ -372,12 +430,18 @@ def build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data):
     return png_bytes
 
 
-def build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64):
+def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64):
     """e-sensor schema 互換の anemometer ノードを構築。"""
+    e0 = float(coef_a[0])
+    # 検証の最大誤差と合否（0 m/s は誤差計算対象外）
+    errs = [float(r["error"]) for r in phase3_data if r["ref"] > 0]
+    max_err = max(errs) if errs else 0.0
     return {
-        "calibrated_at": datetime.date.today().isoformat(),
+        "calibrated_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "calibrator_id": CALIBRATOR_ID,
         "model":         "kings_law_3range",
-        "E0":            round(float(coef_a[0]), 6),
+        "E0":            round(e0, 6),
+        "E0_mV":         round(e0 * 1000, 1),
         "ranges": [
             {"v_min": 0.0,
              "v_max": round(float(coef_b[2]), 4),
@@ -392,6 +456,16 @@ def build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64):
              "m":     round(float(coef_b[0]), 4),
              "lnC":   round(float(coef_b[1]), 4)},
         ],
+        # フィットに用いた実測点（電圧とばらつき）。std は大きいとセンサ/気流の
+        # 不安定を示す（低風速では環境ノイズで大きめになりやすい）。
+        "calibration_points": [
+            {
+                "ref_velocity": round(float(r["ref_velocity"]), 2),
+                "voltage_mV":   round(float(r["measured_avg"]) * 1000, 1),
+                "std_dev_mV":   round(float(r["std_dev"]) * 1000, 1),
+            }
+            for r in phase1_data
+        ],
         "verification": [
             {
                 "ref_velocity":      round(float(r['ref']),       2),
@@ -401,6 +475,8 @@ def build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64):
             }
             for r in phase3_data
         ],
+        "max_error_pct": round(float(max_err), 1),
+        "pass":          bool(max_err <= VERIFY_ERROR_THRESHOLD_PCT),
         "plot": {
             "format":   "image/png",
             "data_url": f"data:image/png;base64,{png_b64}",
@@ -413,7 +489,7 @@ def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_dat
     png_bytes = build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data)
     png_b64   = base64.b64encode(png_bytes).decode('ascii')
 
-    anemo = build_anemometer_doc(coef_a, coef_b, phase3_data, png_b64)
+    anemo = build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64)
 
     device_id_hex = f"{device_info['device_id']:06X}"
     os.makedirs(REPORTS_DIR, exist_ok=True)
