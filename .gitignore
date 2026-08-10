@@ -458,8 +458,5 @@ FodyWeavers.xsd
 # load_data.py の dump 出力 (実機テスト成果物、リポジトリには含めない)
 software/python/mlogger/mlogger_*.csv
 
-# web/*/reports はローカル表示確認用の一時配置場所 (正典はスクリプト同階層の reports/)
-web/inspection/reports/*
-web/velocity_calibration/reports/*
-!web/inspection/reports/.gitkeep
-!web/velocity_calibration/reports/.gitkeep
+# 公開サイトのソースは Drive 側で管理する (repo に web/ を置かない)
+web/
