@@ -373,6 +373,10 @@ public partial class DeviceSetting : ContentPage
         // XBee アドレスではないため、ラベルは「本体ID」を使う (DS_SpecXBAdd は v3 用に残置)
         spc_xbadds.Text    = MLSResource.DS_SpecDeviceId + ": " + dev.HardwareId;
         spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
+
+        // 本体 ID タップで出荷時試験成績ページを開く
+        makeIdLabelLink(spc_xbadds,
+            $"{REPORT_SITE_BASE}/inspection/viewer.html?id={dev.HardwareId}");
       });
 
       // 初回のみ時刻同期。fire-and-forget だと直後にユーザーが start_logging を押したとき
@@ -406,6 +410,10 @@ public partial class DeviceSetting : ContentPage
         spc_velProbe.Text = MLSResource.DS_SpecVelProbeId + ": "
                           + (vel.Connected ? vel.DeviceId : "-");
         spc_velProbe.IsVisible = true;
+        // プローブ ID タップで風速校正成績ページを開く
+        if (vel.Connected && !string.IsNullOrEmpty(vel.DeviceId))
+          makeIdLabelLink(spc_velProbe,
+              $"{REPORT_SITE_BASE}/velocity_calibration/viewer.html?id={vel.DeviceId}");
       });
     }
     catch (Exception ex)
@@ -413,6 +421,30 @@ public partial class DeviceSetting : ContentPage
       // 旧 firmware (get_probe_info 未実装) では unknown_command が返る。ラベル非表示のまま。
       MLUtility.WriteLog($"[probe] GetProbeInfoAsync FAIL: {ex.GetType().Name}: {ex.Message}");
     }
+  }
+
+  // 出荷時試験成績・風速校正成績の公開サイト
+  private const string REPORT_SITE_BASE = "https://www.mlogger.jp";
+
+  /// <summary>ID ラベルをリンク風の見た目にし、タップで既定ブラウザの成績ページを開く。</summary>
+  private void makeIdLabelLink(Label label, string url)
+  {
+    label.TextDecorations = TextDecorations.Underline;
+    label.TextColor = Color.FromArgb("#1976D2");
+    label.GestureRecognizers.Clear();  // 再接続時の多重登録防止
+    var tap = new TapGestureRecognizer();
+    tap.Tapped += async (_, __) =>
+    {
+      try
+      {
+        await Browser.Default.OpenAsync(new Uri(url), BrowserLaunchMode.SystemPreferred);
+      }
+      catch (Exception ex)
+      {
+        MLUtility.WriteLog($"[link] open failed: {ex.GetType().Name}: {ex.Message}");
+      }
+    };
+    label.GestureRecognizers.Add(tap);
   }
 
   /// <summary>get_settings を叩いて UI に反映 (毎回呼ばれる)。</summary>
