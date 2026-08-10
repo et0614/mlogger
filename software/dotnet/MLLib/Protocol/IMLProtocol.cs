@@ -37,6 +37,13 @@ public interface IMLProtocol : IDisposable
     /// </summary>
     Task<BatteryInfo> GetBatteryAsync(CancellationToken ct = default);
 
+    /// <summary>
+    /// 接続中プローブ (温湿度/CO2/グローブ、風速) の個体識別情報を取得。
+    /// 出荷時試験成績・風速校正成績を Web で参照する際のキー (device_id) になる。
+    /// v3 (LegacyV3Protocol) は本コマンド未対応のため <see cref="MLProtocolException"/> (code=unknown_command)。
+    /// </summary>
+    Task<ProbeInfo> GetProbeInfoAsync(CancellationToken ct = default);
+
     Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default);
     Task StopLoggingAsync(CancellationToken ct = default);
 

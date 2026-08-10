@@ -384,6 +384,24 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             IsLow:     result["low_battery"]?.GetValue<bool>() ?? false);
     }
 
+    public async Task<ProbeInfo> GetProbeInfoAsync(CancellationToken ct = default)
+    {
+        var result = RequireResult<JsonObject>(await CallAsync("get_probe_info", null, ct));
+        return new ProbeInfo(
+            ThProbe:       ParseProbePort(result["th_probe"]?.AsObject()),
+            VelocityProbe: ParseProbePort(result["velocity_probe"]?.AsObject()));
+    }
+
+    private static ProbePortInfo ParseProbePort(JsonObject? o)
+    {
+        if (o is null) return new ProbePortInfo(false, null, null, 0);
+        return new ProbePortInfo(
+            Connected: o["connected"]?.GetValue<bool>() ?? false,
+            DeviceId:  o["device_id"]?.GetValue<string>(),
+            Name:      o["name"]?.GetValue<string>(),
+            DataCount: o["data_count"]?.GetValue<int>() ?? 0);
+    }
+
     public async Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default)
     {
         var tx = new JsonObject

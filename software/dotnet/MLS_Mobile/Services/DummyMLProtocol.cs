@@ -172,6 +172,15 @@ public sealed class DummyMLProtocol : IMLProtocol
         return Task.FromResult(new BatteryInfo(VoltageMv: 3050, IsLow: false));
     }
 
+    public Task<ProbeInfo> GetProbeInfoAsync(CancellationToken ct = default)
+    {
+        if (_protocolVersion < 1)
+            throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_probe_info is v4-only");
+        return Task.FromResult(new ProbeInfo(
+            ThProbe:       new ProbePortInfo(true, "0AB123", "TH_DEMO", 4),
+            VelocityProbe: new ProbePortInfo(true, "1CD456", "VEL_DEMO", 2)));
+    }
+
     public Task StartLoggingAsync(LoggingConfig config, CancellationToken ct = default)
     {
         IsLogging = true;

@@ -335,6 +335,12 @@ public sealed class LegacyV3Protocol : IMLProtocol
         throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_battery is v4-only");
     }
 
+    public Task<ProbeInfo> GetProbeInfoAsync(CancellationToken ct = default)
+    {
+        // v3 firmware はプローブ情報取得コマンドを持たない (v4 で新設)
+        throw new MLProtocolException(MLProtocolErrorCodes.UnknownCommand, "get_probe_info is v4-only");
+    }
+
     public Task<DumpResult> GetCountAsync(CancellationToken ct = default)
     {
         // v3 firmware は count 取得コマンドを持たない (v4 で新設)。

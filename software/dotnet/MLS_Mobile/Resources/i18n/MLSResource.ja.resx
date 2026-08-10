@@ -192,6 +192,9 @@
   <data name="DS_SpecName" xml:space="preserve">
     <value>名称</value>
   </data>
+  <data name="DS_SpecVelProbeId" xml:space="preserve">
+    <value>風速プローブID</value>
+  </data>
   <data name="DS_SpecVersion" xml:space="preserve">
     <value>M-Loggerバージョン</value>
   </data>

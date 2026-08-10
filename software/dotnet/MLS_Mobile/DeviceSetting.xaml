@@ -252,6 +252,8 @@
                 <Label x:Name="spc_localName" Margin="10,0,0,0" FontSize="16"/>
                 <Label x:Name="spc_xbadds" Margin="10,0,0,0" FontSize="16"/>
                 <Label x:Name="spc_vers" Margin="10,0,0,0" FontSize="16"/>
+                <!--風速プローブID (get_probe_info、v4 のみ。将来は出荷試験成績/校正成績ページへのリンク化予定)-->
+                <Label x:Name="spc_velProbe" Margin="10,0,0,0" FontSize="16" IsVisible="False"/>
                 <!--名称の設定-->
                 <Button Margin="50,15,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetName}" Clicked="SetNameButton_Clicked">
                     <Button.ImageSource>

@@ -377,6 +377,39 @@ public partial class DeviceSetting : ContentPage
       // BLE 競合で timeout する事象があるため、settings の後に短い間隔を空けて await で待つ。
       await Task.Delay(300);
       await MLUtility.SyncDeviceTimeAsync();
+
+      // 初回のみプローブ個体情報を取得して風速プローブ ID を表示 (v4 のみ、best-effort)。
+      // ID は Web の出荷試験成績 / 風速校正成績を参照するキーになる (将来リンク化)。
+      // 他 RPC と同じく BLE 競合回避のため直列 + 間隔を空けて実行する。
+      if (isV4)
+      {
+        await Task.Delay(300);
+        await refreshProbeInfoAsync();
+      }
+    }
+  }
+
+  /// <summary>get_probe_info を叩いて風速プローブ ID ラベルを更新する (best-effort)。</summary>
+  private async Task refreshProbeInfoAsync()
+  {
+    try
+    {
+      MLUtility.WriteLog("[probe] GetProbeInfoAsync start");
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var probe = await MLUtility.Protocol.GetProbeInfoAsync(cts.Token);
+      var vel = probe.VelocityProbe;
+      MLUtility.WriteLog($"[probe] GetProbeInfoAsync OK: vel={(vel.Connected ? vel.DeviceId : "n/a")}");
+      Application.Current?.Dispatcher.Dispatch(() =>
+      {
+        spc_velProbe.Text = MLSResource.DS_SpecVelProbeId + ": "
+                          + (vel.Connected ? vel.DeviceId : "-");
+        spc_velProbe.IsVisible = true;
+      });
+    }
+    catch (Exception ex)
+    {
+      // 旧 firmware (get_probe_info 未実装) では unknown_command が返る。ラベル非表示のまま。
+      MLUtility.WriteLog($"[probe] GetProbeInfoAsync FAIL: {ex.GetType().Name}: {ex.Message}");
     }
   }
 

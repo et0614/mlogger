@@ -192,6 +192,9 @@
   <data name="DS_SpecName" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="DS_SpecVelProbeId" xml:space="preserve">
+    <value>Velocity probe ID</value>
+  </data>
   <data name="DS_SpecVersion" xml:space="preserve">
     <value>M-Logger version</value>
   </data>

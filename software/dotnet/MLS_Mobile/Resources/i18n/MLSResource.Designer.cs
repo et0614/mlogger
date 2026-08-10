@@ -339,6 +339,15 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Velocity probe ID に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_SpecVelProbeId {
+            get {
+                return ResourceManager.GetString("DS_SpecVelProbeId", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   M-Logger version に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string DS_SpecVersion {
