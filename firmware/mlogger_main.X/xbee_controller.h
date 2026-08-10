@@ -26,6 +26,7 @@ extern "C" {
 #define XB_FRAME_ZIGBEE_RECEIVE_PACKET 0x90
 #define XB_FRAME_USER_DATA_RELAY_IN    0xAD
 #define XB_FRAME_TRANSMIT_STATUS       0x8B
+#define XB_FRAME_TX_STATUS             0x89  // USER_DATA_RELAY (0x2D) 送信への応答ステータス
 
 // TxRequest Constants
 #define XB_TX_FRAME_ID_NO_ACK      0x00
@@ -40,9 +41,13 @@ extern "C" {
 #define XB_UDR_HEADER_LENGTH       3
 
 // RxPayloadOffset
+// buffer_index = framePosition - (offset + 1)、つまり payload は position offset+1 から。
+// Frame ID を持つフレーム (0x88/0x89/0x8B) では position 4 = Frame ID が payload に
+// 含まれない (offset=4 で skip) 点に注意。Frame ID はパーサが g_rxFrameId に別途捕捉する。
 #define XB_RX_OFFSET_ZIGBEE_PACKET 14
 #define XB_RX_OFFSET_USER_DATA_RELAY 4
 #define XB_RX_OFFSET_TRANSMIT_STATUS 4
+#define XB_RX_OFFSET_TX_STATUS 4
 #define XB_RX_OFFSET_AT_COMMAND_RESPONSE 4
 
 // 通信インターフェースの有効状態を伝えるための構造体

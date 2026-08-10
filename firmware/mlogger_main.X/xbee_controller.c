@@ -16,13 +16,19 @@
 #define XB_RX_BUFFER_SIZE 256
 #define XB_MBUFF_LENGTH   20
 
+// 受け付ける最大フレームサイズ (position 換算)。XBee3 の API フレームは
+// ヘッダ + payload (NP 上限 255) + checksum で高々 ~270。これを超える length
+// 指定は化けたヘッダとみなして破棄する (旧実装は uint8_t で wrap していた)。
+#define XB_RX_MAX_FRAME_SIZE (XB_RX_BUFFER_SIZE + 20)
+
 // 内部状態変数 (staticで隠蔽)
 static bool g_readingFrame = false;
-static uint8_t g_framePosition = 0;
-static uint8_t g_frameSize = 0;
+static uint16_t g_framePosition = 0;
+static uint16_t g_frameSize = 0;
 static char g_frameBuff[XB_RX_BUFFER_SIZE];
 static uint8_t g_xbeeOffset = 14;
 static uint8_t g_frameChecksum = 0;
+static uint8_t g_rxFrameId = 0;   // 受信フレームの position 4 (0x88/0x89/0x8B では Frame ID)
 
 // 送信完了ステータス確認用
 static uint8_t g_lastFrameId = 0x01; //送信フレームID
@@ -151,9 +157,17 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
     if(g_framePosition >= 3) g_frameChecksum += current_byte;
 
     switch(g_framePosition) {
-        case 1: break; // Len MSB
+        case 1: // Len MSB (16bit length の上位バイト。旧実装は無視していた)
+            g_frameSize = (uint16_t)current_byte << 8;
+            break;
         case 2: // Len LSB
-            g_frameSize = current_byte + 3;
+            g_frameSize = (g_frameSize | current_byte) + 3;
+            if (g_frameSize > XB_RX_MAX_FRAME_SIZE) {
+                // 化けた length ヘッダ。フレームを破棄して次の 0x7E を待つ
+                g_readingFrame = false;
+                g_framePosition = 0;
+                return false;
+            }
             break;
         case 3: // API ID
             g_lastApiId = current_byte;
@@ -167,6 +181,9 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                 case XB_FRAME_TRANSMIT_STATUS:
                     g_xbeeOffset = XB_RX_OFFSET_TRANSMIT_STATUS;
                     break;
+                case XB_FRAME_TX_STATUS:
+                    g_xbeeOffset = XB_RX_OFFSET_TX_STATUS;
+                    break;
                 case XB_FRAME_AT_COMMAND_RESPONSE:
                     g_xbeeOffset = XB_RX_OFFSET_AT_COMMAND_RESPONSE;
                     break;
@@ -175,6 +192,11 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                     break;
             }
             break; // missing break added
+        case 4:
+            // 0x88/0x89/0x8B では Frame ID。0x90 では 64bit アドレスの先頭バイト、
+            // 0xAD ではインターフェース番号だが、これらでは g_rxFrameId は参照しない。
+            g_rxFrameId = current_byte;
+            break;
         default:
             if(g_xbeeOffset < g_framePosition) {
                 if (g_frameSize <= g_framePosition) {
@@ -189,24 +211,27 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
 
                     //正常にフレーム受信完了
                     if(g_frameChecksum == XB_CHECKSUM_SUCCESS) {
-                        // 受信したフレームが「送信完了ステータス(0x8B)」だった場合
-                        if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS)
+                        // 送信完了ステータス:
+                        //   0x8B = ZIGBEE_TX_REQUEST (0x10) への応答。payload = [addr16(2), retry, delivery, discovery]
+                        //   0x89 = USER_DATA_RELAY (0x2D) への応答。payload = [delivery]
+                        // Frame ID は offset=4 のため payload に入らない。position 4 で捕捉した
+                        // g_rxFrameId と比較する (旧実装は 0x8B の g_frameBuff[0] = addr16 上位
+                        // バイトを Frame ID と誤読し、waitTxCompletion が毎回タイムアウトしていた)。
+                        if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS ||
+                            g_lastApiId == XB_FRAME_TX_STATUS)
                         {
-                            uint8_t receivedFrameId = (uint8_t)g_frameBuff[0]; // フレームID
-                            if (receivedFrameId == g_lastFrameId) g_txStatusReceived = true;
+                            if (g_rxFrameId == g_lastFrameId) g_txStatusReceived = true;
 
-                            // DIAG: TX status frame の生 payload を吐く
-                            //   USER_DATA_RELAY TX に対する Transmit Status (0x89) の場合、
-                            //   payload は [delivery_status, ...]。0x7C/0x7D 等が出れば XBee 側拒否。
-                            //   ※ frame_id は g_xbeeOffset の関係で payload に含まれない実装。
-                            if (payload_len_at_end > 0) {
-                                diag_usb_logf("TX_STATUS plen=%d recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
-                                              payload_len_at_end,
-                                              (unsigned)receivedFrameId, (unsigned)g_lastFrameId,
-                                              (unsigned)(uint8_t)g_frameBuff[0]);
-                            } else {
-                                diag_usb_logf("TX_STATUS plen=%d (empty)", payload_len_at_end);
-                            }
+                            // delivery status: 0x00 = 成功。0x8B は payload[3]、0x89 は payload[0]。
+                            uint8_t delivery = 0xFF;
+                            if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS && payload_len_at_end >= 4)
+                                delivery = (uint8_t)g_frameBuff[3];
+                            else if (g_lastApiId == XB_FRAME_TX_STATUS && payload_len_at_end >= 1)
+                                delivery = (uint8_t)g_frameBuff[0];
+                            diag_usb_logf("TX_STATUS api=0x%02X recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
+                                          (unsigned)g_lastApiId,
+                                          (unsigned)g_rxFrameId, (unsigned)g_lastFrameId,
+                                          (unsigned)delivery);
                             return false;
 
                         }
@@ -252,7 +277,10 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
             break;
     }
     g_framePosition++;
-    if (g_framePosition >= XB_RX_BUFFER_SIZE + g_xbeeOffset + 2) {
+    // 暴走時のバックストップ。正常フレームは g_frameSize (<= XB_RX_MAX_FRAME_SIZE)
+    // 到達時に終端処理されるので、ここに来るのは状態機械が壊れた場合のみ。
+    // (旧実装は uint8_t の g_framePosition と 272 の比較で永遠に成立しなかった)
+    if (g_framePosition > XB_RX_MAX_FRAME_SIZE) {
         g_readingFrame = false;
         g_framePosition = 0;
     }
@@ -577,10 +605,11 @@ void Xbee_TxChars(const char *data)
 // data: 送信バイト先頭, len: 送信バイト数 (この呼び出しで送るバイト数のみ)。
 // 呼び出し側で Wakeup/Sleep/g_communicating の管理を行う。
 //
-// requestStatus=true:  Frame ID 非ゼロで送出 → XBee から TX_STATUS が返ってくる
-//                      のを最大 200ms 待機 (JSON 応答などの 1 発送信向け、確実性優先)。
-// requestStatus=false: Frame ID = 0 で送出 → XBee は TX_STATUS を返さず、AVR も
-//                      待たない fire-and-forget (dump の連続 binary 送信向け、速度優先)。
+// requestStatus=true:  Frame ID 非ゼロで送出し、TX Status (0x89) を最大 200ms 待機。
+//                      ただし 0x89 は「エラー時のみ」返る仕様のため、成功時は必ず
+//                      タイムアウトする。現在は未使用 (将来 BLE 切断検知等でエラー
+//                      status を拾いたくなった場合のために残置)。
+// requestStatus=false: Frame ID = 0 で送出する fire-and-forget (現在の標準経路)。
 //                      XBee 内部 buffer に複数 chunk を積んで、BLE 配信は XBee に任せる。
 static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
 {
@@ -618,18 +647,16 @@ static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
     if (requestStatus) waitTxCompletion(200);
 }
 
-// 後方互換: Xbee_BlChars (JSON 応答) などから使う既存呼び出し向け
-static void xbee_bl_send_chunk(const char *data, int len)
-{
-    xbee_bl_send_chunk_ex(data, len, true);
-}
-
 // XBee 3 の BLE GATT notification MTU (~244B) を超える単一フレームは
 // モジュールが silently drop してしまうため、安全側で 220B/chunk に分割して
 // 複数の USER_DATA_RELAY フレームで送る。受信側 (MAUI LineBuffer 等) は \n
 // まで連結するので分割は透過的。
 // dump 用に 200B 超でも安定送信できることを実機で確認 (244B 上限に対し ~25B 余裕)。
 #define XB_BL_MAX_CHUNK_BYTES 220
+
+// 複数 chunk 送信時の chunk 間 pacing [ms]。XBee 内部 buffer の BLE 側 drain
+// (実効 5-8 KB/sec) を待つ。dump 経路 (USB_Stream_Task) の 40ms と同じ根拠。
+#define XB_BL_INTER_CHUNK_DELAY_MS 40
 
 void Xbee_BlChars(const char *data)
 {
@@ -647,12 +674,17 @@ void Xbee_BlChars(const char *data)
     diag_usb_logf("TX_BLE_BEGIN total=%d wasSleeping=%d", total, (int)wasSleeping);
     diag_usb_hex("TX_BLE_DATA", (const uint8_t*)data, total, 96);
 
+    // fire-and-forget で送る。USER_DATA_RELAY への TX Status (0x89) は
+    // 「エラー時のみ」返る仕様 (実機トレースで成功時に 0x89 が来ないことを確認
+    // 2026-08-10)。ステータス待ちは成功時に必ずタイムアウトするだけなので廃止。
+    // 複数 chunk の場合のみ、XBee 内部 buffer 溢れ防止に chunk 間 pacing を入れる。
     int offset = 0;
     while (offset < total) {
         int chunk = total - offset;
         if (chunk > XB_BL_MAX_CHUNK_BYTES) chunk = XB_BL_MAX_CHUNK_BYTES;
-        xbee_bl_send_chunk(data + offset, chunk);
+        xbee_bl_send_chunk_ex(data + offset, chunk, false);
         offset += chunk;
+        if (offset < total) DELAY_milliseconds(XB_BL_INTER_CHUNK_DELAY_MS);
     }
 
     if(wasSleeping || g_shouldSleep) sleepXBee();
