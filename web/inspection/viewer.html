@@ -55,8 +55,8 @@
         const id = (params.get('id') || '').toUpperCase();
         const main = document.getElementById('main');
 
-        // 風速プローブの校正成績ページ (別途整備予定)。整備後にこの相対パスで公開する。
-        const CALIBRATION_URL = velId => `../calibration/viewer.html?id=${velId}`;
+        // 風速プローブの校正成績ページ (プローブ device_id 6桁hex がキー)
+        const CALIBRATION_URL = velId => `../velocity_calibration/viewer.html?id=${velId}`;
 
         function esc(s) {
             return String(s ?? '').replace(/[&<>"']/g,
