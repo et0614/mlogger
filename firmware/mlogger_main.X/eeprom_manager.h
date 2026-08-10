@@ -56,15 +56,17 @@ typedef struct{
 	bool measure_AD3; //汎用AD3の計測真偽
 	bool measure_Prox; //近接センサの計測真偽
 	bool measure_co2; //CO2の計測真偽
-	unsigned int interval_th; //乾球温度の計測間隔[sec]
-	unsigned int interval_glb; //グローブ温度の計測間隔[sec]
-	unsigned int interval_vel; //風速の計測間隔[sec]
-	unsigned int interval_ill; //照度の計測間隔[sec]
-	unsigned int interval_AD1; //汎用AD1の計測間隔[sec]
-	unsigned int interval_AD2; //汎用AD2の計測間隔[sec]
-	unsigned int interval_AD3; //汎用AD3の計測間隔[sec]
-	unsigned int interval_Prox; //近接センサの計測間隔[sec]
-	unsigned int interval_co2; //CO2の計測間隔[sec]
+	// 計測間隔は 32bit。AVR の unsigned int は 16bit で、v4 protocol の上限
+	// 99999 [sec] を保持できない (silent wrap / (int) キャストで負値化) ため拡張した。
+	uint32_t interval_th; //乾球温度の計測間隔[sec]
+	uint32_t interval_glb; //グローブ温度の計測間隔[sec]
+	uint32_t interval_vel; //風速の計測間隔[sec]
+	uint32_t interval_ill; //照度の計測間隔[sec]
+	uint32_t interval_AD1; //汎用AD1の計測間隔[sec]
+	uint32_t interval_AD2; //汎用AD2の計測間隔[sec]
+	uint32_t interval_AD3; //汎用AD3の計測間隔[sec]
+	uint32_t interval_Prox; //近接センサの計測間隔[sec]
+	uint32_t interval_co2; //CO2の計測間隔[sec]
 	uint32_t start_dt;	//計測開始日時
 	uint8_t crc; //CRC
 }MeasurementSettings;

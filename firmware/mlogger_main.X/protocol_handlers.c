@@ -82,7 +82,7 @@ static bool get_category_enabled(SensorCategory_t c) {
     return false;
 }
 
-static unsigned int get_category_interval(SensorCategory_t c) {
+static uint32_t get_category_interval(SensorCategory_t c) {
     switch (c) {
         case SC_GENERAL:     return EM_mSettings.interval_th;  // th/glb/co2 は常に同値で保持
         case SC_VELOCITY:    return EM_mSettings.interval_vel;
@@ -103,7 +103,7 @@ static void set_category_enabled(SensorCategory_t c, bool v) {
     }
 }
 
-static void set_category_interval(SensorCategory_t c, unsigned int v) {
+static void set_category_interval(SensorCategory_t c, uint32_t v) {
     switch (c) {
         case SC_GENERAL:
             EM_mSettings.interval_th  = v;
@@ -298,7 +298,8 @@ void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
             set_category_enabled(SENSOR_SETTINGS[i].category, en);
             changed = true;
         }
-        // interval
+        // interval (0-99999 [sec])。EEPROM 側は uint32_t、比較系は int32_t で扱うので
+        // この範囲を歪みなく保持できる (16bit 時代の wrap/負値化問題は解消済み)。
         int iv_tok = pc_obj_get(json, tokens, ntokens, s_tok, "interval");
         if (iv_tok >= 0) {
             int32_t iv = pc_tok_int(json, &tokens[iv_tok]);
@@ -306,7 +307,7 @@ void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
                 send_simple_error(id, src, "out_of_range", "interval must be 0-99999");
                 return;
             }
-            set_category_interval(SENSOR_SETTINGS[i].category, (unsigned int)iv);
+            set_category_interval(SENSOR_SETTINGS[i].category, (uint32_t)iv);
             changed = true;
         }
     }

@@ -12,6 +12,12 @@
 // AVR64DU32 EEPROM開始アドレス (定数として定義)
 #define EEPROM_BASE_ADDR  0x1400
 
+// EEPROM レイアウト識別フラグ。構造体レイアウトを変更したらこの値も変えること。
+// 値が一致しない個体は初回起動時に initMemory で全初期化される (名前・世代番号含む)。
+//   'T' = v4 初期レイアウト (interval_* が 16bit)
+//   'U' = interval_* を 32bit 化 (2026-08-10)
+#define EEPROM_INIT_MAGIC  'U'
+
 // EEPROM全体のマップを定義（型定義のみ）
 typedef struct {
     uint8_t init_flag;      // 0x0000
@@ -225,7 +231,7 @@ static void initMemory()
 	
 	//初期化フラグ
     while(EEPROM_IsBusy());
-    EEPROM_Write(ADDR_INIT_FLAG, 'T');
+    EEPROM_Write(ADDR_INIT_FLAG, EEPROM_INIT_MAGIC);
 }
 
 // </editor-fold>
@@ -284,6 +290,9 @@ static void loadMSettings()
 static void loadName()
 {
 	read_eep_block((void *)EM_mlName, ADDR_NAME, sizeof(EM_mlName));
+	// name 領域は CRC を持たないため、EEPROM 破損時でも strlen/strcmp が
+	// バッファ外へ走らないよう終端を強制する
+	EM_mlName[sizeof(EM_mlName) - 1] = '\0';
 }
 
 // </editor-fold>
@@ -321,7 +330,7 @@ void EM_saveGenerationNumber()
 //設定を読み込む
 void EM_loadEEPROM()
 {
-	if (EEPROM_Read(ADDR_INIT_FLAG) != 'T') initMemory();
+	if (EEPROM_Read(ADDR_INIT_FLAG) != EEPROM_INIT_MAGIC) initMemory();
 	loadCFactors();
 	loadVCCoefficients();
 	loadMSettings();

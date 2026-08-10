@@ -19,13 +19,15 @@
 // <editor-fold defaultstate="collapsed" desc="構造体定義">
 
 //計測時間間隔を保持する構造体
+// interval_* (uint32_t, 最大 99999) と比較するため 32bit。AVR の int は 16bit で
+// 32767 超の間隔を扱えない。getNormTime の初期値は負になり得るので符号付き。
 typedef struct {
-	int th;  //温湿度
-	int glb; //グローブ温度
-	int vel; //微風速
-	int ill; //照度
-	int ad1; //汎用AD
-	int co2; //CO2濃度
+	int32_t th;  //温湿度
+	int32_t glb; //グローブ温度
+	int32_t vel; //微風速
+	int32_t ill; //照度
+	int32_t ad1; //汎用AD
+	int32_t co2; //CO2濃度
 } MeasurementPassCounters;
 
 // </editor-fold>
@@ -160,13 +162,16 @@ inline static float min(float x, float y)
 // <editor-fold defaultstate="collapsed" desc="内部関数の定義">
 
 //きりの良い時刻になるように最初の計測時間間隔を調整する
-static int getNormTime(struct tm time, unsigned int interval)
+// 戻り値は負になり得る (きりの良い時刻まで interval より長く待つ場合)。
+// 減算は符号付き 32bit で行う (uint32_t のままだと interval < 減算値 で wrap する)。
+static int32_t getNormTime(struct tm time, uint32_t interval)
 {
-	if(interval == 1) return interval; //1secの場合には直ちに計測
-	if(interval <= 5) return interval - (5 - time.tm_sec % 5);
-	else if(interval <= 10) return interval - (10 - time.tm_sec % 10);
-	else if(interval <= 30) return interval - (30 - time.tm_sec % 30);
-	else return interval - (60 - time.tm_sec % 60);
+	int32_t iv = (int32_t)interval;
+	if(interval == 1) return iv; //1secの場合には直ちに計測
+	if(interval <= 5) return iv - (5 - time.tm_sec % 5);
+	else if(interval <= 10) return iv - (10 - time.tm_sec % 10);
+	else if(interval <= 30) return iv - (30 - time.tm_sec % 30);
+	else return iv - (60 - time.tm_sec % 60);
 }
 
 // CO2 FRC: 子機内で 30sec 連続測定 + perform_forced_recalibration ~5sec が完結する。
@@ -223,7 +228,8 @@ void execLogging(void)
 	}
 	
 	//計測のWAKEUP_TIME[sec]前から熱線式風速計回路のスリープを解除して加熱開始
-	if(EM_mSettings.measure_vel && EM_mSettings.interval_vel - pass_counters.vel < V_WAKEUP_TIME) Anemometer_Wakeup();
+	// 符号付き 32bit で評価 (uint32_t のままだとカウンタ負値時に wrap して誤判定)
+	if(EM_mSettings.measure_vel && (int32_t)EM_mSettings.interval_vel - pass_counters.vel < V_WAKEUP_TIME) Anemometer_Wakeup();
 	
 	bool send_needed = false;
     SensorData_t data = {0};
@@ -235,7 +241,7 @@ void execLogging(void)
     if(EM_mSettings.measure_vel)
     {
         // 計測時刻に到達
-        if((int)EM_mSettings.interval_vel <= pass_counters.vel)
+        if((int32_t)EM_mSettings.interval_vel <= pass_counters.vel)
         {
             send_needed = true;
             pass_counters.vel = 0;
@@ -276,10 +282,10 @@ void execLogging(void)
 	pass_counters.th++;
 	pass_counters.co2++;
 	pass_counters.glb++;
-	bool mesTH  = EM_mSettings.measure_th  && (int)EM_mSettings.interval_th  <= pass_counters.th;
+	bool mesTH  = EM_mSettings.measure_th  && (int32_t)EM_mSettings.interval_th  <= pass_counters.th;
 	bool mesCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
-	              && (int)EM_mSettings.interval_co2 <= pass_counters.co2;
-	bool mesGlb = EM_mSettings.measure_glb && (int)EM_mSettings.interval_glb <= pass_counters.glb;
+	              && (int32_t)EM_mSettings.interval_co2 <= pass_counters.co2;
+	bool mesGlb = EM_mSettings.measure_glb && (int32_t)EM_mSettings.interval_glb <= pass_counters.glb;
 
 	if (mesTH || mesCO2 || mesGlb) {
 		ThProbe_Read(&th_probe);
@@ -359,7 +365,7 @@ void execLogging(void)
 
 	//照度センサ測定**************
 	pass_counters.ill++;
-	if(EM_mSettings.measure_ill && (int)EM_mSettings.interval_ill <= pass_counters.ill)
+	if(EM_mSettings.measure_ill && (int32_t)EM_mSettings.interval_ill <= pass_counters.ill)
 	{
         send_needed = true;
 		pass_counters.ill = 0;        
@@ -436,10 +442,10 @@ void execLogging(void)
 		}
 	}
 	//次 sec が計測時刻なら今 sec のうちに pre-trigger 発行 (子機の single-shot は ~520ms)
-	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int)EM_mSettings.interval_th;
+	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int32_t)EM_mSettings.interval_th;
 	bool nextCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
-	               && (pass_counters.co2 + 1) >= (int)EM_mSettings.interval_co2;
-	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int)EM_mSettings.interval_glb;
+	               && (pass_counters.co2 + 1) >= (int32_t)EM_mSettings.interval_co2;
+	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int32_t)EM_mSettings.interval_glb;
 	if (nextTH || nextCO2 || nextGlb) {
 		ThProbe_Trigger();
 		th_trigger_pending = true;
@@ -590,9 +596,9 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     // 同じ delta を全カウンタに適用して全センサが同 tick で発火するよう同期。
     // 短 interval (例 th=1sec) のカウンタに subtract しても結果は変わらない。
     if (EM_mSettings.measure_vel && EM_mSettings.interval_vel >= V_WAKEUP_TIME) {
-        int max_vel = (int)EM_mSettings.interval_vel - V_WAKEUP_TIME;
+        int32_t max_vel = (int32_t)EM_mSettings.interval_vel - V_WAKEUP_TIME;
         if (pass_counters.vel > max_vel) {
-            int delta = pass_counters.vel - max_vel;
+            int32_t delta = pass_counters.vel - max_vel;
             pass_counters.vel = max_vel;
             if (pass_counters.th  > delta) pass_counters.th  -= delta; else pass_counters.th  = 0;
             if (pass_counters.glb > delta) pass_counters.glb -= delta; else pass_counters.glb = 0;
