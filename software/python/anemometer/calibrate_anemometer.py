@@ -28,33 +28,63 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from anemometer_manager import AnemometerManager
+from anemometer_manager import AnemometerManager, AnemometerRegisters
 from quadro_fan_controller import QuadroFanController
 
 
 # ==========================================
 # 定数・設定値
 # ==========================================
-CALIBRATION_POINTS = [
-    {"fan_power": 0,  "ref_velocity": 0.00},
-    {"fan_power": 7,  "ref_velocity": 0.12},
-    {"fan_power": 12, "ref_velocity": 0.41},
-    {"fan_power": 40, "ref_velocity": 2.50},
-    {"fan_power": 74, "ref_velocity": 5.00},
-]
+# 使用する風洞(Calibrator)を 1 または 2 で指定する。風洞ごとにファン power と
+# 基準風速の対応が異なるため、ここを切り替えるだけで校正・検証の両方の点群が
+# 一括で差し替わる。トレーサビリティ用に JSON へも記録する。
+CALIBRATOR_ID = 1
 
-VALIDATION_POINTS = [
-    {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
-    {"fan_power": 10, "ref_velocity": 0.28},   # 補間 Range A
-    {"fan_power": 21, "ref_velocity": 1.06},   # 補間 Range B
-    {"fan_power": 53, "ref_velocity": 3.46},   # 補間 Range C
-    {"fan_power": 74, "ref_velocity": 5.00},   # 再現性（上端）
-]
+CALIBRATOR_PROFILES = {
+    1: {
+        "calibration_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},
+            {"fan_power": 8,  "ref_velocity": 0.23},
+            {"fan_power": 12, "ref_velocity": 0.52},
+            {"fan_power": 40, "ref_velocity": 2.76},
+            {"fan_power": 69, "ref_velocity": 5.00},
+        ],
+        "validation_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+            {"fan_power": 10, "ref_velocity": 0.37},   # 補間 Range A
+            {"fan_power": 21, "ref_velocity": 1.24},   # 補間 Range B
+            {"fan_power": 53, "ref_velocity": 3.75},   # 補間 Range C
+            {"fan_power": 69, "ref_velocity": 5.00},   # 再現性（上端）
+        ],
+    },
+    2: {
+        "calibration_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},
+            {"fan_power": 8,  "ref_velocity": 0.23},
+            {"fan_power": 12, "ref_velocity": 0.50},
+            {"fan_power": 38, "ref_velocity": 2.73},
+            {"fan_power": 67, "ref_velocity": 5.03},
+        ],
+        "validation_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+            {"fan_power": 10, "ref_velocity": 0.32},   # 補間 Range A
+            {"fan_power": 19, "ref_velocity": 1.09},   # 補間 Range B
+            {"fan_power": 51, "ref_velocity": 3.80},   # 補間 Range C
+            {"fan_power": 67, "ref_velocity": 5.03},   # 再現性（上端）
+        ],
+    },
+}
+
+if CALIBRATOR_ID not in CALIBRATOR_PROFILES:
+    raise ValueError(
+        f"CALIBRATOR_ID={CALIBRATOR_ID} は未定義です。"
+        f"利用可能: {sorted(CALIBRATOR_PROFILES.keys())}"
+    )
+
+CALIBRATION_POINTS = CALIBRATOR_PROFILES[CALIBRATOR_ID]["calibration_points"]
+VALIDATION_POINTS  = CALIBRATOR_PROFILES[CALIBRATOR_ID]["validation_points"]
 
 SLAVE_ADDRESS = 0x10
-
-# 使用した風洞(Calibrator)識別。トレーサビリティ用に JSON へ記録する。
-CALIBRATOR_ID = 1
 
 SAMPLING_INTERVAL    = 0.1           # センサ読み取り間隔 [s]
 FILTER_N             = 6             # EWMA フィルタ係数 (0~20)
@@ -103,6 +133,33 @@ def stabilization_time(ref_v):
 def measurement_duration(ref_v):
     """校正の計測窓[s]。高風速は低ノイズなので短く、低風速・無風は長めに平均する。"""
     return CAL_MEAS_HIGH_WIND if ref_v >= MEAS_HIGH_WIND_THRESHOLD else CAL_MEAS_LOW_WIND
+
+
+# ==========================================
+# 通知（ビープ）
+# ==========================================
+
+def notify_done():
+    """校正完了をビープ音で通知する（Windows: winsound、他: BEL 文字）。"""
+    try:
+        import winsound
+        winsound.Beep(880, 200)
+        winsound.Beep(1320, 300)
+    except Exception:
+        print('\a', end='', flush=True)
+
+
+def notify_abnormal():
+    """異常検知時の警告ビープ。下降音 × 3 回で注意を引く。"""
+    try:
+        import winsound
+        for _ in range(3):
+            winsound.Beep(1500, 180)
+            winsound.Beep(700, 220)
+    except Exception:
+        for _ in range(3):
+            print('\a', end='', flush=True)
+            time.sleep(0.15)
 
 
 # ==========================================
@@ -168,9 +225,12 @@ def run_phase_1():
             start = time.time()
             buf_v = []
             while time.time() - start < meas_dur:
-                volt = sensor.get_voltage()
-                if volt is not None:
-                    buf_v.append(volt)
+                # status1 の該当ビットが立っていない(=有効)サンプルだけ採用する。
+                # 予熱中や通信失敗の stale 値を平均に混ぜない。
+                poll = sensor.read_poll_block()
+                if poll is not None and not (
+                        poll["status1"] & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
+                    buf_v.append(poll["values"][AnemometerRegisters.VAL_IDX_VOLTAGE])
                 time.sleep(SAMPLING_INTERVAL)
 
             if buf_v:
@@ -194,6 +254,7 @@ def run_phase_1():
         zero = next((r for r in results if r["ref_velocity"] == 0.0), None)
         if zero is not None and zero["measured_avg"] < ABNORMAL_NO_WIND_VOLTAGE:
             fan.set_power(0)
+            notify_abnormal()
             print("\n" + "!" * 60)
             print(f"!! WARNING: 0 m/s 電圧が異常に低い: {zero['measured_avg']*1000:.1f} mV "
                   f"(基準 > {ABNORMAL_NO_WIND_VOLTAGE*1000:.0f} mV)")
@@ -335,12 +396,15 @@ def run_phase_3():
             vels, volts = [], []
             start = time.time()
             while time.time() - start < VAL_MEASUREMENT_DURATION:
-                vel = sensor.get_velocity()
-                vol = sensor.get_voltage()
-                if vel is not None:
-                    vels.append(vel)
-                if vol is not None:
-                    volts.append(vol)
+                # velocity / voltage それぞれ status1 の有効ビットを確認して採用。
+                poll = sensor.read_poll_block()
+                if poll is not None:
+                    s1 = poll["status1"]
+                    vv = poll["values"]
+                    if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VELOCITY)):
+                        vels.append(vv[AnemometerRegisters.VAL_IDX_VELOCITY])
+                    if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
+                        volts.append(vv[AnemometerRegisters.VAL_IDX_VOLTAGE])
                 time.sleep(0.5)
 
             if vels and volts:
@@ -379,13 +443,15 @@ def run_phase_3():
 # 結果出力 (e-sensor 互換 JSON; PNG は base64 同梱)
 # ==========================================
 
+# repo 内の Web 公開ディレクトリ (公開サイト (Drive 側) への配置は手動)
 REPORTS_DIR = os.path.normpath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "..", "..", "web", "calibration", "reports"))
+    "..", "..", "..", "web", "velocity_calibration", "reports"))
 
 
-def build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data):
-    """King の法則 (3 区分) 曲線 + 実測点を描いた PNG を bytes で返す。"""
+def build_plot(coef_a, coef_b, phase1_data, phase3_data):
+    """King の法則 (3 区分) 曲線 + 実測点を描いた matplotlib Figure を返す (クローズしない)。
+    呼び出し側で base64 化・PNG 保存・表示に使い、最後に plt.close(fig) すること。"""
     e0 = coef_a[0]
     m1, ln_c1 = coef_a[1], coef_a[2]
     m2, ln_c2 = coef_a[3], coef_a[4]
@@ -411,7 +477,7 @@ def build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data):
     verify_vel = [r['ref']                  for r in phase3_data]
     verify_vol = [r['measuredV'] * 1000     for r in phase3_data]  # mV
 
-    plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     plt.plot(v_curve, vol_curve, 'r-', label="King's Law Fit", alpha=0.7)
     plt.scatter(ref_v, meas_v, color='blue',
                 label='Reference Points', zorder=5)
@@ -422,23 +488,24 @@ def build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data):
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.legend()
 
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=120)
-    buf.seek(0)
-    png_bytes = buf.read()
-    plt.close()
-    return png_bytes
+    return fig
 
 
-def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64):
-    """e-sensor schema 互換の anemometer ノードを構築。"""
+def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64,
+                         device_info=None, calibrator_id=None):
+    """e-sensor schema 互換の anemometer ノードを構築。
+    calibrator_id: 使用した風洞 ID。None なら本モジュールの CALIBRATOR_ID
+    (単体 CLI 実行時)。GUI (複数風洞) からは風洞ごとの値を渡す。"""
     e0 = float(coef_a[0])
     # 検証の最大誤差と合否（0 m/s は誤差計算対象外）
     errs = [float(r["error"]) for r in phase3_data if r["ref"] > 0]
     max_err = max(errs) if errs else 0.0
     return {
         "calibrated_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "calibrator_id": CALIBRATOR_ID,
+        "calibrator_id": CALIBRATOR_ID if calibrator_id is None else calibrator_id,
+        # 装置ラベル (トレーサビリティ用)。本子機は温湿度を持たないため、元 e-sensor 版の
+        # ambient_temp/humidity の代わりに device name を残す。
+        "name":          (device_info or {}).get("name"),
         "model":         "kings_law_3range",
         "E0":            round(e0, 6),
         "E0_mV":         round(e0 * 1000, 1),
@@ -484,12 +551,18 @@ def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64):
     }
 
 
-def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_data):
-    """JSON 1 ファイルに集約して reports/ に書き出し (既存ファイルがあれば merge)。"""
-    png_bytes = build_plot_png_bytes(coef_a, coef_b, phase1_data, phase3_data)
-    png_b64   = base64.b64encode(png_bytes).decode('ascii')
+def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_data,
+                            show_plot=True, calibrator_id=None):
+    """JSON 1 ファイルに集約して reports/ に書き出し (既存ファイルがあれば merge)。
+    確認用に PNG も同ディレクトリへ保存し、show_plot=True ならグラフを表示する。"""
+    fig = build_plot(coef_a, coef_b, phase1_data, phase3_data)
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=120)
+    buf.seek(0)
+    png_b64 = base64.b64encode(buf.read()).decode('ascii')
 
-    anemo = build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64)
+    anemo = build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64,
+                                 device_info, calibrator_id=calibrator_id)
 
     device_id_hex = f"{device_info['device_id']:06X}"
     os.makedirs(REPORTS_DIR, exist_ok=True)
@@ -512,6 +585,19 @@ def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_dat
         json.dump(doc, f, ensure_ascii=False, indent=2)
 
     print(f"\nReport written: {out_path}")
+
+    # ローカル確認用に PNG も保存 (JSON には base64 で同梱済み)。
+    png_path = os.path.join(REPORTS_DIR, f"{device_id_hex}.png")
+    fig.savefig(png_path, dpi=120)
+    print(f"Plot saved    : {png_path}")
+
+    notify_done()
+
+    # 確認用にグラフを表示 (ウィンドウを閉じるまでブロック)。一括実行時は show_plot=False。
+    if show_plot:
+        print("\nClose the plot window to exit.")
+        plt.show()
+    plt.close(fig)
 
 
 # ==========================================

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // 末尾スラッシュなしでアクセスされた場合、相対パスの解決基準がずれるので
+        // すぐにスラッシュ付きへリダイレクトして以降の挙動を一貫させる。
+        (function() {
+            var p = window.location.pathname;
+            if (p && !p.endsWith('/') && !/\.[a-zA-Z0-9]+$/.test(p)) {
+                window.location.replace(p + '/' + window.location.search + window.location.hash);
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Logger | Anemometer Calibration Report</title>
+    <style>
+        body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+               max-width: 900px; margin: 0 auto; padding: 20px; color: #111; }
+        header { border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 24px; }
+        .header-inner { display: flex; justify-content: space-between; align-items: baseline; }
+        h1 { margin: 0; font-size: 1.6rem; }
+        h2 { border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-top: 30px; }
+        .monospace { font-family: "SFMono-Regular", Consolas, monospace; }
+        footer { margin-top: 60px; padding-top: 12px; border-top: 1px solid #ccc;
+                 font-size: 0.85rem; color: #666; text-align: center; }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .search-form input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 1.2rem;
+            padding: 10px 12px;
+            border: 1px solid #000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .search-form button {
+            padding: 10px 24px;
+            border: 1px solid #000;
+            background: #000;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .search-form button:hover {
+            background: #fff;
+            color: #000;
+        }
+        .hint {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: -10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>M-Logger</h1>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>Anemometer Calibration Report</h2>
+            <p>Enter the anemometer device ID (6 hex digits, FNV-1a 22bit OSL device_id reported by the velocity probe) to view its calibration report.</p>
+
+            <form class="search-form" onsubmit="return go(event)">
+                <input type="text" id="device-id" placeholder="e.g. 271C79" maxlength="6" pattern="[0-9A-Fa-f]{6}" required autocomplete="off">
+                <button type="submit">View</button>
+            </form>
+            <p class="hint">6 characters, 0-9 / A-F only.</p>
+        </section>
+    </main>
+
+    <footer>
+        &copy; Togashi Research Institute LLC
+    </footer>
+
+    <script>
+        function go(e) {
+            e.preventDefault();
+            const id = document.getElementById('device-id').value.trim().toUpperCase();
+            if (/^[0-9A-F]{6}$/.test(id)) {
+                window.location.href = `./viewer.html?id=${id}`;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

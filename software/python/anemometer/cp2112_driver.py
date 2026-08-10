@@ -37,10 +37,14 @@ class CP2112Device:
     VID = 0x10C4    # Vendor ID
     PID = 0xEA90    # Product ID
 
-    def __init__(self, slave_addr, serial_number):
+    def __init__(self, slave_addr, serial_number=None, path=None):
+        """path (HID デバイスパス) を指定すると物理ポートを特定して開く。
+        CP2112 は工場出荷シリアルが重複し得るため、複数アダプタ運用 (風洞校正 GUI)
+        では path 指定を推奨。serial_number は単一アダプタ運用の後方互換。"""
         self.__dev = hid.device()
         self.slave_addr = slave_addr
         self.serial_number = serial_number
+        self.path = path
         self.is_open = False
 
     #endregion
@@ -60,7 +64,10 @@ class CP2112Device:
 
     def open(self):
         try:
-            if self.serial_number is None:
+            if self.path is not None:
+                p = self.path.encode('utf-8') if isinstance(self.path, str) else self.path
+                self.__dev.open_path(p)
+            elif self.serial_number is None:
                 self.__dev.open(self.VID, self.PID)
             else:
                 self.__dev.open(self.VID, self.PID, self.serial_number)
@@ -96,7 +103,12 @@ class CP2112Device:
     # region I2C通信処理
 
     def read_i2c_block(self, offset, length, retries=2):
-        """低レイヤーI2C読み込み (CP2112コマンド処理)"""
+        """低レイヤーI2C読み込み (CP2112コマンド処理)。
+
+        スレーブ不在(NACK)・転送エラー・タイムアウト時は None を返す。
+        転送の COMPLETE と DATA_READ_RESPONSE の有効バイト数を検証するので、
+        HID バッファの残骸(ゴミ)を有効データとして返すことはない。
+        """
         for attempt in range(retries + 1):
             try:
                 self.__dev.write([
@@ -107,27 +119,46 @@ class CP2112Device:
                     0x01, # Target Address Length (通常1)
                     offset])
 
-                # ポーリング
+                # 転送完了までポーリング。COMPLETE を実際に確認できたかを記録する。
+                # NACK(スレーブ不在)や ERROR のときは COMPLETE にならないので失敗扱い。
+                completed = False
                 for _ in range(15):
                     self.__dev.write([
-                        CP2112Report.TRANSFER_STATUS_REQ, 
+                        CP2112Report.TRANSFER_STATUS_REQ,
                         0x01])
                     res = self.__dev.read(64, 100)
-                    if (res and 
-                        res[0] == CP2112Report.TRANSFER_STATUS_RESPONSE and 
-                        res[1] == I2CStatus.COMPLETE):
-                        break
+                    if res and res[0] == CP2112Report.TRANSFER_STATUS_RESPONSE:
+                        status = res[1]
+                        if status == I2CStatus.COMPLETE:
+                            completed = True
+                            break
+                        if status == I2CStatus.ERROR:
+                            # NACK / バスエラー。これ以上待っても無駄なので抜ける。
+                            break
                     time.sleep(0.001)
+
+                if not completed:
+                    # 完了が確認できない(不在/NACK/タイムアウト)。中途半端な転送を
+                    # 破棄してからリトライ。ゴミは返さない。
+                    self.__dev.write([CP2112Report.CANCEL_TRANSFER, 0x01])
+                    if attempt < retries:
+                        time.sleep(0.001)
+                    continue
 
                 # データ取得
                 self.__dev.write([
-                    CP2112Report.DATA_READ_FORCE_SEND, 
-                    0x00, 
+                    CP2112Report.DATA_READ_FORCE_SEND,
+                    0x00,
                     length])
                 data_res = self.__dev.read(64, 500)
-                if data_res and data_res[0] == CP2112Report.DATA_READ_RESPONSE:
+                # DATA_READ_RESPONSE = [0x13, status, valid_len, data...]
+                # valid_len(data_res[2]) が要求長に満たなければ失敗扱い(ゴミを返さない)。
+                if (data_res and
+                        data_res[0] == CP2112Report.DATA_READ_RESPONSE and
+                        len(data_res) >= 3 and
+                        data_res[2] >= length):
                     return bytes(data_res[3:3+length]) # bytes型で返す
-                    
+
             except Exception as e:
                 if attempt == retries: return None
                 time.sleep(0.001)
