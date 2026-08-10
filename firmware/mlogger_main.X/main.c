@@ -174,7 +174,11 @@ int main(void)
             Xbee_InterfaceConfig_t xb_cfg;
             xb_cfg.zigbee_enabled = LC_UseZigbeeConnection();
             xb_cfg.ble_enabled = LC_UseBLEConnection();
-            xb_cfg.wake_hold_active = LC_IsTimeSyncWindowActive();
+            // 非ロギング時は BLE 接続受付のため XBee を常時起こしておく。
+            // Pin Hibernate は BLE advertising ごと落とすため、寝かせると
+            // スマホから接続できなくなる。スリープによる省電力はロギング中
+            // (Zigbee 送信の間欠スリープ) に限定する。
+            xb_cfg.wake_hold_active = LC_IsTimeSyncWindowActive() || !LC_IsLogging();
             Xbee_MaintainTask(xb_cfg);
 		}
 

@@ -27,6 +27,11 @@ extern "C" {
 #define XB_FRAME_USER_DATA_RELAY_IN    0xAD
 #define XB_FRAME_TRANSMIT_STATUS       0x8B
 #define XB_FRAME_TX_STATUS             0x89  // USER_DATA_RELAY (0x2D) 送信への応答ステータス
+#define XB_FRAME_MODEM_STATUS          0x8A  // モデムステータス (BLE 接続/切断通知を含む)
+
+// Modem Status (0x8A) の status 値 (Digi XBee3)
+#define XB_MODEM_STATUS_BLE_CONNECTED    0x32
+#define XB_MODEM_STATUS_BLE_DISCONNECTED 0x33
 
 // TxRequest Constants
 #define XB_TX_FRAME_ID_NO_ACK      0x00
@@ -48,6 +53,7 @@ extern "C" {
 #define XB_RX_OFFSET_USER_DATA_RELAY 4
 #define XB_RX_OFFSET_TRANSMIT_STATUS 4
 #define XB_RX_OFFSET_TX_STATUS 4
+#define XB_RX_OFFSET_MODEM_STATUS 4
 #define XB_RX_OFFSET_AT_COMMAND_RESPONSE 4
 
 // 通信インターフェースの有効状態を伝えるための構造体

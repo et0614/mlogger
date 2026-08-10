@@ -45,6 +45,12 @@ static uint8_t g_association_status = 0xFF; // 0xFFは不明状態
 static uint16_t g_join_timer = 0;
 static uint16_t g_ai_request_timer = 0;
 
+// BLE central (スマホ) が接続中か。Modem Status (0x8A) の 0x32/0x33 で追跡し、
+// BLE 経由のコマンド受信 (0xAD interface=BLE) でも true にする (boot 前から
+// 接続済みで 0x32 を取り逃した場合のフォールバック)。
+// 接続中は XBee をスリープさせない (Pin Hibernate は BLE ごと落とすため)。
+static bool g_bleConnected = false;
+
 // <editor-fold defaultstate="collapsed" desc="内部関数">
 
 static void sleepXBee(void)
@@ -184,6 +190,9 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                 case XB_FRAME_TX_STATUS:
                     g_xbeeOffset = XB_RX_OFFSET_TX_STATUS;
                     break;
+                case XB_FRAME_MODEM_STATUS:
+                    g_xbeeOffset = XB_RX_OFFSET_MODEM_STATUS;
+                    break;
                 case XB_FRAME_AT_COMMAND_RESPONSE:
                     g_xbeeOffset = XB_RX_OFFSET_AT_COMMAND_RESPONSE;
                     break;
@@ -211,6 +220,17 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
 
                     //正常にフレーム受信完了
                     if(g_frameChecksum == XB_CHECKSUM_SUCCESS) {
+                        // モデムステータス (0x8A): status 値は position 4 (= g_rxFrameId に捕捉済み)。
+                        // BLE central の接続/切断 (0x32/0x33) を追跡してスリープ制御に使う。
+                        if (g_lastApiId == XB_FRAME_MODEM_STATUS) {
+                            if (g_rxFrameId == XB_MODEM_STATUS_BLE_CONNECTED)
+                                g_bleConnected = true;
+                            else if (g_rxFrameId == XB_MODEM_STATUS_BLE_DISCONNECTED)
+                                g_bleConnected = false;
+                            diag_usb_logf("MODEM_STATUS 0x%02X bleConn=%d",
+                                          (unsigned)g_rxFrameId, (int)g_bleConnected);
+                            return false;
+                        }
                         // 送信完了ステータス:
                         //   0x8B = ZIGBEE_TX_REQUEST (0x10) への応答。payload = [addr16(2), retry, delivery, discovery]
                         //   0x89 = USER_DATA_RELAY (0x2D) への応答。payload = [delivery]
@@ -258,6 +278,12 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                         //受信フレームがコマンドだった場合
                         else
                         {
+                            // BLE 経由の受信 = BLE central 接続中とみなす (0x32 取り逃しの保険)。
+                            // 0xAD の position 4 (interface 番号) は g_rxFrameId に入っている。
+                            if (g_lastApiId == XB_FRAME_USER_DATA_RELAY_IN &&
+                                g_rxFrameId == XB_UDR_INTERFACE_BLUETOOTH)
+                                g_bleConnected = true;
+
                             int payload_len = payload_len_at_end;
                             if (payload_len < 0) payload_len = 0;
                             if (payload_len >= XB_RX_BUFFER_SIZE) payload_len = XB_RX_BUFFER_SIZE - 1;
@@ -769,8 +795,12 @@ void Xbee_SendAtCmd(const char *data)
 // <editor-fold defaultstate="collapsed" desc="公開関数：スリープ">
 
 void Xbee_MaintainTask(Xbee_InterfaceConfig_t config) {
-    // BLE 有効、または time_sync wake window 中はスリープ不可
-    if (config.ble_enabled || config.wake_hold_active) {
+    // 以下のいずれかの間はスリープ不可:
+    //  - BLE 出力有効 (ロギングの BLE transport)
+    //  - wake hold (time_sync window / 非ロギング時の BLE 接続受付)
+    //  - BLE central (スマホ) 接続中 (Pin Hibernate は BLE ごと落とすため、
+    //    Zigbee ロギング中でもスマホ接続が生きている限り起こしておく)
+    if (config.ble_enabled || config.wake_hold_active || g_bleConnected) {
         Xbee_Wakeup();
         g_ai_request_timer = 0;
         return;
