@@ -1,0 +1,215 @@
+{
+  "test": "factory_test",
+  "script_version": "1.1",
+  "timestamp": "2026-08-10T11:01:27",
+  "device": {
+    "name": "MLogger_0000",
+    "hardware_id": "911759D0",
+    "firmware_version": "4.0.0",
+    "protocol_version": 1,
+    "battery_mv": 2974
+  },
+  "probes": {
+    "th_probe": {
+      "connected": true,
+      "device_id": "0BED26",
+      "name": "",
+      "data_count": 4
+    },
+    "velocity_probe": {
+      "connected": true,
+      "device_id": "321465",
+      "name": "",
+      "data_count": 2
+    }
+  },
+  "radio": {
+    "xbee_mac": "0013A200420BCE01",
+    "xbee_fw": "1013"
+  },
+  "correction": {
+    "t_dry": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "humidity": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "t_glb": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "illuminance": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "velocity": {
+      "a": 1.0,
+      "b": 0.0
+    }
+  },
+  "settings_shipped": {
+    "general": {
+      "enabled": true,
+      "interval": 60
+    },
+    "velocity": {
+      "enabled": true,
+      "interval": 60
+    },
+    "illuminance": {
+      "enabled": true,
+      "interval": 60
+    },
+    "start_ts": 1609459200
+  },
+  "overall": "PASS",
+  "items": [
+    {
+      "item": "THプローブ情報",
+      "pass": true,
+      "detail": "id=0BED26 name= n=4"
+    },
+    {
+      "item": "風速プローブ情報",
+      "pass": true,
+      "detail": "id=321465 name= n=2"
+    },
+    {
+      "item": "XBeeモジュール",
+      "pass": true,
+      "detail": "mac=0013A200420BCE01 fw=1013"
+    },
+    {
+      "item": "電池電圧",
+      "pass": true,
+      "detail": "2974 mV (許容 2000..3500)"
+    },
+    {
+      "item": "probe_connection",
+      "pass": true,
+      "detail": "切断なし"
+    },
+    {
+      "item": "温湿度センサ (乾球温度)",
+      "pass": true,
+      "detail": "n=15/15 min=25.87 mean=26.16 max=26.42"
+    },
+    {
+      "item": "温湿度センサ (相対湿度)",
+      "pass": true,
+      "detail": "n=15/15 min=51.2 mean=51.57 max=52.1"
+    },
+    {
+      "item": "グローブセンサ",
+      "pass": true,
+      "detail": "n=15/15 min=24.12 mean=24.24 max=24.45"
+    },
+    {
+      "item": "CO2センサ",
+      "pass": true,
+      "detail": "n=15/15 min=749 mean=1001.13 max=1165"
+    },
+    {
+      "item": "照度センサ",
+      "pass": true,
+      "detail": "n=15/15 min=936 mean=940.73 max=949"
+    },
+    {
+      "item": "風速センサ (風速)",
+      "pass": true,
+      "detail": "n=15/15 min=0.0 mean=0.1 max=0.348"
+    },
+    {
+      "item": "風速センサ (ブリッジ電圧)",
+      "pass": true,
+      "detail": "n=15/15 min=397 mean=449.27 max=538"
+    },
+    {
+      "item": "フラッシュメモリ",
+      "pass": true,
+      "detail": "28 件読み返し: gen=[2] ts単調=True flags非ゼロ=True ts整合=True dump_end=True"
+    }
+  ],
+  "channel_stats": {
+    "t": {
+      "n": 15,
+      "min": 25.87,
+      "mean": 26.157,
+      "max": 26.42
+    },
+    "h": {
+      "n": 15,
+      "min": 51.2,
+      "mean": 51.573,
+      "max": 52.1
+    },
+    "g": {
+      "n": 15,
+      "min": 24.12,
+      "mean": 24.241,
+      "max": 24.45
+    },
+    "c": {
+      "n": 15,
+      "min": 749,
+      "mean": 1001.133,
+      "max": 1165
+    },
+    "l": {
+      "n": 15,
+      "min": 936,
+      "mean": 940.733,
+      "max": 949
+    },
+    "v": {
+      "n": 15,
+      "min": 0.0,
+      "mean": 0.097,
+      "max": 0.348
+    },
+    "vv": {
+      "n": 15,
+      "min": 397,
+      "mean": 449.267,
+      "max": 538
+    }
+  },
+  "judge_ranges": {
+    "channels": {
+      "t": [
+        -10.0,
+        50.0
+      ],
+      "h": [
+        5.0,
+        95.0
+      ],
+      "g": [
+        -10.0,
+        50.0
+      ],
+      "c": [
+        300,
+        10000
+      ],
+      "l": [
+        1,
+        200000
+      ],
+      "v": [
+        0.0,
+        10.0
+      ],
+      "vv": [
+        100,
+        3000
+      ]
+    },
+    "battery_mv": [
+      2000,
+      3500
+    ]
+  }
+}

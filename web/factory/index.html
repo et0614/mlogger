@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <script>
+        // 末尾スラッシュなしでアクセスされた場合、相対パスの解決基準がずれるので
+        // すぐにスラッシュ付きへリダイレクトして以降の挙動を一貫させる。
+        (function() {
+            var p = window.location.pathname;
+            if (p && !p.endsWith('/') && !/\.[a-zA-Z0-9]+$/.test(p)) {
+                window.location.replace(p + '/' + window.location.search + window.location.hash);
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Logger | 出荷時試験成績</title>
+    <style>
+        body { margin: 0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif; color: #000; background: #fff; line-height: 1.7; }
+        header { border-bottom: 2px solid #000; }
+        .header-inner { max-width: 860px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: baseline; }
+        h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
+        main { max-width: 860px; margin: 0 auto; padding: 10px 20px 60px 20px; }
+        h2 { border-left: 6px solid #000; padding-left: 10px; font-size: 1.15rem; margin-top: 40px; }
+        footer { border-top: 1px solid #000; text-align: center; padding: 16px; font-size: 0.85rem; }
+        a { color: #000; }
+        .monospace { font-family: "SFMono-Regular", Consolas, monospace; }
+        .search-form { display: flex; gap: 10px; margin: 30px 0 10px 0; flex-wrap: wrap; }
+        .search-form input[type="text"] {
+            flex: 1; min-width: 200px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 1.2rem; padding: 10px 12px; border: 1px solid #000;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .search-form button {
+            padding: 10px 24px; border: 1px solid #000; background: #000; color: #fff;
+            font-weight: bold; cursor: pointer; font-size: 1rem;
+        }
+        .search-form button:hover { background: #fff; color: #000; }
+        .hint { font-size: 0.85rem; color: #555; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>M-Logger</h1>
+            <nav><a href="https://www.mlogger.jp/">HOME</a></nav>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>出荷時試験成績の検索</h2>
+            <p>デバイス ID (16 進数 8 桁) を入力してください。ID は本体ラベル、
+               またはスマートフォンアプリの機器設定画面に表示されます。</p>
+
+            <form class="search-form" onsubmit="return go(event)">
+                <input type="text" id="device-id" placeholder="例: 911759D0" maxlength="8"
+                       pattern="[0-9A-Fa-f]{8}" required autocomplete="off">
+                <button type="submit">表示</button>
+            </form>
+            <p class="hint">8 文字、0-9 / A-F のみ。</p>
+        </section>
+    </main>
+
+    <footer>
+        &copy; Togashi Research Institute LLC
+    </footer>
+
+    <script>
+        function go(e) {
+            e.preventDefault();
+            const id = document.getElementById('device-id').value.trim().toUpperCase();
+            if (/^[0-9A-F]{8}$/.test(id)) {
+                window.location.href = `./viewer.html?id=${id}`;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
