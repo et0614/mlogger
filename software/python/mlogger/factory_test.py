@@ -140,8 +140,8 @@ def collect_samples(ser, report):
         for cat in data.get("dc", []):
             dc_since.setdefault(cat, now)
             if now - dc_since[cat] >= DC_FAIL_S:
-                name = {"g": "温湿度/CO2/グローブ プローブ", "v": "風速プローブ"}.get(cat, cat)
-                report.add("probe_connection", False, f"{name} が切断状態 (dc={cat})")
+                name = {"g": "T/RH/CO2/Globe probe", "v": "Velocity probe"}.get(cat, cat)
+                report.add("Probe connection", False, f"{name} disconnected (dc={cat})")
                 return None
         for cat in list(dc_since):
             if cat not in data.get("dc", []):
@@ -162,11 +162,12 @@ def collect_samples(ser, report):
 
         samples.append(data)
         if len(samples) >= SAMPLE_COUNT:
-            report.add("probe_connection", True, "切断なし")
+            report.add("Probe connection", True, "no disconnection")
             return samples
 
-    report.add("probe_connection", False,
-               f"ウォームアップが {WARMUP_TIMEOUT_S}sec 以内に完了しない (収集 {len(samples)}/{SAMPLE_COUNT})")
+    report.add("Probe connection", False,
+               f"warmup not completed within {WARMUP_TIMEOUT_S}s "
+               f"(collected {len(samples)}/{SAMPLE_COUNT})")
     return None
 
 
@@ -174,20 +175,20 @@ def check_channels(samples, report):
     """各チャネルの出現率とレンジを検査。"""
     n = len(samples)
     channel_names = {
-        "t": "温湿度センサ (乾球温度)",
-        "h": "温湿度センサ (相対湿度)",
-        "g": "グローブセンサ",
-        "c": "CO2センサ",
-        "l": "照度センサ",
-        "v": "風速センサ (風速)",
-        "vv": "風速センサ (ブリッジ電圧)",
+        "t": "T/RH sensor (dry-bulb)",
+        "h": "T/RH sensor (humidity)",
+        "g": "Globe temperature sensor",
+        "c": "CO2 sensor",
+        "l": "Illuminance sensor",
+        "v": "Velocity sensor (air speed)",
+        "vv": "Velocity sensor (bridge voltage)",
     }
     stats = {}
     for key, name in channel_names.items():
         vals = [s[key] for s in samples if key in s]
         lo, hi = RANGES[key]
         if len(vals) < n * PRESENCE_RATIO:
-            report.add(name, False, f"出現率不足 {len(vals)}/{n}")
+            report.add(name, False, f"insufficient valid samples {len(vals)}/{n}")
             continue
         vmin, vmax = min(vals), max(vals)
         vmean = sum(vals) / len(vals)
@@ -195,7 +196,7 @@ def check_channels(samples, report):
         in_range = lo <= vmin and vmax <= hi
         report.add(name, in_range,
                    f"n={len(vals)}/{n} min={vmin} mean={round(vmean, 2)} max={vmax}"
-                   + ("" if in_range else f" (許容 {lo}..{hi})"))
+                   + ("" if in_range else f" (allowed {lo}-{hi})"))
     return stats
 
 
@@ -214,7 +215,7 @@ def _attempt_dump(ser, count, rec_size, session_start_ts):
             header = obj
             break
     if not header or "result" not in header:
-        return False, f"dump ヘッダ応答なし/エラー: {header}"
+        return False, f"no/invalid dump header: {header}"
 
     total = count * rec_size
     blob = b""
@@ -224,7 +225,7 @@ def _attempt_dump(ser, count, rec_size, session_start_ts):
         if chunk:
             blob += chunk
     if len(blob) < total:
-        return False, f"バイナリ受信不足 {len(blob)}/{total} bytes"
+        return False, f"binary underrun {len(blob)}/{total} bytes"
 
     # dump_end を確認 (少し待つ)
     got_end = False
@@ -247,8 +248,8 @@ def _attempt_dump(ser, count, rec_size, session_start_ts):
     monotonic = all(a <= b for a, b in zip(ts_list, ts_list[1:]))
     ts_sane = all(abs(t - session_start_ts) < 3600 for t in ts_list)
     ok = len(gens) == 1 and monotonic and flag_ok and ts_sane and got_end
-    detail = (f"{count} 件読み返し: gen={sorted(gens)} ts単調={monotonic} "
-              f"flags非ゼロ={flag_ok} ts整合={ts_sane} dump_end={got_end}")
+    detail = (f"read back {count} records: gen={sorted(gens)} ts_monotonic={monotonic} "
+              f"flags_nonzero={flag_ok} ts_sane={ts_sane} dump_end={got_end}")
     return ok, detail
 
 
@@ -262,10 +263,10 @@ def verify_flash(ser, report, session_start_ts):
     count = res["count"]
     rec_size = res["record_size"]
     if count == 0:
-        report.add("フラッシュメモリ", False, "記録件数 0 (書き込みされていない)")
+        report.add("Flash memory", False, "0 records written")
         return
     if rec_size != RECORD_SIZE:
-        report.add("フラッシュメモリ", False, f"record_size 不一致: {rec_size} != {RECORD_SIZE}")
+        report.add("Flash memory", False, f"record_size mismatch: {rec_size} != {RECORD_SIZE}")
         return
 
     ok, detail = _attempt_dump(ser, count, rec_size, session_start_ts)
@@ -273,7 +274,7 @@ def verify_flash(ser, report, session_start_ts):
         print(f"  dump 検証失敗 ({detail}) → リトライ")
         time.sleep(1.0)
         ok, detail = _attempt_dump(ser, count, rec_size, session_start_ts)
-    report.add("フラッシュメモリ", ok, detail)
+    report.add("Flash memory", ok, detail)
 
 
 def collect_identity(ser, report):
@@ -285,24 +286,24 @@ def collect_identity(ser, report):
     identity["probes"] = probes
     th = probes.get("th_probe", {})
     vel = probes.get("velocity_probe", {})
-    report.add("THプローブ情報",
+    report.add("TH probe info",
                th.get("connected") and th.get("device_id") not in (None, "000000"),
                f"id={th.get('device_id')} name={th.get('name')} n={th.get('data_count')}"
-               if th.get("connected") else "未接続")
-    report.add("風速プローブ情報",
+               if th.get("connected") else "not connected")
+    report.add("Velocity probe info",
                vel.get("connected") and vel.get("device_id") not in (None, "000000"),
                f"id={vel.get('device_id')} name={vel.get('name')} n={vel.get('data_count')}"
-               if vel.get("connected") else "未接続")
+               if vel.get("connected") else "not connected")
 
     # XBee モジュール (64bit MAC / firmware version)
     res = send_cmd(ser, "get_radio_info", timeout=5.0)
     if res and "result" in res:
         identity["radio"] = res["result"]
-        report.add("XBeeモジュール", True,
+        report.add("XBee module", True,
                    f"mac={res['result'].get('xbee_mac')} fw={res['result'].get('xbee_fw')}")
     else:
         identity["radio"] = None
-        report.add("XBeeモジュール", False, f"応答なし/エラー: {res}")
+        report.add("XBee module", False, f"no response/error: {res}")
 
     # 補正係数 (出荷時の校正状態の記録。判定はしない)
     identity["correction"] = cmd_result(ser, "get_correction")
@@ -339,7 +340,7 @@ def main(port):
             bat = cmd_result(ser, "get_battery")
             mv = bat["voltage_mv"]
             lo, hi = BATTERY_RANGE_MV
-            report.add("電池電圧", lo <= mv <= hi, f"{mv} mV (許容 {lo}..{hi})")
+            report.add("Battery voltage", lo <= mv <= hi, f"{mv} mV (allowed {lo}-{hi})")
             device["battery_mv"] = mv
 
             # --- 3. 設定退避 → 試験用設定 ---
