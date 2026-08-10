@@ -1,13 +1,13 @@
 {
   "test": "factory_test",
   "script_version": "1.1",
-  "timestamp": "2026-08-10T12:41:21",
+  "timestamp": "2026-08-10T13:11:40",
   "device": {
     "name": "MLogger_0000",
     "hardware_id": "911759D0",
     "firmware_version": "4.0.0",
     "protocol_version": 1,
-    "battery_mv": 2970
+    "battery_mv": 2974
   },
   "probes": {
     "th_probe": {
@@ -67,113 +67,113 @@
   "overall": "PASS",
   "items": [
     {
-      "item": "THプローブ情報",
+      "item": "TH probe info",
       "pass": true,
       "detail": "id=0BED26 name= n=4"
     },
     {
-      "item": "風速プローブ情報",
+      "item": "Velocity probe info",
       "pass": true,
       "detail": "id=321465 name= n=2"
     },
     {
-      "item": "XBeeモジュール",
+      "item": "XBee module",
       "pass": true,
       "detail": "mac=0013A200420BCE01 fw=1013"
     },
     {
-      "item": "電池電圧",
+      "item": "Battery voltage",
       "pass": true,
-      "detail": "2970 mV (許容 2000..3500)"
+      "detail": "2974 mV (allowed 2000-3500)"
     },
     {
-      "item": "probe_connection",
+      "item": "Probe connection",
       "pass": true,
-      "detail": "切断なし"
+      "detail": "no disconnection"
     },
     {
-      "item": "温湿度センサ (乾球温度)",
+      "item": "T/RH sensor (dry-bulb)",
       "pass": true,
-      "detail": "n=15/15 min=25.72 mean=25.89 max=25.98"
+      "detail": "n=15/15 min=24.35 mean=24.47 max=24.63"
     },
     {
-      "item": "温湿度センサ (相対湿度)",
+      "item": "T/RH sensor (humidity)",
       "pass": true,
-      "detail": "n=15/15 min=55.2 mean=55.31 max=55.7"
+      "detail": "n=15/15 min=56.0 mean=56.47 max=57.0"
     },
     {
-      "item": "グローブセンサ",
+      "item": "Globe temperature sensor",
       "pass": true,
-      "detail": "n=15/15 min=24.42 mean=24.48 max=24.52"
+      "detail": "n=15/15 min=23.77 mean=23.83 max=23.92"
     },
     {
-      "item": "CO2センサ",
+      "item": "CO2 sensor",
       "pass": true,
-      "detail": "n=15/15 min=1627 mean=1784.27 max=1920"
+      "detail": "n=15/15 min=1567 mean=1585.27 max=1593"
     },
     {
-      "item": "照度センサ",
+      "item": "Illuminance sensor",
       "pass": true,
-      "detail": "n=15/15 min=723 mean=809.13 max=847"
+      "detail": "n=15/15 min=859 mean=860.0 max=861"
     },
     {
-      "item": "風速センサ (風速)",
+      "item": "Velocity sensor (air speed)",
       "pass": true,
-      "detail": "n=15/15 min=0.0 mean=0.03 max=0.084"
+      "detail": "n=15/15 min=0.0 mean=0.05 max=0.154"
     },
     {
-      "item": "風速センサ (ブリッジ電圧)",
+      "item": "Velocity sensor (bridge voltage)",
       "pass": true,
-      "detail": "n=15/15 min=351 mean=420.27 max=494"
+      "detail": "n=15/15 min=371 mean=443.67 max=560"
     },
     {
-      "item": "フラッシュメモリ",
+      "item": "Flash memory",
       "pass": true,
-      "detail": "28 件読み返し: gen=[3] ts単調=True flags非ゼロ=True ts整合=True dump_end=True"
+      "detail": "read back 21 records: gen=[5] ts_monotonic=True flags_nonzero=True ts_sane=True dump_end=True"
     }
   ],
   "channel_stats": {
     "t": {
       "n": 15,
-      "min": 25.72,
-      "mean": 25.891,
-      "max": 25.98
+      "min": 24.35,
+      "mean": 24.469,
+      "max": 24.63
     },
     "h": {
       "n": 15,
-      "min": 55.2,
-      "mean": 55.313,
-      "max": 55.7
+      "min": 56.0,
+      "mean": 56.473,
+      "max": 57.0
     },
     "g": {
       "n": 15,
-      "min": 24.42,
-      "mean": 24.477,
-      "max": 24.52
+      "min": 23.77,
+      "mean": 23.832,
+      "max": 23.92
     },
     "c": {
       "n": 15,
-      "min": 1627,
-      "mean": 1784.267,
-      "max": 1920
+      "min": 1567,
+      "mean": 1585.267,
+      "max": 1593
     },
     "l": {
       "n": 15,
-      "min": 723,
-      "mean": 809.133,
-      "max": 847
+      "min": 859,
+      "mean": 860.0,
+      "max": 861
     },
     "v": {
       "n": 15,
       "min": 0.0,
-      "mean": 0.03,
-      "max": 0.084
+      "mean": 0.047,
+      "max": 0.154
     },
     "vv": {
       "n": 15,
-      "min": 351,
-      "mean": 420.267,
-      "max": 494
+      "min": 371,
+      "mean": 443.667,
+      "max": 560
     }
   },
   "judge_ranges": {
