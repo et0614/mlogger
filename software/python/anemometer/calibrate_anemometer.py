@@ -57,22 +57,22 @@ CALIBRATOR_PROFILES = {
             {"fan_power": 69, "ref_velocity": 5.00},   # 再現性（上端）
         ],
     },
-    2: {
-        "calibration_points": [
-            {"fan_power": 0,  "ref_velocity": 0.00},
-            {"fan_power": 8,  "ref_velocity": 0.23},
-            {"fan_power": 12, "ref_velocity": 0.50},
-            {"fan_power": 38, "ref_velocity": 2.73},
-            {"fan_power": 67, "ref_velocity": 5.03},
-        ],
-        "validation_points": [
-            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
-            {"fan_power": 10, "ref_velocity": 0.32},   # 補間 Range A
-            {"fan_power": 19, "ref_velocity": 1.09},   # 補間 Range B
-            {"fan_power": 51, "ref_velocity": 3.80},   # 補間 Range C
-            {"fan_power": 67, "ref_velocity": 5.03},   # 再現性（上端）
-        ],
-    },
+    #2: {
+    #    "calibration_points": [
+    #        {"fan_power": 0,  "ref_velocity": 0.00},
+    #        {"fan_power": 8,  "ref_velocity": 0.23},
+    #        {"fan_power": 12, "ref_velocity": 0.50},
+    #        {"fan_power": 38, "ref_velocity": 2.73},
+    #        {"fan_power": 67, "ref_velocity": 5.03},
+    #    ],
+    #    "validation_points": [
+    #        {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+    #        {"fan_power": 10, "ref_velocity": 0.32},   # 補間 Range A
+    #        {"fan_power": 19, "ref_velocity": 1.09},   # 補間 Range B
+    #        {"fan_power": 51, "ref_velocity": 3.80},   # 補間 Range C
+    # b       {"fan_power": 67, "ref_velocity": 5.03},   # 再現性（上端）
+    #    ],
+    #},
 }
 
 if CALIBRATOR_ID not in CALIBRATOR_PROFILES:
@@ -443,10 +443,9 @@ def run_phase_3():
 # 結果出力 (e-sensor 互換 JSON; PNG は base64 同梱)
 # ==========================================
 
-# repo 内の Web 公開ディレクトリ (公開サイト (Drive 側) への配置は手動)
-REPORTS_DIR = os.path.normpath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "..", "..", "..", "web", "velocity_calibration", "reports"))
+# 成績の保存先 (スクリプトと同階層の reports/)。ファイル名は <6桁hex device_id>.json。
+# 公開サイト (Drive 側 web/velocity_calibration/reports) への配置は手動で行う。
+REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 
 
 def build_plot(coef_a, coef_b, phase1_data, phase3_data):

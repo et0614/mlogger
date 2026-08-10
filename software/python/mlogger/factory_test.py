@@ -2,7 +2,7 @@
 M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 
 温湿度・グローブ温度・CO2・照度・風速の各センサとフラッシュメモリを一通り
-動作させ、結果を factory_test_logs/ に JSON で記録する。
+動作させ、結果を reports/<hardware_id>.json に記録する。
 
 試験手順:
   1. hello で個体情報 (name / hardware_id / FW version) を取得
@@ -57,7 +57,9 @@ BATTERY_RANGE_MV = (2000, 3500)
 RECORD_FORMAT = "<BIBIhhHHHH"  # SensorData_t (22 bytes)
 RECORD_SIZE = struct.calcsize(RECORD_FORMAT)
 
-LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "factory_test_logs")
+# 成績の保存先 (スクリプトと同階層の reports/)。ファイル名は <hardware_id>.json。
+# 公開サイト (Drive 側 web/inspection/reports) への配置は手動で行う。
+REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 
 _next_id = [100]
 
@@ -405,39 +407,18 @@ def main(port):
         "judge_ranges": {"channels": RANGES, "battery_mv": BATTERY_RANGE_MV},
     }
     # 保存名は Web 公開仕様に合わせて hardware_id のみ (例: 911759D0.json)。
-    # 再試験で上書きされるため、履歴は history/ にタイムスタンプ付きでも残す。
+    # 再試験は上書き。
     hwid = device.get("hardware_id", "noid")
-    os.makedirs(LOG_DIR, exist_ok=True)
-    path = os.path.join(LOG_DIR, f"{hwid}.json")
-    payload = json.dumps(result, ensure_ascii=False, indent=2)
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    path = os.path.join(REPORTS_DIR, f"{hwid}.json")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(payload)
-
-    hist_dir = os.path.join(LOG_DIR, "history")
-    os.makedirs(hist_dir, exist_ok=True)
-    hist_path = os.path.join(hist_dir, f"{hwid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    with open(hist_path, "w", encoding="utf-8") as f:
-        f.write(payload)
-
-    # repo 内の Web 公開ディレクトリ (web/inspection/reports) にコピーする。
-    # 実際に配信されるサイト (Drive 側) への配置は手動で行う
-    # (ローカル環境固有のパスを repo コードに書かないため)。
-    web_reports = os.path.normpath(os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "web", "inspection", "reports"))
-    published = None
-    if os.path.isdir(os.path.dirname(web_reports)):
-        os.makedirs(web_reports, exist_ok=True)
-        published = os.path.join(web_reports, f"{hwid}.json")
-        with open(published, "w", encoding="utf-8") as f:
-            f.write(payload)
+        json.dump(result, f, ensure_ascii=False, indent=2)
 
     print()
     print(f"総合判定: {'PASS' if overall else 'FAIL'}")
     print(f"記録: {path}")
-    print(f"履歴: {hist_path}")
-    if published:
-        print(f"Web公開用: {published} (公開サイトへの配置は手動)")
-        print(f"  デプロイ後 URL: https://www.mlogger.jp/inspection/viewer.html?id={hwid}")
+    print(f"公開: web/inspection/reports へ手動配置 → "
+          f"https://www.mlogger.jp/inspection/viewer.html?id={hwid}")
     return 0 if overall else 1
 
 
