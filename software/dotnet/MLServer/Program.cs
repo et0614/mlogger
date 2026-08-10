@@ -498,7 +498,10 @@ namespace MLServer
           fmtOrNA(s.GlobeTemperature,   "F1") + "," +
           fmtOrNA(s.Velocity,           "F4") + "," +
           fmtOrNA(s.Illuminance,        "F2") + "," +
-          "n/a,n/a,n/a," + // v4 Sample に電圧フィールド無し、placeholder
+          "n/a," +                                   // Forward Compatibility Placeholder
+          (s.VelocityVoltage.HasValue                // 熱線電圧 [V] (Sample は mV で保持)
+            ? (s.VelocityVoltage.Value / 1000.0).ToString("F4") : "n/a") + "," +
+          "n/a," +                                   // Future Placeholder
           fmtOrDouble(cache.MeanRadiantTemperature, "F1") + "," +
           fmtOrDouble(cache.WBGT_Indoor,            "F1") + "," +
           fmtOrDouble(cache.WBGT_Outdoor,           "F1"));
