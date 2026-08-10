@@ -192,6 +192,9 @@
   <data name="DS_SpecName" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="DS_SpecDeviceId" xml:space="preserve">
+    <value>Device ID</value>
+  </data>
   <data name="DS_SpecVelProbeId" xml:space="preserve">
     <value>Velocity probe ID</value>
   </data>

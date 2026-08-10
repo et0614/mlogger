@@ -192,6 +192,9 @@
   <data name="DS_SpecName" xml:space="preserve">
     <value>名称</value>
   </data>
+  <data name="DS_SpecDeviceId" xml:space="preserve">
+    <value>本体ID</value>
+  </data>
   <data name="DS_SpecVelProbeId" xml:space="preserve">
     <value>風速プローブID</value>
   </data>

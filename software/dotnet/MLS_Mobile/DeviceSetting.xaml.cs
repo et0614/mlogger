@@ -369,7 +369,9 @@ public partial class DeviceSetting : ContentPage
       {
         spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
         spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
-        spc_xbadds.Text    = MLSResource.DS_SpecXBAdd    + ": " + dev.HardwareId;
+        // v4 の HardwareId は AVR SIGROW.SERNUM0 (MCU シリアル) の FNV-1a hash であり
+        // XBee アドレスではないため、ラベルは「本体ID」を使う (DS_SpecXBAdd は v3 用に残置)
+        spc_xbadds.Text    = MLSResource.DS_SpecDeviceId + ": " + dev.HardwareId;
         spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
       });
 
