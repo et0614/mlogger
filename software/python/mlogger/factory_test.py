@@ -419,22 +419,29 @@ def main(port):
     with open(hist_path, "w", encoding="utf-8") as f:
         f.write(payload)
 
-    # repo 内の Web 公開ディレクトリ (web/factory/reports) があればコピーして
-    # デプロイ待ち状態にする (https://www.mlogger.jp/factory/viewer.html?id=<hwid>)
-    web_reports = os.path.normpath(os.path.join(
+    # Web 公開ディレクトリへコピー (存在するもののみ)。
+    #  - repo 内 web/factory/reports: HTML の version 管理と対で保持
+    #  - Drive 側 (広報用資料/web): 実際にデプロイされるサイトのソース
+    repo_reports = os.path.normpath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "web", "factory", "reports"))
-    published = None
-    if os.path.isdir(web_reports):
-        published = os.path.join(web_reports, f"{hwid}.json")
-        with open(published, "w", encoding="utf-8") as f:
-            f.write(payload)
+    drive_reports = (r"C:\Users\etoga\マイドライブ（e.togashi@gmail.com）"
+                     r"\研究\ロガー開発4\3.広報用資料\web\factory\reports")
+    published = []
+    for base in (repo_reports, drive_reports):
+        if os.path.isdir(os.path.dirname(base)) or os.path.isdir(base):
+            os.makedirs(base, exist_ok=True)
+            dst = os.path.join(base, f"{hwid}.json")
+            with open(dst, "w", encoding="utf-8") as f:
+                f.write(payload)
+            published.append(dst)
 
     print()
     print(f"総合判定: {'PASS' if overall else 'FAIL'}")
     print(f"記録: {path}")
     print(f"履歴: {hist_path}")
+    for dst in published:
+        print(f"Web公開用: {dst}")
     if published:
-        print(f"Web公開用: {published}")
         print(f"  デプロイ後 URL: https://www.mlogger.jp/factory/viewer.html?id={hwid}")
     return 0 if overall else 1
 
