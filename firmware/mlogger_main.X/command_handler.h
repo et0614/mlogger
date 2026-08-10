@@ -41,6 +41,13 @@ void CH_AppendString(const char *str, CommandSource_t src);
 void CH_ProcessCommand(const char *cmd, CommandSource_t src);
 
 /**
+ * @brief dispatch 待ちのコマンドを処理する。
+ * コマンド確定時に内部から自動で呼ばれるため通常は明示呼び出し不要。
+ * dispatch 実行中に別コマンドが確定した場合の遅延処理に使われる。
+ */
+void CH_DispatchPending(void);
+
+/**
  * @brief 応答を送信元 transport へ送り返す (v4 プロトコルハンドラ用に公開)
  * @param msg 送信文字列 (改行終端済み)
  * @param src 送信先 transport

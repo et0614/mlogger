@@ -12,6 +12,7 @@
 typedef struct {
     char buff[MAX_CMD_CHAR];
     uint16_t pos;
+    bool ready;   // 完成コマンドが dispatch 待ち。処理完了まで同 source の新規バイトは破棄
 } CommandBuffer_t;
 
 // コマンド組み立て用バッファ。USB / Zigbee / BLE で完全独立に持つ。
@@ -19,9 +20,17 @@ typedef struct {
 // バイトが混ざって JSON が破損し pd_dispatch がコマンドを認識できなくなる
 // 事象 (MLServer Zigbee 経由の get_settings が MLS_Mobile BLE 接続中に
 // 無応答になる現象) が出たため分離。
-static CommandBuffer_t usb_buffer    = { {0}, 0 };
-static CommandBuffer_t zigbee_buffer = { {0}, 0 };
-static CommandBuffer_t ble_buffer    = { {0}, 0 };
+static CommandBuffer_t usb_buffer    = { {0}, 0, false };
+static CommandBuffer_t zigbee_buffer = { {0}, 0, false };
+static CommandBuffer_t ble_buffer    = { {0}, 0, false };
+
+// dispatch 再入防止カウンタ。
+// 応答送信中の waitTxCompletion → Xbee_LoadUART 経由で別コマンドが完成した場合、
+// そこから同期的に dispatch すると、外側の dispatch と静的バッファ (protocol_handlers
+// の s_tx_buf、protocol_dispatch の s_tokens) を共有しているため送信途中の応答が
+// 破壊される。depth > 0 の間は ready フラグを立てるだけにして、外側の dispatch
+// 完了後に CH_DispatchPending のループが拾って処理する。
+static uint8_t s_dispatch_depth = 0;
 
 // 応答送信 (v4 ハンドラは CH_Reply 経由でこれを呼ぶ)
 static void reply(const char *msg, CommandSource_t src) {
@@ -47,14 +56,44 @@ static void append_char_internal(char c, CommandSource_t src) {
         default:       return;
     }
 
+    // 前のコマンドが dispatch 待ちの間に届いた同 source のバイトは破棄する。
+    // 旧実装は処理中の b->buff 末尾に追記し、処理後の pos=0 リセットで次コマンドの
+    // 先頭バイトが失われて JSON が破損していた。破棄なら少なくとも破損 JSON の
+    // dispatch は起きず、上位の request/response 再送で回復できる。
+    // (通常の request/response 運用ではクライアントは応答を待ってから次を送るため、
+    //  ここに来るのは連投時のみ)
+    if (b->ready) return;
+
     if (c == '\r' || c == '\n') {
         if (b->pos > 0) {
             b->buff[b->pos] = '\0';
-            CH_ProcessCommand(b->buff, src);
-            b->pos = 0;
+            b->ready = true;
+            CH_DispatchPending();  // depth 0 なら即時処理 (従来挙動)、dispatch 中なら遅延
         }
     } else if (b->pos < MAX_CMD_CHAR - 1) {
         b->buff[b->pos++] = c;
+    }
+}
+
+// dispatch 待ちのコマンドを順に処理する。dispatch 中 (depth > 0) の呼び出しは
+// 何もせず戻り、外側のこのループが処理を引き継ぐ。
+void CH_DispatchPending(void) {
+    if (s_dispatch_depth > 0) return;
+    for (;;) {
+        CommandBuffer_t *b;
+        CommandSource_t src;
+        if      (usb_buffer.ready)    { b = &usb_buffer;    src = SRC_USB;  }
+        else if (zigbee_buffer.ready) { b = &zigbee_buffer; src = SRC_XBEE; }
+        else if (ble_buffer.ready)    { b = &ble_buffer;    src = SRC_BLE;  }
+        else break;
+
+        s_dispatch_depth++;
+        CH_ProcessCommand(b->buff, src);
+        s_dispatch_depth--;
+
+        // 処理完了後にバッファを解放 (この間に届いた同 source のバイトは破棄済み)
+        b->pos = 0;
+        b->ready = false;
     }
 }
 
