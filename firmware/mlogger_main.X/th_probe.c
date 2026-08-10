@@ -74,6 +74,21 @@ void ThProbe_Init(ThProbe_t* p)
     p->glb_valid  = false;
 }
 
+// INFO BLOCK (0x00-0x27) を読んで個体識別情報を取得する。
+// レイアウトは i2c_shared_data.h (SHASE 2026 共通レジスタ仕様):
+//   0x00 uint32 LE device_id (FNV-1a 22bit), 0x06 data_count, 0x18 name[16]
+bool ThProbe_ReadInfo(uint32_t *device_id, uint8_t *data_count, char name[17])
+{
+    const uint8_t cmd = 0x00;
+    uint8_t buf[0x28];
+    if (!I2C_WriteRead(TH_PROBE_ADDRESS, &cmd, 1, buf, sizeof(buf))) return false;
+    memcpy(device_id, &buf[0x00], 4);
+    *data_count = buf[0x06];
+    memcpy(name, &buf[0x18], 16);
+    name[16] = '\0';
+    return true;
+}
+
 bool ThProbe_IsConnected(void)
 {
     // INFO ブロックの data_count (0x06) を読んで値が 4 (= T/RH/CO2/glb) であることを確認。

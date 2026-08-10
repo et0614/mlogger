@@ -48,6 +48,20 @@ void Anemometer_Init(Anemometer_t* anemo) {
     I2C_Write(ANEMO_ADDRESS, writeBuffer, 2);
 }
 
+// INFO BLOCK (0x00-0x27) を読んで個体識別情報を取得する。
+// レイアウトは poem_velocity_sensor/i2c_shared_data.h (SHASE 2026 共通レジスタ仕様):
+//   0x00 uint32 LE device_id (FNV-1a 22bit), 0x06 data_count, 0x18 name[16]
+bool Anemometer_ReadInfo(uint32_t *device_id, uint8_t *data_count, char name[17]) {
+    const uint8_t cmd = 0x00;
+    uint8_t buf[0x28];
+    if (!I2C_WriteRead(ANEMO_ADDRESS, &cmd, 1, buf, sizeof(buf))) return false;
+    memcpy(device_id, &buf[0x00], 4);
+    *data_count = buf[0x06];
+    memcpy(name, &buf[0x18], 16);
+    name[16] = '\0';
+    return true;
+}
+
 void Anemometer_Update(Anemometer_t* anemo) {
     // POLL BLOCK (0x28-0x4B, 36B) を 1 トランザクションで読む。
     // 内訳: status1(1B) + status2(1B) + reserved(2B) + value[8] float (32B)

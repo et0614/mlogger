@@ -58,6 +58,11 @@ void ThProbe_Init(ThProbe_t* p);
 // 接続確認 (data_count = 0x06 を 1 byte 読んでみて値が 4 か確認)
 bool ThProbe_IsConnected(void);
 
+// INFO BLOCK から個体識別情報を取得する (出荷検査・診断用)。
+// device_id: FNV-1a 22bit ID、data_count: 有効計測値数 (=4)、name: 装置ラベル (NUL 終端保証)
+// 戻り値 false = I2C 失敗 (プローブ未接続)
+bool ThProbe_ReadInfo(uint32_t *device_id, uint8_t *data_count, char name[17]);
+
 // 子機に single-shot 計測の開始を依頼 (REG_STATUS2 に 0 を書き込む)
 // 計測時刻の 1 sec 前に呼び、1 sec 後に ThProbe_Read() で取得する。
 void ThProbe_Trigger(void);

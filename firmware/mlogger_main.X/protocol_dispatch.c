@@ -30,6 +30,8 @@ static const pd_command_t s_commands[] = {
     { "get_count",      ph_get_count      },
     { "dump",           ph_dump           },
     { "echo",           ph_echo           },
+    { "get_probe_info", ph_get_probe_info },
+    { "get_radio_info", ph_get_radio_info },
     { NULL,             NULL              }
 };
 

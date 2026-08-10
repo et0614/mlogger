@@ -9,6 +9,9 @@
 #include "w25q256.h"           // SensorData_t (record_size 算出用), W25_ChipErase
 #include "hal_io.h"            // turnOnRedLED / turnOffRedLED (erase_flash 中の処理中通知)
 #include "main.h"              // getBatteryVoltage_mV (= ph_get_battery)
+#include "th_probe.h"          // ThProbe_ReadInfo (= ph_get_probe_info)
+#include "anemometer.h"        // Anemometer_ReadInfo (= ph_get_probe_info)
+#include "xbee_controller.h"   // Xbee_QueryAt (= ph_get_radio_info)
 
 #include <avr/io.h>            // SIGROW
 #include <stdio.h>
@@ -609,6 +612,84 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
 
     // バイナリストリーム開始。transport に応じて stream destination を切替。
     USB_StartRecordStream(src);
+}
+
+// ============================================================
+// get_probe_info (出荷検査・診断用)
+//   接続中のプローブの INFO BLOCK (device_id / name / data_count) を返す。
+//   response: { "result": { "th_probe":       {"connected":bool, "device_id":"XXXXXX", "name":"...", "data_count":N},
+//                           "velocity_probe": { 同上 } } }
+//   未接続のプローブは connected=false のみ。ロギング中でも安全 (INFO は静的領域)。
+// ============================================================
+static void write_probe_info(pc_writer_t *w, const char *key,
+                             bool (*reader)(uint32_t*, uint8_t*, char[17])) {
+    uint32_t dev_id = 0;
+    uint8_t count = 0;
+    char pname[17];
+    bool ok = reader(&dev_id, &count, pname);
+
+    pc_key(w, key);
+    pc_obj_begin(w);
+    pc_key(w, "connected"); pc_bool(w, ok);
+    if (ok) {
+        char idbuf[12];
+        snprintf(idbuf, sizeof(idbuf), "%06lX", (unsigned long)dev_id);
+        pc_key(w, "device_id");  pc_str(w, idbuf);
+        pc_key(w, "name");       pc_str(w, pname);
+        pc_key(w, "data_count"); pc_uint(w, count);
+    }
+    pc_obj_end(w);
+}
+
+void ph_get_probe_info(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    write_probe_info(&w, "th_probe",       ThProbe_ReadInfo);
+    write_probe_info(&w, "velocity_probe", Anemometer_ReadInfo);
+    pc_end_result(&w);
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+}
+
+// ============================================================
+// get_radio_info (出荷検査・診断用)
+//   XBee モジュールの 64bit MAC (SH+SL) と firmware version (VR) を返す。
+//   response: { "result": { "xbee_mac":"0013A200XXXXXXXX", "xbee_fw":"XXXX" } }
+//   XBee 無応答時は error (xbee_no_response)。
+// ============================================================
+void ph_get_radio_info(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+
+    uint8_t sh[4] = {0}, sl[4] = {0}, vr[4] = {0};
+    int nh = Xbee_QueryAt("SH", sh, sizeof(sh));
+    int nl = Xbee_QueryAt("SL", sl, sizeof(sl));
+    if (nh <= 0 || nl <= 0) {
+        send_simple_error(id, src, "xbee_no_response", "SH/SL query failed");
+        return;
+    }
+    int nv = Xbee_QueryAt("VR", vr, sizeof(vr));
+
+    // SH/SL は上位バイトの 0 が省略されて返ることがあるため、8 バイト固定に右詰め
+    uint8_t mac[8] = {0};
+    for (int i = 0; i < nh; i++) mac[4 - nh + i] = sh[i];
+    for (int i = 0; i < nl; i++) mac[8 - nl + i] = sl[i];
+    char macbuf[20];
+    snprintf(macbuf, sizeof(macbuf), "%02X%02X%02X%02X%02X%02X%02X%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    pc_key(&w, "xbee_mac"); pc_str(&w, macbuf);
+    if (nv > 0) {
+        char vrbuf[12];
+        char *p = vrbuf;
+        for (int i = 0; i < nv && (p - vrbuf) < (int)sizeof(vrbuf) - 3; i++)
+            p += snprintf(p, 3, "%02X", vr[i]);
+        pc_key(&w, "xbee_fw"); pc_str(&w, vrbuf);
+    }
+    pc_end_result(&w);
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
 }
 
 // ============================================================

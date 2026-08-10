@@ -105,6 +105,15 @@ void Xbee_TxBytes(const uint8_t *data, int len);
 void Xbee_SendAtCmd(const char *data);
 
 /**
+ * @brief AT コマンドを API フレームで発行しレスポンス値を取得する (blocking, 最大 300ms)
+ * @param at_command 2 文字の AT コマンド (例 "SH")
+ * @param out        レスポンス value の格納先
+ * @param out_cap    out の容量
+ * @return 受信 value バイト数 (-1 = timeout / ステータス異常)
+ */
+int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap);
+
+/**
  * @brief XBeeの設定を初期化する
  * @return 初期化成功: true
  */

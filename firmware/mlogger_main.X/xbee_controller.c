@@ -51,6 +51,13 @@ static uint16_t g_ai_request_timer = 0;
 // 接続中は XBee をスリープさせない (Pin Hibernate は BLE ごと落とすため)。
 static bool g_bleConnected = false;
 
+// 汎用 AT レスポンス捕捉 (Xbee_QueryAt 用)。最後に受信した 0x88 の内容を保持する。
+static char    g_atrCmd[2] = {0, 0};
+static uint8_t g_atrStatus = 0xFF;
+static uint8_t g_atrData[8];
+static uint8_t g_atrLen = 0;
+static bool    g_atrReceived = false;
+
 // <editor-fold defaultstate="collapsed" desc="内部関数">
 
 static void sleepXBee(void)
@@ -268,6 +275,15 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                                 g_association_status = (uint8_t)g_frameBuff[3];
                             }
                             if (payload_len_at_end >= 3) {
+                                // Xbee_QueryAt 向けに直近レスポンスを捕捉
+                                g_atrCmd[0] = g_frameBuff[0];
+                                g_atrCmd[1] = g_frameBuff[1];
+                                g_atrStatus = (uint8_t)g_frameBuff[2];
+                                g_atrLen = (uint8_t)(payload_len_at_end - 3);
+                                if (g_atrLen > sizeof(g_atrData)) g_atrLen = sizeof(g_atrData);
+                                memcpy(g_atrData, &g_frameBuff[3], g_atrLen);
+                                g_atrReceived = true;
+
                                 diag_usb_logf("AT_RESP cmd=%c%c status=0x%02X val=0x%02X",
                                               g_frameBuff[0], g_frameBuff[1],
                                               (unsigned)(uint8_t)g_frameBuff[2],
@@ -788,6 +804,41 @@ void Xbee_TxBytes(const uint8_t *data, int len)
 void Xbee_SendAtCmd(const char *data)
 {
     sendString(data);
+}
+
+// AT コマンドを API フレームで発行し、レスポンスの value バイト列を取得する (blocking)。
+// 出荷検査・診断用 (例: SH/SL で 64bit MAC、VR で XBee firmware version)。
+// 戻り値: 受信した value のバイト数 (0 = value 無しの OK)、-1 = timeout / ステータス異常。
+int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap)
+{
+    bool wasSleeping = Xbee_IsSleeping();
+    if (wasSleeping) {
+        Xbee_Wakeup();
+        DELAY_microseconds(150);
+    }
+
+    g_atrReceived = false;
+    sendAtCommandApiFrame(at_command, 0x01, NULL, 0);
+
+    int result = -1;
+    uint16_t waited = 0;
+    while (waited < 300) {
+        Xbee_LoadUART();
+        if (g_atrReceived &&
+            g_atrCmd[0] == at_command[0] && g_atrCmd[1] == at_command[1]) {
+            if (g_atrStatus != 0x00) break; // AT status エラー
+            uint8_t n = g_atrLen;
+            if (n > out_cap) n = out_cap;
+            memcpy(out, g_atrData, n);
+            result = n;
+            break;
+        }
+        _delay_ms(1);
+        waited++;
+    }
+
+    if (wasSleeping || g_shouldSleep) sleepXBee();
+    return result;
 }
 
 // </editor-fold>
