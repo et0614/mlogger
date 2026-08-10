@@ -236,10 +236,23 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
 
                         }
                         // 受信したフレームがATコマンドレスポンスだった場合
+                        // payload = [ATコマンド文字(2), status, data...] (Frame ID は offset=4 で
+                        // payload に入らない)。旧実装は buff[2]=='A' && buff[3]=='I' と誤った
+                        // 位置 (実際には status と data) を見ていたため AI 応答が一度も認識されず、
+                        // g_association_status が 0xFF のまま → Zigbee 利用時に XBee が永遠に
+                        // スリープせず、CB (コミッショニング) を 30 秒毎に送り続けていた。
                         else if (g_lastApiId == XB_FRAME_AT_COMMAND_RESPONSE) {
-                            // AIコマンドのレスポンスは4,5バイト目
-                            if (g_frameBuff[2] == 'A' && g_frameBuff[3] == 'I') // AI (Association Indication) コマンド
-                                g_association_status = (uint8_t)g_frameBuff[5];
+                            if (payload_len_at_end >= 4 &&
+                                g_frameBuff[0] == 'A' && g_frameBuff[1] == 'I' &&
+                                (uint8_t)g_frameBuff[2] == 0x00) { // status 0x00 = OK
+                                g_association_status = (uint8_t)g_frameBuff[3];
+                            }
+                            if (payload_len_at_end >= 3) {
+                                diag_usb_logf("AT_RESP cmd=%c%c status=0x%02X val=0x%02X",
+                                              g_frameBuff[0], g_frameBuff[1],
+                                              (unsigned)(uint8_t)g_frameBuff[2],
+                                              (payload_len_at_end >= 4) ? (unsigned)(uint8_t)g_frameBuff[3] : 0xFFu);
+                            }
                             return false;
                         }
                         //受信フレームがコマンドだった場合
