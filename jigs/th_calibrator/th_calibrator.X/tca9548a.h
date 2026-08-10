@@ -15,6 +15,14 @@
  *   MCC 生成の RST1..RST8 マクロがそれぞれ mux #0..#7 の /RESET に接続されている前提。
  *   (基板の RST1 は「1 番目」 = mux #0 と対応する慣例)
  *
+ * 基板シルクのチャンネル番号 (ch01-ch64) との対応:
+ *   mux m は基板 ch(8m+1)〜ch(8m+8) を担当し、mux ローカル ch c は
+ *   基板 ch(8m + offset[c])、offset = {6,5,7,8,4,3,2,1} に接続されている。
+ *   例) mux4: ch0→ch38, ch1→ch37, ch2→ch39, ch3→ch40,
+ *             ch4→ch36, ch5→ch35, ch6→ch34, ch7→ch33
+ *   firmware 内部は配線どおり (mux, ローカルch) で扱い、基板番号への変換は
+ *   ホスト側 (python/thc_client.py の BOARD_OFFSET) で行う。
+ *
  * 使い方:
  *   Tca_Init();                       // 起動時 1 回。RST 一括叩き + 全 mux disable。
  *   Tca_Select(mux, ch);              // ch を切替 → 以降の I2C_* はそのサブバスへ届く
@@ -57,6 +65,12 @@ bool Tca_Deselect(uint8_t mux);
 
 /// 全 mux を disable する (バスをクリーンな状態に戻す)。
 void Tca_DeselectAll(void);
+
+/// 指定 mux の /RESET を制御する (診断用)。
+/// assert_reset = true でリセットにアサート (Low)、false で解除 (High)。
+/// rst_test コマンドが「RST を 1 本ずつ落として親バスから消えるアドレスを見る」
+/// ことで RST 配線 ↔ I2C アドレスの対応と、アドレス重複を検出するために使う。
+void Tca_SetReset(uint8_t mux, bool assert_reset);
 
 #ifdef __cplusplus
 }

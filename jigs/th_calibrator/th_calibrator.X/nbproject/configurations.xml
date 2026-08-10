@@ -101,6 +101,7 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f2" displayName="Sensors" projectFiles="true">
+        <itemPath>th_probe.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="Utils" projectFiles="true">
         <itemPath>crc.h</itemPath>
@@ -204,6 +205,7 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Sensors" projectFiles="true">
+        <itemPath>th_probe.c</itemPath>
       </logicalFolder>
     </logicalFolder>
   </logicalFolder>
@@ -398,7 +400,7 @@
         <property key="remove-unused-sections" value="true"/>
       </HI-TECH-LINK>
       <PK5Tool>
-        <property key="AutoSelectMemRanges" value="manual"/>
+        <property key="AutoSelectMemRanges" value="auto"/>
         <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>
@@ -463,7 +465,7 @@
         <property key="voltagevalue" value="3.3"/>
       </PK5Tool>
       <Tool>
-        <property key="AutoSelectMemRanges" value="manual"/>
+        <property key="AutoSelectMemRanges" value="auto"/>
         <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>

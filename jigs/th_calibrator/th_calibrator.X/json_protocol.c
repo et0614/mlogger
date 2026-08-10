@@ -7,6 +7,7 @@
 #include "w25q64.h"         // W25_Count_Record / W25_ReadRecord / SensorData_t
 #include "tca9548a.h"       // Tca_Select / Tca_Deselect
 #include "i2c_master.h"     // I2C_IsConnected
+#include "th_probe.h"       // ThProbe_Trigger / ThProbe_ReadSample
 
 #include <string.h>
 #include <stdlib.h>
@@ -307,6 +308,301 @@ static void ph_mux_scan(int32_t id, const char *json,
     send_line(b);
 }
 
+// 全スロット一斉トリガ (th_trigger): 64 スロットを巡回して single-shot 計測を
+// 開始させる。子機不在スロットは NACK で即スキップされる。子機の計測は ~500ms
+// なので、ホストは ~1sec 待ってから th_read_all を呼ぶこと (pre-trigger 方式)。
+static void ph_th_trigger(int32_t id, const char *json,
+                          const jsmntok_t *t, int ntok, int params)
+{
+    (void)json; (void)t; (void)ntok; (void)params;
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        for (uint8_t ch = 0; ch < TCA_CH_PER_MUX; ch++)
+        {
+            if (!Tca_Select(m, ch)) break; // mux 自体が無応答なら残り ch も無駄
+            ThProbe_Trigger();
+        }
+        (void)Tca_Deselect(m); // 次の mux に移る前に必ず切る (サブバス衝突防止)
+    }
+    reply_ok(id);
+}
+
+// 全スロット一括読み出し (th_read_all): 64 スロットの POLL ブロックを読んで
+// 1 行の JSON で返す。事前に th_trigger → ~1sec 待ちが必要。
+// 応答 (1 行、~1.8KB):
+//   {"id":N,"ok":true,"vals":[[2531,4820,612,0,1,0],null,...]}
+//   vals[m*8+c] = [温度℃*100, 湿度%*100, CO2ppm, status1, status2, stcc4_state]。
+//   子機不在スロット (I2C NACK) は null。stale の値は要素単位で null。
+//   末尾 3 要素はホスト側の状態表示用の生値 (stcc4_state は読み出し失敗時 -1):
+//     status2=0        → トリガ未処理/計測中
+//     stcc4_state=6    → conditioning 実行中 (boot 後 ~22sec、stale が正常)
+//     status1=0xFF     → 子機内で STCC4 通信全滅
+// 応答が JP_REPLY_CAP を大きく超えるため、チャンクを USB へ逐次送信する。
+static void ph_th_read_all(int32_t id, const char *json,
+                           const jsmntok_t *t, int ntok, int params)
+{
+    (void)json; (void)t; (void)ntok; (void)params;
+
+    char b[96];
+    snprintf(b, sizeof(b), "{\"id\":%ld,\"ok\":true,\"vals\":[", (long)id);
+    USB_Comm_SendString(b);
+
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        for (uint8_t ch = 0; ch < TCA_CH_PER_MUX; ch++)
+        {
+            const char *sep = (m == 0 && ch == 0) ? "" : ",";
+            ThSample_t s;
+            if (Tca_Select(m, ch)) ThProbe_ReadSample(&s);
+            else                   s.i2c_ok = false;
+
+            if (!s.i2c_ok)
+            {
+                snprintf(b, sizeof(b), "%snull", sep);
+            }
+            else
+            {
+                // stcc4_state も同スロットから読む (状態表示用。失敗は -1)
+                uint8_t st4 = 0;
+                int st4_out = ThProbe_ReadStcc4State(&st4) ? (int)st4 : -1;
+
+                // 値ごとに stale なら null (例: [2531,null,612,4,1,0])
+                char tv[8], hv[8], cv[8];
+                if (s.t_valid)   snprintf(tv, sizeof(tv), "%d", (int)s.t_c100);
+                else             snprintf(tv, sizeof(tv), "null");
+                if (s.rh_valid)  snprintf(hv, sizeof(hv), "%u", (unsigned)s.rh_100);
+                else             snprintf(hv, sizeof(hv), "null");
+                if (s.co2_valid) snprintf(cv, sizeof(cv), "%u", (unsigned)s.co2_ppm);
+                else             snprintf(cv, sizeof(cv), "null");
+                snprintf(b, sizeof(b), "%s[%s,%s,%s,%u,%u,%d]", sep, tv, hv, cv,
+                         (unsigned)s.status1, (unsigned)s.status2, st4_out);
+            }
+            USB_Comm_SendString(b);
+        }
+        (void)Tca_Deselect(m);
+    }
+
+    USB_Comm_SendString("]}\n");
+    USB_Comm_Flush();
+}
+
+// FRC 一括開始 (frc_start): params {ppm} = 基準 CO2 濃度。
+// 64 スロットを巡回し、応答した子機全てに FRC コマンドを発行する。
+// 子機側は 30 sec 連続測定 → STCC4_performForcedRecalibration (~35 sec 所要)。
+// 進捗/結果は frc_status でポーリングする。
+// 応答: {"id":N,"ok":true,"ppm":P,"started":M,"accepted":"...64bit..."}
+//   accepted[m*8+c] = '1' なら該当スロットがコマンドを受理 (ACK した)。
+static void ph_frc_start(int32_t id, const char *json,
+                         const jsmntok_t *t, int ntok, int params)
+{
+    int pt = (params >= 0) ? obj_get(json, t, ntok, params, "ppm") : -1;
+    if (pt < 0) { reply_error(id, "missing_ppm"); return; }
+    int32_t ppm = tok_int(json, &t[pt]);
+    // 校正基準値の妥当範囲 (外気 ~420ppm、室内校正でも高々数千 ppm)
+    if (ppm < 300 || ppm > 5000) { reply_error(id, "invalid_ppm"); return; }
+
+    char accepted[TCA_MUX_COUNT * TCA_CH_PER_MUX + 1];
+    unsigned started = 0;
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        for (uint8_t ch = 0; ch < TCA_CH_PER_MUX; ch++)
+        {
+            bool ok = Tca_Select(m, ch) && ThProbe_StartFrc((uint16_t)ppm);
+            accepted[m * TCA_CH_PER_MUX + ch] = ok ? '1' : '0';
+            if (ok) started++;
+        }
+        (void)Tca_Deselect(m);
+    }
+    accepted[TCA_MUX_COUNT * TCA_CH_PER_MUX] = '\0';
+
+    char b[JP_REPLY_CAP];
+    snprintf(b, sizeof(b),
+        "{\"id\":%ld,\"ok\":true,\"ppm\":%ld,\"started\":%u,\"accepted\":\"%s\"}\n",
+        (long)id, (long)ppm, started, accepted);
+    send_line(b);
+}
+
+// FRC 状態一括取得 (frc_status): 64 スロットの stcc4_state と FRC 補正値を返す。
+// 応答 (1 行):
+//   {"id":N,"ok":true,"stat":[[state,corr],null,...]}
+//   stat[m*8+c] = [stcc4_state, frc_correction]。子機不在は null。
+//   state: 1=FRC実行中, 2=FRC完了, 3=FRC失敗, 6=conditioning中 (FRC は完了後に開始)
+//   corr : FRC 補正値 [ppm signed]。FRC 完了後のみ有効 (読み出し失敗は null)。
+static void ph_frc_status(int32_t id, const char *json,
+                          const jsmntok_t *t, int ntok, int params)
+{
+    (void)json; (void)t; (void)ntok; (void)params;
+
+    char b[64];
+    snprintf(b, sizeof(b), "{\"id\":%ld,\"ok\":true,\"stat\":[", (long)id);
+    USB_Comm_SendString(b);
+
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        for (uint8_t ch = 0; ch < TCA_CH_PER_MUX; ch++)
+        {
+            const char *sep = (m == 0 && ch == 0) ? "" : ",";
+            uint8_t state = 0;
+            if (!Tca_Select(m, ch) || !ThProbe_ReadStcc4State(&state))
+            {
+                snprintf(b, sizeof(b), "%snull", sep);
+            }
+            else
+            {
+                int16_t corr = 0;
+                if (ThProbe_ReadFrcCorrection(&corr))
+                    snprintf(b, sizeof(b), "%s[%u,%d]", sep,
+                             (unsigned)state, (int)corr);
+                else
+                    snprintf(b, sizeof(b), "%s[%u,null]", sep, (unsigned)state);
+            }
+            USB_Comm_SendString(b);
+        }
+        (void)Tca_Deselect(m);
+    }
+
+    USB_Comm_SendString("]}\n");
+    USB_Comm_Flush();
+}
+
+// 1 スロット診断 (th_debug): params {mux, ch} の子機から生レジスタを読んで返す。
+//   status1     (0x28): per-value stale bitmask (0xFF = 全滅/boot 直後)
+//   status2     (0x29): 0 = トリガ受理待ち or 計測中, 1 = サンプル READY
+//   stcc4_state (0x6F): 0x06 = conditioning 実行中 (boot 後 ~22sec) 等
+//   data_count  (0x06): 共通レジスタ仕様の有効値数 (th_sensor は 4)
+// 「トリガしても値が stale のまま」の原因切り分け用:
+//   status2 が 0 のまま → 子機がトリガを処理していない (main loop 停止等)
+//   status2=1 で status1=0xFF → 計測はしたが子機内で STCC4 通信全滅
+//   stcc4_state=6 → conditioning 中 (T/RH/CO2 は約 22 秒間 stale が正常)
+static void ph_th_debug(int32_t id, const char *json,
+                        const jsmntok_t *t, int ntok, int params)
+{
+    int32_t mux = -1, ch = -1;
+    if (params >= 0)
+    {
+        int mt = obj_get(json, t, ntok, params, "mux");
+        int ct = obj_get(json, t, ntok, params, "ch");
+        if (mt >= 0) mux = tok_int(json, &t[mt]);
+        if (ct >= 0) ch  = tok_int(json, &t[ct]);
+    }
+    if (mux < 0 || mux >= TCA_MUX_COUNT || ch < 0 || ch >= TCA_CH_PER_MUX)
+    {
+        reply_error(id, "invalid_mux_ch");
+        return;
+    }
+
+    if (!Tca_Select((uint8_t)mux, (uint8_t)ch))
+    {
+        reply_error(id, "mux_select_failed");
+        return;
+    }
+
+    uint8_t st12[2] = { 0, 0 };   // status1, status2
+    uint8_t dc = 0, st4 = 0;
+    uint8_t reg;
+    bool ok1, ok2, ok3;
+    reg = 0x28; ok1 = I2C_WriteRead(TH_PROBE_ADDRESS, &reg, 1, st12, 2);
+    reg = 0x06; ok2 = I2C_WriteRead(TH_PROBE_ADDRESS, &reg, 1, &dc, 1);
+    reg = 0x6F; ok3 = I2C_WriteRead(TH_PROBE_ADDRESS, &reg, 1, &st4, 1);
+    (void)Tca_Deselect((uint8_t)mux);
+
+    if (!ok1) { reply_error(id, "probe_no_response"); return; }
+
+    char b[JP_REPLY_CAP];
+    snprintf(b, sizeof(b),
+        "{\"id\":%ld,\"ok\":true,\"status1\":%u,\"status2\":%u,"
+        "\"data_count\":%d,\"stcc4_state\":%d}\n",
+        (long)id, (unsigned)st12[0], (unsigned)st12[1],
+        ok2 ? (int)dc : -1, ok3 ? (int)st4 : -1);
+    send_line(b);
+}
+
+// 親バス直接スキャン (i2c_scan): mux select を介さず、親 I2C バス上の
+// 0x08-0x77 全アドレスへの ACK 有無を調べる。TCA9548A 自体 (0x70-0x77 想定) や
+// 想定外アドレスに座っているデバイスの発見に使う。
+// 応答: {"id":N,"ok":true,"found":[112,113,...]}  (7bit アドレスの 10進配列)
+static void ph_i2c_scan(int32_t id, const char *json,
+                        const jsmntok_t *t, int ntok, int params)
+{
+    (void)json; (void)t; (void)ntok; (void)params;
+
+    // 応答は最悪 112 アドレス × 4 文字 + 枠 ≈ 500B。バッチで組み立てる。
+    char b[560];
+    int pos = snprintf(b, sizeof(b), "{\"id\":%ld,\"ok\":true,\"found\":[", (long)id);
+    bool first = true;
+    for (uint8_t a = 0x08; a <= 0x77; a++)
+    {
+        if (!I2C_IsConnected(a)) continue;
+        pos += snprintf(&b[pos], sizeof(b) - (size_t)pos, first ? "%u" : ",%u",
+                        (unsigned)a);
+        first = false;
+        if (pos >= (int)sizeof(b) - 8) break; // 溢れそうなら打ち切り (異常事態)
+    }
+    snprintf(&b[pos], sizeof(b) - (size_t)pos, "]}\n");
+    send_line(b);
+}
+
+// RST 配線テスト (rst_test): RST ピンを 1 本ずつ Low に落とし、その間に親バスの
+// 0x70-0x77 への ACK を調べる。応答の matrix は 64 文字で、matrix[i*8+j] は
+// 「RST(i+1) を Low にしている間の、アドレス 0x70+j の ACK 有無」。
+// 正常配線なら RST(i+1) の行だけ 0x70+i が '0' になる (対角線が消える)。
+//   ・どの行でも消えない列 → その RST がどのアドレスの mux にも繋がっていない
+//   ・2 本の RST で同じ列が消える → その 2 個の mux がアドレス重複している
+// 実行後は全 RST を High に戻す。
+//
+// params.mask (省略可): 指定時は 1 本ずつではなく、mask の bit i = RST(i+1) を
+// 「全部同時に」Low へ落として 1 回だけスキャンする。アドレス重複した複数 chip を
+// 同時にリセットして初めて消えるかを確認する用途 (重複の確定診断)。
+// mask 指定時の応答: {"id":N,"ok":true,"mask":M,"present":"8文字"}
+static void ph_rst_test(int32_t id, const char *json,
+                        const jsmntok_t *t, int ntok, int params)
+{
+    // mask 指定モード
+    int mt = (params >= 0) ? obj_get(json, t, ntok, params, "mask") : -1;
+    if (mt >= 0)
+    {
+        int32_t mask = tok_int(json, &t[mt]);
+        if (mask < 0 || mask > 0xFF) { reply_error(id, "invalid_mask"); return; }
+
+        for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+            if (mask & (1 << m)) Tca_SetReset(m, true);
+
+        char present[9];
+        for (uint8_t j = 0; j < 8; j++)
+            present[j] = I2C_IsConnected((uint8_t)(TCA_ADDR_BASE + j)) ? '1' : '0';
+        present[8] = '\0';
+
+        for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+            if (mask & (1 << m)) Tca_SetReset(m, false);
+
+        char b[JP_REPLY_CAP];
+        snprintf(b, sizeof(b),
+            "{\"id\":%ld,\"ok\":true,\"mask\":%ld,\"present\":\"%s\"}\n",
+            (long)id, (long)mask, present);
+        send_line(b);
+        return;
+    }
+
+    // 1 本ずつモード (既定)
+    char matrix[TCA_MUX_COUNT * 8 + 1];
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        Tca_SetReset(m, true);   // RST(m+1) を Low
+        for (uint8_t j = 0; j < 8; j++)
+        {
+            bool ok = I2C_IsConnected((uint8_t)(TCA_ADDR_BASE + j));
+            matrix[m * 8 + j] = ok ? '1' : '0';
+        }
+        Tca_SetReset(m, false);  // High に戻す
+    }
+    matrix[TCA_MUX_COUNT * 8] = '\0';
+
+    char b[160];
+    snprintf(b, sizeof(b),
+        "{\"id\":%ld,\"ok\":true,\"matrix\":\"%s\"}\n", (long)id, matrix);
+    send_line(b);
+}
+
 // 範囲指定データ読み出し (dump_range): params { "start": N, "count": M }
 static void ph_dump_range(int32_t id, const char *json,
                           const jsmntok_t *t, int ntok, int params)
@@ -364,6 +660,13 @@ static const jp_command_t s_commands[] = {
     { "set_interval",  ph_set_interval  },
     { "get_status",    ph_get_status    },
     { "mux_scan",      ph_mux_scan      },
+    { "i2c_scan",      ph_i2c_scan      },
+    { "rst_test",      ph_rst_test      },
+    { "th_trigger",    ph_th_trigger    },
+    { "th_read_all",   ph_th_read_all   },
+    { "th_debug",      ph_th_debug      },
+    { "frc_start",     ph_frc_start     },
+    { "frc_status",    ph_frc_status    },
     { "dump",          ph_dump          },
     { "dump_range",    ph_dump_range    },
     { NULL,            NULL             }

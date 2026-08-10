@@ -75,3 +75,10 @@ void Tca_DeselectAll(void)
 {
     for (uint8_t i = 0; i < TCA_MUX_COUNT; i++) (void)Tca_Deselect(i);
 }
+
+void Tca_SetReset(uint8_t mux, bool assert_reset)
+{
+    if (mux >= TCA_MUX_COUNT) return;
+    if (assert_reset) rst_pin_low(mux);
+    else              rst_pin_high(mux);
+}

@@ -34,6 +34,7 @@
 #include "hal_io.h"
 #include "eeprom_manager.h" //EEPROM
 #include "usb_comm.h"       //USB-CDC通信 (PCコマンド)
+#include "tca9548a.h"       //I2C mux (8x TCA9548A)
 
 //標準ヘッダ
 #include <avr/io.h>        // RTC / RSTCTRL / PORT レジスタ, _PROTECTED_WRITE
@@ -67,6 +68,10 @@ int main(void)
 
     // SPIモジュールを有効化 (内蔵フラッシュ W25Q64 用)
     SPI0_Open(SPI0_DEFAULT);
+
+    // TCA9548A mux 初期化。MCC の pin 初期化は RST1-8 = 出力 Low (= /RESET アサート)
+    // なので、これを呼ばないと 8 個の mux 全部がリセットに押さえ込まれたままになる。
+    Tca_Init();
 
     //EEPROMロード (計測設定・start_dt 等)
     EM_loadEEPROM();
