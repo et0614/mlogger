@@ -84,22 +84,18 @@ static uint32_t adcVelocityVoltage(void)
     return safe_val * 2000UL / (4096UL * 16UL);
 }
 
-// 風速電圧 [V] を平滑化して value[1] に書き込み、フィルタ出力 [V] を返す
-static float updateVelocityVoltage(void)
+// 風速電圧を AD 変換して平滑化し、フィルタ出力 [V] を返す。
+// SharedMemory への公開は行わない (公開タイミングは main loop が制御する)
+static float sampleVelocityVoltage(void)
 {
     uint32_t voltage_mv = adcVelocityVoltage();
     SF_Apply(&velFilter, (int32_t)voltage_mv);
 
-    float voltage_v = (float)velFilter.out_y * 0.001f;
-
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-        SharedMemory.reg.value[VAL_IDX_VOLTAGE] = voltage_v;
-    }
-    return voltage_v;
+    return (float)velFilter.out_y * 0.001f;
 }
 
-// 電圧 [V] から風速 [m/s] を計算して value[0] に書き込み
-static void updateVelocity(float voltage_v)
+// 電圧 [V] から風速 [m/s] を計算して返す。SharedMemory への公開は行わない
+static float computeVelocity(float voltage_v)
 {
     // 補正係数取得 (native LE なのでそのまま memcpy)
     float coA[5];
@@ -134,9 +130,7 @@ static void updateVelocity(float voltage_v)
         }
     }
 
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-        SharedMemory.reg.value[VAL_IDX_VELOCITY] = vel_f;
-    }
+    return vel_f;
 }
 
 // </editor-fold>
@@ -220,7 +214,7 @@ int main(void)
     sei();
     while (1) {
         wdt_reset();
-        (void)updateVelocityVoltage();   // ADC 変換 + フィルタ
+        (void)sampleVelocityVoltage();   // ADC 変換 + フィルタ
     }
 
 #else
@@ -289,21 +283,34 @@ int main(void)
             // 残予熱時間
             heating_timer = (heating_timer < INTERRUPT_MSEC) ? 0 : (heating_timer - INTERRUPT_MSEC);
 
-            // Status1 更新 (予熱中は両計測値とも stale)
+            // Status1 更新 (予熱中と熱線 OFF 中は両計測値とも stale)。
+            // enable=0 でも heating_timer は 0 まで減り続けるため、enable を見ずに
+            // heating_timer だけで判定すると熱線 OFF・value=0.0 のまま
+            // status1=0x00 (全 valid) になり、「0 m/s が有効値」として読めてしまう。
             ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-                if (heating_timer > 0) SharedMemory.reg.status1 = STATUS1_ALL_STALE;
-                else                    SharedMemory.reg.status1 = 0x00;
+                if (heating_timer > 0 || SharedMemory.reg.enable == 0)
+                    SharedMemory.reg.status1 = STATUS1_ALL_STALE;
+                else
+                    SharedMemory.reg.status1 = 0x00;
             }
 
             // 計測準備が整っていれば計測
             if (SharedMemory.reg.enable == 1 && heating_timer == 0)
             {
-                float voltage_v = updateVelocityVoltage();
-                updateVelocity(voltage_v);
+                float voltage_v = sampleVelocityVoltage();
+                float vel_f     = computeVelocity(voltage_v);
 
-                // 計測値更新フラグを立てる (親機が読み取り後に 0 を書き戻す)
-                ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-                    SharedMemory.reg.status2 = 1;
+                // マスタが POLL ブロックを読んでいる途中に value[] の float を
+                // 書き換えると、前半旧値・後半新値の壊れた float が valid として
+                // 渡る。I2C 通信中は公開せず次 tick (20ms 後) に回す。
+                // フィルタ状態 (velFilter) は上で更新済みなので計測は途切れない。
+                if (!I2C_Is_Busy) {
+                    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+                        SharedMemory.reg.value[VAL_IDX_VOLTAGE]  = voltage_v;
+                        SharedMemory.reg.value[VAL_IDX_VELOCITY] = vel_f;
+                        // 計測値更新フラグを立てる (親機が読み取り後に 0 を書き戻す)
+                        SharedMemory.reg.status2 = 1;
+                    }
                 }
             }
         }
