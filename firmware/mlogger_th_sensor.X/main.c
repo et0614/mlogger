@@ -259,12 +259,13 @@ static void finishFrc(void)
     DELAY_milliseconds(1200);
 
     int16_t correction = 0;
-    bool ok = STCC4_performForcedRecalibration(g_frc_target_ppm, &correction);
+    bool frc_ok = false;
+    bool comm_ok = STCC4_performForcedRecalibration(g_frc_target_ppm, &correction, &frc_ok);
 
     STCC4_enterSleep();
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         SharedMemory.reg.frc_correction = correction;
-        SharedMemory.reg.stcc4_state = (ok && correction != (int16_t)0xFFFF)
+        SharedMemory.reg.stcc4_state = (comm_ok && frc_ok)
             ? STCC4_STATE_FRC_DONE
             : STCC4_STATE_FRC_FAIL;
     }

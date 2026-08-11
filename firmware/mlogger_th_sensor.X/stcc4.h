@@ -38,10 +38,11 @@ bool STCC4_performConditioning();
 /**
 * @fn
 * 強制校正処理
-* @param correction 補正した濃度[ppm]
-* @return 成功でtrue、失敗でfalse
+* @param correction 補正した濃度[ppm] (frc_ok が true のときのみ有効)
+* @param frc_ok FRC が成功したか (センサ応答 0xFFFF = FRC 失敗)
+* @return 通信成功でtrue、失敗でfalse
 */
-bool STCC4_performForcedRecalibration(uint16_t co2Level, int16_t* correction);
+bool STCC4_performForcedRecalibration(uint16_t co2Level, int16_t* correction, bool* frc_ok);
 
 /**
 * @fn

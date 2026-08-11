@@ -80,8 +80,9 @@ bool STCC4_performConditioning(){
 	return true; // 成功（22秒間はコマンドを受け付けなくなる）
 }
 
-bool STCC4_performForcedRecalibration(uint16_t co2Level, int16_t* correction){
+bool STCC4_performForcedRecalibration(uint16_t co2Level, int16_t* correction, bool* frc_ok){
 	const uint16_t arguments[] = { co2Level };
+	*frc_ok = false;
 
 	// コマンドと1つの引数を送信
 	if(!sendCommandWithArguments(CMD_PERFORM_RECALIBRATION, arguments, 1))
@@ -101,11 +102,17 @@ bool STCC4_performForcedRecalibration(uint16_t co2Level, int16_t* correction){
 	}
 
 	uint16_t response = (buffer[0] << 8) | buffer[1];
- 
-	// FRC失敗を示す
-	if (response == 0xFFFF) *correction = 0xFFFF;
-	// 成功時は補正値を計算 (Output - 32768) [cite: 379]
-	else *correction = (int16_t)(response - 32768);
+
+	// 0xFFFF は FRC 失敗。sentinel を correction の値 (int16 の -1) で表現すると
+	// 正常応答 0x7FFF (= 補正 -1 ppm) と区別できなくなるため、成否は frc_ok で返す
+	if (response == 0xFFFF) {
+		*frc_ok = false;
+		*correction = 0;
+	} else {
+		// 成功時は補正値を計算 (Output - 32768) [cite: 379]
+		*frc_ok = true;
+		*correction = (int16_t)(response - 32768);
+	}
 
 	return true; // 通信成功
 }
