@@ -4,6 +4,7 @@
 使い方:
     python thc_client.py hello                  # ポート自動検出して hello
     python thc_client.py ping
+    python thc_client.py monitor                # 現在値を表示
     python thc_client.py mux_scan               # 64 スロットスキャン (既定 addr=0x11)
     python thc_client.py mux_scan --addr 0x70   # TCA9548A 自体の応答確認
     python thc_client.py status                 # get_status
