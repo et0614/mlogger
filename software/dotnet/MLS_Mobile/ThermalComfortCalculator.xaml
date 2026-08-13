@@ -60,7 +60,7 @@
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.DrybulbTemperature}, StringFormat='{0} [°CDB]'}"
                    />
-            <Slider Grid.Row="1" Grid.Column="0" x:Name="dbtSlider" Minimum="10" Maximum="40" Margin="30,0,0,0" Value="26" ValueChanged="slider_ValueChanged"/>
+            <Slider Grid.Row="1" Grid.Column="0" x:Name="dbtSlider" Minimum="0" Maximum="50" Margin="30,0,0,0" Value="26" ValueChanged="slider_ValueChanged"/>
             <Label x:Name="dbtLabel" Grid.Row="1" Grid.Column="1" Text="{Binding Source={x:Reference dbtSlider}, Path=Value, StringFormat='{0:F1}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer Tapped="Value_Tapped"/>
@@ -84,7 +84,7 @@
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.MeanRadiantTemperature}, StringFormat='{0} [°C]'}"
                    />
-            <Slider Grid.Row="5" Grid.Column="0" x:Name="mrtSlider" Minimum="10" Maximum="40" Margin="30,0,0,0" Value="26" ValueChanged="slider_ValueChanged"/>
+            <Slider Grid.Row="5" Grid.Column="0" x:Name="mrtSlider" Minimum="0" Maximum="50" Margin="30,0,0,0" Value="26" ValueChanged="slider_ValueChanged"/>
             <Label x:Name="mrtLabel" Grid.Row="5" Grid.Column="1" Text="{Binding Source={x:Reference mrtSlider}, Path=Value, StringFormat='{0:F1}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer Tapped="Value_Tapped"/>
@@ -96,7 +96,7 @@
                    HorizontalTextAlignment="Start"
                    Text="{Binding Source={x:Static res:MLSResource.RelativeAirVelocity}, StringFormat='{0} [m/s]'}"
                    />
-            <Slider Grid.Row="7" Grid.Column="0" x:Name="velSlider" Minimum="0" Maximum="1.5" Margin="30,0,0,0" Value="0.1" ValueChanged="slider_ValueChanged"/>
+            <Slider Grid.Row="7" Grid.Column="0" x:Name="velSlider" Minimum="0" Maximum="5.0" Margin="30,0,0,0" Value="0.1" ValueChanged="slider_ValueChanged"/>
             <Label x:Name="velLabel" Grid.Row="7" Grid.Column="1" Text="{Binding Source={x:Reference velSlider}, Path=Value, StringFormat='{0:F2}'}" HorizontalTextAlignment="End" VerticalTextAlignment="Center" FontSize="Large">
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer Tapped="Value_Tapped"/>

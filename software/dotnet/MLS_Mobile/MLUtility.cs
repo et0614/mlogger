@@ -442,6 +442,14 @@ namespace MLS_Mobile
     }
 
     /// <summary>
+    /// 負値を入力できる数値入力用キーボード。iOS の Keyboard.Numeric (DecimalPad) には
+    /// マイナスキーがなく負数を入力できないため、iOS のみ標準キーボードを返す
+    /// (数字・記号ページからマイナスを入力できる)。Android は Numeric のまま。
+    /// </summary>
+    public static Keyboard SignedNumericKeyboard
+      => Microsoft.Maui.Devices.DeviceInfo.Platform == DevicePlatform.iOS ? Keyboard.Default : Keyboard.Numeric;
+
+    /// <summary>
     /// 例外発生時のユーザー向け Alert を統一する。
     ///   - 技術詳細 (型名 + ex.Message + StackTrace 先頭) は WriteLog で LogView に残す
     ///   - 画面には userMessage + 「詳細はログ画面で確認できます。」とだけ表示

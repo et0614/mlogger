@@ -335,6 +335,9 @@ Do not switch screens or close the app during the transfer. Continue?</value>
   <data name="LD_Share" xml:space="preserve">
     <value>Share</value>
   </data>
+  <data name="LD_ShareFailed" xml:space="preserve">
+    <value>Failed to share the file.</value>
+  </data>
   <data name="LD_Title" xml:space="preserve">
     <value>Logging data</value>
   </data>

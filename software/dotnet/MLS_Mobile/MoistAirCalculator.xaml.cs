@@ -276,7 +276,8 @@ public partial class MoistAirCalculator : ContentPage
     if (target == dbtLabel)
     {
       sld = dbtSlider;
-      popup = new TextInputPopup(MLSResource.DrybulbTemperature, sld.Value.ToString("F1"), Keyboard.Numeric);
+      // 乾球温度は -10°C まであり得るので負値入力可能なキーボードにする
+      popup = new TextInputPopup(MLSResource.DrybulbTemperature, sld.Value.ToString("F1"), MLUtility.SignedNumericKeyboard);
     }
     else if (target == rhmdLabel)
     {
@@ -312,9 +313,9 @@ public partial class MoistAirCalculator : ContentPage
     if (popup == null) return;
     if (!sld.IsEnabled) return;
 
-    if (await this.ShowPopupAsync<string>(popup) != null)
-      if (double.TryParse(popup.EntryValue, out double val))
-        sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
+    await this.ShowPopupAsync<string>(popup);
+    if (popup.WasAccepted && double.TryParse(popup.AcceptedText, out double val))
+      sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }
 
   #region ライブ計測連携 (Live モード)

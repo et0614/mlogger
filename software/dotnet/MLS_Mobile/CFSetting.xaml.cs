@@ -52,6 +52,11 @@ public partial class CFSetting : ContentPage
     lbl_glb.Text = MLSResource.GlobeTemperature;
     lbl_vel.Text = MLSResource.Velocity;
     lbl_lux.Text = MLSResource.Illuminance;
+
+    // 補正係数はオフセット B を中心に負値があり得る。iOS の Numeric キーボードでは
+    // マイナスが打てないため、負値入力可能なキーボードに差し替える (Android は Numeric のまま)。
+    foreach (Entry ent in new[] { cA_dbt, cB_dbt, cA_hmd, cB_hmd, cA_glb, cB_glb, cA_vel, cB_vel, cA_lux, cB_lux })
+      ent.Keyboard = MLUtility.SignedNumericKeyboard;
   }
 
   protected override void OnAppearing()

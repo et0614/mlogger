@@ -614,6 +614,15 @@ namespace MLS_Mobile.Resources.i18n {
                 return ResourceManager.GetString("LD_Share", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Failed to share the file. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_ShareFailed {
+            get {
+                return ResourceManager.GetString("LD_ShareFailed", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Logging data に類似しているローカライズされた文字列を検索します。

@@ -1,6 +1,8 @@
 namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
+using System.Text;
+using MLS_Mobile.Resources.i18n;
 
 public partial class LoggingDataList : ContentPage
 {
@@ -25,7 +27,15 @@ public partial class LoggingDataList : ContentPage
       string fName = file.Substring(file.LastIndexOf(Path.DirectorySeparatorChar) + 1);
       if (fName.StartsWith("MLogger_"))
       {
-        LogFile lf = new LogFile(fName, this);
+        LogFile lf;
+        try { lf = new LogFile(fName, this); }
+        catch
+        {
+          // 命名規約外のファイル (機器名に '_' を含む、外部から持ち込まれた等) が
+          // 1 つあるだけでページ生成ごと失敗しないよう、除外して続行する。
+          MLUtility.WriteLog($"[datalist] unrecognized file name skipped: {fName}");
+          continue;
+        }
         if (!lfDict.ContainsKey(lf.MLoggerName)) lfDict.Add(lf.MLoggerName, new List<LogFile>());
         lfDict[lf.MLoggerName].Add(lf);
       }
@@ -132,12 +142,24 @@ public partial class LoggingDataList : ContentPage
 
     private async void OnShareCommand(LogFile logFile)
     {
-      await Share.Default.RequestAsync(new ShareTextRequest
+      // ShareTextRequest に全文を積むと Android では 1MB 境界で
+      // TransactionTooLargeException になるため、詳細ページ (LoggingData.share_Clicked)
+      // と同じ一時ファイル + ShareFileRequest 方式で共有する。
+      try
       {
-        Text = FileName + Environment.NewLine + LoggingData.MakeClipData(FileName),
-        Title = "M-Logger Data",
-        Subject = logFile.FileName
-      });
+        string filePath = Path.Combine(FileSystem.CacheDirectory, logFile.FileName);
+        await Task.Run(() =>
+          File.WriteAllText(filePath, LoggingData.MakeClipData(logFile.FileName), Encoding.UTF8));
+        await Share.Default.RequestAsync(new ShareFileRequest
+        {
+          Title = "M-Logger Data",
+          File = new ShareFile(filePath)
+        });
+      }
+      catch (Exception ex)
+      {
+        await MLUtility.ShowErrorAsync(logFile.Parent, MLSResource.LD_ShareFailed, ex);
+      }
     }
 
     private async void OnNavigateCommand(LogFile logFile)

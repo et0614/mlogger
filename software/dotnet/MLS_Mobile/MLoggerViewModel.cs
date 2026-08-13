@@ -227,7 +227,7 @@ namespace MLS_Mobile
     /// <summary>グローブ温度の最終更新日時を設定・取得する</summary>
     public DateTime LastCommunicated_GLB
     {
-      get { return _lastComDBT; }
+      get { return _lastComGLB; }
       set
       {
         if (_lastComGLB != value)

@@ -208,39 +208,48 @@ public partial class DeviceSetting : ContentPage
   /// <summary>測定設定を設定する</summary>
   private async void updateMeasurementSetting() => await updateMeasurementSettingV4();
 
+  // 計測間隔として受け付ける範囲 [sec]。parse 成功だけで通すと負数が
+  // (uint) キャストで巨大値になってそのまま機器に送信されるため、範囲も検証する。
+  private const int SPAN_MIN_SEC = 1;
+  private const int SPAN_MAX_SEC = 86400;
+
   private bool isInputsCorrect
   (out int thSpan, out int glbSpan, out int velSpan, out int luxSpan, out int co2Span)
   {
     bool hasError = false;
     string alert = "";
-    if (!int.TryParse(ent_th.Text, out thSpan))
+
+    bool isValidSpan(string text, out int span)
+      => int.TryParse(text, out span) && SPAN_MIN_SEC <= span && span <= SPAN_MAX_SEC;
+
+    if (!isValidSpan(ent_th.Text, out thSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + lbl_th.Text + ")\r\n";
     }
-    if (!int.TryParse(ent_glb.Text, out glbSpan))
+    if (!isValidSpan(ent_glb.Text, out glbSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.GlobeTemperature + ")\r\n";
     }
-    if (!int.TryParse(ent_vel.Text, out velSpan))
+    if (!isValidSpan(ent_vel.Text, out velSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Velocity + ")\r\n";
     }
-    if (!int.TryParse(ent_lux.Text, out luxSpan))
+    if (!isValidSpan(ent_lux.Text, out luxSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
     }
-    if (!int.TryParse(ent_co2.Text, out co2Span))
+    if (!isValidSpan(ent_co2.Text, out co2Span))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.CO2level + ")\r\n";
     }
 
     if (hasError)
-      DisplayAlert("Alert", alert, "OK");
+      DisplayAlert("Alert", alert + "(" + SPAN_MIN_SEC + " - " + SPAN_MAX_SEC + " sec)", "OK");
 
     return !hasError;
   }
@@ -278,19 +287,11 @@ public partial class DeviceSetting : ContentPage
     // hello でキャッシュした Protocol.Device.Name を popup の初期値に使う。
     string currentName = MLUtility.Protocol?.Device.Name ?? Logger.Name;
     var popup = new TextInputPopup(MLSResource.DS_SetName, currentName, Keyboard.Text);
-    // Popup<string>.CloseAsync(null) は IPopupResult を non-null で返してくる。
-    // 真の Cancel 判定は Result が null かどうかで行う。
-    // ただし iOS で OK 押下時にも Result が null になる事象を実機で確認したため、
-    // popup.EntryValue (binding 経由で常に typed text を保持) をフォールバックに使う。
-    // Cancel 時は EntryValue は popup 初期値のまま残るが、ユーザが何も typing
-    // しなかった場合は initial と同じ値で update が走る (副作用 = 名前不変)。
-    var result = await this.ShowPopupAsync<string>(popup);
-    string typed = (result?.Result is string r && !string.IsNullOrEmpty(r))
-                   ? r
-                   : popup.EntryValue;
-    // Cancel と OK を区別: result.Result が string なら確定 OK、null かつ initial と同じなら Cancel と推定。
-    bool isCancel = (result?.Result == null) && (typed == currentName);
-    if (!isCancel && !string.IsNullOrEmpty(typed)) updateName(typed);
+    // OK/Cancel は popup.WasAccepted で判定する。iOS で OK 押下時にも CloseAsync の
+    // Result が null になる事象を実機で確認しており、Result ベースの判定は信頼できない。
+    await this.ShowPopupAsync<string>(popup);
+    if (popup.WasAccepted && !string.IsNullOrEmpty(popup.AcceptedText))
+      updateName(popup.AcceptedText);
   }
 
   private void SDButton_Clicked(object sender, EventArgs e)
@@ -369,14 +370,24 @@ public partial class DeviceSetting : ContentPage
       {
         spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
         spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
-        // v4 の HardwareId は AVR SIGROW.SERNUM0 (MCU シリアル) の FNV-1a hash であり
-        // XBee アドレスではないため、ラベルは「本体ID」を使う (DS_SpecXBAdd は v3 用に残置)
-        spc_xbadds.Text    = MLSResource.DS_SpecDeviceId + ": " + dev.HardwareId;
-        spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
+        if (isV4 && !string.IsNullOrEmpty(dev.HardwareId))
+        {
+          // v4 の HardwareId は AVR SIGROW.SERNUM0 (MCU シリアル) の FNV-1a hash であり
+          // XBee アドレスではないため、ラベルは「本体ID」を使う
+          spc_xbadds.Text = MLSResource.DS_SpecDeviceId + ": " + dev.HardwareId;
 
-        // 本体 ID タップで出荷時試験成績ページを開く
-        makeIdLabelLink(spc_xbadds,
-            $"{REPORT_SITE_BASE}/inspection/viewer.html?id={dev.HardwareId}");
+          // 本体 ID タップで出荷時試験成績ページを開く。
+          // 出荷試験成績の Web 公開は v4 以降のみのため、リンク化も v4 限定
+          // (v3 でリンクにすると File not found ページに飛ばしてしまう)
+          makeIdLabelLink(spc_xbadds,
+              $"{REPORT_SITE_BASE}/inspection/viewer.html?id={dev.HardwareId}");
+        }
+        else
+        {
+          // v3: HardwareId は取得できないため従来どおり XBee アドレスを表示 (リンクなし)
+          spc_xbadds.Text = MLSResource.DS_SpecXBAdd + ": " + MLoggerLowAddress;
+        }
+        spc_vers.Text      = MLSResource.DS_SpecVersion  + ": " + dev.FirmwareVersion;
       });
 
       // 初回のみ時刻同期。fire-and-forget だと直後にユーザーが start_logging を押したとき
@@ -769,16 +780,16 @@ public partial class DeviceSetting : ContentPage
 
   /// <summary>
   /// CO2 reference level の数値入力 popup を出して値を返す。
-  /// Cancel (Popup.Result == null) なら黙って null を返す。
+  /// Cancel (WasAccepted == false) なら黙って null を返す。
   /// 数値として解釈できないときだけ alert を出す。
   /// </summary>
   private async Task<int?> PromptCo2LevelAsync(TextInputPopup popup)
   {
-    var result = await this.ShowPopupAsync<string>(popup);
-    if (result?.Result is not string typed || string.IsNullOrWhiteSpace(typed))
+    await this.ShowPopupAsync<string>(popup);
+    if (!popup.WasAccepted || string.IsNullOrWhiteSpace(popup.AcceptedText))
       return null;
 
-    if (!int.TryParse(typed, out int refLevel))
+    if (!int.TryParse(popup.AcceptedText, out int refLevel))
     {
       await DisplayAlert(MLSResource.ERR_AlertTitle, MLSResource.DS_InvalidNumber, "OK");
       return null;
@@ -892,7 +903,7 @@ public partial class DeviceSetting : ContentPage
       sb.Append(t.ToString("yyyy/M/d,HH:mm:ss")).Append(',');
       sb.Append(FmtNA(r.DrybulbTemperature, "F1")).Append(',');
       sb.Append(FmtNA(r.RelativeHumidity,   "F1")).Append(',');
-      sb.Append(FmtNA(r.GlobeTemperature,   "F2")).Append(',');
+      sb.Append(FmtNA(r.GlobeTemperature,   "F1")).Append(',');
       sb.Append(FmtNA(r.Velocity,           "F3")).Append(',');
       sb.Append(FmtNA(r.Illuminance,        "F2")).Append(',');
       // DataReceive と同形式: globe_voltage は v4 未対応で常に n/a、velocity_voltage は mV→V。

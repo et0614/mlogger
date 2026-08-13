@@ -159,9 +159,9 @@ public partial class ThermalComfortCalculator : ContentPage
     }
 
     if (popup == null) return;
-    if (await this.ShowPopupAsync<string>(popup) != null)
-      if (double.TryParse(popup.EntryValue, out double val))
-        sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
+    await this.ShowPopupAsync<string>(popup);
+    if (popup.WasAccepted && double.TryParse(popup.AcceptedText, out double val))
+      sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));
   }
 
   #endregion

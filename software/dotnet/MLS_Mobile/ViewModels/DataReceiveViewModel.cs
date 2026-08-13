@@ -29,9 +29,6 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>グローブ温度計の直径[m]</summary>
     private const double GLOBE_DIAMETER = 0.038;
 
-    /// <summary>計測値が無い場合のデフォルト値</summary>
-    private const double DEF_TEMP = 25, DEF_RH = 50, DEF_VEL = 0.1, DEF_GLB = 25;
-
     // 警告色は App.xaml の Status_* リソースから取得 (Colors.xaml で一元管理)。
     // resource が見つからない場合は安全な fallback で動作継続。
     private static Color GetResourceColor(string key, Color fallback)
@@ -385,12 +382,26 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// </summary>
     private void RecalcThermalIndicesNoNotify()
     {
-        if (_lastSample is not Sample s) return;
+        if (_lastSample is null) return;
 
-        double dbt = Clamp(s.DrybulbTemperature ?? DEF_TEMP, -10, 40);
-        double rhd = Clamp(s.RelativeHumidity ?? DEF_RH, 0, 100);
-        double vel = Clamp(s.Velocity ?? DEF_VEL, 0, 2);
-        double glb = Clamp(s.GlobeTemperature ?? DEF_GLB, -10, 50);
+        // Sample はセンサごとに計測間隔が違うため null フィールドを含み得る。
+        // 直近値は _live (LiveMeasurementService) が保持しているのでそちらを使う。
+        // 一度も実測が無いセンサ (プローブ不在・無効化) をデフォルト仮定値で補完すると
+        // 導出指標が実測に見えてしまうため、4 入力が揃うまでは "—" 表示にする。
+        if (_live.DryBulbTemperature is not double dbtRaw
+         || _live.RelativeHumidity   is not double rhdRaw
+         || _live.Velocity           is not double velRaw
+         || _live.GlobeTemperature   is not double glbRaw)
+        {
+            _meanRadiantTemperature = _pMV = _pPD = _sETStar = _wBGT_Indoor = _wBGT_Outdoor = "—";
+            _wbgtIndoorColor = _wbgtOutdoorColor = NormalColor;
+            return;
+        }
+
+        double dbt = Clamp(dbtRaw, -10, 40);
+        double rhd = Clamp(rhdRaw, 0, 100);
+        double vel = Clamp(velRaw, 0, 2);
+        double glb = Clamp(glbRaw, -10, 50);
 
         double mrt = GetMRT(dbt, glb, vel);
         double wbt = MoistAir.GetWetBulbTemperatureFromDryBulbTemperatureAndRelativeHumidity(dbt, rhd, ATM);
@@ -471,7 +482,7 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         sb.Append(t.ToString("yyyy/M/d,HH:mm:ss")).Append(',');
         sb.Append(FormatOrNA(s.DrybulbTemperature, "F1")).Append(',');
         sb.Append(FormatOrNA(s.RelativeHumidity, "F1")).Append(',');
-        sb.Append(FormatOrNA(s.GlobeTemperature, "F2")).Append(',');
+        sb.Append(FormatOrNA(s.GlobeTemperature, "F1")).Append(',');
         sb.Append(FormatOrNA(s.Velocity, "F3")).Append(',');
         sb.Append(FormatOrNA(s.Illuminance, "F2")).Append(',');
         // v3 DTT 互換: 1 列目 = グローブ温度電圧 (v4 未対応で常に n/a)、
