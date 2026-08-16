@@ -38,45 +38,31 @@ jobs:
       - name: Select latest usable Xcode
         run: |
           ls -d /Applications/Xcode*.app
-          # 新しい順に走査し、以下を満たす最初の Xcode を選ぶ:
-          #  - beta でない
-          #  - iOS 26 SDK を持つ (.NET 10 iOS バインディングの要求)
-          #  - xcodebuild -find ibtool が通る (ランナーイメージはディスク節約で
-          #    非デフォルト Xcode のコンポーネントを削ることがあり、その検出用。
-          #    MAUI ビルドが実際に発行するのと同じコマンドでテストする)
+          # 新しい順に候補を走査し、「ビルドが実際に使う最終状態」で検証して選ぶ:
+          # xcode-select + runFirstLaunch まで済ませてから xcrun で必須ツール一式を
+          # 引けるか確認する。事前の実体チェックが通っても runFirstLaunch 後に
+          # xcodebuild -find が壊れる個体があった (26.6.0 の clang++) ため、
+          # 事前チェックではなく最終状態そのもので判定し、駄目なら次の候補へ進む。
           SELECTED=""
           for x in $(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -rV); do
             DEV="$x/Contents/Developer"
-            MACSDK="$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
-            # ランナーイメージは非デフォルト Xcode の一部コンポーネントを削って
-            # いることがある。ビルドが実際に使うものの実体を直接確認する。
             if ! ls "$DEV/Platforms/iPhoneOS.platform/Developer/SDKs" 2>/dev/null | grep -q '^iPhoneOS26'; then
               echo "skip: $x (no iOS 26 SDK)"; continue
             fi
-            if [ ! -d "$MACSDK" ]; then
+            if [ ! -d "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ]; then
               echo "skip: $x (no macOS SDK)"; continue
             fi
-            # ツールチェーン配下のビルド必須ツールを一括で実体チェック。
-            # 部分削除された Xcode はツールが個別に欠けている
-            # (実例: 26.3 は ibtool、26.6.0 は clang++ が無い) ため、
-            # macios ビルドが使う一式をまとめて確認する。
-            TOOLCHAIN_BIN="$DEV/Toolchains/XcodeDefault.xctoolchain/usr/bin"
-            MISSING=""
-            for t in clang clang++ ld strip dsymutil libtool lipo install_name_tool codesign_allocate; do
-              [ -e "$TOOLCHAIN_BIN/$t" ] || { MISSING="$t"; break; }
-            done
-            if [ -n "$MISSING" ]; then
-              echo "skip: $x (missing toolchain tool: $MISSING)"; continue
+            sudo xcode-select -s "$x"
+            if ! sudo xcodebuild -runFirstLaunch >/dev/null 2>&1; then
+              echo "skip: $x (runFirstLaunch failed)"; continue
             fi
-            # 仕上げに、MAUI ビルドが発行するのと同じ lookup コマンドで確認
-            for t in ibtool clang clang++; do
-              if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find "$t" >/dev/null 2>&1; then
-                MISSING="$t"; break
+            OK=1
+            for t in actool ibtool clang clang++ ld strip dsymutil libtool lipo; do
+              if ! xcrun --find "$t" >/dev/null 2>&1; then
+                echo "skip: $x (xcrun cannot find $t)"; OK=0; break
               fi
             done
-            if [ -n "$MISSING" ]; then
-              echo "skip: $x ($MISSING lookup failed)"; continue
-            fi
+            [ "$OK" = "1" ] || continue
             SELECTED="$x"; break
           done
           if [ -z "$SELECTED" ]; then
@@ -84,15 +70,10 @@ jobs:
             for x in /Applications/Xcode_*.app; do echo "== $x"; ls "$x/Contents/Developer/Platforms" 2>/dev/null || true; done
             exit 1
           fi
-          echo "selecting: $SELECTED"
-          sudo xcode-select -s "$SELECTED"
-          sudo xcodebuild -runFirstLaunch
+          echo "selected: $SELECTED"
           # xcrun の解決を選択した Xcode に固定 (以降の全ステップに適用)
           echo "DEVELOPER_DIR=$SELECTED/Contents/Developer" >> "$GITHUB_ENV"
           xcodebuild -version
-          xcrun --find actool
-          xcrun --find ibtool
-          xcrun --find clang
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
