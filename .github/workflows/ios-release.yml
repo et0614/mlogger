@@ -29,11 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ビルドに使う Xcode を固定したい場合はコメントを外して調整する。
-      # 既定のままで SDK 不整合エラーが出たら、まず一覧を見て新しい Xcode を選ぶ:
-      #   ls /Applications | grep Xcode
-      # - name: Select Xcode
-      #   run: sudo xcode-select -s /Applications/Xcode_26.0.app
+      # .NET 10 の iOS バインディングは iOS 26 SDK を要求するため、ランナー既定の
+      # Xcode (iOS 18.5 SDK) ではなくインストール済みの最新版を選ぶ。
+      # (バージョン直書きにしないことでランナーイメージの更新に追従する)
+      - name: Select latest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          LATEST=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "selecting: $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
