@@ -56,17 +56,26 @@ jobs:
             if [ ! -d "$MACSDK" ]; then
               echo "skip: $x (no macOS SDK)"; continue
             fi
-            # clang は usr/bin ではなく Toolchains 配下。ibtool が居ても
-            # ツールチェーンだけ削られている Xcode がある (macos-26 の 26.6.0 で実例)
-            if [ ! -x "$DEV/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" ]; then
-              echo "skip: $x (no clang in toolchain)"; continue
+            # ツールチェーン配下のビルド必須ツールを一括で実体チェック。
+            # 部分削除された Xcode はツールが個別に欠けている
+            # (実例: 26.3 は ibtool、26.6.0 は clang++ が無い) ため、
+            # macios ビルドが使う一式をまとめて確認する。
+            TOOLCHAIN_BIN="$DEV/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+            MISSING=""
+            for t in clang clang++ ld strip dsymutil libtool lipo install_name_tool codesign_allocate; do
+              [ -e "$TOOLCHAIN_BIN/$t" ] || { MISSING="$t"; break; }
+            done
+            if [ -n "$MISSING" ]; then
+              echo "skip: $x (missing toolchain tool: $MISSING)"; continue
             fi
             # 仕上げに、MAUI ビルドが発行するのと同じ lookup コマンドで確認
-            if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find ibtool >/dev/null 2>&1; then
-              echo "skip: $x (ibtool lookup failed)"; continue
-            fi
-            if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find clang >/dev/null 2>&1; then
-              echo "skip: $x (clang lookup failed)"; continue
+            for t in ibtool clang clang++; do
+              if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find "$t" >/dev/null 2>&1; then
+                MISSING="$t"; break
+              fi
+            done
+            if [ -n "$MISSING" ]; then
+              echo "skip: $x ($MISSING lookup failed)"; continue
             fi
             SELECTED="$x"; break
           done
