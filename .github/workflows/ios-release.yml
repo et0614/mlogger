@@ -47,15 +47,25 @@ jobs:
           SELECTED=""
           for x in $(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -rV); do
             DEV="$x/Contents/Developer"
+            MACSDK="$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+            # ランナーイメージは非デフォルト Xcode の一部コンポーネントを削って
+            # いることがある。ビルドが実際に使うものの実体を直接確認する。
             if ! ls "$DEV/Platforms/iPhoneOS.platform/Developer/SDKs" 2>/dev/null | grep -q '^iPhoneOS26'; then
               echo "skip: $x (no iOS 26 SDK)"; continue
             fi
-            if ! "$DEV/usr/bin/xcodebuild" -sdk "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find ibtool >/dev/null 2>&1; then
+            if [ ! -d "$MACSDK" ]; then
+              echo "skip: $x (no macOS SDK)"; continue
+            fi
+            # clang は usr/bin ではなく Toolchains 配下。ibtool が居ても
+            # ツールチェーンだけ削られている Xcode がある (macos-26 の 26.6.0 で実例)
+            if [ ! -x "$DEV/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" ]; then
+              echo "skip: $x (no clang in toolchain)"; continue
+            fi
+            # 仕上げに、MAUI ビルドが発行するのと同じ lookup コマンドで確認
+            if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find ibtool >/dev/null 2>&1; then
               echo "skip: $x (ibtool lookup failed)"; continue
             fi
-            # clang は usr/bin ではなく Toolchains 配下にあり、ibtool が居ても
-            # ツールチェーンだけ削られている Xcode がある (macos-26 の 26.6.0 で実例)
-            if ! "$DEV/usr/bin/xcodebuild" -sdk "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find clang >/dev/null 2>&1; then
+            if ! "$DEV/usr/bin/xcodebuild" -sdk "$MACSDK" -find clang >/dev/null 2>&1; then
               echo "skip: $x (clang lookup failed)"; continue
             fi
             SELECTED="$x"; break
@@ -68,9 +78,12 @@ jobs:
           echo "selecting: $SELECTED"
           sudo xcode-select -s "$SELECTED"
           sudo xcodebuild -runFirstLaunch
+          # xcrun の解決を選択した Xcode に固定 (以降の全ステップに適用)
+          echo "DEVELOPER_DIR=$SELECTED/Contents/Developer" >> "$GITHUB_ENV"
           xcodebuild -version
           xcrun --find actool
           xcrun --find ibtool
+          xcrun --find clang
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
