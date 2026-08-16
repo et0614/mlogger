@@ -70,6 +70,14 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     /// <summary>最後に受け取ったサンプル (Clo/Met 変更時の再計算用)</summary>
     private Sample? _lastSample;
 
+    /// <summary>
+    /// 直近サンプルの dc (プローブ切断) / wu (ウォームアップ) 状態。
+    /// general = 温湿度プローブ (glb 含む)、velocity = 風速プローブ。
+    /// 切断中・ウォームアップ中は _live に残る直近値で PMV 等を計算し続けないよう、
+    /// 導出指標の表示可否判定に使う (個別値が "—" なのに PMV だけ出る不整合も防ぐ)。
+    /// </summary>
+    private bool _dcGeneral, _dcVelocity, _wuGeneral, _wuVelocity;
+
     #endregion
 
     #region 計測値の表示プロパティ
@@ -240,6 +248,10 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         bool wuGeneral  = wu != null && wu.Contains("g");
         bool wuVelocity = wu != null && wu.Contains("v");
         bool wuLight    = wu != null && wu.Contains("l");
+        _dcGeneral  = dcGeneral;
+        _dcVelocity = dcVelocity;
+        _wuGeneral  = wuGeneral;
+        _wuVelocity = wuVelocity;
 
         // wu / dc の解釈ポリシー:
         //   - smp に値が来ている → そのまま表示 (glb は warmup 中も独立センサで有効、信用する)
@@ -388,7 +400,10 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         // 直近値は _live (LiveMeasurementService) が保持しているのでそちらを使う。
         // 一度も実測が無いセンサ (プローブ不在・無効化) をデフォルト仮定値で補完すると
         // 導出指標が実測に見えてしまうため、4 入力が揃うまでは "—" 表示にする。
-        if (_live.DryBulbTemperature is not double dbtRaw
+        // また dc (プローブ切断) / wu (ウォームアップ) 中は _live に直近値が残っていても
+        // 更新が続いて直感に反するため、解消するまで同様に "—" にする。
+        if (_dcGeneral || _dcVelocity || _wuGeneral || _wuVelocity
+         || _live.DryBulbTemperature is not double dbtRaw
          || _live.RelativeHumidity   is not double rhdRaw
          || _live.Velocity           is not double velRaw
          || _live.GlobeTemperature   is not double glbRaw)
