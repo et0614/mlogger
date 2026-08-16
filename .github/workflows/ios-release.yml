@@ -23,7 +23,10 @@ on:
 
 jobs:
   build-and-upload:
-    runs-on: macos-15
+    # macos-15 は Xcode 26.3 (iOS 26.2 SDK) 止まりで、.NET 10 の iOS バインディング
+    # (iOS 26.4+ の API を含む) と合わず MT4162 で失敗する。より新しい Xcode を持つ
+    # macos-26 を使う。
+    runs-on: macos-26
     timeout-minutes: 60
 
     steps:
