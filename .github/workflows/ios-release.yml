@@ -32,16 +32,37 @@ jobs:
       # .NET 10 の iOS バインディングは iOS 26 SDK を要求するため、ランナー既定の
       # Xcode (iOS 18.5 SDK) ではなくインストール済みの最新版を選ぶ。
       # (バージョン直書きにしないことでランナーイメージの更新に追従する)
-      - name: Select latest Xcode
+      - name: Select latest usable Xcode
         run: |
           ls -d /Applications/Xcode*.app
-          # beta は除外する (ツール構成が不完全で actool が見つからないことがある)
-          LATEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
-          echo "selecting: $LATEST"
-          sudo xcode-select -s "$LATEST"
+          # 新しい順に走査し、以下を満たす最初の Xcode を選ぶ:
+          #  - beta でない
+          #  - iOS 26 SDK を持つ (.NET 10 iOS バインディングの要求)
+          #  - xcodebuild -find ibtool が通る (ランナーイメージはディスク節約で
+          #    非デフォルト Xcode のコンポーネントを削ることがあり、その検出用。
+          #    MAUI ビルドが実際に発行するのと同じコマンドでテストする)
+          SELECTED=""
+          for x in $(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -rV); do
+            DEV="$x/Contents/Developer"
+            if ! ls "$DEV/Platforms/iPhoneOS.platform/Developer/SDKs" 2>/dev/null | grep -q '^iPhoneOS26'; then
+              echo "skip: $x (no iOS 26 SDK)"; continue
+            fi
+            if ! "$DEV/usr/bin/xcodebuild" -sdk "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find ibtool >/dev/null 2>&1; then
+              echo "skip: $x (ibtool lookup failed)"; continue
+            fi
+            SELECTED="$x"; break
+          done
+          if [ -z "$SELECTED" ]; then
+            echo "::error::no usable Xcode with iOS 26 SDK found"
+            for x in /Applications/Xcode_*.app; do echo "== $x"; ls "$x/Contents/Developer/Platforms" 2>/dev/null || true; done
+            exit 1
+          fi
+          echo "selecting: $SELECTED"
+          sudo xcode-select -s "$SELECTED"
           sudo xcodebuild -runFirstLaunch
           xcodebuild -version
           xcrun --find actool
+          xcrun --find ibtool
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
