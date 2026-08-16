@@ -222,12 +222,21 @@ public partial class DeviceSetting : ContentPage
     bool isValidSpan(string text, out int span)
       => int.TryParse(text, out span) && SPAN_MIN_SEC <= span && span <= SPAN_MAX_SEC;
 
+    // 非表示の行 (v4: グローブ/CO2 行、v3: CO2 センサ非搭載機の CO2 行) はユーザーが
+    // 編集できず、機器から受信した値 (CO2 非搭載機では 0) がそのまま入っている。
+    // これを範囲検証すると保存が常に失敗する (v3.3.21 CO2 なし機で「無効な数値です
+    // (CO2濃度)」が出て設定送信不能になった不具合)。非表示行は検証せず受信値を
+    // そのまま返す (parse 不能なら 0 = 範囲検証導入前の従来挙動)。
     if (!isValidSpan(ent_th.Text, out thSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + lbl_th.Text + ")\r\n";
     }
-    if (!isValidSpan(ent_glb.Text, out glbSpan))
+    if (!row_glb.IsVisible)
+    {
+      int.TryParse(ent_glb.Text, out glbSpan);
+    }
+    else if (!isValidSpan(ent_glb.Text, out glbSpan))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.GlobeTemperature + ")\r\n";
@@ -242,7 +251,11 @@ public partial class DeviceSetting : ContentPage
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.Illuminance + ")\r\n";
     }
-    if (!isValidSpan(ent_co2.Text, out co2Span))
+    if (!row_co2.IsVisible)
+    {
+      int.TryParse(ent_co2.Text, out co2Span);
+    }
+    else if (!isValidSpan(ent_co2.Text, out co2Span))
     {
       hasError = true;
       alert += MLSResource.DS_InvalidNumber + "(" + MLSResource.CO2level + ")\r\n";
