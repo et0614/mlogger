@@ -35,10 +35,13 @@ jobs:
       - name: Select latest Xcode
         run: |
           ls -d /Applications/Xcode*.app
-          LATEST=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          # beta は除外する (ツール構成が不完全で actool が見つからないことがある)
+          LATEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
           echo "selecting: $LATEST"
           sudo xcode-select -s "$LATEST"
+          sudo xcodebuild -runFirstLaunch
           xcodebuild -version
+          xcrun --find actool
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
