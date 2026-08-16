@@ -120,15 +120,28 @@ jobs:
           -p:CodesignProvision=mls_dist_ci
           -p:CodesignKey="Apple Distribution: Eisuke Togashi (CREDLZ9YUL)"
 
+      # ランナー同梱の fastlane (Homebrew Ruby) は OpenSSL の問題で API キー (EC 鍵) を
+      # 読めず 'invalid curve name' で失敗するため、setup-ruby の環境に fastlane を
+      # 入れて使う
+      - name: Setup Ruby for fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
       - name: Upload to TestFlight
         env:
           API_KEY: ${{ secrets.APPSTORE_API_KEY_P8 }}
           API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
           API_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
+          # Secret の .p8 が秘密鍵として読めるか先に確認 (貼り付けで改行が失われる事故の切り分け)
+          if ! printf '%s\n' "$API_KEY" | openssl pkey -noout 2>/dev/null; then
+            echo "::error::APPSTORE_API_KEY_P8 secret cannot be parsed as a private key (check that newlines were preserved when pasting)"
+            exit 1
+          fi
+          gem install fastlane --no-document
           IPA=$(find software/dotnet/MLS_Mobile/bin/Release/net10.0-ios -name '*.ipa' | head -n 1)
           echo "uploading: $IPA"
-          # fastlane は GitHub macOS ランナーにプリインストール済み
           python3 - <<'EOF'
           import json, os
           json.dump({
