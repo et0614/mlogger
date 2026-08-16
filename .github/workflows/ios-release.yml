@@ -56,8 +56,11 @@ jobs:
             if ! sudo xcodebuild -runFirstLaunch >/dev/null 2>&1; then
               echo "skip: $x (runFirstLaunch failed)"; continue
             fi
+            # mdimport は Xcode 外のシステムツールで、xcrun の解決が
+            # xcodebuild -find フォールバックに落ちる。26.6.0 はこの
+            # フォールバック自体が壊れているため、これで検出して弾く
             OK=1
-            for t in actool ibtool clang clang++ ld strip dsymutil libtool lipo; do
+            for t in actool ibtool clang clang++ ld strip dsymutil libtool lipo mdimport; do
               if ! xcrun --find "$t" >/dev/null 2>&1; then
                 echo "skip: $x (xcrun cannot find $t)"; OK=0; break
               fi
