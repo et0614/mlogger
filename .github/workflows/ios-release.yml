@@ -53,6 +53,11 @@ jobs:
             if ! "$DEV/usr/bin/xcodebuild" -sdk "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find ibtool >/dev/null 2>&1; then
               echo "skip: $x (ibtool lookup failed)"; continue
             fi
+            # clang は usr/bin ではなく Toolchains 配下にあり、ibtool が居ても
+            # ツールチェーンだけ削られている Xcode がある (macos-26 の 26.6.0 で実例)
+            if ! "$DEV/usr/bin/xcodebuild" -sdk "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" -find clang >/dev/null 2>&1; then
+              echo "skip: $x (clang lookup failed)"; continue
+            fi
             SELECTED="$x"; break
           done
           if [ -z "$SELECTED" ]; then
