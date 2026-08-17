@@ -37,6 +37,15 @@ typedef struct {
 //熱線式風速計の立ち上げに必要な時間[sec]
 #define V_WAKEUP_TIME  10
 
+// CO2 (STCC4) の平均化秒数。single-shot の読み値ノイズを平滑化する。
+// 暫定値 5 sec、実測ノイズ評価の結果で調整予定。
+// 平均化は親機がここで統括する (子機はトリガに単発の生値を返す基本機能のみ):
+// CO2 計測 tick 直前の CO2_AVERAGING_SEC sec 間は tick でなくても毎 sec
+// pre-trigger/read を行い (1 Hz burst)、読めた CO2 を SMA (窓 = 同 sec 数) に蓄積、
+// tick では SMA 平均を記録する。interval_co2 <= CO2_AVERAGING_SEC では burst が
+// 連続するためプローブは 1 Hz 連続動作となる (live 閲覧相当、電力増は許容)。
+#define CO2_AVERAGING_SEC  5
+
 //照度計カバーアクリル板の透過率
 #define TRANSMITTANCE  0.60
 
@@ -96,7 +105,7 @@ static MeasurementPassCounters pass_counters = {0};
 volatile static uint8_t co2_condition_time = 0;	 //perform_conditioning 進行残[sec]
 static uint32_t co2InitializingTime = 0;         //安定化(任意秒)→FRC モード残り秒数
 static uint16_t reforcedCO2Level = 400;          //強制校正CO2濃度[ppm]
-static SmAverage smaCO2;                         //60秒平均
+static SmAverage smaCO2;                         //CO2平均化 (窓幅は LC_StartLoggingTask で interval_co2 に応じて設定)
 
 // FRC 進行管理 (子機 stcc4_state を polling)
 typedef enum { FRC_PHASE_IDLE = 0, FRC_PHASE_RUNNING } FrcPhase_t;
@@ -287,7 +296,13 @@ void execLogging(void)
 	              && (int32_t)EM_mSettings.interval_co2 <= pass_counters.co2;
 	bool mesGlb = EM_mSettings.measure_glb && (int32_t)EM_mSettings.interval_glb <= pass_counters.glb;
 
-	if (mesTH || mesCO2 || mesGlb) {
+	// CO2 平均化 burst: CO2 計測 tick 直前 CO2_AVERAGING_SEC sec の窓内は tick で
+	// なくても毎 sec read し、CO2 を SMA に蓄積する (トリガは前 sec の pre-trigger
+	// 部で発行済み)。interval_co2 <= CO2_AVERAGING_SEC の場合は常に窓内 (1 Hz 連続)。
+	bool co2Burst = EM_mSettings.measure_co2 && co2_condition_time == 0
+	                && (int32_t)EM_mSettings.interval_co2 - pass_counters.co2 <= CO2_AVERAGING_SEC - 1;
+
+	if (mesTH || mesCO2 || mesGlb || co2Burst) {
 		ThProbe_Read(&th_probe);
 		th_trigger_pending = false;
 
@@ -329,6 +344,15 @@ void execLogging(void)
 			waitingForFirstValidCO2 = false;
 		}
 
+		// CO2 は計測 tick に限らず read するたびに SMA へ蓄積する (burst 分を含む)。
+		// これで tick 時の SMA_GetAverage が「直近 CO2_AVERAGING_SEC shot (1 Hz) の平均」になる。
+		// burst の窓幅 = SMA の窓幅なので、正常時は毎 tick 全サンプルが入れ替わる。
+		// shot 失敗があった tick では前回 burst のサンプルが窓に残り得るが、
+		// 「直近の有効 shot の平均」として許容する。
+		if (th_probe.co2_valid && !waitingForFirstValidCO2) {
+			SMA_Add(&smaCO2, th_probe.co2_ppm);
+		}
+
 		// waitingForFirstValidCO2 中は STCC4 系の値 (t/h/c) を smp に乗せない。
 		// 子機が valid=true で 0 を返してきても初回安定化前の bogus とみなして握り潰す。
 		// glb は STCC4 と無関係 (独立 SHT4x_glb) なので warmup と関係なく送る。
@@ -348,7 +372,6 @@ void execLogging(void)
 			send_needed = true;
 			pass_counters.co2 = 0;
 			if (th_probe.co2_valid && !waitingForFirstValidCO2) {
-				SMA_Add(&smaCO2, th_probe.co2_ppm);
 				data.co2_ppm = SMA_GetAverage(&smaCO2);
 				data.valid_flags |= FLAG_CO2_PPM;
 			}
@@ -442,9 +465,12 @@ void execLogging(void)
 		}
 	}
 	//次 sec が計測時刻なら今 sec のうちに pre-trigger 発行 (子機の single-shot は ~520ms)
+	//CO2 は平均化のため計測 tick 直前 CO2_AVERAGING_SEC sec を 1 Hz burst で計測する:
+	//nextCO2 は「次 sec が burst 窓内」まで判定を広げてあり、窓内は毎 sec トリガ→
+	//翌 sec に co2Burst read で SMA へ蓄積される。
 	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int32_t)EM_mSettings.interval_th;
 	bool nextCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
-	               && (pass_counters.co2 + 1) >= (int32_t)EM_mSettings.interval_co2;
+	               && (pass_counters.co2 + 1) >= (int32_t)EM_mSettings.interval_co2 - (CO2_AVERAGING_SEC - 1);
 	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int32_t)EM_mSettings.interval_glb;
 	if (nextTH || nextCO2 || nextGlb) {
 		ThProbe_Trigger();
@@ -461,7 +487,7 @@ void execLogging(void)
 // <editor-fold defaultstate="collapsed" desc="公開関数：初期化処理">
 
 void LC_InitSensors(void){
-    SMA_Init(&smaCO2); //CO2センサ平均化インスタンスの初期化
+    SMA_Init(&smaCO2, CO2_AVERAGING_SEC); //CO2センサ平均化インスタンスの初期化
 
     // 温湿度+CO2+グローブ温度プローブ (子機 firmware は起動時に STCC4 を扱える状態へ自動遷移する)
     ThProbe_Init(&th_probe);
@@ -609,6 +635,9 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     }
     // interval_vel < V_WAKEUP_TIME の場合 (または vel 無効時) は熱線常時 ON
     // 運用で別途設計、ここでは巻き戻ししない。
+
+    // CO2 平均化 SMA を初期化 (前セッションの残サンプルを破棄)
+    SMA_Init(&smaCO2, CO2_AVERAGING_SEC);
 
     // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
     th_trigger_pending = false;
