@@ -43,7 +43,14 @@
 
 // Line state and setup
 STATIC uint16_t usbCDCControlLineState;
-STATIC USB_CDC_LINE_CODING_t usbCDCLineCoding;
+// [手動修正 2026-08-17] aligned(2) を追加 (MCC 再生成時は要再適用)。
+// SET_LINE_CODING は EP0 OUT のデータステージをこの変数に直接受けるが、
+// AVR DU の errata (multipacket OUT は偶数番地必須) により、リンク結果で
+// この変数が奇数番地に落ちるとホストのポートオープン (SET_LINE_CODING) が
+// EndpointBufferSet の ENDPOINT_ALIGN_ERROR で恒久失敗し、列挙は成功するのに
+// open がハングする。MCC は controlTransfer / usbCDCReceiveTempBuffer には
+// aligned(2) を付けているがここには付け忘れている (stack のバグ)。
+STATIC USB_CDC_LINE_CODING_t usbCDCLineCoding __attribute__((aligned(2)));
 
 void USB_CDCInitialize(void)
 {
