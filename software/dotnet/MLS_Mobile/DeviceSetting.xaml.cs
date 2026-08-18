@@ -381,8 +381,7 @@ public partial class DeviceSetting : ContentPage
       _initInfoV4Done = true;
       Application.Current?.Dispatcher.Dispatch(() =>
       {
-        spc_name.Text      = MLSResource.DS_SpecName     + ": " + dev.Name;
-        spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + Logger.LocalName;
+        updateNameLabels(dev.Name);
         if (isV4 && !string.IsNullOrEmpty(dev.HardwareId))
         {
           // v4 の HardwareId は AVR SIGROW.SERNUM0 (MCU シリアル) の FNV-1a hash であり
@@ -635,6 +634,20 @@ public partial class DeviceSetting : ContentPage
     }
   }
 
+  /// <summary>
+  /// 名称ラベルを更新する。XBee 名 (BLE 広告名) は firmware の set_name で本体名称に
+  /// 追従するため通常は一致し、併記は冗長になる。一致時は非表示にし、不一致のとき
+  /// (旧 firmware 機や、ユーザーが XCTU 等で XBee 側だけを改名した場合など) のみ
+  /// 従来どおり表示する。
+  /// </summary>
+  private void updateNameLabels(string name)
+  {
+    string localName = Logger?.LocalName ?? "";
+    spc_name.Text      = MLSResource.DS_SpecName      + ": " + name;
+    spc_localName.Text = MLSResource.DS_SpecLocalName + ": " + localName;
+    spc_localName.IsVisible = name != localName;
+  }
+
   /// <summary>v4 path of updateName - calls SetNameAsync and reflects the returned name.</summary>
   private async Task updateNameV4(string name)
   {
@@ -647,7 +660,7 @@ public partial class DeviceSetting : ContentPage
 
       Application.Current?.Dispatcher.Dispatch(() =>
       {
-        spc_name.Text = MLSResource.DS_SpecName + ": " + newName;
+        updateNameLabels(newName);
       });
     }
     catch (Exception ex)
