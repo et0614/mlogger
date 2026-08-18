@@ -21,8 +21,10 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 照度センサを覆ったまま試験すると illuminance が FAIL するので注意。
 
 Usage:
-    python factory_test.py           # auto-detect COM port
+    python factory_test.py                  # auto-detect COM port
     python factory_test.py COM3
+    python factory_test.py --id 1234        # 試験冒頭で名称を MLogger_1234 に設定
+                                            # (firmware が XBee の BLE 名にも反映する)
 """
 import json
 import os
@@ -36,7 +38,7 @@ from ble_trace import open_no_reset, find_device_port
 # ============================================================
 # 試験パラメータ
 # ============================================================
-SCRIPT_VERSION = "1.1"  # 記録 JSON に埋める試験スクリプト版数
+SCRIPT_VERSION = "1.2"  # 記録 JSON に埋める試験スクリプト版数
 
 SAMPLE_COUNT      = 15    # ウォームアップ後に収集するサンプル数
 WARMUP_TIMEOUT_S  = 90    # ウォームアップ完了待ちの上限 [sec]
@@ -50,7 +52,7 @@ RANGES = {
     "c":  (300, 10000),     # CO2 [ppm]
     "l":  (1, 200000),      # 照度 [lx] (照明のある室内前提。0 は素子カバー or 故障)
     "v":  (0.0, 10.0),      # 風速 [m/s] (無風で 0.000 は正常)
-    "vv": (100, 3000),      # 熱線ブリッジ電圧 [mV]
+    "vv": (50, 3000),      # 熱線ブリッジ電圧 [mV]
 }
 BATTERY_RANGE_MV = (2000, 3500)
 
@@ -310,7 +312,7 @@ def collect_identity(ser, report):
     return identity
 
 
-def main(port):
+def main(port, device_id=None):
     report = Report()
     device = {}
     stats = {}
@@ -331,6 +333,18 @@ def main(port):
             cmd_result(ser, "stop_logging")
             time.sleep(1.0)
             ser.reset_input_buffer()
+
+        # --- 1a. 個体番号の付与 (--id 指定時のみ) ---
+        # set_name は EEPROM の名称に加えて XBee の BLE アドバタイズ名 (BI) にも
+        # firmware 側で反映される。BLE 広告名の確実な反映は電源再投入後。
+        if device_id is not None:
+            new_name = f"MLogger_{device_id:04d}"
+            res = cmd_result(ser, "set_name", {"name": new_name})
+            ok = res.get("name") == new_name
+            report.add("Device name set", ok, f"{device['name']} -> {res.get('name')}")
+            print(f"名称設定: {device['name']} -> {res.get('name')}")
+            device["name"] = res.get("name")
+            time.sleep(0.5)  # firmware 側の XBee BI/WR 適用 (~200ms) を跨がない
 
         try:
             # --- 1b. プローブ ID / XBee MAC / 補正係数 ---
@@ -424,12 +438,22 @@ def main(port):
 
 
 if __name__ == "__main__":
-    port = sys.argv[1] if len(sys.argv) > 1 else find_device_port()
+    import argparse
+    ap = argparse.ArgumentParser(description="M-Logger 出荷前試験")
+    ap.add_argument("port", nargs="?", default=None, help="COM ポート (省略時は自動検出)")
+    ap.add_argument("--id", type=int, metavar="NNNN", default=None,
+                    help="4 桁の個体番号。指定すると試験冒頭で名称を MLogger_NNNN に設定"
+                         " (XBee の BLE 名にも反映)")
+    args = ap.parse_args()
+    if args.id is not None and not (0 <= args.id <= 9999):
+        print("--id は 0-9999 の範囲で指定してください")
+        sys.exit(2)
+    port = args.port or find_device_port()
     if not port:
         print("No M-Logger found. Pass COM port explicitly: python factory_test.py COMx")
         sys.exit(2)
     try:
-        sys.exit(main(port))
+        sys.exit(main(port, args.id))
     except RuntimeError as e:
         print(f"[ABORT] {e}")
         sys.exit(1)
