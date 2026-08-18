@@ -52,6 +52,10 @@
 #define INTERRUPT_MSEC  (20)    // タイマ割り込み間隔 [msec]
 #define RESET_TIME      (3000)  // Reset 押し続け時間 [msec]
 
+// meas_count (0x2A) を進める間引き数。20ms × 10 = 200ms 周期 = 毎秒 +5。
+// 計測そのものは 20ms のままで、カウンタだけ間引く (poem 版と同じ歩幅)。
+#define MEAS_COUNT_DIV  (10)
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="変数定義">
@@ -167,6 +171,10 @@ int main(void)
     SharedMemory.reg.unit_type[1]  = UNIT_VOLTS;
     SharedMemory.reg.status1       = 0;
     SharedMemory.reg.status2       = 0;
+    // meas_count は RAM 上の変数なので、再起動すると必ず 0 に戻る。親機はこの値の
+    // 進み方から silent reboot を検知できる (poem と共通のレジスタ仕様)。
+    SharedMemory.reg.meas_count    = 0;
+    SharedMemory.reg.err_count     = 0;
     for (uint8_t i = 0; i < 8; i++) SharedMemory.reg.value[i] = 0.0f;
 
     // ===== 拡張領域の初期化 ===================================================
@@ -223,8 +231,16 @@ int main(void)
     sei();
 
     uint8_t prev_enabled = SharedMemory.reg.enable;
+    uint8_t meas_div     = 0;
     while (1)
     {
+        // WDT は SYSTEM_Initialize() 内で 4.1 秒周期に設定されている
+        // (mcc_generated_files/system/src/system.c の WDT_Initialize)。
+        // 呼ばないでいると 4.1 秒ごとに勝手に再起動する (th_sensor で実害が出た
+        // 既知の罠)。PWR_DOWN 中は tick が止まり pet できないため、末尾の
+        // スリープ選択で WDT を一時停止してから落とす。
+        wdt_reset();
+
         // マスタからの設定変更リクエスト
         if (I2C_Config_Update_Requested)
         {
@@ -259,6 +275,14 @@ int main(void)
         if (tick_count)
         {
             ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { tick_count--; }
+
+            // MEAS_COUNT_DIV 回に 1 度 +1。255 の次は 0 に戻る (uint8 の自然な巻き戻り)。
+            // 予熱中や enable=0 でも進める。「MCU が生きて回っているか」だけを表す
+            // 信号にしたいので、計測の可否は status1 に任せる (poem 版と同一仕様)。
+            if (++meas_div >= MEAS_COUNT_DIV) {
+                meas_div = 0;
+                SharedMemory.reg.meas_count++;
+            }
 
             // I2C keepalive
             if (0 < I2C_KeepAlive_Ticks)
@@ -315,13 +339,22 @@ int main(void)
             }
         }
 
-        // スリープモードを選択
+        // スリープモードを選択。
+        // PWR_DOWN 中は RTC tick が止まり main ループが回らず wdt_reset() を呼べない
+        // 一方、WDT は専用発振器で動き続けて 4.1 秒で誤リセットしてしまう。そのため
+        // th_sensor と同じく PWR_DOWN の間だけ WDT を止め、wake (TWI ADDR_MATCH)
+        // 後に再有効化する (poem 版は pod 給電で常時 IDLE のためこの分岐自体が無い)。
         if (SharedMemory.reg.enable == 1 || I2C_Is_Busy || 0 < I2C_KeepAlive_Ticks) {
             set_sleep_mode(SLEEP_MODE_IDLE);
+            sleep_mode();
         } else {
             set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+            _PROTECTED_WRITE(WDT.CTRLA, 0);      // WDT disable (PWR_DOWN 中)
+            sleep_mode();
+            _PROTECTED_WRITE(WDT.CTRLA, 0xA);    // WDT 4.1sec で再有効化 (WDT_Initialize と同値)
+            // wdt_reset() は不要: CTRLA への period set でカウンタは 0 から start し、
+            // すぐループ先頭の wdt_reset() に戻る
         }
-        sleep_mode();
     }
 #endif // TEST_MODE
 }

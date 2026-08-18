@@ -51,8 +51,8 @@ void SYSTEM_Initialize(void)
 
 int8_t WDT_Initialize()
 {
-    //PERIOD Off; WINDOW Off; 
-    ccp_write_io((void*)&(WDT.CTRLA),0x0);
+    //PERIOD 4K cycles (4.1s); WINDOW Off;
+    ccp_write_io((void*)&(WDT.CTRLA),0xA);
     
     //LOCK disabled; 
     ccp_write_io((void*)&(WDT.STATUS),0x0);

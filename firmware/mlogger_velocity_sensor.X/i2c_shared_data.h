@@ -38,7 +38,15 @@ typedef struct {
     // ===== POLL BLOCK (0x28-0x4B, 毎周期読む) ================================
     uint8_t  status1;               // 0x28 R   : 状態フラグ
     uint8_t  status2;               // 0x29 R/W : 計測値更新フラグ (0=未了, 1=更新)
-    uint8_t  reserved_2A[2];        // 0x2A     : 予約 (float alignment)
+    // 0x2A-0x2B は元は予約 (float 整列用) だった 2 バイト。POLL BLOCK の内側にあり
+    // 親機が毎周期読んで捨てていたので、通信を増やさずに自己診断を運べる。
+    //
+    // meas_count は自分が数えた計測回数。RAM 上なので再起動すると 0 に戻り、
+    // 親機は進み方から silent reboot を検知できる (poem 版と同一仕様。
+    // M-Logger 親機は現状未使用)。20 ms 周期の 10 回に 1 度だけ進めるので
+    // 1 秒あたり +5。enable=0 で PWR_DOWN 中は tick ごと止まるため進まない。
+    uint8_t  meas_count;            // 0x2A R   : 計測ごとに +1。255 の次は 0。起動時は 0
+    uint8_t  err_count;             // 0x2B R   : I2C 異常を検出した回数 (現状は未使用で 0)
     float    value[8];              // 0x2C R   : 計測値 (LE float)
 
     // ===== 拡張領域 (0x4C-) ==================================================
