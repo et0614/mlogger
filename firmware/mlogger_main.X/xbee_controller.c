@@ -841,6 +841,29 @@ int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap)
     return result;
 }
 
+// EEPROM の名称 (EM_mlName) を XBee の BLE アドバタイズ名 (BI) に反映して永続化する。
+// set_name 受信時に呼ぶ (従来は Xbee_Initialize の初期設定でしか BI を書かず、
+// 改名しても BLE 名が初期値のまま残っていた)。
+// 広告名の確実な反映は XBee の再起動後だが、FR (ソフトリセット) は発行しない
+// (BLE 経由の改名で接続が切断されるのを避けるため。出荷工程では試験後の
+// 電源再投入で反映される)。
+void Xbee_ApplyBleName(void)
+{
+    bool wasSleeping = Xbee_IsSleeping();
+    if (wasSleeping) {
+        Xbee_Wakeup();
+        DELAY_microseconds(150);
+    }
+
+    const uint8_t frameIdNoAck = 0x00; // 応答を要求しない
+    sendAtCommandApiFrame("BI", frameIdNoAck, (const uint8_t*)EM_mlName, strlen(EM_mlName));
+    _delay_ms(100);
+    sendAtCommandApiFrame("WR", frameIdNoAck, NULL, 0); // 不揮発メモリへ保存
+    _delay_ms(100);
+
+    if (wasSleeping || g_shouldSleep) sleepXBee();
+}
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="公開関数：スリープ">

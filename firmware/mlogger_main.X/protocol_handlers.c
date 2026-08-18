@@ -241,6 +241,11 @@ void ph_set_name(int32_t id, const char *json, const jsmntok_t *tokens, int ntok
     pc_key(&w, "name"); pc_str(&w, EM_mlName);
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+
+    // XBee の BLE アドバタイズ名 (BI) にも反映する (出荷時の個体番号付与や
+    // アプリからの改名で BLE 名が初期値のまま残らないように)。
+    // 応答送信後に行う (BI/WR の適用待ち ~200ms で応答を遅らせないため)。
+    Xbee_ApplyBleName();
 }
 
 // ============================================================

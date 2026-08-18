@@ -114,6 +114,12 @@ void Xbee_SendAtCmd(const char *data);
 int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap);
 
 /**
+ * @brief EEPROM の名称 (EM_mlName) を XBee の BLE アドバタイズ名 (BI) に反映して永続化する
+ *        (set_name 受信時に呼ぶ。blocking ~200ms)
+ */
+void Xbee_ApplyBleName(void);
+
+/**
  * @brief XBeeの設定を初期化する
  * @return 初期化成功: true
  */
