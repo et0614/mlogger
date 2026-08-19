@@ -103,6 +103,12 @@
 
 ## 4. Battery 寿命試算
 
+> **改訂 (2026-08-18)**: CO2 平均化 (計測 tick 直前 5 sec を 1 Hz burst で計測、
+> firmware `CO2_AVERAGING_SEC=5`) の導入により、TH/CO2/Glb 系は interval あたり
+> 1 shot → 5 shot になった。interval > 5sec の該当試算値を改訂済み (60sec: 62→58 日)。
+> また interval ≤ 5sec では probe が 1 Hz 連続動作となるため、interval 2〜5sec でも
+> 1sec と同等 (~4.9 mA) になる点に注意。
+
 ### 前提
 
 - Eneloop Pro AA × 2 直列 (1 本 2500 mAh、直列接続なので **容量 = 2500 mAh**、電圧 = 1 本ぶんの倍 = 2.76V)
@@ -121,14 +127,14 @@
 
 ### interval = 60sec (現実的)
 
-- TH/CO2/Glb のみ: ~1.67 mA → **62 日** (probe duty 1.7% で baseline とほぼ同等)
+- TH/CO2/Glb のみ: ~1.78 mA → **58 日** (CO2 burst 5 shot で probe duty 4.3%)
 - 風速のみ: ~11 mA → **9 日** (熱線 V_WAKEUP_TIME=10sec で duty 17%)
 - 照度のみ: ~1.64 mA → **64 日**
 - すべて: ~12 mA → **9 日**
 
 ### interval = 600sec (10 分)
 
-- TH/CO2/Glb のみ: ~1.65 mA → **63 日**
+- TH/CO2/Glb のみ: ~1.65 mA → **63 日** (burst の寄与 +0.014 mA で影響軽微)
 - 風速のみ: ~2.6 mA → **40 日**
 - すべて: ~2.7 mA → **39 日**
 
@@ -153,6 +159,7 @@ active 期間の長さ (duty 計算用):
 | 定数 | 値 [sec] | 説明 |
 |------|----------|------|
 | `T_GENERAL_ACTIVE_S` | 0.52 | th_probe `measureOnce` 1 回あたりの所要時間 |
+| `T_CO2_BURST_S` | 5 | CO2 平均化 burst 秒数 (firmware `CO2_AVERAGING_SEC` と同期、2026-08 追加)。tick 直前のこの秒数は 1 Hz で measureOnce するため、interval あたりの shot 数は min(interval, この値) |
 | `T_VELOCITY_WAKEUP_S` | 10 | 風速プローブ熱線立ち上がり時間 (`V_WAKEUP_TIME`) |
 | `T_ILLUMINANCE_ACTIVE_S` | 0.01 | OPT3001 read 所要 (推定、微小) |
 
@@ -182,7 +189,10 @@ def estimate_power_mW(settings, *, led_blink_enabled=True):
     if not led_blink_enabled:
         p -= P_LED_BLINK_MW
     if settings.general.enabled:
-        duty = min(T_GENERAL_ACTIVE_S / settings.general.interval, 1.0)
+        # CO2 平均化 burst: tick 直前 T_CO2_BURST_S sec は 1 Hz で measureOnce するため、
+        # interval あたりの active 時間は min(interval, T_CO2_BURST_S) shot ぶん
+        active_s = T_GENERAL_ACTIVE_S * min(settings.general.interval, T_CO2_BURST_S)
+        duty = min(active_s / settings.general.interval, 1.0)
         p += P_GENERAL_ACTIVE_MW * duty
     if settings.velocity.enabled:
         if settings.velocity.interval < T_VELOCITY_WAKEUP_S:
@@ -202,12 +212,14 @@ def estimate_hours(power_mW, voltage_mV):
 
 ### 試算例 (新品電池、Alkaline 3.0V / NiMH 2.6V)
 
+CO2 burst 対応の式で再計算 (2026-08-18。旧表は式との不整合もあったため全行を計算し直した):
+
 | 設定 | Power [mW] | I @3.0V [mA] | 時間 @3.0V | I @2.6V [mA] | 時間 @2.6V |
 |------|-----------|--------------|-----------|--------------|-----------|
-| general (60sec) のみ | 4.68 | 1.56 | **43 日** | 1.80 | **37 日** |
-| general (60sec) + velocity (300sec) | 13.0 | 4.32 | **15 日** | 5.00 | **13 日** |
-| general (60sec) + velocity (60sec) + illuminance (60sec) | 46.0 | 15.3 | **4.3 日** | 17.7 | **3.8 日** |
-| 全有効 (10分間隔) | 8.67 | 2.89 | **23 日** | 3.33 | **20 日** |
+| general (60sec) のみ | 5.27 | 1.76 | **38 日** | 2.03 | **33 日** |
+| general (60sec) + velocity (300sec) | 9.40 | 3.13 | **21 日** | 3.61 | **18 日** |
+| general (60sec) + velocity (60sec) + illuminance (60sec) | 25.9 | 8.65 | **7.7 日** | 9.98 | **6.7 日** |
+| 全有効 (10分間隔) | 6.67 | 2.22 | **30 日** | 2.57 | **26 日** |
 
 ### 注記
 

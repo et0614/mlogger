@@ -30,6 +30,13 @@ public static class BatteryEstimator
     /// <summary>th_probe measureOnce 1 回の所要時間 [sec]。</summary>
     public const double TGeneralActiveSec = 0.52;
 
+    /// <summary>
+    /// CO2 平均化 burst 秒数 (firmware <c>CO2_AVERAGING_SEC</c> と同期、2026-08 導入)。
+    /// 計測 tick 直前のこの秒数は 1 Hz で measureOnce するため、
+    /// interval あたりの shot 数は min(interval, この値) になる。
+    /// </summary>
+    public const double TCo2BurstSec = 5.0;
+
     /// <summary>風速プローブ熱線立ち上げ時間 [sec] (firmware <c>V_WAKEUP_TIME</c>)。</summary>
     public const double TVelocityWakeupSec = 10.0;
 
@@ -68,11 +75,14 @@ public static class BatteryEstimator
         double p = PBaselineMw;
         if (!ledBlinkEnabled) p -= PLedBlinkMw;
 
-        // General カテゴリ (= t_dry/humidity/t_glb/co2 一括) は DrybulbTemperature を代表値で使う
+        // General カテゴリ (= t_dry/humidity/t_glb/co2 一括) は DrybulbTemperature を代表値で使う。
+        // CO2 平均化 burst により tick 直前 TCo2BurstSec sec は 1 Hz で measureOnce するため、
+        // interval あたりの active 時間は min(interval, TCo2BurstSec) shot ぶんになる。
         var general = settings.DrybulbTemperature;
         if (general.Enabled && general.Interval > 0)
         {
-            double duty = Math.Min(TGeneralActiveSec / general.Interval, 1.0);
+            double activeSec = TGeneralActiveSec * Math.Min(general.Interval, TCo2BurstSec);
+            double duty = Math.Min(activeSec / general.Interval, 1.0);
             p += PGeneralActiveMw * duty;
         }
 
