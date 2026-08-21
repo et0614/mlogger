@@ -889,8 +889,10 @@ public partial class DeviceSetting : ContentPage
       });
       showIndicator(string.Format(MLSResource.DS_DumpInProgress, 0, header.RecordCount));
 
-      // 所要時間に応じた timeout (実効 ETA + 余裕 50%、最低 60sec)
-      int timeoutSec = Math.Max(60, etaMinutes * 60 * 3 / 2);
+      // 所要時間に応じた timeout (実効 ETA の 2 倍、最低 120sec)。
+      // block-pull 方式 (JsonRpcV4Protocol.DumpAsync) はフレーム欠落 block を
+      // 内部で再試行する (最大 4 回 × 10sec/block) ため、その余裕を含める。
+      int timeoutSec = Math.Max(120, etaMinutes * 60 * 2);
       using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSec));
       var result = await MLUtility.Protocol.DumpAsync(progress, cts.Token);
 

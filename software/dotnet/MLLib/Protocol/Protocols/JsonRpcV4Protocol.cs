@@ -31,9 +31,10 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     private int _dumpBytesRead;
     private int _dumpRemaining;
     private TaskCompletionSource? _dumpBytesReceived;
-    private TaskCompletionSource<int>? _dumpEndReceived;
-    // 進捗報告先 (DumpAsync の IProgress<int> を OnBytesReceived から呼ぶ用)
-    private IProgress<int>? _dumpProgress;
+    // 進捗報告先 (block 内の受信バイト数を OnBytesReceived から呼ぶ用)
+    private Action<int>? _dumpProgress;
+    // _lineBuffer の排他 (受信スレッドの Append と DumpBlockAsync の Reset が競合するため)
+    private readonly object _lineLock = new();
     // dump 応答の id (OnLine が同期的に binary mode へ切替える際の照合用)。-1 は dump 待機無し。
     // BLE では JSON header の直後に binary chunk が到着する場合があり、DumpAsync 側で
     // 非同期に _dumpRemaining を立てる従来方式だと race で binary bytes が line buffer に
@@ -109,7 +110,6 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         }
         _pending.Clear();
         _dumpBytesReceived?.TrySetCanceled();
-        _dumpEndReceived?.TrySetCanceled();
 
         _samples.OnCompleted();
         _samples.Dispose();
@@ -175,8 +175,12 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     // ============================================================
     // 受信処理
     // ============================================================
+    // 最終受信時刻 [Environment.TickCount64]。dump block 再試行前の静穏待ちに使う。
+    private long _lastRxTicks;
+
     private void OnBytesReceived(ReadOnlyMemory<byte> data)
     {
+        _lastRxTicks = Environment.TickCount64;
         int offset = 0;
         while (offset < data.Length)
         {
@@ -187,7 +191,7 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                 _dumpBytesRead += toRead;
                 _dumpRemaining -= toRead;
                 offset += toRead;
-                _dumpProgress?.Report(_dumpBytesRead);
+                _dumpProgress?.Invoke(_dumpBytesRead);
                 if (_dumpRemaining == 0) _dumpBytesReceived?.TrySetResult();
             }
             else
@@ -196,10 +200,14 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                 // 行解釈を中断し、残りバイトを dump buffer 経路に流す。これをしないと
                 // JSON header と binary chunk が同一 BLE notification に乗ったときに
                 // binary が line buffer に詰まって捨てられる。
-                int consumed = _lineBuffer.Append(
-                    data.Span[offset..],
-                    OnLine,
-                    () => _dumpRemaining > 0);
+                int consumed;
+                lock (_lineLock)
+                {
+                    consumed = _lineBuffer.Append(
+                        data.Span[offset..],
+                        OnLine,
+                        () => _dumpRemaining > 0);
+                }
                 offset += consumed;
             }
         }
@@ -285,8 +293,9 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                     if (data is not null) _co2.OnNext(ParseCo2Progress(data, ts));
                     break;
                 case "dump_end":
-                    int sent = data?["sent"]?.GetValue<int>() ?? 0;
-                    _dumpEndReceived?.TrySetResult(sent);
+                    // block-pull 方式では完了判定は受信バイト数で行うため未使用。
+                    // (firmware は各 block 送信後にも送出してくるが無視して良い。
+                    //  遅延到着した前 block の dump_end が次 block と交錯しても無害)
                     break;
                 case "time_sync_request":
                     int windowSec = data?["window_s"]?.GetValue<int>() ?? 30;
@@ -473,7 +482,126 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         return new DumpResult(count, recordSize, format, ReadOnlyMemory<byte>.Empty);
     }
 
+    // ============================================================
+    // dump (block-pull 方式)
+    //
+    // BLE/Zigbee の binary stream は fire-and-forget でフレーム欠落があり得る
+    // (XBee 内部バッファ overflow による silent drop)。欠落はストリーム途中で
+    // 起きるため「受信済みバイト数からの単純 resume」はデータ破損を招く。
+    // そこで全件を一気に流させるのではなく、小 block (DumpBlockRecords 件) を
+    // dump {from, limit} で順に pull し、期待バイト数が揃わなかった block だけ
+    // を再要求する。block 単位の要求-応答なのでペーシングが閉ループ化し、
+    // 欠落時も block 1 個の再試行 (~1-2 sec) で済む。
+    // ============================================================
+
+    /// <summary>
+    /// 1 block あたりのレコード数。22B/record × 1000 = 22KB。
+    /// firmware 側の UART flow-control 対応 (xb_write) によりストリーム自体が
+    /// ほぼ無損失になったため、block は「万一の欠落時の再取得単位 + 進捗の区切り」
+    /// でしかない。小さくしすぎると block 間の要求-応答ポーズ (~0.3 sec) が
+    /// 増えて体感が悪化する (100 で細切れ感の指摘あり 2026-08-21)。
+    /// </summary>
+    private const int DumpBlockRecords = 1000;
+
+    /// <summary>block 再試行の上限回数 (初回含む)。</summary>
+    private const int DumpBlockMaxAttempts = 4;
+
+    /// <summary>
+    /// block attempt の失敗判定: 受信が完全に途絶えてからこの時間で attempt を
+    /// 打ち切る (sliding timeout — バイトが流れ続けている限り切らない)。
+    /// block サイズに依存しないので大 block でも安全、途絶時は素早く再試行に入る。
+    /// </summary>
+    private static readonly TimeSpan DumpBlockStallTimeout = TimeSpan.FromSeconds(8);
+
+    /// <summary>
+    /// 失敗 block の再試行前に要求する受信静穏時間。失敗 attempt の遅延バイナリが
+    /// 吐き切られる前に再要求すると、遅延バイトが新 block のバッファに混入して
+    /// 「バイト数は揃うが中身が破損」する恐れがあるため、この時間受信が無いことを
+    /// 確認してから再要求する。
+    /// </summary>
+    private static readonly TimeSpan DumpRetryQuietWindow = TimeSpan.FromMilliseconds(700);
+
+    /// <summary>静穏待ちの上限 (受信が続いても諦めて再試行に進む)。</summary>
+    private static readonly TimeSpan DumpRetryQuietMaxWait = TimeSpan.FromSeconds(5);
+
+    /// <summary>直近 <see cref="DumpRetryQuietWindow"/> の間に受信が無くなるまで待つ。</summary>
+    private async Task WaitForRxQuietAsync(CancellationToken ct)
+    {
+        long start = Environment.TickCount64;
+        while (true)
+        {
+            long silence = Environment.TickCount64 - _lastRxTicks;
+            if (silence >= (long)DumpRetryQuietWindow.TotalMilliseconds) return;
+            if (Environment.TickCount64 - start >= (long)DumpRetryQuietMaxWait.TotalMilliseconds) return;
+            await Task.Delay(100, ct).ConfigureAwait(false);
+        }
+    }
+
     public async Task<DumpResult> DumpAsync(IProgress<int>? progress = null, CancellationToken ct = default)
+    {
+        // 総件数・record_size は get_count で確定 (dump は logging 停止中のみ許可される
+        // ため、転送中に件数が変わることはない)。
+        var header = await GetCountAsync(ct).ConfigureAwait(false);
+        int total   = header.RecordCount;
+        int recSize = header.RecordSize;
+        if (total <= 0 || recSize <= 0)
+            return new DumpResult(0, recSize, header.Format, ReadOnlyMemory<byte>.Empty);
+
+        var all = new byte[total * recSize];
+        int done = 0;   // 取得済みレコード数
+        while (done < total)
+        {
+            int n = Math.Min(DumpBlockRecords, total - done);
+            int baseBytes = done * recSize;
+            byte[]? block = null;
+
+            for (int attempt = 1; attempt <= DumpBlockMaxAttempts && block is null; attempt++)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (attempt > 1)
+                    await WaitForRxQuietAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    using var blockCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    blockCts.CancelAfter(DumpBlockStallTimeout);
+                    block = await DumpBlockAsync(
+                        done, n,
+                        bytes =>
+                        {
+                            // 受信がある限り stall timeout を再アーム。
+                            // (attempt 終了後に遅延バイトが届いた場合 blockCts は
+                            //  破棄済みのことがあるため ODE は握りつぶす)
+                            try { blockCts.CancelAfter(DumpBlockStallTimeout); }
+                            catch (ObjectDisposedException) { }
+                            progress?.Report(baseBytes + bytes);
+                        },
+                        blockCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    // block 単体のタイムアウト (フレーム欠落など) → 再要求
+                    DiagnosticSink?.Invoke($"dump block from={done} n={n} attempt={attempt} timed out, retrying");
+                }
+            }
+
+            if (block is null)
+                throw new MLProtocolException("dump_incomplete",
+                    $"dump block from={done} count={n} failed after {DumpBlockMaxAttempts} attempts");
+
+            block.CopyTo(all.AsSpan(baseBytes));
+            done += n;
+            progress?.Report(done * recSize);
+        }
+
+        return new DumpResult(total, recSize, header.Format, all);
+    }
+
+    /// <summary>
+    /// dump {from, limit} を 1 回発行し、その block の binary (limit × record_size バイト)
+    /// を受信して返す。期待バイト数が揃わない場合は ct のタイムアウトで
+    /// OperationCanceledException になる (呼び出し側が再試行)。
+    /// </summary>
+    private async Task<byte[]> DumpBlockAsync(int from, int count, Action<int>? progress, CancellationToken ct)
     {
         // CallAsync を使わず、id を先に確定してから _dumpPendingId に登録する。これで
         // header response 受信時に OnLine が同期的に _dumpBuffer/_dumpRemaining を立て、
@@ -485,24 +613,30 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
         _dumpPendingId = id;
 
         _dumpBytesReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _dumpEndReceived   = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         _dumpProgress      = progress;
 
         using var registration = ct.Register(() =>
         {
             if (_pending.TryRemove(id, out var t)) t.TrySetCanceled(ct);
             _dumpBytesReceived?.TrySetCanceled();
-            _dumpEndReceived?.TrySetCanceled();
         });
 
         try
         {
+            // 前 attempt の遅延バイナリ残骸 (改行を含まない不完全 "行") が line buffer に
+            // 残っていると、今回の header JSON がそれに連結されて parse 不能になる。
+            // リクエスト送信前に捨てて再同期する。dump シーケンス中に正規の行が
+            // 部分受信状態でいることはほぼ無い (60 sec 周期の ready heartbeat 程度で、
+            // 欠けても実害なし)。
+            lock (_lineLock) _lineBuffer.Reset();
+
             // 1) dump コマンドを送信 (id は予約済み)
             var envelope = new JsonObject
             {
                 ["v"]       = 1,
                 ["id"]      = id,
                 ["command"] = "dump",
+                ["params"]  = new JsonObject { ["from"] = from, ["limit"] = count },
             };
             var json = envelope.ToJsonString();
             DiagnosticSink?.Invoke($"TX id={id} cmd=dump len={json.Length}: {json}");
@@ -512,19 +646,18 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             var resp = await tcs.Task.ConfigureAwait(false);
             if (resp is not JsonObject header)
                 throw new InvalidDataException("dump header was not a JSON object");
-            int count       = header["count"]?.GetValue<int>() ?? 0;
-            int recordSize  = header["record_size"]?.GetValue<int>() ?? 0;
-            string format   = header["format"]?.GetValue<string>() ?? "";
+            int gotCount = header["count"]?.GetValue<int>() ?? 0;
+            int gotFrom  = header["from"]?.GetValue<int>() ?? 0;
+            if (gotFrom != from || gotCount != count)
+                throw new InvalidDataException(
+                    $"dump block mismatch: requested from={from} count={count}, got from={gotFrom} count={gotCount}");
 
-            // 3) バイナリ受信完了待ち (0件なら即解決)
-            if (count * recordSize == 0) _dumpBytesReceived.TrySetResult();
+            // 3) バイナリ受信完了待ち (期待バイト数が揃うまで)
             await _dumpBytesReceived.Task.ConfigureAwait(false);
 
-            // 4) dump_end イベント待ち
-            await _dumpEndReceived.Task.ConfigureAwait(false);
-
-            var data = _dumpBuffer ?? Array.Empty<byte>().AsMemory();
-            return new DumpResult(count, recordSize, format, data);
+            // 4) dump_end イベントは待たない (完了はバイト数で判定済み。イベント行の
+            //    欠落・遅延到着の影響を受けないようにするため)。
+            return _dumpBuffer ?? Array.Empty<byte>();
         }
         finally
         {
@@ -533,7 +666,6 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
             _dumpBytesRead = 0;
             _dumpRemaining = 0;
             _dumpBytesReceived = null;
-            _dumpEndReceived = null;
             _dumpProgress = null;
         }
     }
