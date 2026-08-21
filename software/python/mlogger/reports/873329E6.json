@@ -1,13 +1,13 @@
 {
   "test": "factory_test",
-  "script_version": "1.1",
-  "timestamp": "2026-08-10T13:11:40",
+  "script_version": "1.2",
+  "timestamp": "2026-08-18T18:59:26",
   "device": {
-    "name": "MLogger_0000",
-    "hardware_id": "911759D0",
+    "name": "MLogger_1456",
+    "hardware_id": "873329E6",
     "firmware_version": "4.0.0",
     "protocol_version": 1,
-    "battery_mv": 2974
+    "battery_mv": 2603
   },
   "probes": {
     "th_probe": {
@@ -24,7 +24,7 @@
     }
   },
   "radio": {
-    "xbee_mac": "0013A200420BCE01",
+    "xbee_mac": "0013A200420BCDE8",
     "xbee_fw": "1013"
   },
   "correction": {
@@ -52,15 +52,15 @@
   "settings_shipped": {
     "general": {
       "enabled": true,
-      "interval": 60
+      "interval": 1
     },
     "velocity": {
       "enabled": true,
-      "interval": 60
+      "interval": 1
     },
     "illuminance": {
       "enabled": true,
-      "interval": 60
+      "interval": 1
     },
     "start_ts": 1609459200
   },
@@ -79,12 +79,12 @@
     {
       "item": "XBee module",
       "pass": true,
-      "detail": "mac=0013A200420BCE01 fw=1013"
+      "detail": "mac=0013A200420BCDE8 fw=1013"
     },
     {
       "item": "Battery voltage",
       "pass": true,
-      "detail": "2974 mV (allowed 2000-3500)"
+      "detail": "2603 mV (allowed 2000-3500)"
     },
     {
       "item": "Probe connection",
@@ -94,86 +94,86 @@
     {
       "item": "T/RH sensor (dry-bulb)",
       "pass": true,
-      "detail": "n=15/15 min=24.35 mean=24.47 max=24.63"
+      "detail": "n=15/15 min=26.67 mean=27.16 max=27.71"
     },
     {
       "item": "T/RH sensor (humidity)",
       "pass": true,
-      "detail": "n=15/15 min=56.0 mean=56.47 max=57.0"
+      "detail": "n=15/15 min=56.4 mean=57.37 max=58.5"
     },
     {
       "item": "Globe temperature sensor",
       "pass": true,
-      "detail": "n=15/15 min=23.77 mean=23.83 max=23.92"
+      "detail": "n=15/15 min=25.04 mean=25.07 max=25.11"
     },
     {
       "item": "CO2 sensor",
       "pass": true,
-      "detail": "n=15/15 min=1567 mean=1585.27 max=1593"
+      "detail": "n=15/15 min=1618 mean=2075.33 max=2183"
     },
     {
       "item": "Illuminance sensor",
       "pass": true,
-      "detail": "n=15/15 min=859 mean=860.0 max=861"
+      "detail": "n=15/15 min=494 mean=495.53 max=497"
     },
     {
       "item": "Velocity sensor (air speed)",
       "pass": true,
-      "detail": "n=15/15 min=0.0 mean=0.05 max=0.154"
+      "detail": "n=15/15 min=0.0 mean=0.06 max=0.292"
     },
     {
       "item": "Velocity sensor (bridge voltage)",
       "pass": true,
-      "detail": "n=15/15 min=371 mean=443.67 max=560"
+      "detail": "n=15/15 min=361 mean=425.87 max=513"
     },
     {
       "item": "Flash memory",
       "pass": true,
-      "detail": "read back 21 records: gen=[5] ts_monotonic=True flags_nonzero=True ts_sane=True dump_end=True"
+      "detail": "read back 27 records: gen=[7] ts_monotonic=True flags_nonzero=True ts_sane=True dump_end=True"
     }
   ],
   "channel_stats": {
     "t": {
       "n": 15,
-      "min": 24.35,
-      "mean": 24.469,
-      "max": 24.63
+      "min": 26.67,
+      "mean": 27.156,
+      "max": 27.71
     },
     "h": {
       "n": 15,
-      "min": 56.0,
-      "mean": 56.473,
-      "max": 57.0
+      "min": 56.4,
+      "mean": 57.367,
+      "max": 58.5
     },
     "g": {
       "n": 15,
-      "min": 23.77,
-      "mean": 23.832,
-      "max": 23.92
+      "min": 25.04,
+      "mean": 25.073,
+      "max": 25.11
     },
     "c": {
       "n": 15,
-      "min": 1567,
-      "mean": 1585.267,
-      "max": 1593
+      "min": 1618,
+      "mean": 2075.333,
+      "max": 2183
     },
     "l": {
       "n": 15,
-      "min": 859,
-      "mean": 860.0,
-      "max": 861
+      "min": 494,
+      "mean": 495.533,
+      "max": 497
     },
     "v": {
       "n": 15,
       "min": 0.0,
-      "mean": 0.047,
-      "max": 0.154
+      "mean": 0.06,
+      "max": 0.292
     },
     "vv": {
       "n": 15,
-      "min": 371,
-      "mean": 443.667,
-      "max": 560
+      "min": 361,
+      "mean": 425.867,
+      "max": 513
     }
   },
   "judge_ranges": {
@@ -203,7 +203,7 @@
         10.0
       ],
       "vv": [
-        100,
+        50,
         3000
       ]
     },
