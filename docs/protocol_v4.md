@@ -301,26 +301,29 @@ dump 実行前に件数とフォーマット情報を取得する軽量コマン
 
 ### 4.11 `dump`
 
-旧 `DMP`。記録データ全量転送。**バイナリ形式は v3 を踏襲。**
+旧 `DMP`。記録データ転送。**バイナリ形式は v3 を踏襲。**
 
 USB / BLE / Zigbee すべてで動作する。ただし以下の制約あり:
 
 - **ロギング中は不可** (`busy` エラー): BLE / Zigbee 経由 dump は smp イベントと
   同 channel になるため、binary stream と JSON が混ざって受信側 parser が破綻する。
   事前に `stop_logging` を呼ぶこと。
-- **BLE は所要時間が長い**: 実効スループット 約 1.7 KB/sec、1 record = 22 B なので、
+- **BLE は所要時間が長い**: 実効スループット 約 1.7〜2.4 KB/sec、1 record = 22 B なので、
   10,000 records (60 sec 間隔の 1 週間相当) で ~2 分、満杯 (1.44M records ≈ 31.7 MB)
   で ~5 時間。親機側で `get_count` の応答から ETA を計算してユーザーに確認すること。
 - **dump 実行中は ready event の同 channel への送出を firmware 側で抑止する**
-  (受信側 parser が dump_end まで binary 受信モードを維持できるように)。
+  (受信側 parser が binary 受信完了まで binary 受信モードを維持できるように)。
 
 ```jsonc
-// 要求
-{"v":1,"id":12,"command":"dump"}
+// 要求 (params は省略可)
+//   from  = 送信開始レコード index (省略時 0)
+//   limit = 送信レコード数 (省略時/0 は末尾まで全件)
+{"v":1,"id":12,"command":"dump","params":{"from":200,"limit":100}}
 
-// 制御応答: 件数とフォーマット情報 (get_count の応答と同じ形)
+// 制御応答: この応答で送る範囲 (rec_latest でクランプ後) とフォーマット情報
 {"v":1,"id":12,"result":{
-  "count": <int>,
+  "count": <int>,          // この応答で送るレコード数
+  "from": <int>,           // 送信開始 index (クランプ後)
   "record_size": 22,
   "format": "<BIBIhhHHHH>"
 }}
@@ -333,9 +336,35 @@ USB / BLE / Zigbee すべてで動作する。ただし以下の制約あり:
 //   uint16 wind, uint16 volt, uint16 co2
 // (旧 v3 Python load_data.py の RECORD_SIZE/DATA_FMT と互換)
 
-// 終了通知 (JSON モードに戻る合図)
+// 終了通知 (JSON モードに戻る合図。sent = この要求で送ったレコード数)
 {"v":1,"event":"dump_end","ts":1747500000,"data":{"sent":<int>}}
 ```
+
+#### 転送の無損失性と block-pull (2026-08 導入)
+
+**firmware 側 (根本対策)**: XBee 宛 UART TX は flow-control 対応ラッパ
+(`xbee_controller.c` の `xb_write`) を通す。MCC の `USART0_Write` は TX ring
+(256B) 満杯時にバイトを silent drop するが、XBee の CTS (PD5 配線済み) で
+UART 送出が止まっている間に dump chunk を書き続けるとこの ring が溢れる。
+BLE リンクが冷えている転送開始直後は drain が遅く CTS で止まりやすいため、
+「ダウンロード開始直後だけ ~400B 欠落する」実機不具合の原因だった (2026-08-21)。
+`xb_write` は ring の空きを待つので、MCU ring → CTS → XBee バッファ → BLE
+(リンク層再送あり) の全区間が閉ループになり、原理的に無損失。
+
+**クライアント側 (保険)**: それでも欠落・切断はあり得るため、クライアントは
+全件を 1 回の dump で流させるのではなく、block を `from`/`limit` で順に pull し、
+期待バイト数 (count × record_size) が揃わなかった block だけを再要求する。
+
+- MAUI (`JsonRpcV4Protocol.DumpAsync`) の実装値: 1000 records/block (22 KB —
+  小さすぎると block 間の要求-応答ポーズで細切れ感が出る)、受信途絶 8 sec で
+  attempt 打切り (sliding stall timeout、流れている限り切らない)、再試行上限 4 回。
+  再試行前は受信静穏 (~700 ms 無受信) を待って前 attempt の遅延バイナリとの
+  交錯 (buffer 混入によるデータ破損) を防ぎ、さらに line buffer をリセットして
+  残骸との行連結を防ぐ。
+- 完了判定は受信バイト数で行い、`dump_end` イベントには依存しない
+  (イベント行自体が drop され得るため)。
+- USB-CDC は元々ロスレス (USB 自体のフロー制御) なので、従来どおり
+  params 無し (全件 1 stream) で良い (Python `load_data.py` / `factory_test.py`)。
 
 ロギング中に送ると:
 ```jsonc
@@ -353,7 +382,7 @@ USB / BLE / Zigbee すべてで動作する。ただし以下の制約あり:
 
 PC (Zigbee) / BLE / USB-CDC への送信は内蔵フラッシュを使わないため、満杯概念は無関係 (`start_logging` の `transports.flash:false` で運用)。
 
-`dump` の `count` は常に「現世代のレコード数」= `rec_latest` を返し、バイナリストリームも index 0 から `count` 件を時系列順 (= 書き込み順) に出力する。CSV 上の並び替えは不要。
+`get_count` の `count` は常に「現世代のレコード数」= `rec_latest` を返す。`dump` のバイナリストリームは `from` (デフォルト 0) から `count` 件を時系列順 (= 書き込み順) に出力する。CSV 上の並び替えは不要。
 
 ### 4.12 `erase_flash` (USB-CDC 専用)
 

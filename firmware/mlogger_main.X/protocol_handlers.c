@@ -593,20 +593,46 @@ void ph_get_count(int32_t id, const char *json, const jsmntok_t *tokens, int nto
 //   ロギング中は busy エラー (BLE/Zigbee dump は同 channel で smp event と干渉するため)。
 //   USB-CDC: async stream (USB_Stream_Task が main loop で駆動)
 //   BLE/Zigbee: blocking 風だが内部で wdt_reset/main loop pump
+//
+//   params (省略可): { "from": N, "limit": M }
+//   from  = 送信開始レコード index (省略時 0)
+//   limit = 送信レコード数 (省略時/0 は末尾まで)
+//   BLE/Zigbee は fire-and-forget でフレーム欠落があり得るため、クライアントは
+//   小 block (~100 records) を limit 指定で pull し、不足 block だけ再要求する。
+//   ヘッダの count/from は「この応答で送る範囲」(クランプ後) を返す。
 // ============================================================
 void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
-    (void)json; (void)tokens; (void)ntokens; (void)params_tok;
-
     if (LC_IsLogging()) {
         send_simple_error(id, src, "busy", "stop logging before dump");
         return;
     }
 
+    uint32_t from = 0;
+    uint32_t limit = 0;   // 0 = 末尾まで
+    if (params_tok >= 0) {
+        int from_tok = pc_obj_get(json, tokens, ntokens, params_tok, "from");
+        if (from_tok >= 0 && tokens[from_tok].type == JSMN_PRIMITIVE) {
+            int32_t v = pc_tok_int(json, &tokens[from_tok]);
+            if (v > 0) from = (uint32_t)v;
+        }
+        int limit_tok = pc_obj_get(json, tokens, ntokens, params_tok, "limit");
+        if (limit_tok >= 0 && tokens[limit_tok].type == JSMN_PRIMITIVE) {
+            int32_t v = pc_tok_int(json, &tokens[limit_tok]);
+            if (v > 0) limit = (uint32_t)v;
+        }
+    }
+
+    // rec_latest でクランプした実送信範囲 (USB_StartRecordStream 内の計算と一致させる)
+    if (from > rec_latest) from = rec_latest;
+    uint32_t n = rec_latest - from;
+    if (limit > 0 && limit < n) n = limit;
+
     // JSON ヘッダ送信。record_size は SensorData_t (=22 bytes) に追従する。
     // format string "<BIBIhhHHHH>" も 22 bytes (LE 無 alignment) で一致確認済。
     pc_writer_t w;
     pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
-    pc_key(&w, "count");       pc_uint(&w, rec_latest);
+    pc_key(&w, "count");       pc_uint(&w, n);
+    pc_key(&w, "from");        pc_uint(&w, from);
     pc_key(&w, "record_size"); pc_uint(&w, sizeof(SensorData_t));
     pc_key(&w, "format");      pc_str(&w, "<BIBIhhHHHH>");
     pc_end_result(&w);
@@ -616,7 +642,7 @@ void ph_dump(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens,
     USB_SetStreamDoneCallback(pe_emit_dump_end);
 
     // バイナリストリーム開始。transport に応じて stream destination を切替。
-    USB_StartRecordStream(src);
+    USB_StartRecordStream(src, from, n);
 }
 
 // ============================================================

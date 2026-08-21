@@ -76,6 +76,42 @@ static int addCsum(int csum, char nbyte) {
     return csum;
 }
 
+// ============================================================
+// USART0_Write の flow-control 対応ラッパ (XBee 宛の全 TX はこれを使う)
+//
+// MCC の USART0_Write は TX ring buffer (256B) 満杯時にバイトを silent drop する。
+// 本基板は XBee の CTS が PD5 に配線されており、XBee 内部バッファが満杯になると
+// CTS de-assert → MCC ドライバが UART 送出を停止 → ring が掃けなくなる。
+// BLE dump のような連続送信でここに書き続けると ring 溢れで欠落する
+// (実害: BLE リンクが冷えている転送開始直後に ~400B がまとまって消え、
+//  スマホ側ダウンロードが「最初の block だけ何度も失敗」する 2026-08-21 の不具合)。
+// → 空きを待ってから書くことで、MCU ring → CTS → XBee バッファ → BLE (リンク層
+//   再送あり) の全区間が閉ループになり、drain 速度によらず無損失になる。
+//
+// BLE 切断等で CTS が永久に戻らない場合に備え ~500ms でタイムアウトし、
+// g_uartTxStall を立てて以降は待たずに捨てる (無限待ち回避。frame は壊れるが
+// リンク自体が死んでいる状況。次 frame は 0x7E delimiter で再同期される)。
+// 空きが出た時点で stall は自動解除。
+// ============================================================
+static bool g_uartTxStall = false;
+
+static void xb_write(uint8_t b)
+{
+    if (!USART0_IsTxReady()) {
+        if (g_uartTxStall) return;   // stall 中は待たない (連続 500ms 待ちの累積回避)
+        uint16_t guard = 5000;       // 100us x 5000 = 500ms
+        while (!USART0_IsTxReady()) {
+            if (--guard == 0) {
+                g_uartTxStall = true;
+                return;
+            }
+            DELAY_microseconds(100);
+        }
+    }
+    g_uartTxStall = false;
+    USART0_Write(b);
+}
+
 static void receiveMessage(char message[]) {
     uint8_t index = 0;
     uint16_t timeout_counter = 0;
@@ -105,34 +141,34 @@ static void sendAtCommandApiFrame(const char at_command[2], uint8_t frame_id, co
     uint8_t checksum = 0;
     uint8_t payload_len = 4 + param_len;
 
-    USART0_Write(XB_START_DELIMITER);
-    USART0_Write(0x00);
-    USART0_Write(payload_len);
+    xb_write(XB_START_DELIMITER);
+    xb_write(0x00);
+    xb_write(payload_len);
 
-    USART0_Write(XB_FRAME_AT_COMMAND);
+    xb_write(XB_FRAME_AT_COMMAND);
     checksum += XB_FRAME_AT_COMMAND;
 
-    USART0_Write(frame_id);
+    xb_write(frame_id);
     checksum += frame_id;
 
-    USART0_Write((uint8_t)at_command[0]);
+    xb_write((uint8_t)at_command[0]);
     checksum += at_command[0];
-    USART0_Write((uint8_t)at_command[1]);
+    xb_write((uint8_t)at_command[1]);
     checksum += at_command[1];
 
     if (param && param_len > 0) {
         for (uint8_t i = 0; i < param_len; i++) {
-            USART0_Write(param[i]);
+            xb_write(param[i]);
             checksum += param[i];
         }
     }
-    USART0_Write((uint8_t)(0xFF - checksum));
+    xb_write((uint8_t)(0xFF - checksum));
 }
 
 // 文字列送信ヘルパー
 static void sendString(const char *str) {
     while (*str) {
-        USART0_Write((uint8_t)*str++);
+        xb_write((uint8_t)*str++);
     }
 }
 
@@ -582,38 +618,38 @@ static void xbee_zb_send_chunk(const char *data, int len)
 {
     int chkSum = 0;
 
-    USART0_Write(XB_START_DELIMITER);
-    USART0_Write((uint8_t)(((len + XB_TX_HEADER_LENGTH) >> 8) & 0xff));
-    USART0_Write((uint8_t)((len + XB_TX_HEADER_LENGTH) & 0xff));
+    xb_write(XB_START_DELIMITER);
+    xb_write((uint8_t)(((len + XB_TX_HEADER_LENGTH) >> 8) & 0xff));
+    xb_write((uint8_t)((len + XB_TX_HEADER_LENGTH) & 0xff));
 
-    USART0_Write(XB_FRAME_ZIGBEE_TX_REQUEST);
+    xb_write(XB_FRAME_ZIGBEE_TX_REQUEST);
     chkSum = addCsum(chkSum, XB_FRAME_ZIGBEE_TX_REQUEST);
 
     g_txStatusReceived = false;
     g_lastFrameId++;
     if(g_lastFrameId == 0) g_lastFrameId = 0x01; // 0はNoACKなのでスキップ
-    USART0_Write(g_lastFrameId);
+    xb_write(g_lastFrameId);
     chkSum = addCsum(chkSum, g_lastFrameId);
 
     // 64bit Address (All 0)
-    for(int i=0; i<8; i++) USART0_Write(0x00);
+    for(int i=0; i<8; i++) xb_write(0x00);
 
     // 16bit Address
     uint8_t addr_msb = (uint8_t)(XB_TX_ADDR16_COORDINATOR >> 8);
     uint8_t addr_lsb = (uint8_t)(XB_TX_ADDR16_COORDINATOR & 0xFF);
-    USART0_Write(addr_msb); chkSum = addCsum(chkSum, addr_msb);
-    USART0_Write(addr_lsb); chkSum = addCsum(chkSum, addr_lsb);
+    xb_write(addr_msb); chkSum = addCsum(chkSum, addr_msb);
+    xb_write(addr_lsb); chkSum = addCsum(chkSum, addr_lsb);
 
-    USART0_Write(XB_TX_BROADCAST_RADIUS_MAX);
-    USART0_Write(XB_TX_OPTIONS_DEFAULT);
+    xb_write(XB_TX_BROADCAST_RADIUS_MAX);
+    xb_write(XB_TX_OPTIONS_DEFAULT);
 
     // Payload
     for(int i=0; i<len; i++) {
-        USART0_Write((uint8_t)data[i]);
+        xb_write((uint8_t)data[i]);
         chkSum = addCsum(chkSum, data[i]);
     }
 
-    USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
+    xb_write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
 
     waitTxCompletion(200);
 }
@@ -670,11 +706,11 @@ static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
 {
     int chkSum = 0;
 
-    USART0_Write(XB_START_DELIMITER);
-    USART0_Write((uint8_t)(((len + XB_UDR_HEADER_LENGTH) >> 8) & 0xff));
-    USART0_Write((uint8_t)((len + XB_UDR_HEADER_LENGTH) & 0xff));
+    xb_write(XB_START_DELIMITER);
+    xb_write((uint8_t)(((len + XB_UDR_HEADER_LENGTH) >> 8) & 0xff));
+    xb_write((uint8_t)((len + XB_UDR_HEADER_LENGTH) & 0xff));
 
-    USART0_Write(XB_FRAME_USER_DATA_RELAY);
+    xb_write(XB_FRAME_USER_DATA_RELAY);
     chkSum = addCsum(chkSum, XB_FRAME_USER_DATA_RELAY);
 
     uint8_t frameId;
@@ -686,18 +722,18 @@ static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
     } else {
         frameId = 0x00;  // XBee は応答しない
     }
-    USART0_Write(frameId);
+    xb_write(frameId);
     chkSum = addCsum(chkSum, frameId);
 
-    USART0_Write(XB_UDR_INTERFACE_BLUETOOTH);
+    xb_write(XB_UDR_INTERFACE_BLUETOOTH);
     chkSum = addCsum(chkSum, XB_UDR_INTERFACE_BLUETOOTH);
 
     for(int i = 0; i < len; i++) {
-        USART0_Write((uint8_t)data[i]);
+        xb_write((uint8_t)data[i]);
         chkSum = addCsum(chkSum, data[i]);
     }
 
-    USART0_Write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
+    xb_write((uint8_t)(XB_CHECKSUM_SUCCESS - chkSum));
 
     if (requestStatus) waitTxCompletion(200);
 }

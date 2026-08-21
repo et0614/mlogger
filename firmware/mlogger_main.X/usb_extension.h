@@ -50,9 +50,11 @@ void USB_Stream_Task(void);
  * @brief 内蔵メモリのレコードストリーム送信を開始する (v4 dump 用: 件数prefix無し)
  *        ヘッダは呼び出し側で別途送信すること。
  *        実際の転送は USB_Stream_Task() が非同期に行う。
- * @param dest 送出先 transport (SRC_USB / SRC_BLE / SRC_XBEE)
+ * @param dest    送出先 transport (SRC_USB / SRC_BLE / SRC_XBEE)
+ * @param fromIdx 送信開始レコード index (0 起点)。rec_latest 超は 0 件送信になる
+ * @param count   送信レコード数。0 なら fromIdx から末尾まで全件
  */
-void USB_StartRecordStream(CommandSource_t dest);
+void USB_StartRecordStream(CommandSource_t dest, uint32_t fromIdx, uint32_t count);
 
 /**
  * @brief stream が現在 active で、引数の dest に dump を送出中かどうか。

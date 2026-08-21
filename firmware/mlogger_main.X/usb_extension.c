@@ -27,6 +27,11 @@ typedef enum {
 
 static StreamState_t streamState = STREAM_IDLE;
 static uint32_t currentReadIdx = 0;
+// 送信範囲 [streamStartIdx, streamEndIdx)。block 転送 (BLE/Zigbee の分割 dump) では
+// rec_latest 全域ではなく要求された範囲のみ送る。USB python の全件 dump は
+// from=0/count=0 指定で従来どおり全域になる。
+static uint32_t streamStartIdx = 0;
+static uint32_t streamEndIdx = 0;
 // dump の送出先 transport (USB / BLE / Zigbee)。STREAM_SENDING 中のみ意味がある。
 static CommandSource_t streamDest = SRC_USB;
 
@@ -108,12 +113,12 @@ uint16_t USB_CDC_SendString(const char *str)
     return count;
 }
 
-// 完了判定: rec_latest に到達したら streamState を IDLE に戻して完了 cb を呼ぶ。
+// 完了判定: streamEndIdx に到達したら streamState を IDLE に戻して完了 cb を呼ぶ。
 // done cb には dest を渡して dump_end イベントを正しい transport に送れるようにする。
 static void finalize_stream_if_done(void)
 {
-    if (rec_latest <= currentReadIdx) {
-        uint32_t sent = currentReadIdx;
+    if (streamEndIdx <= currentReadIdx) {
+        uint32_t sent = currentReadIdx - streamStartIdx;
         CommandSource_t dest = streamDest;
         streamState = STREAM_IDLE;
         if (s_stream_done_cb) s_stream_done_cb(sent, dest);
@@ -145,7 +150,7 @@ void USB_Stream_Task(void)
                 // USB-CDC: CDC tx リングバッファに「1ページ分」の空きがある間 burst write
                 while (!USB_CDCTxBusy() && (PAGE_DATA_SIZE <= getFreeSpace()))
                 {
-                    if (rec_latest <= currentReadIdx) {
+                    if (streamEndIdx <= currentReadIdx) {
                         finalize_stream_if_done();
                         return;
                     }
@@ -158,7 +163,7 @@ void USB_Stream_Task(void)
                     uint32_t recordsLeftInPage = RECS_PER_PAGE - offsetIdx;
 
                     // 2. DUMP完了までに必要な残りレコード数
-                    uint32_t recordsNeeded = rec_latest - currentReadIdx;
+                    uint32_t recordsNeeded = streamEndIdx - currentReadIdx;
 
                     // 3. USBバッファに入るレコード数
                     uint32_t recordsFitInUsb = CIRCBUF_FreeSpace(&usbCDCTransmitBuffer) / RECORD_SIZE;
@@ -181,7 +186,7 @@ void USB_Stream_Task(void)
                 // 経由で同期送信。fire-and-forget なので chunk 間に pacing delay (40ms) を
                 // 入れて XBee 内部 buffer overflow を防ぐ (BLE 実効 5-8 KB/sec)。
                 // 220B / 40ms = 5.5 KB/sec で BLE drain rate と同等。
-                if (rec_latest <= currentReadIdx) {
+                if (streamEndIdx <= currentReadIdx) {
                     finalize_stream_if_done();
                     break;
                 }
@@ -189,7 +194,7 @@ void USB_Stream_Task(void)
                 // ページ境界を跨がない & 残り件数 & chunk 上限 の最小値
                 uint32_t offsetIdx = currentReadIdx % RECS_PER_PAGE;
                 uint32_t recordsLeftInPage = RECS_PER_PAGE - offsetIdx;
-                uint32_t recordsNeeded = rec_latest - currentReadIdx;
+                uint32_t recordsNeeded = streamEndIdx - currentReadIdx;
                 uint32_t recordsToSend = RECS_PER_BLE_CHUNK;
                 if (recordsLeftInPage < recordsToSend) recordsToSend = recordsLeftInPage;
                 if (recordsNeeded < recordsToSend)     recordsToSend = recordsNeeded;
@@ -206,7 +211,7 @@ void USB_Stream_Task(void)
                 }
 
                 currentReadIdx += recordsToSend;
-                if (rec_latest <= currentReadIdx) {
+                if (streamEndIdx <= currentReadIdx) {
                     // 最後の binary chunk と dump_end JSON の間にも pacing delay を入れる。
                     // これを入れないと XBee 内部 buffer (~150-256B) が直前の binary で
                     // 飽和した状態で dump_end (~60B) が流入し、buffer overflow で dump_end
@@ -229,11 +234,18 @@ void USB_Stream_Task(void)
 // v4 dump 用: 件数prefix無しでレコードストリーム送信を開始
 // (ヘッダJSON送信は呼び出し側の責任)
 // dest で送出 transport (SRC_USB / SRC_BLE / SRC_XBEE) を指定する。
-void USB_StartRecordStream(CommandSource_t dest)
+// fromIdx/count で送信範囲を指定 (count=0 は末尾まで)。範囲は rec_latest でクランプ。
+void USB_StartRecordStream(CommandSource_t dest, uint32_t fromIdx, uint32_t count)
 {
+    uint32_t end = rec_latest;
+    if (fromIdx > end) fromIdx = end;
+    if (count > 0 && count < end - fromIdx) end = fromIdx + count;
+
     streamDest = dest;
+    streamStartIdx = fromIdx;
+    streamEndIdx = end;
+    currentReadIdx = fromIdx;
     streamState = STREAM_SENDING;
-    currentReadIdx = 0;
 }
 
 // stream が現在 active で、引数の dest に送出中かどうか。
