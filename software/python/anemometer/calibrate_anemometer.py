@@ -40,39 +40,77 @@ from quadro_fan_controller import QuadroFanController
 # 一括で差し替わる。トレーサビリティ用に JSON へも記録する。
 CALIBRATOR_ID = 1
 
+# 2026-08-21: e-sensor プロジェクト(calibrate_coefficients.py)と同一の Kanomax(6543)
+# 実測プロファイルを転記。同一の物理風洞(QuadroFan fan1〜4)を転用するため値は共通。
+# 昇降平均・真値基準(tunnel_map.py)。上端アンカーは各風洞の到達上限に合わせる
+# （風洞3のみ fan73≒5.04 で5.0到達のため上端 fan73、他は fan78）。
 CALIBRATOR_PROFILES = {
     1: {
         "calibration_points": [
             {"fan_power": 0,  "ref_velocity": 0.00},
-            {"fan_power": 8,  "ref_velocity": 0.23},
-            {"fan_power": 12, "ref_velocity": 0.52},
-            {"fan_power": 40, "ref_velocity": 2.76},
-            {"fan_power": 69, "ref_velocity": 5.00},
+            {"fan_power": 8,  "ref_velocity": 0.22},
+            {"fan_power": 12, "ref_velocity": 0.48},
+            {"fan_power": 40, "ref_velocity": 2.54},
+            {"fan_power": 78, "ref_velocity": 5.27},
         ],
         "validation_points": [
             {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
-            {"fan_power": 10, "ref_velocity": 0.37},   # 補間 Range A
-            {"fan_power": 21, "ref_velocity": 1.24},   # 補間 Range B
-            {"fan_power": 53, "ref_velocity": 3.75},   # 補間 Range C
-            {"fan_power": 69, "ref_velocity": 5.00},   # 再現性（上端）
+            {"fan_power": 10, "ref_velocity": 0.35},   # 補間 Range A
+            {"fan_power": 21, "ref_velocity": 1.12},   # 補間 Range B
+            {"fan_power": 60, "ref_velocity": 3.98},   # 補間 Range C
+            {"fan_power": 78, "ref_velocity": 5.27},   # 再現性（上端）
         ],
     },
-    #2: {
-    #    "calibration_points": [
-    #        {"fan_power": 0,  "ref_velocity": 0.00},
-    #        {"fan_power": 8,  "ref_velocity": 0.23},
-    #        {"fan_power": 12, "ref_velocity": 0.50},
-    #        {"fan_power": 38, "ref_velocity": 2.73},
-    #        {"fan_power": 67, "ref_velocity": 5.03},
-    #    ],
-    #    "validation_points": [
-    #        {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
-    #        {"fan_power": 10, "ref_velocity": 0.32},   # 補間 Range A
-    #        {"fan_power": 19, "ref_velocity": 1.09},   # 補間 Range B
-    #        {"fan_power": 51, "ref_velocity": 3.80},   # 補間 Range C
-    # b       {"fan_power": 67, "ref_velocity": 5.03},   # 再現性（上端）
-    #    ],
-    #},
+    2: {
+        "calibration_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},
+            {"fan_power": 8,  "ref_velocity": 0.24},
+            {"fan_power": 12, "ref_velocity": 0.51},
+            {"fan_power": 40, "ref_velocity": 2.57},
+            {"fan_power": 78, "ref_velocity": 5.23},
+        ],
+        "validation_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+            {"fan_power": 10, "ref_velocity": 0.38},   # 補間 Range A
+            {"fan_power": 21, "ref_velocity": 1.17},   # 補間 Range B
+            {"fan_power": 60, "ref_velocity": 3.99},   # 補間 Range C
+            {"fan_power": 78, "ref_velocity": 5.23},   # 再現性（上端）
+        ],
+    },
+    3: {
+        # 風洞3は4基中で fan73≒5.04 m/s で5.0到達（fan78は未測定）。上端は fan73。
+        "calibration_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},
+            {"fan_power": 8,  "ref_velocity": 0.24},
+            {"fan_power": 12, "ref_velocity": 0.50},
+            {"fan_power": 40, "ref_velocity": 2.59},
+            {"fan_power": 73, "ref_velocity": 5.04},
+        ],
+        "validation_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+            {"fan_power": 10, "ref_velocity": 0.36},   # 補間 Range A
+            {"fan_power": 21, "ref_velocity": 1.17},   # 補間 Range B
+            {"fan_power": 60, "ref_velocity": 4.05},   # 補間 Range C
+            {"fan_power": 73, "ref_velocity": 5.04},   # 再現性（上端）
+        ],
+    },
+    4: {
+        # 風洞4は4基中で最も強く fan78≒5.40 m/s。
+        "calibration_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},
+            {"fan_power": 8,  "ref_velocity": 0.23},
+            {"fan_power": 12, "ref_velocity": 0.49},
+            {"fan_power": 40, "ref_velocity": 2.58},
+            {"fan_power": 78, "ref_velocity": 5.40},
+        ],
+        "validation_points": [
+            {"fan_power": 0,  "ref_velocity": 0.00},   # 再現性（下端）
+            {"fan_power": 10, "ref_velocity": 0.35},   # 補間 Range A
+            {"fan_power": 21, "ref_velocity": 1.15},   # 補間 Range B
+            {"fan_power": 60, "ref_velocity": 4.02},   # 補間 Range C
+            {"fan_power": 78, "ref_velocity": 5.40},   # 再現性（上端）
+        ],
+    },
 }
 
 if CALIBRATOR_ID not in CALIBRATOR_PROFILES:
@@ -83,6 +121,9 @@ if CALIBRATOR_ID not in CALIBRATOR_PROFILES:
 
 CALIBRATION_POINTS = CALIBRATOR_PROFILES[CALIBRATOR_ID]["calibration_points"]
 VALIDATION_POINTS  = CALIBRATOR_PROFILES[CALIBRATOR_ID]["validation_points"]
+
+# QuadroFan のチャネル。風洞 id N は fanN に対応（GUI と同じ規約）。
+FAN_INDEX = CALIBRATOR_ID
 
 SLAVE_ADDRESS = 0x10
 
@@ -214,7 +255,7 @@ def run_phase_1():
             ref_vel      = point["ref_velocity"]
 
             print(f"\n[Step] Target: {ref_vel} m/s (Fan: {target_power}%)")
-            fan.set_power(target_power)
+            fan.set_power(target_power, FAN_INDEX)
 
             wait_time = stabilization_time(ref_vel)
             print(f"Waiting {wait_time}s for stabilization...")
@@ -253,7 +294,7 @@ def run_phase_1():
         # 0 m/s 電圧が異常に低くないか（回路未起動/断線の検知）
         zero = next((r for r in results if r["ref_velocity"] == 0.0), None)
         if zero is not None and zero["measured_avg"] < ABNORMAL_NO_WIND_VOLTAGE:
-            fan.set_power(0)
+            fan.set_power(0, FAN_INDEX)
             notify_abnormal()
             print("\n" + "!" * 60)
             print(f"!! WARNING: 0 m/s 電圧が異常に低い: {zero['measured_avg']*1000:.1f} mV "
@@ -280,7 +321,7 @@ def run_phase_1():
         return None
     finally:
         print("\nShutting down phase 1 devices...")
-        fan.set_power(0)
+        fan.set_power(0, FAN_INDEX)
         sensor.close()
 
 
@@ -387,7 +428,7 @@ def run_phase_3():
             ref_v  = point["ref_velocity"]
 
             print(f"\n[Validation] Fan: {target}% (Ref: {ref_v} m/s)")
-            fan.set_power(target)
+            fan.set_power(target, FAN_INDEX)
 
             wait_time = stabilization_time(ref_v)
             print(f"Waiting {wait_time}s for stabilization...")
@@ -433,7 +474,7 @@ def run_phase_3():
                   f"{r['error']:>9.1f}% | {r['measuredV']:>10.4f}")
 
     finally:
-        fan.set_power(0)
+        fan.set_power(0, FAN_INDEX)
         sensor.close()
 
     return results
