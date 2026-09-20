@@ -457,7 +457,7 @@ namespace MLS_Mobile
 
       //計測値
       DrybulbTemperature = _mLogger.DrybulbTemperature.LastValue.ToString("F1");
-      RelativeHumdity = _mLogger.RelativeHumdity.LastValue.ToString("F1");
+      RelativeHumdity = _mLogger.RelativeHumdity.LastValue.ToString("F0"); // SHT40 の絶対精度±1.8%RH のため表示は整数のみ (記録CSVはF1のまま)
       GlobeTemperature = _mLogger.GlobeTemperature.LastValue.ToString("F1");
       Velocity = (2.00 < _mLogger.Velocity.LastValue) ? "OOR" : _mLogger.Velocity.LastValue.ToString("F2"); // 2.00m/s以上はOut of Range, 校正は1.5m/sまで
       Illuminance = _mLogger.Illuminance.LastValue.ToString("F1");

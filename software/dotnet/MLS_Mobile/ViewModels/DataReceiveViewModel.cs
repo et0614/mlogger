@@ -272,7 +272,7 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
         }
         if (s.RelativeHumidity is double rh)
         {
-            _relativeHumdity      = FormatF(rh, 1);
+            _relativeHumdity      = FormatF(rh, 0);  // SHT40 の絶対精度±1.8%RH のため表示は整数のみ (記録CSVはF1のまま)
             _lastCommunicated_HMD = local;
         }
         else if (dcGeneral || wuGeneral)
