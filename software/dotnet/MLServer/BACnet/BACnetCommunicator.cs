@@ -1,12 +1,28 @@
-﻿using System.IO.BACnet;
-using System.Diagnostics;
+using System;
 using System.Collections.Generic;
-
-using MLServer.BACnet.Storage;
+using System.Diagnostics;
+using System.Linq;
+using System.IO.BACnet;
+using System.IO.BACnet.Storage;
 
 namespace MLServer.BACnet
 {
-  internal class BACnetCommunicator
+  /// <summary>
+  /// NuGet 版 DeviceStorage には AddObject ヘルパが無いので、MLServer 側で
+  /// 拡張メソッドとして提供する (動的に BACnet オブジェクトを追加するのに使用)。
+  /// </summary>
+  public static class DeviceStorageExtensions
+  {
+    public static void AddObject(this DeviceStorage storage, System.IO.BACnet.Storage.Object obj)
+    {
+      var arr = storage.Objects;
+      System.Array.Resize(ref arr, arr.Length + 1);
+      arr[arr.Length - 1] = obj;
+      storage.Objects = arr;
+    }
+  }
+
+  public class BACnetCommunicator
   {
 
     #region 定数宣言
@@ -43,12 +59,6 @@ namespace MLServer.BACnet
     /// <summary>インスタンスを初期化する</summary>
     /// <param name="storage"></param>
     /// <param name="exclusivePort"></param>
-    public BACnetCommunicator(DeviceStorage storage, int exclusivePort) : this(storage, exclusivePort, "")
-    { }
-
-    /// <summary>インスタンスを初期化する</summary>
-    /// <param name="storage"></param>
-    /// <param name="exclusivePort"></param>
     public BACnetCommunicator(DeviceStorage storage, int exclusivePort, string localEndPointIP)
     {
       m_storage = storage;
@@ -58,17 +68,19 @@ namespace MLServer.BACnet
       m_storage.ReadOverride += new DeviceStorage.ReadOverrideHandler(m_storage_ReadOverride);
 
       //BACnetClientを作成
-      BacnetIpUdpProtocolTransport bUDP;
-      if (exclusivePort == 0xBAC0) bUDP = new BacnetIpUdpProtocolTransport(0xBAC0, true, false, 1472, localEndPointIP);
-      else bUDP = new BacnetIpUdpProtocolTransport(0xBAC0, exclusivePort, false, 1472, localEndPointIP);
+      //2025.11.28修正：常に排他的に使う設定とする (PoEMServer と同じ)
+      BacnetIpUdpProtocolTransport bUDP = new BacnetIpUdpProtocolTransport(
+        0xBAC0, exclusivePort, false, 1472, localEndPointIP);
+
       m_ip_server = new BacnetClient(bUDP);
 
       m_ip_server.OnWhoIs += new BacnetClient.WhoIsHandler(OnWhoIs);
       m_ip_server.OnReadPropertyRequest += new BacnetClient.ReadPropertyRequestHandler(OnReadPropertyRequest);
-      m_ip_server.OnWritePropertyRequest += new BacnetClient.WritePropertyRequestHandler(OnWritePropertyRequest);
       m_ip_server.OnReadPropertyMultipleRequest += new BacnetClient.ReadPropertyMultipleRequestHandler(OnReadPropertyMultipleRequest);
+      m_ip_server.OnWritePropertyRequest += new BacnetClient.WritePropertyRequestHandler(OnWritePropertyRequest);
       m_ip_server.OnSubscribeCOV += new BacnetClient.SubscribeCOVRequestHandler(OnSubscribeCOV);
       m_ip_server.OnSubscribeCOVProperty += new BacnetClient.SubscribeCOVPropertyRequestHandler(OnSubscribeCOVProperty);
+
       m_ip_server.OnTimeSynchronize += new BacnetClient.TimeSynchronizeHandler(OnTimeSynchronize);
       m_ip_server.OnDeviceCommunicationControl += new BacnetClient.DeviceCommunicationControlRequestHandler(OnDeviceCommunicationControl);
       m_ip_server.OnReinitializedDevice += new BacnetClient.ReinitializedRequestHandler(OnReinitializedDevice);
@@ -104,13 +116,13 @@ namespace MLServer.BACnet
       List<string> dLst = new List<string>();
       List<string> vLst = new List<string>();
 
-      foreach (BACnetObject obj in m_storage.Objects)
+      foreach (System.IO.BACnet.Storage.Object obj in m_storage.Objects)
       {
         if (obj.Type != BacnetObjectTypes.OBJECT_DEVICE)
         {
           tLst.Add(obj.Type.ToString());
           iLst.Add(obj.Instance);
-          foreach (BACnetProperty prop in obj.Properties)
+          foreach (Property prop in obj.Properties)
           {
             if (prop.Id == BacnetPropertyIds.PROP_OBJECT_NAME) nLst.Add(prop.Value[0]);
             else if (prop.Id == BacnetPropertyIds.PROP_DESCRIPTION) dLst.Add(prop.Value[0]);
@@ -135,8 +147,8 @@ namespace MLServer.BACnet
     /// <returns>bool値</returns>
     public static bool ConvertToBool(object obj)
     {
-      if (obj is uint) return (uint)obj == 1;
-      else if (obj is int) return (int)obj == 1;
+      if (obj is uint) return ((uint)obj == 1);
+      else if (obj is int) return ((int)obj == 1);
       else if (obj is bool) return (bool)obj;
       else return false;
     }
@@ -147,9 +159,6 @@ namespace MLServer.BACnet
 
     public BacnetValue GetBacObjectPresentValue(BacnetObjectId id)
     {
-      // L'index 0 c'est le nombre de valeurs associées à la propriété
-      // L'index 1 pour la première valeur
-      // L'index System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL pour tout le tableau
       lock (m_lockObject)
       {
         IList<BacnetValue> val = null;
@@ -160,13 +169,9 @@ namespace MLServer.BACnet
 
     public void SetBacObjectPresentValue(BacnetObjectId id, BacnetValue bv)
     {
-      // On est sur des valeurs simples, la comparaison est possible ici sans problème
       if (GetBacObjectPresentValue(id).Value.ToString() == bv.Value.ToString())
         return;
 
-      // L'index 0 c'est le nombre de valeurs associées à la propriété
-      // L'index 1 pour la première valeur
-      // L'index System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL pour tout le tableau
       lock (m_lockObject)
       {
         IList<BacnetValue> val = new BacnetValue[1] { bv };
@@ -186,12 +191,12 @@ namespace MLServer.BACnet
       {
         if (array_index == 0)
         {
-          //object list count 
+          //object list count
           value = new BacnetValue[] { new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_UNSIGNED_INT, (uint)m_storage.Objects.Length) };
         }
         else if (array_index != System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
         {
-          //object list index 
+          //object list index
           value = new BacnetValue[] { new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_ID, new BacnetObjectId(m_storage.Objects[array_index - 1].Type, m_storage.Objects[array_index - 1].Instance)) };
         }
         else
@@ -273,7 +278,7 @@ namespace MLServer.BACnet
             cov.monitoredObjectIdentifier = sub.monitoredObjectIdentifier;
             cov.monitoredProperty = sub.monitoredProperty;
             cov.IssueConfirmedNotifications = sub.issueConfirmedNotifications;
-            cov.TimeRemaining = sub.lifetime - (uint)(System.DateTime.Now - sub.start).TotalMinutes;
+            cov.TimeRemaining = (uint)sub.lifetime - (uint)(DateTime.Now - sub.start).TotalMinutes;
             cov.COVIncrement = sub.covIncrement;
             System.IO.BACnet.Serialize.ASN1.encode_cov_subscription(buffer, cov);
 
@@ -285,53 +290,6 @@ namespace MLServer.BACnet
           }
         }
         value = list;
-      }
-      else if (object_id.type == BacnetObjectTypes.OBJECT_OCTETSTRING_VALUE && object_id.instance == 0 && property_id == BacnetPropertyIds.PROP_PRESENT_VALUE)
-      {
-        //this is our huge blob
-        BacnetValue v = new BacnetValue();
-        v.Tag = BacnetApplicationTags.BACNET_APPLICATION_TAG_OCTET_STRING;
-        byte[] blob = new byte[2000];
-        for (int i = 0; i < blob.Length; i++)
-          blob[i] = i % 2 == 0 ? (byte)'A' : (byte)'B';
-        v.Value = blob;
-        value = new BacnetValue[] { v };
-      }
-      else if (object_id.type == BacnetObjectTypes.OBJECT_GROUP && property_id == BacnetPropertyIds.PROP_PRESENT_VALUE)
-      {
-        //get property list
-        IList<BacnetValue> properties;
-        if (m_storage.ReadProperty(object_id, BacnetPropertyIds.PROP_LIST_OF_GROUP_MEMBERS, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL, out properties) != DeviceStorage.ErrorCodes.Good)
-        {
-          value = new BacnetValue[] { new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_ERROR, new BacnetError(BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_INTERNAL_ERROR)) };
-        }
-        else
-        {
-          List<BacnetValue> _value = new List<BacnetValue>();
-          foreach (BacnetValue p in properties)
-          {
-            if (p.Value is BacnetReadAccessSpecification)
-            {
-              BacnetReadAccessSpecification prop = (BacnetReadAccessSpecification)p.Value;
-              BacnetReadAccessResult result = new BacnetReadAccessResult();
-              result.objectIdentifier = prop.objectIdentifier;
-              List<BacnetPropertyValue> result_values = new List<BacnetPropertyValue>();
-              foreach (BacnetPropertyReference r in prop.propertyReferences)
-              {
-                BacnetPropertyValue prop_value = new BacnetPropertyValue();
-                prop_value.property = r;
-                if (m_storage.ReadProperty(prop.objectIdentifier, (BacnetPropertyIds)r.propertyIdentifier, r.propertyArrayIndex, out prop_value.value) != DeviceStorage.ErrorCodes.Good)
-                {
-                  prop_value.value = new BacnetValue[] { new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_ERROR, new BacnetError(BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_INTERNAL_ERROR)) };
-                }
-                result_values.Add(prop_value);
-              }
-              result.values = result_values;
-              _value.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_READ_ACCESS_RESULT, result));
-            }
-          }
-          value = _value;
-        }
       }
       else
       {
@@ -348,7 +306,7 @@ namespace MLServer.BACnet
       public BacnetPropertyReference monitoredProperty;
       public bool issueConfirmedNotifications;
       public uint lifetime;
-      public System.DateTime start;
+      public DateTime start;
       public float covIncrement;
       public Subscription(BacnetClient reciever, BacnetAddress reciever_address, uint subscriberProcessIdentifier, BacnetObjectId monitoredObjectIdentifier, BacnetPropertyReference property, bool issueConfirmedNotifications, uint lifetime, float covIncrement)
       {
@@ -356,10 +314,10 @@ namespace MLServer.BACnet
         this.reciever_address = reciever_address;
         this.subscriberProcessIdentifier = subscriberProcessIdentifier;
         this.monitoredObjectIdentifier = monitoredObjectIdentifier;
-        monitoredProperty = property;
+        this.monitoredProperty = property;
         this.issueConfirmedNotifications = issueConfirmedNotifications;
         this.lifetime = lifetime;
-        start = System.DateTime.Now;
+        this.start = DateTime.Now;
         this.covIncrement = covIncrement;
       }
       public int GetTimeRemaining()
@@ -367,7 +325,7 @@ namespace MLServer.BACnet
 
         if (lifetime == 0) return 0;
 
-        uint elapse = (uint)(System.DateTime.Now - start).TotalSeconds;
+        uint elapse = (uint)(DateTime.Now - start).TotalSeconds;
 
         if (lifetime > elapse)
           return (int)(lifetime - elapse);
@@ -453,7 +411,7 @@ namespace MLServer.BACnet
       //update perhaps
       sub.issueConfirmedNotifications = issueConfirmedNotifications;
       sub.lifetime = lifetime;
-      sub.start = System.DateTime.Now;
+      sub.start = DateTime.Now;
 
       return sub;
     }
@@ -465,7 +423,7 @@ namespace MLServer.BACnet
       {
         try
         {
-          //create 
+          //create
           Subscription sub = HandleSubscriptionRequest(sender, adr, invoke_id, subscriberProcessIdentifier, monitoredObjectIdentifier, (uint)BacnetPropertyIds.PROP_ALL, cancellationRequest, issueConfirmedNotifications, lifetime, 0);
 
           //send confirm
@@ -484,7 +442,7 @@ namespace MLServer.BACnet
             }, null);
           }
         }
-        catch (System.Exception)
+        catch (Exception)
         {
           sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_SUBSCRIBE_COV, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
@@ -497,7 +455,7 @@ namespace MLServer.BACnet
       {
         try
         {
-          //create 
+          //create
           Subscription sub = HandleSubscriptionRequest(sender, adr, invoke_id, subscriberProcessIdentifier, monitoredObjectIdentifier, (uint)BacnetPropertyIds.PROP_ALL, cancellationRequest, issueConfirmedNotifications, lifetime, covIncrement);
 
           //send confirm
@@ -520,7 +478,7 @@ namespace MLServer.BACnet
             }, null);
           }
         }
-        catch (System.Exception)
+        catch (Exception)
         {
           sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_SUBSCRIBE_COV_PROPERTY, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
@@ -561,7 +519,7 @@ namespace MLServer.BACnet
       }, null);
     }
 
-    private void HandleSegmentationResponse(BacnetClient sender, BacnetAddress adr, byte invoke_id, BacnetMaxSegments max_segments, System.Action<BacnetClient.Segmentation> transmit)
+    private void HandleSegmentationResponse(BacnetClient sender, BacnetAddress adr, byte invoke_id, BacnetMaxSegments max_segments, Action<BacnetClient.Segmentation> transmit)
     {
       BacnetClient.Segmentation segmentation = sender.GetSegmentBuffer(max_segments);
 
@@ -649,7 +607,7 @@ namespace MLServer.BACnet
       sender.SimpleAckResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_REINITIALIZE_DEVICE, invoke_id);
     }
 
-    private void OnTimeSynchronize(BacnetClient sender, BacnetAddress adr, System.DateTime dateTime, bool utc)
+    private void OnTimeSynchronize(BacnetClient sender, BacnetAddress adr, DateTime dateTime, bool utc)
     {
       Trace.TraceInformation("Uh, a new date: " + dateTime.ToString());
     }
@@ -682,7 +640,7 @@ namespace MLServer.BACnet
             sender.ReadPropertyMultipleResponse(adr, invoke_id, seg, values);
           });
         }
-        catch (System.Exception)
+        catch (Exception)
         {
           sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROP_MULTIPLE, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
@@ -693,21 +651,13 @@ namespace MLServer.BACnet
     {
       BacnetPropertyIds PropId = (BacnetPropertyIds)value.property.propertyIdentifier;
 
-      bool AllowWrite =
+      // 計測値・計測日時を示す入力系オブジェクトへの書込は拒否する
+      bool AllowWrite = (
         object_id.type != BacnetObjectTypes.OBJECT_ANALOG_INPUT &&
         object_id.type != BacnetObjectTypes.OBJECT_BINARY_INPUT &&
         object_id.type != BacnetObjectTypes.OBJECT_MULTI_STATE_INPUT &&
         object_id.type != BacnetObjectTypes.OBJECT_DATETIME_VALUE
-        ;
-
-      /*bool AllowWrite =
-          (object_id.Equals("OBJECT_ANALOG_VALUE:0") && (PropId == BacnetPropertyIds.PROP_OUT_OF_SERVICE)) ||
-          (object_id.Equals("OBJECT_ANALOG_VALUE:0") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE)) ||
-          (object_id.Equals("OBJECT_ANALOG_VALUE:1") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE)) ||
-          (object_id.Equals("OBJECT_ANALOG_VALUE:2") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE)) ||
-          (object_id.Equals("OBJECT_ANALOG_VALUE:3") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE)) ||
-          (object_id.Equals("OBJECT_CHARACTERSTRING_VALUE:1") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE)) ||
-          (object_id.Equals("OBJECT_MULTI_STATE_VALUE:0") && (PropId == BacnetPropertyIds.PROP_PRESENT_VALUE));*/
+        );
 
       if (AllowWrite == false)
       {
@@ -734,7 +684,7 @@ namespace MLServer.BACnet
           else
             sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_WRITE_PROPERTY, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
-        catch (System.Exception)
+        catch (Exception)
         {
           sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_WRITE_PROPERTY, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
@@ -754,7 +704,7 @@ namespace MLServer.BACnet
           else
             sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROPERTY, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
-        catch (System.Exception)
+        catch (Exception)
         {
           sender.ErrorResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_READ_PROPERTY, invoke_id, BacnetErrorClasses.ERROR_CLASS_DEVICE, BacnetErrorCodes.ERROR_CODE_OTHER);
         }
@@ -763,9 +713,6 @@ namespace MLServer.BACnet
 
     private void OnWhoIs(BacnetClient sender, BacnetAddress adr, int low_limit, int high_limit)
     {
-      //Console.WriteLine("Recieve Who-is");//DEBUG
-      //Console.WriteLine("1. Broadcast I-am to " + sender.Transport.GetBroadcastAddress().ToString());     
-
       lock (m_lockObject)
       {
         if (low_limit != -1 && m_storage.DeviceId < low_limit) return;
