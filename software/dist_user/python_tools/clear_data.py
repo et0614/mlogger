@@ -1,13 +1,10 @@
 """
-M-Logger v4 のフラッシュ記録データを論理消去する (USB-CDC 経由)。
+Clear the recorded data on an M-Logger v4 (over USB-CDC).
 
-protocol_v4.md §4.8 の `clear_data` コマンドを送る。論理消去 = 世代番号
-インクリメント。旧データは flash 上に物理的には残るが、以降の dump で
-load_data.py がデフォルト動作 (最新世代のみ抽出) で除外する。
-
-使い方:
-    python clear_data.py             # COM ポート自動検出
-    python clear_data.py COM5        # 明示指定
+Usage:
+    python clear_data.py             # auto-detect COM port
+    python clear_data.py COM5        # explicit COM port
+    python clear_data.py -y          # skip the confirmation prompt
 """
 import argparse
 import json
@@ -23,9 +20,9 @@ CONNECT_TIMEOUT = 1.5
 
 
 def open_no_reset(port, baud=BAUD_RATE, timeout=CONNECT_TIMEOUT):
-    """DTR/RTS を非アサートで open して AVR DU32 の reset 経路を踏まないようにする。
-    pyserial デフォルトでは open 時に DTR/RTS がアサートされ、USB CDC reconnect と
-    合わせて MCU reset を引き起こす環境がある。"""
+    """Open the port with DTR/RTS de-asserted so the AVR DU32 reset path is
+    not triggered. pyserial asserts DTR/RTS on open by default, which combined
+    with the USB CDC reconnect resets the MCU on some hosts."""
     ser = serial.Serial()
     ser.port = port
     ser.baudrate = baud
@@ -92,6 +89,8 @@ def main():
         description="Clear M-Logger v4 stored data (generation increment).")
     ap.add_argument("port", nargs="?", default=None,
                     help="COM port (auto-detect if omitted)")
+    ap.add_argument("-y", "--yes", action="store_true",
+                    help="skip the confirmation prompt")
     args = ap.parse_args()
 
     port = args.port or find_device_port()
@@ -112,11 +111,25 @@ def main():
                   f"v{hello['result'].get('firmware_version')}")
             print(f"  hardware : {hello['result'].get('hardware_id')}")
             if hello['result'].get("logging"):
-                print("[ABORT] device is currently logging — stop logging first")
+                print("[ABORT] device is currently logging — stop the measurement first")
                 return 1
 
+            count = send_command(ser, {"v": 1, "id": 2, "command": "get_count"})
+            if count and "result" in count:
+                n = count["result"].get("count", 0)
+                print(f"  stored   : {n} records")
+                if n == 0:
+                    print("Nothing to clear.")
+                    return 0
+
+            if not args.yes:
+                ans = input("\nClear all recorded data on this device? [y/N]: ")
+                if ans.strip().lower() not in ("y", "yes"):
+                    print("Cancelled.")
+                    return 0
+
             print("\nSending clear_data...")
-            resp = send_command(ser, {"v": 1, "id": 2, "command": "clear_data"},
+            resp = send_command(ser, {"v": 1, "id": 3, "command": "clear_data"},
                                 timeout=5.0)
             if resp is None:
                 print("[ERROR] no response (timeout)")
@@ -127,46 +140,14 @@ def main():
             if "result" not in resp:
                 print(f"[ERROR] unexpected response: {resp}")
                 return 1
-            print("  OK (generation incremented).")
 
-            # === 診断: 同一 session 内で dump の count (= rec_latest) を確認 ===
-            # 0 が返れば LC_ClearData() は正常に rec_latest をリセットしている。
-            # 0 でなければ firmware 側で rec_latest=0 が効いていない。
-            # ここで一度 close → 別 session で 0 以外が返るようなら reboot 仮説。
-            print("\n[diag] checking rec_latest in same session...")
-            dump_resp = send_command(ser, {"v": 1, "id": 3, "command": "dump"},
-                                     timeout=5.0)
-            if dump_resp and "result" in dump_resp:
-                cnt = dump_resp["result"].get("count")
-                print(f"  rec_latest after clear = {cnt}")
-                if cnt == 0:
-                    print("  → OK: clear_data reset rec_latest. ")
-                    print("    If a separate load_data.py run shows count>0,")
-                    print("    the close→reopen is rebooting the device (DTR/USB reset).")
-                else:
-                    print("  → BAD: firmware did not reset rec_latest.")
-                # dump はヘッダのみ確認したいが、binary stream + dump_end も
-                # 来るので readout を完了させてバッファをクリアしておく。
-                rec_size = dump_resp["result"].get("record_size", 22)
-                total    = cnt * rec_size
-                if total > 0:
-                    old_to = ser.timeout
-                    ser.timeout = 5.0
-                    try:
-                        ser.read(total)
-                    finally:
-                        ser.timeout = old_to
-                # dump_end を消費
-                end = time.time() + 3.0
-                while time.time() < end:
-                    line = ser.readline().decode('utf-8', errors='ignore').strip()
-                    if line.startswith('{') and '"dump_end"' in line:
-                        break
+            # Verify: the record counter must now read zero
+            count = send_command(ser, {"v": 1, "id": 4, "command": "get_count"})
+            if count and "result" in count and count["result"].get("count") == 0:
+                print("  OK — data cleared (record count is now 0).")
             else:
-                print(f"  [WARN] dump diag failed: {dump_resp}")
+                print(f"[WARN] could not verify the cleared state: {count}")
 
-            print("\nNote: data is logically cleared. Old records remain in flash")
-            print("      but load_data.py default mode hides them via gen filter.")
     except serial.SerialException as e:
         print(f"Serial error: {e}")
         return 1

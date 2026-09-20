@@ -457,6 +457,9 @@ FodyWeavers.xsd
 *.msp
 # load_data.py の dump 出力 (実機テスト成果物、リポジトリには含めない)
 software/python/mlogger/mlogger_*.csv
+software/dist_user/python_tools/mlogger_*.csv
+# 配布 zip (make_dist_zip.py の生成物)
+software/mlogger_tools.zip
 
 # 公開サイトのソースは Drive 側で管理する (repo に web/ を置かない)
 web/

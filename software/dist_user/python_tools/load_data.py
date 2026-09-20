@@ -1,25 +1,25 @@
 """
-M-Logger v4 のフラッシュ記録データを USB-CDC 経由で吸い出し、CSV に保存する。
+Download M-Logger v4 flash-recorded data over USB-CDC and save it as CSV.
 
-使い方:
-    python load_data.py                # COM ポート自動検出
-    python load_data.py COM5           # 明示指定
+Usage:
+    python load_data.py                # auto-detect COM port
+    python load_data.py COM5           # explicit COM port
     python load_data.py COM5 -o out.csv
-    python load_data.py COM5 --all     # 全世代を出力 (既定: 最新世代のみ)
+    python load_data.py COM5 --all     # include all generations (default: latest only)
 
-レコード構造 (22 byte, struct format "<BIBIhhHHHH>"):
-    uint8  gen          : データ世代番号
-    uint32 ts           : UNIX 秒
-    uint8  valid_flags  : ビットフラグ (下記)
-    uint32 illuminance  : Lux × 10
-    int16  temp_dry     : ℃ × 100
-    int16  temp_globe   : ℃ × 100
-    uint16 humidity     : % × 100
-    uint16 wind_speed   : m/s × 10000
-    uint16 voltage      : mV
+Record layout (22 bytes, struct format "<BIBIhhHHHH>"):
+    uint8  gen          : data generation number
+    uint32 ts           : UNIX seconds
+    uint8  valid_flags  : bit flags (see below)
+    uint32 illuminance  : Lux x 10
+    int16  temp_dry     : degC x 100
+    int16  temp_globe   : degC x 100
+    uint16 humidity     : % x 100
+    uint16 wind_speed   : m/s x 10000
+    uint16 voltage      : mV (velocity sensor)
     uint16 co2_ppm      : ppm
 
-valid_flags ビット定義:
+valid_flags bit assignments:
     bit 0: illuminance / bit 1: t_dry / bit 2: t_glb / bit 3: humidity
     bit 4: wind_speed  / bit 5: voltage / bit 6: co2_ppm
 """
@@ -37,13 +37,13 @@ import serial.tools.list_ports
 
 BAUD_RATE       = 115200
 CONNECT_TIMEOUT = 1.5
-DUMP_TIMEOUT    = 30.0       # バルク転送中はタイムアウトを延ばす
+DUMP_TIMEOUT    = 30.0       # extended timeout during the bulk transfer
 
 
 def open_no_reset(port, baud=BAUD_RATE, timeout=CONNECT_TIMEOUT):
-    """DTR/RTS を非アサートで open して AVR DU32 の reset 経路を踏まないようにする。
-    pyserial デフォルトでは open 時に DTR/RTS がアサートされ、USB CDC reconnect と
-    合わせて MCU reset を引き起こす環境がある。"""
+    """Open the port with DTR/RTS de-asserted so the AVR DU32 reset path is
+    not triggered. pyserial asserts DTR/RTS on open by default, which combined
+    with the USB CDC reconnect resets the MCU on some hosts."""
     ser = serial.Serial()
     ser.port = port
     ser.baudrate = baud
@@ -53,14 +53,15 @@ def open_no_reset(port, baud=BAUD_RATE, timeout=CONNECT_TIMEOUT):
     ser.open()
     return ser
 
-RECORD_FORMAT = "<BIBIhhHHHH"  # struct format = 22 byte (LE / no alignment)
+RECORD_FORMAT = "<BIBIhhHHHH"  # struct format = 22 bytes (LE / no alignment)
 RECORD_SIZE   = struct.calcsize(RECORD_FORMAT)   # = 22
-# firmware 側 ("docs/protocol_v4.md") は表記上 "<BIBIhhHHHH>" を返す。
-# 末尾の '>' はバイトオーダー再指定にならない (struct は最初の 1 文字だけ参照)
-# ので意味なし。firmware 表記との照合用に末尾 '>' 込みも許容する。
+# The firmware ("docs/protocol_v4.md") reports "<BIBIhhHHHH>" including a
+# trailing '>'. That trailing '>' is not a byte-order re-specification
+# (struct only looks at the first character), so it is meaningless; accept
+# it as-is when comparing against the firmware-reported format.
 RECORD_FORMAT_FW = RECORD_FORMAT + ">"
 
-# valid_flags ビット
+# valid_flags bits
 FLAG_ILLUMINANCE = 1 << 0
 FLAG_TEMP_DRY    = 1 << 1
 FLAG_TEMP_GLOBE  = 1 << 2
@@ -71,10 +72,10 @@ FLAG_CO2_PPM     = 1 << 6
 
 
 # ============================================================
-# COM ポート検出 (test_protocol_v4.py と同じ流儀)
+# COM port detection
 # ============================================================
 def find_device_port():
-    """利用可能 COM を hello で叩いて M-Logger を探す。"""
+    """Probe the available COM ports with hello and look for an M-Logger."""
     print("Scanning ports...")
     probe = (json.dumps({"v": 1, "id": 1, "command": "hello"}) + '\n').encode('utf-8')
     for p in serial.tools.list_ports.comports():
@@ -87,8 +88,9 @@ def find_device_port():
                 time.sleep(1.5)
                 ser.reset_input_buffer()
                 ser.write(probe)
-                # 応答が来るまで複数行スキャン。firmware が ready event や
-                # diag 行を先に流していると 1 行 readline では取りこぼす。
+                # Scan multiple lines until the response arrives. If the
+                # firmware pushes a ready event or diag lines first, a single
+                # readline would miss the reply.
                 end = time.time() + 2.0
                 found = False
                 while time.time() < end:
@@ -112,11 +114,11 @@ def find_device_port():
 
 
 # ============================================================
-# JSON 1 行のリクエスト
+# Single-line JSON request
 # ============================================================
 def send_command(ser, payload, timeout=3.0):
-    """payload の id 一致応答を timeout 秒の窓内で待つ。間に挟まる ready 等の
-    event (id を持たない) は読み飛ばす。"""
+    """Wait up to `timeout` seconds for the response whose id matches the
+    payload. Event lines (ready etc., which carry no id) are skipped."""
     msg = json.dumps(payload, ensure_ascii=False) + '\n'
     ser.reset_input_buffer()
     ser.write(msg.encode('utf-8'))
@@ -136,19 +138,20 @@ def send_command(ser, payload, timeout=3.0):
 
 
 # ============================================================
-# dump 実行
+# dump
 # ============================================================
 def dump_records(ser):
     """
-    dump コマンドを実行し、(header_dict, raw_bytes, end_event_dict) を返す。
-    失敗時は (None, None, None)。
+    Run the dump command and return (header_dict, raw_bytes, end_event_dict).
+    Returns (None, None, None) on failure.
     """
     ser.reset_input_buffer()
     dump_id = 1000
     msg = json.dumps({"v": 1, "id": dump_id, "command": "dump"}) + '\n'
     ser.write(msg.encode('utf-8'))
 
-    # 1) ヘッダ JSON: id 一致を待つ (間に ready event 等が挟まる可能性)
+    # 1) Header JSON: wait for the matching id (ready events etc. may be
+    #    interleaved)
     hdr = None
     end = time.time() + 3.0
     while time.time() < end:
@@ -178,13 +181,13 @@ def dump_records(ser):
         print(f"[WARN] firmware reports {rec_size}B/{fmt!r} but client expects "
               f"{RECORD_SIZE}B/{RECORD_FORMAT_FW!r} — parser may misinterpret data")
 
-    # 2) バイナリストリーム (chunk 受信 + 進捗バー)
+    # 2) Binary stream (chunked receive + progress bar)
     total = count * rec_size
     print(f"  receiving {total} bytes...")
     data = b""
     if total > 0:
         original_timeout = ser.timeout
-        ser.timeout = 0.5   # 1 chunk 待ちは短く、全体は deadline で制御
+        ser.timeout = 0.5   # short per-chunk wait; overall bounded by deadline
         chunk_size = 1024
         buf = bytearray()
         deadline = time.time() + DUMP_TIMEOUT
@@ -205,12 +208,12 @@ def dump_records(ser):
                           end="", flush=True)
         finally:
             ser.timeout = original_timeout
-        print()  # 進捗バーの行を確定
+        print()  # finish the progress-bar line
         data = bytes(buf)
         if len(data) != total:
             print(f"[WARN] expected {total}B, got {len(data)}B (timeout?)")
 
-    # 3) dump_end イベント: 同じく複数行スキャン
+    # 3) dump_end event: scan multiple lines as above
     end_ev = None
     deadline = time.time() + 3.0
     while time.time() < deadline:
@@ -231,10 +234,10 @@ def dump_records(ser):
 
 
 # ============================================================
-# レコード復号
+# Record decoding
 # ============================================================
 def decode_record(raw):
-    """1 レコード分の bytes を読み、物理量に変換した dict を返す。"""
+    """Unpack one record's bytes and return a dict of physical values."""
     (gen, ts, flags, illum, t_dry, t_glb,
      humid, wind, volt, co2) = struct.unpack(RECORD_FORMAT, raw)
     return {
@@ -252,19 +255,19 @@ def decode_record(raw):
 
 
 # ============================================================
-# CSV 書き出し
+# CSV output
 # ============================================================
 CSV_COLUMNS = ["iso_time", "ts", "gen",
                "t_dry", "humidity", "t_glb",
                "wind_speed", "voltage", "illuminance", "co2"]
 CSV_UNITS   = ["",       "[s]", "",
-               "[degC]",  "[%]",  "[degC]",
-               "[m/s]",   "[mV]", "[Lux]", "[ppm]"]
+               "[C]",     "[%]",  "[C]",
+               "[m/s]",   "[mV]", "[lx]", "[ppm]"]
 
 
 def write_csv(filename, records, device_info, header_meta):
     with open(filename, "w", newline="", encoding="utf-8") as f:
-        # メタ情報をコメント行で残す (CSV パーサが '#' を skip する流儀)
+        # Keep metadata as comment lines (CSV parsers commonly skip '#')
         if device_info:
             f.write(f"# device         : {device_info.get('device')}\n")
             f.write(f"# firmware       : {device_info.get('firmware_version')}\n")
@@ -303,7 +306,7 @@ def main():
     ap.add_argument("-o", "--output", default=None,
                     help="output CSV filename (default: mlogger_<hwid>_<ts>.csv)")
     ap.add_argument("--all", action="store_true",
-                    help="dump all generations (default: latest only)")
+                    help="also recover cleared data")
     args = ap.parse_args()
 
     port = args.port or find_device_port()
@@ -316,7 +319,7 @@ def main():
         with open_no_reset(port) as ser:
             time.sleep(2.0)
 
-            # 機器情報
+            # Device info
             hello = send_command(ser, {"v": 1, "id": 1, "command": "hello"})
             if not hello or "result" not in hello:
                 print(f"[ERROR] hello failed: {hello}")
@@ -326,9 +329,10 @@ def main():
             print(f"  hardware : {device_info.get('hardware_id')}")
             print(f"  name     : {device_info.get('name')!r}")
             if device_info.get("logging"):
-                print("[WARN] device is currently logging — dump may include in-flight records")
+                print("[ERROR] the device is recording — download is not possible")
+                return 1
 
-            # dump 実行
+            # Run the dump
             print("\nDumping records...")
             header_meta, raw_data, end_ev = dump_records(ser)
             if header_meta is None:
@@ -340,13 +344,13 @@ def main():
         print(f"Serial error: {e}")
         return 1
 
-    # デコード
+    # Decode
     nrec = len(raw_data) // RECORD_SIZE
     print(f"\nDecoding {nrec} records...")
     records = [decode_record(raw_data[i * RECORD_SIZE:(i + 1) * RECORD_SIZE])
                for i in range(nrec)]
 
-    # 世代フィルタ
+    # Generation filter
     if records and not args.all:
         latest_gen = max(r["gen"] for r in records)
         before     = len(records)
@@ -356,7 +360,7 @@ def main():
         gens = sorted({r["gen"] for r in records})
         print(f"  including all generations: {gens}")
 
-    # 出力ファイル名
+    # Output filename
     if args.output:
         out = args.output
     else:

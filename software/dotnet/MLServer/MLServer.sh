@@ -1,2 +1,2 @@
 #!/bin/bash
-dotnet /home/pi/Desktop/MLServer/MLServer.dll
+dotnet "$(dirname "$0")/MLServer.dll"

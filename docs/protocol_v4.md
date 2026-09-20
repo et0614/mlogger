@@ -601,7 +601,7 @@ class JsonRpcProtocol : IDeviceProtocol { ... }  // 新JSON
 
 - v3 仕様書: `~/OneDrive/デスクトップ/claude連携/document_ja_2026.01.01.docx` 第6章「通信仕様」
 - 旧コマンド実装: `firmware/mlogger_main.X/command_handler.c`, `eeprom_manager.c`, `logger_control.c`
-- dump 形式の参照実装 (v4 JSON-RPC + バイナリストリーム): `software/python/mlogger/load_data.py`
+- dump 形式の参照実装 (v4 JSON-RPC + バイナリストリーム): `software/dist_user/python_tools/load_data.py`
 - 風速計子機 firmware の実体は `firmware/poem_velocity_sensor.X/`。HW ID 生成 (FNV-1a 32bit) は同 firmware の `main.c` を参照
 - OSL register map (REG_POLL_BASE / VAL_IDX_* / STATUS1_* など) は子機 firmware の `i2c_shared_data.h` が正典。M-Logger 親機 (`firmware/mlogger_main.X/anemometer.c`) は同 header の定数を複製しており、子機側の仕様変更時は親機の anemometer.c も追従修正する
 - XBee 3 ZigBee リファレンス: Digi XBee 3 RF Module, Hardware Reference Manual (Rev. V, 2022.3)
