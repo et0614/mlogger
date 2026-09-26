@@ -329,11 +329,12 @@ static void ph_th_trigger(int32_t id, const char *json,
 
 // 全スロット一括読み出し (th_read_all): 64 スロットの POLL ブロックを読んで
 // 1 行の JSON で返す。事前に th_trigger → ~1sec 待ちが必要。
-// 応答 (1 行、~1.8KB):
-//   {"id":N,"ok":true,"vals":[[2531,4820,612,0,1,0],null,...]}
-//   vals[m*8+c] = [温度℃*100, 湿度%*100, CO2ppm, status1, status2, stcc4_state]。
+// 応答 (1 行、~2.2KB):
+//   {"id":N,"ok":true,"vals":[[2531,4820,612,0,1,0,2540],null,...]}
+//   vals[m*8+c] = [温度℃*100, 湿度%*100, CO2ppm, status1, status2, stcc4_state,
+//                  グローブ温度℃*100]。
 //   子機不在スロット (I2C NACK) は null。stale の値は要素単位で null。
-//   末尾 3 要素はホスト側の状態表示用の生値 (stcc4_state は読み出し失敗時 -1):
+//   4-6 要素目はホスト側の状態表示用の生値 (stcc4_state は読み出し失敗時 -1):
 //     status2=0        → トリガ未処理/計測中
 //     stcc4_state=6    → conditioning 実行中 (boot 後 ~22sec、stale が正常)
 //     status1=0xFF     → 子機内で STCC4 通信全滅
@@ -366,16 +367,19 @@ static void ph_th_read_all(int32_t id, const char *json,
                 uint8_t st4 = 0;
                 int st4_out = ThProbe_ReadStcc4State(&st4) ? (int)st4 : -1;
 
-                // 値ごとに stale なら null (例: [2531,null,612,4,1,0])
-                char tv[8], hv[8], cv[8];
+                // 値ごとに stale なら null (例: [2531,null,612,4,1,0,2540])
+                // グローブ温度は既存クライアント互換のため末尾 (7 要素目) に置く。
+                char tv[8], hv[8], cv[8], gv[8];
                 if (s.t_valid)   snprintf(tv, sizeof(tv), "%d", (int)s.t_c100);
                 else             snprintf(tv, sizeof(tv), "null");
                 if (s.rh_valid)  snprintf(hv, sizeof(hv), "%u", (unsigned)s.rh_100);
                 else             snprintf(hv, sizeof(hv), "null");
                 if (s.co2_valid) snprintf(cv, sizeof(cv), "%u", (unsigned)s.co2_ppm);
                 else             snprintf(cv, sizeof(cv), "null");
-                snprintf(b, sizeof(b), "%s[%s,%s,%s,%u,%u,%d]", sep, tv, hv, cv,
-                         (unsigned)s.status1, (unsigned)s.status2, st4_out);
+                if (s.glb_valid) snprintf(gv, sizeof(gv), "%d", (int)s.glb_c100);
+                else             snprintf(gv, sizeof(gv), "null");
+                snprintf(b, sizeof(b), "%s[%s,%s,%s,%u,%u,%d,%s]", sep, tv, hv, cv,
+                         (unsigned)s.status1, (unsigned)s.status2, st4_out, gv);
             }
             USB_Comm_SendString(b);
         }
@@ -603,6 +607,198 @@ static void ph_rst_test(int32_t id, const char *json,
     send_line(b);
 }
 
+// Device ID 一括取得 (probe_ids): 64 スロットの子機 Device ID (FNV-1a 22bit) を返す。
+// 応答 (1 行): {"id":N,"ok":true,"ids":[3812345,null,...]}
+//   ids[m*8+c] = Device ID (10 進)。子機不在スロットは null。
+static void ph_probe_ids(int32_t id, const char *json,
+                         const jsmntok_t *t, int ntok, int params)
+{
+    (void)json; (void)t; (void)ntok; (void)params;
+
+    char b[48];
+    snprintf(b, sizeof(b), "{\"id\":%ld,\"ok\":true,\"ids\":[", (long)id);
+    USB_Comm_SendString(b);
+
+    for (uint8_t m = 0; m < TCA_MUX_COUNT; m++)
+    {
+        for (uint8_t ch = 0; ch < TCA_CH_PER_MUX; ch++)
+        {
+            const char *sep = (m == 0 && ch == 0) ? "" : ",";
+            uint32_t dev = 0;
+            if (Tca_Select(m, ch) && ThProbe_ReadDeviceId(&dev))
+                snprintf(b, sizeof(b), "%s%lu", sep, (unsigned long)dev);
+            else
+                snprintf(b, sizeof(b), "%snull", sep);
+            USB_Comm_SendString(b);
+        }
+        (void)Tca_Deselect(m);
+    }
+
+    USB_Comm_SendString("]}\n");
+    USB_Comm_Flush();
+}
+
+// 補正係数は float の生バイト列を 16 進文字列でやり取りする (MCU 側で float の
+// 文字列変換を持たずに済み、書いた値と読み戻した値をビット単位で照合できる)。
+// 1 float = 8 文字 (メモリ上のバイト順 = Little Endian)。
+static void to_hex(char *out, const uint8_t *in, uint8_t n)
+{
+    static const char HEX[] = "0123456789abcdef";
+    for (uint8_t i = 0; i < n; i++)
+    {
+        out[i * 2]     = HEX[in[i] >> 4];
+        out[i * 2 + 1] = HEX[in[i] & 0x0F];
+    }
+    out[n * 2] = '\0';
+}
+
+static int hex_nibble(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// 8 文字の 16 進文字列トークンを 4 byte に変換する。
+static bool tok_hex4(const char *json, const jsmntok_t *t, uint8_t out[4])
+{
+    if (t->type != JSMN_STRING || t->end - t->start != 8) return false;
+    const char *p = json + t->start;
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        int hi = hex_nibble(p[i * 2]);
+        int lo = hex_nibble(p[i * 2 + 1]);
+        if (hi < 0 || lo < 0) return false;
+        out[i] = (uint8_t)((hi << 4) | lo);
+    }
+    return true;
+}
+
+// params {mux, ch} を読む。範囲外なら false。
+static bool get_slot_params(const char *json, const jsmntok_t *t, int ntok,
+                            int params, int32_t *mux, int32_t *ch)
+{
+    *mux = -1; *ch = -1;
+    if (params >= 0)
+    {
+        int mt = obj_get(json, t, ntok, params, "mux");
+        int ct = obj_get(json, t, ntok, params, "ch");
+        if (mt >= 0) *mux = tok_int(json, &t[mt]);
+        if (ct >= 0) *ch  = tok_int(json, &t[ct]);
+    }
+    return *mux >= 0 && *mux < TCA_MUX_COUNT && *ch >= 0 && *ch < TCA_CH_PER_MUX;
+}
+
+// 係数応答: {"id":N,"ok":true,"mux":M,"ch":C,"dev":D,"coef":"<64 hex>"}
+//   coef = 補正係数領域 32 byte (t_a,t_b,rh_a,rh_b,co2_a,co2_b,glb_a,glb_b)
+static void reply_coefs(int32_t id, int32_t mux, int32_t ch, uint32_t dev,
+                        const uint8_t coefs[TH_PROBE_COEF_BYTES])
+{
+    char hex[TH_PROBE_COEF_BYTES * 2 + 1];
+    to_hex(hex, coefs, TH_PROBE_COEF_BYTES);
+
+    char b[176];
+    snprintf(b, sizeof(b),
+        "{\"id\":%ld,\"ok\":true,\"mux\":%ld,\"ch\":%ld,\"dev\":%lu,\"coef\":\"%s\"}\n",
+        (long)id, (long)mux, (long)ch, (unsigned long)dev, hex);
+    send_line(b);
+}
+
+// 補正係数の読み出し (coef_get): params {mux, ch}
+static void ph_coef_get(int32_t id, const char *json,
+                        const jsmntok_t *t, int ntok, int params)
+{
+    int32_t mux, ch;
+    if (!get_slot_params(json, t, ntok, params, &mux, &ch))
+    {
+        reply_error(id, "invalid_mux_ch");
+        return;
+    }
+    if (!Tca_Select((uint8_t)mux, (uint8_t)ch))
+    {
+        reply_error(id, "mux_select_failed");
+        return;
+    }
+
+    uint32_t dev = 0;
+    uint8_t coefs[TH_PROBE_COEF_BYTES];
+    bool ok = ThProbe_ReadDeviceId(&dev) && ThProbe_ReadCoefs(coefs);
+    (void)Tca_Deselect((uint8_t)mux);
+
+    if (!ok) { reply_error(id, "probe_no_response"); return; }
+    reply_coefs(id, mux, ch, dev, coefs);
+}
+
+// 補正係数の書き込み (coef_set):
+//   params {mux, ch, dev, t:[a,b], rh:[a,b], co2:[a,b], glb:[a,b]}
+//   a, b は float の 16 進文字列 (8 文字)。項目は省略可 (省略した項目は現状維持)。
+//   dev (必須) は書き込み先子機の Device ID。スロットの子機と一致しなければ
+//   書き込まずに device_mismatch を返す (差し間違い・治具の取り違え対策)。
+//   書き込み後に読み戻して照合し、応答には読み戻した係数を返す。
+static void ph_coef_set(int32_t id, const char *json,
+                        const jsmntok_t *t, int ntok, int params)
+{
+    static const char *const ITEMS[] = { "t", "rh", "co2", "glb" };
+
+    int32_t mux, ch;
+    if (!get_slot_params(json, t, ntok, params, &mux, &ch))
+    {
+        reply_error(id, "invalid_mux_ch");
+        return;
+    }
+    int dt = obj_get(json, t, ntok, params, "dev");
+    if (dt < 0) { reply_error(id, "missing_dev"); return; }
+    uint32_t want_dev = (uint32_t)tok_int(json, &t[dt]);
+
+    // 指定された項目を先に全部解釈しておく (途中で不正があれば何も書かない)
+    uint8_t  newv[TH_PROBE_COEF_BYTES];
+    bool     given[4] = { false, false, false, false };
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        int at = obj_get(json, t, ntok, params, ITEMS[i]);
+        if (at < 0) continue;
+        if (t[at].type != JSMN_ARRAY || t[at].size != 2
+            || !tok_hex4(json, &t[at + 1], &newv[i * 8])
+            || !tok_hex4(json, &t[at + 2], &newv[i * 8 + 4]))
+        {
+            reply_error(id, "invalid_coef");
+            return;
+        }
+        given[i] = true;
+    }
+
+    if (!Tca_Select((uint8_t)mux, (uint8_t)ch))
+    {
+        reply_error(id, "mux_select_failed");
+        return;
+    }
+
+    const char *err = NULL;
+    uint32_t dev = 0;
+    uint8_t coefs[TH_PROBE_COEF_BYTES];
+    uint8_t back[TH_PROBE_COEF_BYTES];
+    if (!ThProbe_ReadDeviceId(&dev) || !ThProbe_ReadCoefs(coefs))
+        err = "probe_no_response";
+    else if (dev != want_dev)
+        err = "device_mismatch";
+    else
+    {
+        // 指定項目だけ差し替えて 32 byte を 1 トランザクションで書く
+        for (uint8_t i = 0; i < 4; i++)
+            if (given[i]) memcpy(&coefs[i * 8], &newv[i * 8], 8);
+
+        if (!ThProbe_WriteCoefs(coefs) || !ThProbe_ReadCoefs(back))
+            err = "write_failed";
+        else if (memcmp(coefs, back, TH_PROBE_COEF_BYTES) != 0)
+            err = "verify_failed";
+    }
+    (void)Tca_Deselect((uint8_t)mux);
+
+    if (err) { reply_error(id, err); return; }
+    reply_coefs(id, mux, ch, dev, back);
+}
+
 // 範囲指定データ読み出し (dump_range): params { "start": N, "count": M }
 static void ph_dump_range(int32_t id, const char *json,
                           const jsmntok_t *t, int ntok, int params)
@@ -667,6 +863,9 @@ static const jp_command_t s_commands[] = {
     { "th_debug",      ph_th_debug      },
     { "frc_start",     ph_frc_start     },
     { "frc_status",    ph_frc_status    },
+    { "probe_ids",     ph_probe_ids     },
+    { "coef_get",      ph_coef_get      },
+    { "coef_set",      ph_coef_set      },
     { "dump",          ph_dump          },
     { "dump_range",    ph_dump_range    },
     { NULL,            NULL             }

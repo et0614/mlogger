@@ -18,11 +18,19 @@
 #define VAL_IDX_TEMPERATURE   0
 #define VAL_IDX_HUMIDITY      1
 #define VAL_IDX_CO2           2
+#define VAL_IDX_GLB           3
 
 // Status1 stale ビット
 #define STATUS1_STALE_T       (0x01)
 #define STATUS1_STALE_RH      (0x02)
 #define STATUS1_STALE_CO2     (0x04)
+#define STATUS1_STALE_GLB     (0x08)
+
+// INFO ブロック: Device ID (uint32_t LE)
+#define REG_DEVICE_ID         0x00
+
+// 拡張領域 (子機 i2c_shared_data.h と同期): 線形補正係数 (0x4C-0x6B)
+#define REG_COEF_BASE         0x4C
 
 // 拡張領域 (子機 i2c_shared_data.h と同期): STCC4 校正コマンド制御
 #define REG_STCC4_CMD         0x6C
@@ -48,9 +56,11 @@ void ThProbe_ReadSample(ThSample_t* s)
     s->t_valid   = false;
     s->rh_valid  = false;
     s->co2_valid = false;
+    s->glb_valid = false;
     s->t_c100    = 0;
     s->rh_100    = 0;
     s->co2_ppm   = 0;
+    s->glb_c100  = 0;
     s->status1   = 0xFF;
     s->status2   = 0;
 
@@ -93,6 +103,16 @@ void ThProbe_ReadSample(ThSample_t* s)
         s->co2_ppm   = (uint16_t)(v + 0.5f);
         s->co2_valid = true;
     }
+
+    // value[3] = グローブ温度 [°C] → ℃*100 に丸め
+    if (!(status1 & STATUS1_STALE_GLB)) {
+        float v;
+        memcpy(&v, &buffer[POLL_OFS_VALUE + VAL_IDX_GLB * 4], 4);
+        if      (v < -327.0f) v = -327.0f;
+        else if (v >  327.0f) v =  327.0f;
+        s->glb_c100  = (int16_t)(v * 100.0f + (v >= 0 ? 0.5f : -0.5f));
+        s->glb_valid = true;
+    }
 }
 
 bool ThProbe_ReadStcc4State(uint8_t* state)
@@ -122,4 +142,29 @@ bool ThProbe_ReadFrcCorrection(int16_t* corr)
     if (!I2C_WriteRead(TH_PROBE_ADDRESS, &cmd, 1, buf, 2)) return false;
     memcpy(corr, buf, 2);
     return true;
+}
+
+bool ThProbe_ReadDeviceId(uint32_t* dev_id)
+{
+    const uint8_t cmd = REG_DEVICE_ID;
+    uint8_t buf[4] = { 0, 0, 0, 0 };
+    if (!I2C_WriteRead(TH_PROBE_ADDRESS, &cmd, 1, buf, 4)) return false;
+    memcpy(dev_id, buf, 4);
+    return true;
+}
+
+bool ThProbe_ReadCoefs(uint8_t coefs[TH_PROBE_COEF_BYTES])
+{
+    const uint8_t cmd = REG_COEF_BASE;
+    return I2C_WriteRead(TH_PROBE_ADDRESS, &cmd, 1, coefs, TH_PROBE_COEF_BYTES);
+}
+
+bool ThProbe_WriteCoefs(const uint8_t coefs[TH_PROBE_COEF_BYTES])
+{
+    // 先頭にレジスタアドレス、続けて 32 byte。子機はレジスタポインタを
+    // 自動インクリメントしながら格納し、STOP 後に EEPROM へ反映する。
+    uint8_t buf[1 + TH_PROBE_COEF_BYTES];
+    buf[0] = REG_COEF_BASE;
+    memcpy(&buf[1], coefs, TH_PROBE_COEF_BYTES);
+    return I2C_Write(TH_PROBE_ADDRESS, buf, sizeof(buf));
 }

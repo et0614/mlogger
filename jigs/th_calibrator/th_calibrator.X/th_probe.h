@@ -4,7 +4,7 @@
  *
  * mlogger_th_sensor (温湿度 + CO2 子機) との I2C 通信ラッパ (th_calibrator 治具用)。
  * firmware/mlogger_main.X/th_probe.c と同じ OSL 共通レジスタ仕様で通信する。
- * 治具では校正対象の T/RH/CO2 のみ扱う (グローブ温度は読まない)。
+ * 治具では校正対象の T/RH/CO2/グローブ温度を扱う (グローブ球を外した状態で校正)。
  *
  * 計測モデルは「pre-trigger」方式:
  *   - ThProbe_Trigger() で子機に single-shot 計測を開始させる (~500ms 所要)
@@ -42,9 +42,11 @@ typedef struct {
     bool     t_valid;    // 温度が有効か (I2C OK + stale ビットクリア)
     bool     rh_valid;   // 湿度
     bool     co2_valid;  // CO2
+    bool     glb_valid;  // グローブ温度
     int16_t  t_c100;     // 乾球温度 [°C * 100]
     uint16_t rh_100;     // 相対湿度 [% * 100]
     uint16_t co2_ppm;    // CO2 濃度 [ppm]
+    int16_t  glb_c100;   // グローブ温度 [°C * 100]
     uint8_t  status1;    // 生 status1 (stale bitmask、ホスト側の状態表示用)
     uint8_t  status2;    // 生 status2 (0=トリガ待ち/計測中, 1=サンプル READY)
 } ThSample_t;
@@ -74,6 +76,23 @@ bool ThProbe_StartFrc(uint16_t target_ppm);
 // FRC_DONE 後にのみ意味を持つ。
 // @return true: 読み出し成功
 bool ThProbe_ReadFrcCorrection(int16_t* corr);
+
+// 補正係数領域 (0x4C-0x6B) のバイト数。
+// 並びは t_a, t_b, rh_a, rh_b, co2_a, co2_b, glb_a, glb_b (各 LE float 4 byte)。
+#define TH_PROBE_COEF_BYTES  32
+
+// 子機の Device ID (REG_DEVICE_ID, FNV-1a 22bit) を読む。
+// @return true: 読み出し成功
+bool ThProbe_ReadDeviceId(uint32_t* dev_id);
+
+// 補正係数領域 32 byte を一括で読む (子機メモリの生バイト列そのまま)。
+// @return true: 読み出し成功
+bool ThProbe_ReadCoefs(uint8_t coefs[TH_PROBE_COEF_BYTES]);
+
+// 補正係数領域 32 byte を 1 トランザクションで書く。
+// 子機は STOP 受信後の main loop で EEPROM に永続化する。
+// @return true: 書き込み成功 (子機 ACK)
+bool ThProbe_WriteCoefs(const uint8_t coefs[TH_PROBE_COEF_BYTES]);
 
 #ifdef __cplusplus
 }
