@@ -11,18 +11,22 @@ class QuadroFanController:
     def __init__(self):
         pass
 
-    def set_power(self, power_percent: int, fan_index = 1):
-        """ファン出力を 0-100% で設定"""
+    def set_power(self, power_percent: int, fan_index = 1) -> bool:
+        """ファン出力を 0-100% で設定。成功なら True。
+        失敗しても例外は投げない (従来互換) ので、校正のように失敗を見逃せない
+        呼び出し側は戻り値を確認すること。"""
         target = f"fan{fan_index}"
         cmd = ["liquidctl", "--match", "quadro", "set", target, "speed", str(power_percent)]
         try:
             # check=Trueにすることで、コマンドが失敗した時に例外を投げる
             subprocess.run(cmd, capture_output=True, check=True)
             print(f"[Fan] Set {target} to {power_percent}%")
+            return True
         except subprocess.CalledProcessError as e:
             print(f"Error: Failed to set fan speed. {e}")
         except FileNotFoundError:
             print("Error: 'liquidctl' command not found. Please install it.")
+        return False
 
 
 # テストコード

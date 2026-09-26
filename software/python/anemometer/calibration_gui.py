@@ -23,6 +23,7 @@ E-Sensor との相違:
 import os
 import threading
 import time
+import traceback
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -355,7 +356,12 @@ class CalibrationGUI:
                 with self._claim_lock:
                     self._claimed.discard(device_id)
         except Exception as e:
-            self._ui(lambda: self._set(t, 'failed', f'例外: {e}'))
+            # 例外変数 e は except を抜けると消えるため、表示文字列は今ここで作る
+            # (lambda 内で e を参照すると、後で UI スレッドが実行した時点で NameError
+            #  になり、状態が「校正中」のまま固まって見えていた)。
+            traceback.print_exc()
+            msg = f'例外: {type(e).__name__}: {e}'
+            self._ui(lambda m=msg: self._set(t, 'failed', m))
         finally:
             t.worker = None
             self._ui(lambda: self._refresh_row(t))

@@ -95,8 +95,16 @@ class AnemometerCalibrator:
             time.sleep(min(0.2, remain))
 
     def _set_fan(self, power):
+        # 設定失敗を見逃すと、ファン出力が前の点のまま計測して校正点が壊れる
+        # (隣の点と同じ電圧になり Phase 2 がフィット不能になる) ので 1 回だけ再試行し、
+        # それでも失敗なら校正を止める。
         with _fan_lock:
-            self.fan.set_power(power, self.fan_index)
+            ok = self.fan.set_power(power, self.fan_index)
+            if not ok:
+                time.sleep(1.0)
+                ok = self.fan.set_power(power, self.fan_index)
+        if not ok:
+            raise RuntimeError(f'ファン{self.fan_index} を {power}% に設定できません (liquidctl)')
 
     def _open_sensor(self, attempts=3):
         """CP2112 を開く。GUI の監視ポーリングと open が競合し得るためリトライする。"""
@@ -186,27 +194,36 @@ class AnemometerCalibrator:
 
             dur = ca.measurement_duration(ref_v)
             self._progress(f"校正 {ref_v} m/s: 計測中 ({dur}s)...")
-            buf = []
+            buf = []   # [(経過秒, 電圧[V])]
             start = time.time()
             while time.time() - start < dur:
                 self._check_cancel()
                 poll = sensor.read_poll_block()
                 if poll is not None and not (
                         poll["status1"] & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
-                    buf.append(poll["values"][AnemometerRegisters.VAL_IDX_VOLTAGE])
+                    buf.append((time.time() - start,
+                                poll["values"][AnemometerRegisters.VAL_IDX_VOLTAGE]))
                 time.sleep(ca.SAMPLING_INTERVAL)
 
             if not buf:
                 self.error = f'{ref_v} m/s: 有効サンプル無し (プローブ切断/予熱不良?)'
                 return None
+            # 秒単位の外れ区間を除いて平均 (calibrate_anemometer.outlier_bins 参照)
+            bad = ca.outlier_bins(buf)
+            avg_v, std_v = ca.window_stats(buf, bad)
+            raw_v, _ = ca.window_stats(buf, set())
             results.append({
-                "fan_power":    power,
-                "ref_velocity": ref_v,
-                "measured_avg": statistics.mean(buf),
-                "std_dev":      statistics.stdev(buf) if len(buf) > 1 else 0.0,
+                "fan_power":     power,
+                "ref_velocity":  ref_v,
+                "measured_avg":  avg_v,
+                "std_dev":       std_v,
+                "raw_avg":       raw_v,
+                "rejected_bins": len(bad),
+                "bins":          ca.n_bins(buf),
             })
-            self._progress(f"校正 {ref_v} m/s: 完了 "
-                           f"({results[-1]['measured_avg']*1000:.1f} mV)", bump=True)
+            self._progress(f"校正 {ref_v} m/s: 完了 ({avg_v*1000:.1f} mV"
+                           + (f", 外れ {len(bad)} 秒除外" if bad else "") + ")",
+                           bump=True)
 
         # フィット・出力のため風速昇順へ (e0 = results[0])
         results.sort(key=lambda r: r["ref_velocity"])
@@ -223,6 +240,10 @@ class AnemometerCalibrator:
 
     # ---------------- Phase 2: フィット + 係数書込 ----------------
     def _run_phase2(self, sensor, phase1):
+        problem = ca.check_calibration_points(phase1)
+        if problem:
+            self.error = problem
+            return None, None
         e = [r["measured_avg"] for r in phase1]
         v = [r["ref_velocity"] for r in phase1]
         e0 = e[0]
@@ -267,35 +288,45 @@ class AnemometerCalibrator:
             self._set_fan(power)
             self._sleep(ca.stabilization_time(ref_v))
 
-            self._progress(f"検証 {ref_v} m/s: 計測中 ({ca.VAL_MEASUREMENT_DURATION}s)...")
-            vels, volts = [], []
+            dur = ca.measurement_duration(ref_v)
+            self._progress(f"検証 {ref_v} m/s: 計測中 ({dur}s)...")
+            vels, volts = [], []   # [(経過秒, 値)]
             start = time.time()
-            while time.time() - start < ca.VAL_MEASUREMENT_DURATION:
+            while time.time() - start < dur:
                 self._check_cancel()
                 poll = sensor.read_poll_block()
                 if poll is not None:
                     s1 = poll["status1"]
                     vv = poll["values"]
+                    t = time.time() - start
                     if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VELOCITY)):
-                        vels.append(vv[AnemometerRegisters.VAL_IDX_VELOCITY])
+                        vels.append((t, vv[AnemometerRegisters.VAL_IDX_VELOCITY]))
                     if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
-                        volts.append(vv[AnemometerRegisters.VAL_IDX_VOLTAGE])
-                time.sleep(0.5)
+                        volts.append((t, vv[AnemometerRegisters.VAL_IDX_VOLTAGE]))
+                # 外れ区間判定に 1 秒あたり複数サンプル要るので校正と同じ周期で読む
+                time.sleep(ca.SAMPLING_INTERVAL)
 
             if not (vels and volts):
                 self.error = f'検証 {ref_v} m/s: 有効サンプル無し'
                 return None
-            avg_vel  = statistics.mean(vels)
-            avg_volt = statistics.mean(volts)
+            # 外れ区間は電圧で判定し、同じ区間を風速からも除く
+            bad = ca.outlier_bins(volts)
+            avg_volt, std_volt = ca.window_stats(volts, bad)
+            avg_vel, _ = ca.window_stats(vels, bad)
             err_pct  = (abs(avg_vel - ref_v) / ref_v * 100) if ref_v > 0 else 0.0
             results.append({
                 "ref":       ref_v,
                 "measuredV": avg_volt,
                 "measured":  avg_vel,
                 "error":     err_pct,
+                "std_dev":   std_volt,
+                "rejected_bins": len(bad),
+                "bins":      ca.n_bins(volts),
             })
             self._progress(f"検証 {ref_v} m/s: {avg_vel:.3f} m/s "
-                           f"(誤差 {err_pct:.1f}%)", bump=True)
+                           f"(誤差 {err_pct:.1f}%"
+                           + (f", 外れ {len(bad)} 秒除外" if bad else "") + ")",
+                           bump=True)
 
         results.sort(key=lambda r: r["ref"])
         return results

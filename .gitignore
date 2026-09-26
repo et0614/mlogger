@@ -463,3 +463,5 @@ software/mlogger_tools.zip
 
 # 公開サイトのソースは Drive 側で管理する (repo に web/ を置かない)
 web/
+# anemometer_diag.py の記録出力
+software/python/anemometer/diag/

@@ -131,12 +131,12 @@ SAMPLING_INTERVAL    = 0.1           # センサ読み取り間隔 [s]
 FILTER_N             = 6             # EWMA フィルタ係数 (0~20)
 
 # --- 計測窓（各点で平均を取る時間）。安定化待機の後にこの秒数だけ計測する。
-# 高風速は std が小さいので短く、低風速・無風は環境ノイズが大きいので長めに平均する
-# （校正のみ風速依存。検証は既に短いので 5s 一律）。
-CAL_MEAS_HIGH_WIND       = 5     # 校正: 高風速(>= MEAS_HIGH_WIND_THRESHOLD)の計測窓 [s]
-CAL_MEAS_LOW_WIND        = 10    # 校正: 低風速・無風の計測窓 [s]
+# 高風速は std が小さいので短く、低風速・無風は環境ノイズが大きいので長めに平均する。
+# 検証も校正と同じ窓にする: 秒単位の外れ区間除去 (outlier_bins) は区間数が要り、
+# 5 s (5 区間) では 1〜2 秒の外れがフィルタで 2〜3 区間に広がって除けないため。
+CAL_MEAS_HIGH_WIND       = 5     # 高風速(>= MEAS_HIGH_WIND_THRESHOLD)の計測窓 [s]
+CAL_MEAS_LOW_WIND        = 10    # 低風速・無風の計測窓 [s]
 MEAS_HIGH_WIND_THRESHOLD = 2.0   # これ以上を「高風速(低ノイズ)」とみなす [m/s]
-VAL_MEASUREMENT_DURATION = 5     # 検証: 一律
 
 # --- 安定化待機は風速帯ごとに設定（降順計測前提）。
 # 高風速は数秒で整定するので短く、低風速ほど熱整定が緩慢（特に 0 m/s は無風で
@@ -162,6 +162,17 @@ ABNORMAL_NO_WIND_VOLTAGE = 0.05
 # 検証フェーズの最大誤差がこの値[%]以下なら合格（JSON の "pass"）。0 m/s は対象外。
 VERIFY_ERROR_THRESHOLD_PCT = 10.0
 
+# --- 秒単位の外れ値除去 ---
+# 低風速で「1〜2 秒だけ電圧が確率的に大きくなる」現象 (風洞側の気流の乱れと推定) が
+# 計測窓の平均を押し上げるため、その区間を平均から除く。プローブのフィルタで平滑化
+# された値なので、ミリ秒のスパイクではなく「秒単位の塊」として判定する:
+#   計測窓を OUTLIER_BIN_SEC ごとの区間に分け、各区間の平均が全区間平均の中央値から
+#   OUTLIER_K × (MAD × 1.4826) 以上離れた区間を捨てる。
+OUTLIER_BIN_SEC  = 1.0    # 判定区間の長さ [s]
+OUTLIER_K        = 3.0    # 判定幅 (ロバスト標準偏差の何倍で外れとするか)
+OUTLIER_FLOOR_V  = 0.010  # 判定幅の下限 [V]。区間がほぼ一定 (MAD≈0) の高風速で正常区間を捨てない
+OUTLIER_MIN_KEEP = 0.5    # 残る区間がこの割合を下回るなら判定不能とみなし、除去しない
+
 
 def stabilization_time(ref_v):
     """風速帯(STAB_BANDS)から安定化待機時間[s]を返す（降順計測前提・個体差のゆとり込み）。"""
@@ -174,6 +185,35 @@ def stabilization_time(ref_v):
 def measurement_duration(ref_v):
     """校正の計測窓[s]。高風速は低ノイズなので短く、低風速・無風は長めに平均する。"""
     return CAL_MEAS_HIGH_WIND if ref_v >= MEAS_HIGH_WIND_THRESHOLD else CAL_MEAS_LOW_WIND
+
+
+def outlier_bins(samples):
+    """秒単位の外れ区間を判定し、除外する区間番号の set を返す。
+    samples: [(計測窓開始からの経過秒, 電圧[V]), ...]"""
+    bins = {}
+    for t, v in samples:
+        bins.setdefault(int(t // OUTLIER_BIN_SEC), []).append(v)
+    if len(bins) < 3:
+        return set()   # 区間が少なすぎて中央値が意味を持たない
+    means = {b: statistics.mean(vs) for b, vs in bins.items()}
+    med = statistics.median(means.values())
+    mad = statistics.median(abs(m - med) for m in means.values())
+    limit = max(OUTLIER_K * 1.4826 * mad, OUTLIER_FLOOR_V)
+    bad = {b for b, m in means.items() if abs(m - med) > limit}
+    if len(bins) - len(bad) < OUTLIER_MIN_KEEP * len(bins):
+        return set()   # 半分以上が外れ = 窓全体が不安定。除去で取り繕わない
+    return bad
+
+
+def window_stats(samples, bad_bins):
+    """外れ区間を除いた (平均, 標準偏差) を返す。samples: [(経過秒, 値), ...]"""
+    kept = [v for t, v in samples if int(t // OUTLIER_BIN_SEC) not in bad_bins]
+    return statistics.mean(kept), (statistics.stdev(kept) if len(kept) > 1 else 0.0)
+
+
+def n_bins(samples):
+    """計測窓の区間数 (JSON 記録用)。"""
+    return len({int(t // OUTLIER_BIN_SEC) for t, _ in samples})
 
 
 # ==========================================
@@ -264,25 +304,32 @@ def run_phase_1():
             meas_dur = measurement_duration(ref_vel)
             print(f"Measuring for {meas_dur}s...")
             start = time.time()
-            buf_v = []
+            buf_v = []   # [(経過秒, 電圧[V])]
             while time.time() - start < meas_dur:
                 # status1 の該当ビットが立っていない(=有効)サンプルだけ採用する。
                 # 予熱中や通信失敗の stale 値を平均に混ぜない。
                 poll = sensor.read_poll_block()
                 if poll is not None and not (
                         poll["status1"] & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
-                    buf_v.append(poll["values"][AnemometerRegisters.VAL_IDX_VOLTAGE])
+                    buf_v.append((time.time() - start,
+                                  poll["values"][AnemometerRegisters.VAL_IDX_VOLTAGE]))
                 time.sleep(SAMPLING_INTERVAL)
 
             if buf_v:
-                avg_v = statistics.mean(buf_v)
-                std_v = statistics.stdev(buf_v) if len(buf_v) > 1 else 0.0
-                print(f"Result: Avg = {avg_v:.4f} V, StdDev = {std_v:.4f} V")
+                bad = outlier_bins(buf_v)
+                avg_v, std_v = window_stats(buf_v, bad)
+                raw_v, _ = window_stats(buf_v, set())
+                print(f"Result: Avg = {avg_v:.4f} V, StdDev = {std_v:.4f} V"
+                      + (f"  (外れ区間 {len(bad)}/{n_bins(buf_v)} 秒を除外, "
+                         f"除外前 {raw_v:.4f} V)" if bad else ""))
                 results.append({
                     "fan_power":     target_power,
                     "ref_velocity":  ref_vel,
                     "measured_avg":  avg_v,    # V
                     "std_dev":       std_v,    # V
+                    "raw_avg":       raw_v,    # V (外れ区間除外前)
+                    "rejected_bins": len(bad),
+                    "bins":          n_bins(buf_v),
                 })
             else:
                 print("Warning: No sensor data could be collected.")
@@ -328,6 +375,25 @@ def run_phase_1():
 # ==========================================
 # Phase 2: 係数計算 + 子機に書き込み
 # ==========================================
+
+# 校正点の電圧は風速とともに単調に増えるはず。隣り合う点の差がこれ未満なら
+# フィット不能 (King の式が 0 除算・オーバーフローする) とみなす [V]。
+MIN_POINT_STEP_V = 0.005
+
+
+def check_calibration_points(results):
+    """フィット前の妥当性確認。問題があれば理由の文字列、なければ None を返す。
+    results は風速昇順 (index0 = 0 m/s)。
+    典型的な原因: ファン出力が変わらなかった (設定失敗/停止)、0 m/s 計測中の外乱で
+    E0 が上振れした、プローブ切断。"""
+    for lo, hi in zip(results, results[1:]):
+        if hi["measured_avg"] - lo["measured_avg"] < MIN_POINT_STEP_V:
+            return (f"校正点の電圧が風速順に増えていません: "
+                    f"{lo['ref_velocity']} m/s = {lo['measured_avg']*1000:.1f} mV, "
+                    f"{hi['ref_velocity']} m/s = {hi['measured_avg']*1000:.1f} mV "
+                    f"(ファン出力の不変・0 m/s 中の外乱を確認)")
+    return None
+
 
 def calculate_kings_law_params(v1, e1, v2, e2, e0):
     """
@@ -434,31 +500,39 @@ def run_phase_3():
             print(f"Waiting {wait_time}s for stabilization...")
             time.sleep(wait_time)
 
-            vels, volts = [], []
+            vels, volts = [], []   # [(経過秒, 値)]
             start = time.time()
-            while time.time() - start < VAL_MEASUREMENT_DURATION:
+            while time.time() - start < measurement_duration(ref_v):
                 # velocity / voltage それぞれ status1 の有効ビットを確認して採用。
                 poll = sensor.read_poll_block()
                 if poll is not None:
                     s1 = poll["status1"]
                     vv = poll["values"]
+                    t = time.time() - start
                     if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VELOCITY)):
-                        vels.append(vv[AnemometerRegisters.VAL_IDX_VELOCITY])
+                        vels.append((t, vv[AnemometerRegisters.VAL_IDX_VELOCITY]))
                     if not (s1 & (1 << AnemometerRegisters.VAL_IDX_VOLTAGE)):
-                        volts.append(vv[AnemometerRegisters.VAL_IDX_VOLTAGE])
-                time.sleep(0.5)
+                        volts.append((t, vv[AnemometerRegisters.VAL_IDX_VOLTAGE]))
+                # 外れ区間判定に 1 秒あたり複数サンプル要るので校正と同じ周期で読む
+                time.sleep(SAMPLING_INTERVAL)
 
             if vels and volts:
-                avg_vel  = statistics.mean(vels)
-                avg_volt = statistics.mean(volts)
+                # 外れ区間は電圧で判定し、同じ区間を風速からも除く
+                bad = outlier_bins(volts)
+                avg_volt, std_volt = window_stats(volts, bad)
+                avg_vel, _ = window_stats(vels, bad)
                 err_pct  = (abs(avg_vel - ref_v) / ref_v * 100) if ref_v > 0 else 0.0
                 print(f"Measured: {avg_vel:.3f} m/s "
-                      f"(Error: {err_pct:.1f}%)  {avg_volt:.4f} V")
+                      f"(Error: {err_pct:.1f}%)  {avg_volt:.4f} V"
+                      + (f"  (外れ区間 {len(bad)}/{n_bins(volts)} 秒を除外)" if bad else ""))
                 results.append({
                     "ref":       ref_v,
                     "measuredV": avg_volt,      # V
                     "measured":  avg_vel,       # m/s
                     "error":     err_pct,
+                    "std_dev":   std_volt,      # V
+                    "rejected_bins": len(bad),
+                    "bins":      n_bins(volts),
                 })
 
         # 降順計測したので、出力(JSON/プロット)のため風速昇順へ並べ替える。
@@ -570,6 +644,10 @@ def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64,
                 "ref_velocity": round(float(r["ref_velocity"]), 2),
                 "voltage_mV":   round(float(r["measured_avg"]) * 1000, 1),
                 "std_dev_mV":   round(float(r["std_dev"]) * 1000, 1),
+                # 秒単位の外れ区間除去 (除外した区間数 / 全区間数、除外前の平均)
+                "rejected_bins":  r.get("rejected_bins", 0),
+                "bins":           r.get("bins"),
+                "raw_voltage_mV": round(float(r.get("raw_avg", r["measured_avg"])) * 1000, 1),
             }
             for r in phase1_data
         ],
@@ -579,6 +657,9 @@ def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64,
                 "measured_velocity": round(float(r['measured']),  3),
                 "error_pct":         round(float(r['error']),     1),
                 "voltage_mV":        round(float(r['measuredV'] * 1000), 1),
+                "std_dev_mV":        round(float(r.get('std_dev', 0.0)) * 1000, 1),
+                "rejected_bins":     r.get("rejected_bins", 0),
+                "bins":              r.get("bins"),
             }
             for r in phase3_data
         ],
@@ -654,6 +735,11 @@ if __name__ == "__main__":
 
     data1 = run_phase_1()
     if not data1:
+        exit(1)
+
+    problem = check_calibration_points(data1)
+    if problem:
+        print(f"\n[ABORT] {problem}")
         exit(1)
 
     coef_a, coef_b = run_phase_2(data1)
