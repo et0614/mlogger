@@ -518,7 +518,16 @@ def load_offsets(path):
 
 
 def run_set_coef(ser, path, assume_yes):
-    """CSV の B を、この治具に接続されている子機へ Device ID で照合して書き込む。"""
+    """CSV の B を、この治具に接続されている子機へ Device ID で照合して書き込む。
+
+    CSV の形式 (1 行目は見出しで、列名は次のとおりにする。列の順番は問わない):
+        sensor_id,t_b,rh_b,glb_b
+        3812345,0.12,-1.50,0.05
+        2290111,,2.10,
+      sensor_id : 子機の Device ID (10 進数)
+      t_b, rh_b, glb_b : 乾球温度 [°C]、相対湿度 [%RH]、グローブ温度 [°C] の B。
+                         空欄の項目は書き換えない
+    """
     try:
         offsets = load_offsets(path)
     except (OSError, ValueError) as e:
