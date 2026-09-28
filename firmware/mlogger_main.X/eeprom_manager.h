@@ -31,7 +31,8 @@ typedef struct {
 	uint8_t crc; //CRC
 }CorrectionFactors;
 
-// 風速特性係数
+// 風速特性係数 (旧設計の名残。風速はプローブ側で計算するので現在は未使用。
+// EEPROM 上の配置を保つための予約領域としてのみ型を残している)
 typedef struct{
 	uint16_t version; //バージョン
     float vol0;
@@ -75,9 +76,6 @@ extern uint8_t EM_generationNumber;
 
 //補正係数
 extern CorrectionFactors EM_cFactors;
-
-//風速特性係数
-extern VelocityCharacteristicCoefficients EM_vcCoefficients;
 
 //計測設定
 extern MeasurementSettings EM_mSettings;

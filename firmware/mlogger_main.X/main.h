@@ -33,6 +33,12 @@ void executeSecondlyTask(void);
 
 void genDummyData(void);
 
+// 起動以来のスタック使用の最小余裕 [byte] (未使用 RAM の塗りつぶし検査による)
+uint16_t MAIN_GetStackFreeMin(void);
+
+// 起動時のリセット要因 (RSTCTRL.RSTFR のビット列。bit0 PORF, 1 BORF, 2 EXTRF, 3 WDRF, 4 SWRF, 5 UPDIRF)
+uint8_t MAIN_GetResetFlags(void);
+
 #ifdef	__cplusplus
 }
 #endif

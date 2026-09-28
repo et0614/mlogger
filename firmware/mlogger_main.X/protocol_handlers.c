@@ -13,9 +13,21 @@
 #include "anemometer.h"        // Anemometer_ReadInfo (= ph_get_probe_info)
 #include "xbee_controller.h"   // Xbee_QueryAt (= ph_get_radio_info)
 
+#include "mcc_generated_files/usb/usb_device.h"      // USBDevice_Handle (erase_flash 待ち中の USB 処理)
+#include "mcc_generated_files/timer/delay.h"         // DELAY_milliseconds
+
 #include <avr/io.h>            // SIGROW
+#include <avr/wdt.h>           // wdt_reset (erase_flash の長時間待ち)
 #include <stdio.h>
 #include <string.h>
+
+// erase_flash の完了待ちの上限 [ms]。W25Q256 の chip erase は通常 80 秒、仕様上の
+// 最大 250 秒強。余裕を持たせ、これを超えたらフラッシュ異常とみなす。
+#define ERASE_TIMEOUT_MS  450000UL
+
+// calibrate_co2 の target_ppm の受付範囲 [ppm]
+#define CO2_TARGET_MIN_PPM  300UL
+#define CO2_TARGET_MAX_PPM  5000UL
 
 // 応答送信用バッファ (set_settings の全状態返却で ~290B、安全側で 512B)
 static char s_tx_buf[512];
@@ -36,7 +48,15 @@ static uint32_t fnv1a_32(const void *data, size_t len) {
 
 static void make_hardware_id(char *out, size_t out_cap) {
     uint32_t h = fnv1a_32((const void *)&SIGROW.SERNUM0, 16);
-    snprintf(out, out_cap, "%08lX", (unsigned long)h);
+    // 8 桁の大文字 16 進。snprintf("%08lX") だと XC8 が汎用 printf (浮動小数点書式
+    // 込みで約 5 KB) をリンクしてしまうため自前で変換する。
+    static const char HEX[] = "0123456789ABCDEF";
+    if (out_cap < 9) { if (out_cap) out[0] = '\0'; return; }
+    for (int8_t i = 7; i >= 0; i--) {
+        out[i] = HEX[h & 0x0F];
+        h >>= 4;
+    }
+    out[8] = '\0';
 }
 
 static void send_simple_error(int32_t id, CommandSource_t src, const char *code, const char *msg) {
@@ -257,16 +277,19 @@ void ph_set_time(int32_t id, const char *json, const jsmntok_t *tokens, int ntok
         return;
     }
     int ts_tok = pc_obj_get(json, tokens, ntokens, params_tok, "ts");
-    if (ts_tok < 0 || tokens[ts_tok].type != JSMN_PRIMITIVE) {
+    uint32_t ts;
+    if (ts_tok < 0 || !pc_tok_u32(json, &tokens[ts_tok], &ts)) {
         send_simple_error(id, src, "invalid_params", "missing or invalid 'ts'");
         return;
     }
-    int32_t ts = pc_tok_int(json, &tokens[ts_tok]);
-    LC_SetCurrentTime((time_t)ts);
+    if (!LC_SetCurrentTime((time_t)ts)) {
+        send_simple_error(id, src, "out_of_range", "ts must be 2026-01-01 or later");
+        return;
+    }
 
     pc_writer_t w;
     pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
-    pc_key(&w, "ts"); pc_int(&w, (int32_t)LC_GetCurrentTime());
+    pc_key(&w, "ts"); pc_uint(&w, (uint32_t)LC_GetCurrentTime());
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
 }
@@ -279,57 +302,77 @@ void ph_get_settings(int32_t id, const char *json, const jsmntok_t *tokens, int 
     send_settings_response(id, src);
 }
 
-void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
-    if (params_tok < 0) {
-        send_simple_error(id, src, "invalid_params", "missing params");
-        return;
-    }
+// set_settings / set_correction の検証エラー
+typedef struct {
+    const char *code;
+    const char *msg;
+} param_error_t;
 
-    bool changed = false;
-
+// set_settings の params を EM_mSettings に適用する。エラー時は途中まで適用した
+// 状態で戻るので、呼び出し側で元に戻すこと。
+static bool apply_settings(const char *json, const jsmntok_t *tokens, int ntokens, int params_tok,
+                           bool *changed, param_error_t *err) {
     // 各カテゴリについてキーが指定されていれば PATCH
     for (size_t i = 0; i < NUM_SENSOR_SETTINGS; i++) {
         int s_tok = pc_obj_get(json, tokens, ntokens, params_tok, SENSOR_SETTINGS[i].name);
         if (s_tok < 0) continue;
         if (tokens[s_tok].type != JSMN_OBJECT) {
-            send_simple_error(id, src, "invalid_params", "sensor value must be object");
-            return;
+            *err = (param_error_t){ "invalid_params", "sensor value must be object" };
+            return false;
         }
         // enabled
         int en_tok = pc_obj_get(json, tokens, ntokens, s_tok, "enabled");
         if (en_tok >= 0) {
             bool en;
             if (!pc_tok_bool(json, &tokens[en_tok], &en)) {
-                send_simple_error(id, src, "invalid_params", "enabled must be boolean");
-                return;
+                *err = (param_error_t){ "invalid_params", "enabled must be boolean" };
+                return false;
             }
             set_category_enabled(SENSOR_SETTINGS[i].category, en);
-            changed = true;
+            *changed = true;
         }
         // interval (0-99999 [sec])。EEPROM 側は uint32_t、比較系は int32_t で扱うので
         // この範囲を歪みなく保持できる (16bit 時代の wrap/負値化問題は解消済み)。
         int iv_tok = pc_obj_get(json, tokens, ntokens, s_tok, "interval");
         if (iv_tok >= 0) {
-            int32_t iv = pc_tok_int(json, &tokens[iv_tok]);
-            if (iv < 0 || iv > 99999) {
-                send_simple_error(id, src, "out_of_range", "interval must be 0-99999");
-                return;
+            uint32_t iv;
+            if (!pc_tok_u32(json, &tokens[iv_tok], &iv) || iv > 99999) {
+                *err = (param_error_t){ "out_of_range", "interval must be 0-99999" };
+                return false;
             }
-            set_category_interval(SENSOR_SETTINGS[i].category, (uint32_t)iv);
-            changed = true;
+            set_category_interval(SENSOR_SETTINGS[i].category, iv);
+            *changed = true;
         }
     }
 
     // start_ts は params 直下
     int st_tok = pc_obj_get(json, tokens, ntokens, params_tok, "start_ts");
     if (st_tok >= 0) {
-        if (tokens[st_tok].type != JSMN_PRIMITIVE) {
-            send_simple_error(id, src, "invalid_params", "start_ts must be number");
-            return;
+        uint32_t st;
+        if (!pc_tok_u32(json, &tokens[st_tok], &st)) {
+            *err = (param_error_t){ "invalid_params", "start_ts must be number" };
+            return false;
         }
-        int32_t st = pc_tok_int(json, &tokens[st_tok]);
-        EM_mSettings.start_dt = (uint32_t)st;
-        changed = true;
+        EM_mSettings.start_dt = st;
+        *changed = true;
+    }
+    return true;
+}
+
+void ph_set_settings(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    if (params_tok < 0) {
+        send_simple_error(id, src, "invalid_params", "missing params");
+        return;
+    }
+
+    // エラーなら何も変えない (途中まで反映した値が次の保存で EEPROM に書かれないように)
+    MeasurementSettings backup = EM_mSettings;
+    bool changed = false;
+    param_error_t err;
+    if (!apply_settings(json, tokens, ntokens, params_tok, &changed, &err)) {
+        EM_mSettings = backup;
+        send_simple_error(id, src, err.code, err.msg);
+        return;
     }
 
     if (changed) EM_saveMeasurementSetting();
@@ -344,49 +387,63 @@ void ph_get_correction(int32_t id, const char *json, const jsmntok_t *tokens, in
     send_correction_response(id, src);
 }
 
+// set_correction の params を EM_cFactors に適用する。エラー時は途中まで適用した
+// 状態で戻るので、呼び出し側で元に戻すこと。
+static bool apply_correction(const char *json, const jsmntok_t *tokens, int ntokens, int params_tok,
+                             bool *changed, param_error_t *err) {
+    for (size_t i = 0; i < NUM_CORRECTIONS; i++) {
+        int s_tok = pc_obj_get(json, tokens, ntokens, params_tok, CORRECTIONS[i].name);
+        if (s_tok < 0) continue;
+        if (tokens[s_tok].type != JSMN_OBJECT) {
+            *err = (param_error_t){ "invalid_params", "sensor value must be object" };
+            return false;
+        }
+        int a_tok = pc_obj_get(json, tokens, ntokens, s_tok, "a");
+        if (a_tok >= 0) {
+            float a;
+            if (!pc_tok_float(json, &tokens[a_tok], &a)) {
+                *err = (param_error_t){ "invalid_params", "'a' must be number" };
+                return false;
+            }
+            if (!in_range_f(a, CORRECTIONS[i].a_min, CORRECTIONS[i].a_max)) {
+                *err = (param_error_t){ "out_of_range", "'a' out of range" };
+                return false;
+            }
+            *CORRECTIONS[i].a_ptr = a;
+            *changed = true;
+        }
+        int b_tok = pc_obj_get(json, tokens, ntokens, s_tok, "b");
+        if (b_tok >= 0) {
+            float b;
+            if (!pc_tok_float(json, &tokens[b_tok], &b)) {
+                *err = (param_error_t){ "invalid_params", "'b' must be number" };
+                return false;
+            }
+            if (!in_range_f(b, CORRECTIONS[i].b_min, CORRECTIONS[i].b_max)) {
+                *err = (param_error_t){ "out_of_range", "'b' out of range" };
+                return false;
+            }
+            *CORRECTIONS[i].b_ptr = b;
+            *changed = true;
+        }
+    }
+    return true;
+}
+
 void ph_set_correction(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     if (params_tok < 0) {
         send_simple_error(id, src, "invalid_params", "missing params");
         return;
     }
 
+    // エラーなら何も変えない
+    CorrectionFactors backup = EM_cFactors;
     bool changed = false;
-
-    for (size_t i = 0; i < NUM_CORRECTIONS; i++) {
-        int s_tok = pc_obj_get(json, tokens, ntokens, params_tok, CORRECTIONS[i].name);
-        if (s_tok < 0) continue;
-        if (tokens[s_tok].type != JSMN_OBJECT) {
-            send_simple_error(id, src, "invalid_params", "sensor value must be object");
-            return;
-        }
-        int a_tok = pc_obj_get(json, tokens, ntokens, s_tok, "a");
-        if (a_tok >= 0) {
-            float a;
-            if (!pc_tok_float(json, &tokens[a_tok], &a)) {
-                send_simple_error(id, src, "invalid_params", "'a' must be number");
-                return;
-            }
-            if (!in_range_f(a, CORRECTIONS[i].a_min, CORRECTIONS[i].a_max)) {
-                send_simple_error(id, src, "out_of_range", "'a' out of range");
-                return;
-            }
-            *CORRECTIONS[i].a_ptr = a;
-            changed = true;
-        }
-        int b_tok = pc_obj_get(json, tokens, ntokens, s_tok, "b");
-        if (b_tok >= 0) {
-            float b;
-            if (!pc_tok_float(json, &tokens[b_tok], &b)) {
-                send_simple_error(id, src, "invalid_params", "'b' must be number");
-                return;
-            }
-            if (!in_range_f(b, CORRECTIONS[i].b_min, CORRECTIONS[i].b_max)) {
-                send_simple_error(id, src, "out_of_range", "'b' out of range");
-                return;
-            }
-            *CORRECTIONS[i].b_ptr = b;
-            changed = true;
-        }
+    param_error_t err;
+    if (!apply_correction(json, tokens, ntokens, params_tok, &changed, &err)) {
+        EM_cFactors = backup;
+        send_simple_error(id, src, err.code, err.msg);
+        return;
     }
 
     if (changed) EM_saveCorrectionFactor();
@@ -445,12 +502,23 @@ void ph_start_logging(int32_t id, const char *json, const jsmntok_t *tokens, int
         }
     }
 
-    // flash 記録は timestamp を後から補正できないので、RTC が set_time で
-    // 未設定 (2026-01-01 未満 = boot 直後の 2000-01-01 相当) だと bogus な
-    // 日付でレコードが埋まる。事前拒否して client に set_time を促す。
-    // live 系 (usb/ble/zigbee) は client 側で ts を補正できるので許容。
-    if (fl && !LC_IsRtcSet()) {
-        send_simple_error(id, src, "rtc_unset", "call set_time before flash logging");
+    if (!zb && !ble && !fl && !usb) {
+        send_simple_error(id, src, "invalid_params", "no transport selected");
+        return;
+    }
+
+    // dump 中に始めると計測データが dump のバイナリに混ざる
+    if (USB_IsStreaming()) {
+        send_simple_error(id, src, "busy", "dump in progress");
+        return;
+    }
+
+    // 時刻が未設定 (2026-01-01 未満 = 電源投入直後の 2000-01-01 相当) なら拒否して
+    // client に set_time を促す。flash 記録は日付が誤ったまま残り、それ以外の出力先も
+    // 計測開始時刻 (start_ts) より前と判定されて何も送られないため。
+    // (電源投入後の auto_restart 再開は本関数を通らないので影響しない)
+    if (!LC_IsRtcSet()) {
+        send_simple_error(id, src, "rtc_unset", "call set_time before start_logging");
         return;
     }
 
@@ -480,6 +548,10 @@ void ph_stop_logging(int32_t id, const char *json, const jsmntok_t *tokens, int 
 // ============================================================
 void ph_clear_data(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     (void)json; (void)tokens; (void)ntokens; (void)params_tok;
+    if (LC_IsLogging() || USB_IsStreaming()) {
+        send_simple_error(id, src, "busy", "stop logging or dump before clear");
+        return;
+    }
     LC_ClearData();
     send_empty_result(id, src);
 }
@@ -504,8 +576,26 @@ void ph_erase_flash(int32_t id, const char *json, const jsmntok_t *tokens, int n
 
     // 処理中通知: 赤 LED を消去完了まで点灯し続ける
     turnOnRedLED();
-    W25_ChipErase();
+    W25_ChipEraseStart();
+
+    // 完了待ち (W25Q256 は通常 80 秒、仕様上の最大 250 秒強)。待つ間も WDT をリセットし、
+    // USB の処理を回してホスト側から見て応答不能にならないようにする。
+    // フラッシュが応答しない (BUSY が立ったまま) 場合に備えてタイムアウトを持つ。
+    uint32_t waited_ms = 0;
+    bool erased = true;
+    while (W25_IsBusy()) {
+        wdt_reset();
+        USBDevice_Handle();
+        USB_CDCVirtualSerialPortHandler();
+        DELAY_milliseconds(10);
+        waited_ms += 10;
+        if (waited_ms >= ERASE_TIMEOUT_MS) { erased = false; break; }
+    }
     turnOffRedLED();
+    if (!erased) {
+        send_simple_error(id, src, "erase_timeout", "flash did not finish chip erase");
+        return;
+    }
 
     // 工場初期化相当 (initMemory) の generation/rec_latest 状態に揃える
     EM_generationNumber = 1;
@@ -520,12 +610,18 @@ void ph_erase_flash(int32_t id, const char *json, const jsmntok_t *tokens, int n
 //   params: { mode: "forced"|"factory"|"reset", target_ppm: int? }
 //
 //   mode="forced":   30秒連続測定 → FRC (LC_CalibrateCO2)、target_ppm 必須
-//   mode="factory":  factory_reset → 12時間安定化 → FRC (LC_FactoryResetCO2)、target_ppm 必須
+//   mode="factory":  factory_reset → 12時間 1 秒ごとに測定 → FRC (LC_FactoryResetCO2)、target_ppm 必須
 //   mode="reset":    factory_reset 単独 (LC_FactoryResetCO2Only)、target_ppm 不要・無視
 // ============================================================
 void ph_calibrate_co2(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
     if (params_tok < 0) {
         send_simple_error(id, src, "invalid_params", "missing params");
+        return;
+    }
+
+    // 校正中はロギングの計測処理が止まるので、ロギング中は受け付けない
+    if (LC_IsLogging()) {
+        send_simple_error(id, src, "busy", "stop logging before calibration");
         return;
     }
 
@@ -544,16 +640,16 @@ void ph_calibrate_co2(int32_t id, const char *json, const jsmntok_t *tokens, int
     }
 
     // reset 以外は target_ppm が必須
-    int32_t target = 0;
+    uint32_t target = 0;
     if (!is_reset) {
         int target_tok = pc_obj_get(json, tokens, ntokens, params_tok, "target_ppm");
-        if (target_tok < 0 || tokens[target_tok].type != JSMN_PRIMITIVE) {
+        if (target_tok < 0 || !pc_tok_u32(json, &tokens[target_tok], &target)) {
             send_simple_error(id, src, "invalid_params", "missing or invalid 'target_ppm'");
             return;
         }
-        target = pc_tok_int(json, &tokens[target_tok]);
-        if (target < 0 || target > 65535) {
-            send_simple_error(id, src, "out_of_range", "target_ppm must be 0-65535");
+        // 基準にできるのは外気 (約 420 ppm) から校正用ガス程度まで
+        if (target < CO2_TARGET_MIN_PPM || target > CO2_TARGET_MAX_PPM) {
+            send_simple_error(id, src, "out_of_range", "target_ppm must be 300-5000");
             return;
         }
     }
@@ -591,8 +687,8 @@ void ph_get_count(int32_t id, const char *json, const jsmntok_t *tokens, int nto
 // dump
 //   JSON ヘッダ送信後、バイナリストリームに切り替え。USB / BLE / Zigbee すべてで動作。
 //   ロギング中は busy エラー (BLE/Zigbee dump は同 channel で smp event と干渉するため)。
-//   USB-CDC: async stream (USB_Stream_Task が main loop で駆動)
-//   BLE/Zigbee: blocking 風だが内部で wdt_reset/main loop pump
+//   USB-CDC / BLE / Zigbee とも、main loop の USB_Stream_Task が呼ばれるたびに
+//   少しずつ送る (1 回の呼び出しで長時間ブロックしない)
 //
 //   params (省略可): { "from": N, "limit": M }
 //   from  = 送信開始レコード index (省略時 0)
@@ -683,10 +779,38 @@ void ph_get_probe_info(int32_t id, const char *json, const jsmntok_t *tokens, in
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
 }
 
+// XBee の AT 設定値を読み、数値 (big endian) として key に書く。読めなければ書かない
+static void put_at_uint(pc_writer_t *w, const char *key, const char at[2]) {
+    uint8_t v[4];
+    int n = Xbee_QueryAt(at, v, sizeof(v));
+    if (n <= 0) return;
+    uint32_t x = 0;
+    for (int i = 0; i < n; i++) x = (x << 8) | v[i];
+    pc_key(w, key); pc_uint(w, x);
+}
+
+// XBee の AT 設定値を読み、16 進文字列として key に書く。読めなければ書かない
+static void put_at_hex(pc_writer_t *w, const char *key, const char at[2]) {
+    static const char HEX[] = "0123456789ABCDEF";
+    uint8_t v[8];
+    int n = Xbee_QueryAt(at, v, sizeof(v));
+    if (n <= 0) return;
+    char s[2 * sizeof(v) + 1];
+    for (int i = 0; i < n; i++) {
+        s[2 * i]     = HEX[v[i] >> 4];
+        s[2 * i + 1] = HEX[v[i] & 0x0F];
+    }
+    s[2 * n] = '\0';
+    pc_key(w, key); pc_str(w, s);
+}
+
 // ============================================================
 // get_radio_info (出荷検査・診断用)
-//   XBee モジュールの 64bit MAC (SH+SL) と firmware version (VR) を返す。
-//   response: { "result": { "xbee_mac":"0013A200XXXXXXXX", "xbee_fw":"XXXX" } }
+//   XBee モジュールの 64bit MAC (SH+SL)、firmware version (VR)、BLE MAC (BL) と、
+//   動作に必要な設定値を返す (出荷検査で期待値と比較する)。
+//   response: { "result": { "xbee_mac":"0013A200XXXXXXXX", "xbee_fw":"XXXX",
+//                           "ble_mac":"XXXXXXXXXXXX", "pan_id":"XXXXXXXXXXXXXXXX",
+//                           "ap":1, "sm":1, "bd":7, "bt":1, "ce":0 } }
 //   XBee 無応答時は error (xbee_no_response)。
 // ============================================================
 void ph_get_radio_info(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
@@ -719,8 +843,56 @@ void ph_get_radio_info(int32_t id, const char *json, const jsmntok_t *tokens, in
             p += snprintf(p, 3, "%02X", vr[i]);
         pc_key(&w, "xbee_fw"); pc_str(&w, vrbuf);
     }
+    put_at_hex (&w, "ble_mac", "BL");   // BLE アドバタイズのアドレス
+    put_at_hex (&w, "pan_id",  "ID");   // 親機と一致している必要がある
+    put_at_uint(&w, "ap", "AP");        // 1 = API (エスケープなし)
+    put_at_uint(&w, "sm", "SM");        // 1 = Pin Hibernate
+    put_at_uint(&w, "bd", "BD");        // 7 = 115200 bps
+    put_at_uint(&w, "bt", "BT");        // 1 = BLE 有効
+    put_at_uint(&w, "ce", "CE");        // 0 = End Device (親機にはならない)
     pc_end_result(&w);
     if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+}
+
+// ============================================================
+// get_diag (安定性診断用)
+//   response: { "result": { "stack_free_min":N, "reset_flags":F,
+//                           "zb_tx_status":S, "zb_tx_fail":E, "zb_tx_last_fail":C } }
+//   zb_tx_*       : 起動以来の Zigbee 送信結果 (TX Status 0x8B)。受信数・失敗数
+//                   (delivery != 0)・最後の失敗コード (0x21 = 無線 ACK なし、0x22 = 未参加 等)
+//   stack_free_min: 起動以来、スタックが最も深く伸びた時点の残り RAM [byte]
+//   reset_flags   : 起動時のリセット要因 (RSTCTRL.RSTFR)。bit0 PORF(電源投入),
+//                   1 BORF(低電圧), 2 EXTRF(外部), 3 WDRF(WDT), 4 SWRF(ソフト), 5 UPDIRF
+// ============================================================
+//   params (省略可, USB-CDC のみ): { "hang": true }
+//     応答を返した後にわざと WDT をリセットしないループに入る。約 8 秒後に WDT で
+//     再起動し、次の get_diag の reset_flags に WDRF (bit3) が立つことで WDT の動作を
+//     確認できる (検査用)。
+void ph_get_diag(int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src) {
+    bool hang = false;
+    if (params_tok >= 0 && src == SRC_USB) {
+        int t = pc_obj_get(json, tokens, ntokens, params_tok, "hang");
+        if (t >= 0) (void)pc_tok_bool(json, &tokens[t], &hang);
+    }
+
+    pc_writer_t w;
+    pc_begin_result(&w, s_tx_buf, sizeof(s_tx_buf), id);
+    uint16_t zb_status, zb_fail;
+    uint8_t  zb_last_fail;
+    Xbee_GetZigbeeTxStats(&zb_status, &zb_fail, &zb_last_fail);
+
+    pc_key(&w, "stack_free_min");  pc_uint(&w, MAIN_GetStackFreeMin());
+    pc_key(&w, "reset_flags");     pc_uint(&w, MAIN_GetResetFlags());
+    pc_key(&w, "zb_tx_status");    pc_uint(&w, zb_status);
+    pc_key(&w, "zb_tx_fail");      pc_uint(&w, zb_fail);
+    pc_key(&w, "zb_tx_last_fail"); pc_uint(&w, zb_last_fail);
+    pc_end_result(&w);
+    if (pc_ok(&w)) CH_Reply(s_tx_buf, src);
+
+    if (hang) {
+        USB_Flush();          // 応答をホストへ送り切ってから止まる
+        while (1) { }         // WDT リセット待ち
+    }
 }
 
 // ============================================================

@@ -81,6 +81,8 @@ int     pc_obj_get(const char *json, const jsmntok_t *tokens, int ntokens, int o
 bool    pc_obj_is_valid(const jsmntok_t *tokens, int ntokens, int obj_idx);
 // プリミティブトークンを int に
 int32_t pc_tok_int(const char *json, const jsmntok_t *t);
+// プリミティブ非負整数 (数字のみ、uint32 範囲) を uint32 に。成功時 true を返す
+bool    pc_tok_u32(const char *json, const jsmntok_t *t, uint32_t *out);
 // 文字列トークンをバッファにコピー (戻り値: 書き込んだ長さ、末尾 \0 含めず)
 size_t  pc_tok_strcpy(const char *json, const jsmntok_t *t, char *dst, size_t dst_cap);
 // プリミティブ true/false を bool に。成功時 true を返す

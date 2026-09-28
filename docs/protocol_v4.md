@@ -143,6 +143,8 @@ M-Logger v4 のメイン基板ファームと親機(MAUI/Python/その他クラ�
 
 リセットボタン3秒長押しで `auto_restart` 解除 (ハードウェア機能、変更なし)。
 
+出力先がすべて `false` なら `invalid_params`、dump 中なら `busy`、時刻が未設定 (`set_time` 前) なら `rtc_unset` を返す。
+
 ```jsonc
 {"v":1,"id":3,"command":"stop_logging"}
 {"v":1,"id":3,"result":{}}
@@ -190,6 +192,8 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 | `<category>.enabled` | カテゴリ全体の有効/無効 |
 | `<category>.interval` | 計測間隔 [秒]、範囲 1〜99999 |
 | `start_ts` | 計測開始時刻 (UNIX秒、0なら即時開始) |
+
+値に誤りがあればエラーを返し、同じ要求で指定した他の値も変更しない (`set_correction` も同様)。
 
 ### 4.5 `get_correction` / `set_correction`
 
@@ -247,6 +251,8 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 {"v":1,"id":9,"result":{"ts":1747500000}}
 ```
 
+`ts` は非負の整数。2026-01-01 (1767225600) より前は `out_of_range`。
+
 ### 4.8 `calibrate_co2`
 
 旧 `IC2` + `CCL` 統合。Sensirion STCC4 の `perform_factory_reset` / `perform_forced_recalibration` (datasheet ICD01 §3.4.11 / §3.4.15) を組合せた 3 つの操作モードを持つ。
@@ -264,12 +270,14 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 | キー | 意味 |
 |---|---|
 | `mode` | `"forced"` / `"factory"` / `"reset"` のいずれか (下表参照) |
-| `target_ppm` | 基準 CO2 濃度 [ppm]。`mode="reset"` 以外で必須 |
+| `target_ppm` | 基準 CO2 濃度 [ppm]、範囲 300〜5000。`mode="reset"` 以外で必須 |
+
+ロギング中は `busy` を返す (校正中は計測が止まるため)。
 
 | `mode` | 動作 | 所要時間 | `target_ppm` |
 |--------|------|---------|-------------|
 | `forced` | 30 秒連続測定 → forced_recalibration (FRC、指定濃度に校正) | ~35 秒 | 必須 |
-| `factory` | factory_reset → 12 時間安定化 → FRC (compound 操作、Sensirion datasheet §1.1.4 Initial Operation を再現) | ~12 時間 | 必須 |
+| `factory` | factory_reset → 12 時間 1 秒ごとに測定 → FRC (compound 操作、Sensirion datasheet §1.1.4 Initial Operation を再現) | ~12 時間 | 必須 |
 | `reset` | factory_reset 単独 (ASC/FRC 履歴消去 + bypass phase 再開) | ~90ms | 不要 (与えても無視) |
 
 ### 4.9 `clear_data`
@@ -280,6 +288,8 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 {"v":1,"id":11,"command":"clear_data"}
 {"v":1,"id":11,"result":{}}
 ```
+
+ロギング中・dump 中は `busy` を返す。
 
 ### 4.10 `get_count`
 
@@ -409,6 +419,30 @@ W25Q256 を chip erase で完全に初期化し、generation を 1 にリセッ�
 - ノイズ等で EEPROM 上の generation 値が壊れて `dump` が異常な件数を返す場合
 
 完了後は `EM_generationNumber = 1`、`rec_latest = 0` の工場初期化相当の状態になる。
+
+### 4.13 `get_diag` — 安定性診断
+
+スタック使用量とリセット要因を返す。開発・検査用。
+
+```jsonc
+// 要求
+{"v":1,"id":N,"command":"get_diag"}
+
+// 応答
+{"v":1,"id":N,"result":{"stack_free_min":812,"reset_flags":1,
+                          "zb_tx_status":120,"zb_tx_fail":3,"zb_tx_last_fail":33}}
+```
+
+| フィールド | 内容 |
+|---|---|
+| `stack_free_min` | 起動以来、スタックが最も深く伸びた時点で残っていた RAM [byte]。起動時に未使用 RAM を既知の値で塗り、書き換わらずに残っている量から求める。0 に近いほどスタックあふれの危険が高い |
+| `reset_flags` | 起動時のリセット要因 (RSTCTRL.RSTFR)。bit0 = 電源投入 (PORF)、bit1 = 低電圧 (BORF)、bit2 = 外部リセット (EXTRF)、bit3 = WDT (WDRF)、bit4 = ソフトウェア (SWRF)、bit5 = UPDI。ブートローダ (euboot) が RSTFR を GPR0 に退避してクリアするため、ファームは両方を合わせて返す |
+
+| `zb_tx_status` / `zb_tx_fail` / `zb_tx_last_fail` | 起動以来の Zigbee 送信結果 (TX Status 0x8B)。受信した送信結果の数、そのうち失敗 (delivery ≠ 0) の数、最後の失敗コード (0x21 = 無線 ACK なし、0x22 = ネットワーク未参加 など。XBee の delivery status) |
+
+params (省略可、USB-CDC のみ): `{"hang": true}` を付けると、応答を返した後にわざと WDT をリセットしない
+ループに入る。約 8 秒後に WDT で再起動するので、次の `get_diag` の `reset_flags` に WDRF が立つことで
+WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.py --wdt-test`)。
 
 ## 5. イベント一覧
 
@@ -571,7 +605,7 @@ W25Q256 を chip erase で完全に初期化し、generation を 1 にリセッ�
 | `out_of_range` | 値が許容範囲外 (補正係数の範囲超過など) |
 | `unsupported_transport` | 現在のtransportでは未サポート (例: dump on XBee) |
 | `busy` | 別操作実行中 (CO2校正中に別校正コマンド等) |
-| `rtc_unset` | RTC が set_time で未同期のまま flash logging を要求 (record 全体が boot 時のダミー日付で埋まるため拒否) |
+| `rtc_unset` | RTC が set_time で未同期のまま start_logging を要求 (出力先によらず拒否) |
 | `internal_error` | その他、ハードエラー等 |
 
 ## 7. 後方互換性 (親機側で吸収)

@@ -50,10 +50,11 @@
 #include "xbee_controller.h" //XBee通信
 #include "anemometer.h" //風速計
 #include "protocol_events.h" //v4 ready ハートビート
+#include "command_handler.h" //受信コマンドの実行
 
 //標準ヘッダ
 #include <avr/sleep.h>
-#include <avr/wdt.h>     // _PROTECTED_WRITE for WDT.CTRLA (XBEE_QUIET_MODE 用)
+#include <avr/wdt.h>     // wdt_reset / WDT.CTRLA
 #include <avr/io.h>      // USART0 register access (XBEE_QUIET_MODE 用)
 
 // </editor-fold>
@@ -78,6 +79,40 @@ static uint8_t lowBattery_timer = 0;
 //リセット処理用タイマ[sec]
 static uint8_t reset_timer = 0;
 
+//起動時のリセット要因 (RSTCTRL.RSTFR)
+static uint8_t reset_flags = 0;
+
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc="スタック使用量の監視">
+
+// 静的変数 (.data/.bss) の直後からスタック先頭までの未使用 RAM を既知の値で塗り、
+// 運用中に書き換わらずに残っている量から「スタックが最も深く伸びた時点の余裕」を求める。
+// malloc は使っていないので、この領域を書き換えるのはスタックだけ。
+#define STACK_PAINT  0xC5
+extern uint8_t __heap_start;   // リンカが定義する静的変数領域の末尾
+
+static void paintStack(void)
+{
+    // 自分自身のフレームを塗りつぶさないよう、現在の SP から少し手前で止める
+    uint8_t *p   = &__heap_start;
+    uint8_t *top = (uint8_t *)SP - 32;
+    while (p < top) *p++ = STACK_PAINT;
+}
+
+uint16_t MAIN_GetStackFreeMin(void)
+{
+    const uint8_t *p = &__heap_start;
+    uint16_t n = 0;
+    while (*p == STACK_PAINT && p < (const uint8_t *)SP) { p++; n++; }
+    return n;
+}
+
+uint8_t MAIN_GetResetFlags(void)
+{
+    return reset_flags;
+}
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="main">
@@ -97,6 +132,21 @@ static uint8_t reset_timer = 0;
 
 int main(void)
 {
+    // リセット要因を記録する。ブートローダ (euboot) は起動時に RSTFR を読んで
+    // GPR.GPR0 に退避してから RSTFR をクリアするので、両方を合わせて見る
+    // (ブートローダなしで書き込んだ場合は RSTFR 側に残っている)。
+    reset_flags = RSTCTRL.RSTFR | GPR.GPR0;
+    RSTCTRL.RSTFR = RSTCTRL.RSTFR;   // 1 を書くとクリアされる
+
+    paintStack();
+
+    // WDT を約 8 秒周期で有効化する (ヒューズでは OFF)。main loop の先頭と、1 秒を
+    // 超えうる待ち (XBee 応答待ち・erase_flash・リセットボタンの解放待ち) でリセットする。
+    // I2C バスの固着などで処理が戻らなくなった場合にマイコンを再起動させるのが目的。
+    // WDT リセット後は euboot がボタンの状態に関係なくアプリへ戻す (euboot main.cpp)。
+    wdt_reset();
+    _PROTECTED_WRITE(WDT.CTRLA, WDT_PERIOD_8KCLK_gc);
+
     SYSTEM_Initialize();
 
 #if XBEE_QUIET_MODE
@@ -130,7 +180,7 @@ int main(void)
 		if(10 <= count)	showError(1);
         DELAY_milliseconds(100);
 	}
-    
+        
     // イベントハンドラ登録
     RTC_SetPITIsrCallback(oneSecHandler); // 1sec割り込み
     RST_SetInterruptHandler(resetButtonHandler); // リセットスイッチ押し込み割り込み
@@ -161,8 +211,17 @@ int main(void)
     //10秒以上電圧不足時間が継続したら終了
     while (lowBattery_timer <= 10)
     {
+        wdt_reset();
+
 		// XBeeコマンド受信と処理
         Xbee_LoadUART();
+
+        // 受信済みのコマンドを実行する (USB / Zigbee / BLE)。コマンドはここでだけ
+        // 実行し、計測処理の途中には割り込ませない
+        CH_DispatchPending();
+
+        // BLE 切断を検知したら、BLE だけに出力しているロギングを止める
+        if (Xbee_TakeBleDisconnectEvent()) LC_OnBleDisconnected();
             
 		//1秒毎の処理を実施
 		if(process_logging_flag)
@@ -259,7 +318,7 @@ void executeSecondlyTask(void)
             // euboot (USB bootloader) は起動時に PF2 (RST) が Low なら bootloader モードに
             // 入る設計のため、SWR を発行した瞬間にユーザがまだ RST を押し続けていると、
             // アプリ復帰のはずが意図せず bootloader に突入してしまう。これを防ぐ。
-            while (!RST_GetValue()) ;
+            while (!RST_GetValue()) wdt_reset();
 
             // マイコン自体をソフトウェアリセット
             _PROTECTED_WRITE(RSTCTRL.SWRR, RSTCTRL_SWRST_bm);
@@ -327,7 +386,10 @@ bool isLowBattery(void)
 
 //エラー表示
 void showError(short int errNum)
-{	
+{
+    // 意図した停止なので WDT を止める (止めないと再起動を繰り返して LED 表示が見えない)
+    _PROTECTED_WRITE(WDT.CTRLA, 0);
+
 	switch(errNum){
 		case 1: //電池不足
 			while(true)

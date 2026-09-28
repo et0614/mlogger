@@ -79,12 +79,10 @@ static bool logging = false;
 static time_t time_sync_next_unix = 0;
 
 // 時刻同期 wake window の残秒数。> 0 の間 XBee を sleep させず set_time 受信を待つ。
-static volatile uint16_t time_sync_window_remaining = 0;
-
-// 1秒タスク内で「time_sync_request を emit すべき」フラグ。LC_TickSecond 内では
-// USART を叩きたくない (割り込み文脈なので) ので、ここでフラグだけ立てて
-// 後段 LC_ProcessTimeSyncTask で emit する。
-static volatile bool time_sync_emit_pending = false;
+// 時刻同期の状態 (time_sync_next_unix / time_sync_window_remaining) は main 側
+// (LC_ProcessTimeSyncTask とコマンド処理) だけで読み書きする。1 秒割り込みから
+// 触ると、main 側の複数バイトの書き込みの途中で読まれて値が壊れるため。
+static uint8_t time_sync_window_remaining = 0;
 
 //コマンド
 static bool outputToBLE=false; //Bluetooth接続に書き出すか否か
@@ -111,6 +109,7 @@ static SmAverage smaCO2;                         //CO2平均化 (窓幅は LC_St
 typedef enum { FRC_PHASE_IDLE = 0, FRC_PHASE_RUNNING } FrcPhase_t;
 static FrcPhase_t frcPhase = FRC_PHASE_IDLE;
 static uint8_t    frcProgressSec = 0;
+#define FRC_TIMEOUT_SEC  120   // FRC 完了待ちの上限 [sec]
 
 //温湿度+CO2+グローブ温度プローブ (mlogger_th_sensor 子機)
 static ThProbe_t th_probe;
@@ -156,14 +155,17 @@ uint32_t rec_latest; // 最新データの書き込み位置インデックス
 
 // <editor-fold defaultstate="collapsed" desc="inline関数の定義">
 
-inline static float max(float x, float y)
+// 物理量 (float) を記録用の整数へ変換する。NaN / ±Inf なら false を返し、呼び出し側は
+// その値を無効として扱う (NaN は大小比較がすべて偽になり、範囲の丸め込みをすり抜けるため)。
+// 範囲外は [lo, hi] に丸め込み、scale 倍して四捨五入する (切り捨てだと平均で 0.5 LSB 低くなる)。
+static bool to_scaled(float v, float lo, float hi, float scale, int32_t *out)
 {
-	return (x > y) ? x : y;
-}
-
-inline static float min(float x, float y)
-{
-	return (x < y) ? x : y;
+	if (v != v || v > 3.4e38f || v < -3.4e38f) return false;
+	if (v < lo) v = lo;
+	else if (v > hi) v = hi;
+	float s = v * scale;
+	*out = (int32_t)(s + ((s >= 0.0f) ? 0.5f : -0.5f));
+	return true;
 }
 
 // </editor-fold>
@@ -204,6 +206,16 @@ static void pollCO2Calibration(void)
         return;
     }
 
+    // 一定時間で完了しなければ打ち切る。プローブが外れると状態が読めず (I2C 失敗時は
+    // IDLE が返る)、DONE/FAIL を永久に受け取れずに校正モードから抜けられなくなるため。
+    // 通常は 30 sec 連続測定 + FRC ~5 sec、直前に電源が入った場合は conditioning 22 sec が加わる。
+    if (frcProgressSec >= FRC_TIMEOUT_SEC) {
+        pe_emit_co2_calibration_progress(0, "fail", 0, co2_now);
+        frcPhase = FRC_PHASE_IDLE;
+        frcProgressSec = 0;
+        return;
+    }
+
     // 進行中: 経過秒を進めて progress イベント (30 sec 想定 + FRC ~5 sec の余裕)
     frcProgressSec++;
     uint8_t remaining = (frcProgressSec < 35) ? (35 - frcProgressSec) : 1;
@@ -211,11 +223,19 @@ static void pollCO2Calibration(void)
 }
 
 // 任意秒安定化フェーズ。0 到達で FRC へ移行 (以降は pollCO2Calibration が引き継ぐ)
+// 新品の STCC4 は初期化に最大 12 時間の連続測定が要る (datasheet §1.1.4 Initial
+// Operation) ので、この間は 1 秒ごとに測定を続ける (前秒の結果を読んでから次を起動)。
 static void pollCO2Initialization(void)
 {
     blinkGreenAndRedLED(1);
+    if (th_trigger_pending) ThProbe_Read(&th_probe);
     co2InitializingTime--;
-    if (co2InitializingTime == 0) {
+    if (0 < co2InitializingTime) {
+        ThProbe_Trigger();
+        th_trigger_pending = true;
+    } else {
+        // 直前の測定 (~0.5 sec) は完了済み。FRC は子機内で 30 sec 連続測定してから実行する
+        th_trigger_pending = false;
         ThProbe_StartFrc(reforcedCO2Level);
         frcPhase = FRC_PHASE_RUNNING;
         frcProgressSec = 0;
@@ -241,6 +261,7 @@ void execLogging(void)
 	if(EM_mSettings.measure_vel && (int32_t)EM_mSettings.interval_vel - pass_counters.vel < V_WAKEUP_TIME) Anemometer_Wakeup();
 	
 	bool send_needed = false;
+    int32_t scaled;     // to_scaled の出力
     SensorData_t data = {0};
     data.generation = EM_generationNumber;
     data.timestamp = (uint32_t)current_snapshot;
@@ -258,8 +279,10 @@ void execLogging(void)
             LC_Update_Anemometer();
             // 子機切断 / status1 異常時は valid_flag を立てない
             // (= load_data.py 等で空欄になり、ゴミ値 65000 等が混入しない)
-            if (anemometer.wind_valid) {
-                data.wind_speed = anemometer.wind_speed_mps * 10000;
+            // 記録形式は uint16 × 10000 なので上限 6.5535 m/s (超える値はこの上限に張り付く)
+            if (anemometer.wind_valid
+                && to_scaled(anemometer.wind_speed_mps, 0.0f, 6.5535f, 10000.0f, &scaled)) {
+                data.wind_speed = (uint16_t)scaled;
                 data.valid_flags |= FLAG_WIND_SPEED;
             }
             if (anemometer.voltage_valid) {
@@ -359,12 +382,14 @@ void execLogging(void)
 		if (mesTH) {
 			send_needed = true;
 			pass_counters.th = 0;
-			if (th_probe.t_valid && !waitingForFirstValidCO2) {
-				data.temp_dry = 100 * max(-40, min(99, EM_cFactors.dbtA * th_probe.temp_c + EM_cFactors.dbtB));
+			if (th_probe.t_valid && !waitingForFirstValidCO2
+			    && to_scaled(EM_cFactors.dbtA * th_probe.temp_c + EM_cFactors.dbtB, -40.0f, 99.0f, 100.0f, &scaled)) {
+				data.temp_dry = (int16_t)scaled;
 				data.valid_flags |= FLAG_TEMP_DRY;
 			}
-			if (th_probe.rh_valid && !waitingForFirstValidCO2) {
-				data.humidity = 100 * max(0, min(100, EM_cFactors.hmdA * th_probe.rh_pct + EM_cFactors.hmdB));
+			if (th_probe.rh_valid && !waitingForFirstValidCO2
+			    && to_scaled(EM_cFactors.hmdA * th_probe.rh_pct + EM_cFactors.hmdB, 0.0f, 100.0f, 100.0f, &scaled)) {
+				data.humidity = (uint16_t)scaled;
 				data.valid_flags |= FLAG_HUMIDITY;
 			}
 		}
@@ -379,8 +404,9 @@ void execLogging(void)
 		if (mesGlb) {
 			send_needed = true;
 			pass_counters.glb = 0;
-			if (th_probe.glb_valid) {
-				data.temp_globe = 100 * max(-40, min(99, EM_cFactors.glbA * th_probe.glb_c + EM_cFactors.glbB));
+			if (th_probe.glb_valid
+			    && to_scaled(EM_cFactors.glbA * th_probe.glb_c + EM_cFactors.glbB, -40.0f, 99.0f, 100.0f, &scaled)) {
+				data.temp_globe = (int16_t)scaled;
 				data.valid_flags |= FLAG_TEMP_GLOBE;
 			}
 		}
@@ -394,10 +420,10 @@ void execLogging(void)
 		pass_counters.ill = 0;        
         
 		float ill_d;
-        if(OPT3001_ReadALS(&ill_d))
+        if(OPT3001_ReadALS(&ill_d)
+           && to_scaled(EM_cFactors.luxA * (ill_d / TRANSMITTANCE) + EM_cFactors.luxB, 0.0f, 99999.99f, 10.0f, &scaled))
         {
-            ill_d /= TRANSMITTANCE;
-            data.illuminance = 10 * max(0,min(99999.99,EM_cFactors.luxA * ill_d + EM_cFactors.luxB));
+            data.illuminance = (uint32_t)scaled;
             data.valid_flags |= FLAG_ILLUMINANCE;
         }
 	}
@@ -502,7 +528,9 @@ void LC_InitSensors(void){
 
 // <editor-fold defaultstate="collapsed" desc="公開関数：日時管理">
 
-void LC_SetCurrentTime(time_t unixTime) {
+bool LC_SetCurrentTime(time_t unixTime) {
+    // 2026-01-01 より前は誤り (0 などを受けると内部時刻の計算が桁あふれする)
+    if (unixTime < (time_t)RTC_MIN_VALID_UNIX) return false;
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         currentTime = unixTime - UNIX_OFFSET;
     }
@@ -511,6 +539,7 @@ void LC_SetCurrentTime(time_t unixTime) {
         time_sync_window_remaining = 0;
         time_sync_next_unix = unixTime + TIME_SYNC_INTERVAL_S;
     }
+    return true;
 }
 
 time_t LC_GetCurrentTime(void) {
@@ -528,20 +557,6 @@ bool LC_IsRtcSet(void) {
 void LC_TickSecond(void) {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         currentTime++;
-    }
-
-    // 時刻同期 wake window のカウントダウン
-    if (time_sync_window_remaining > 0) time_sync_window_remaining--;
-
-    // ロギング中で同期時刻に達したら emit フラグを立てる (実 emit は割り込み外で)
-    if (logging && time_sync_next_unix > 0) {
-        time_t now_unix = currentTime + UNIX_OFFSET;
-        if (now_unix >= time_sync_next_unix) {
-            time_sync_emit_pending = true;
-            // 次回 sync は 24h 後に予約 (set_time が来たら LC_SetCurrentTime 側で
-            // 上書きされるので衝突しない)
-            time_sync_next_unix = now_unix + TIME_SYNC_INTERVAL_S;
-        }
     }
 }
 
@@ -580,9 +595,15 @@ bool LC_IsTimeSyncWindowActive(void){
 }
 
 void LC_ProcessTimeSyncTask(void){
-    // LC_TickSecond で立ったフラグを見て event 送出 + wake window 開始
-    if (!time_sync_emit_pending) return;
-    time_sync_emit_pending = false;
+    // 時刻同期 wake window のカウントダウン
+    if (time_sync_window_remaining > 0) time_sync_window_remaining--;
+
+    // ロギング中で同期時刻に達したら event 送出 + wake window 開始
+    if (!logging || time_sync_next_unix == 0) return;
+    time_t now_unix = LC_GetCurrentTime();
+    if (now_unix < time_sync_next_unix) return;
+    // 次回 sync は 24h 後に予約 (set_time が来たら LC_SetCurrentTime 側で上書き)
+    time_sync_next_unix = now_unix + TIME_SYNC_INTERVAL_S;
     time_sync_window_remaining = TIME_SYNC_WINDOW_S;
     pe_emit_time_sync_request(TIME_SYNC_WINDOW_S);
 }
@@ -663,7 +684,14 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     time_t now_unix = LC_GetCurrentTime();
     time_sync_next_unix = ((now_unix / 86400) + 1) * 86400;
     time_sync_window_remaining = 0;
-    time_sync_emit_pending = false;
+}
+
+// BLE central (スマホ) が切断したときの処理。出力先が BLE だけのロギングは、受け手の
+// いない BLE へ送り続けても電池を消耗するだけなので停止する。flash / Zigbee / USB にも
+// 記録・出力している場合は続ける (アプリで計測を開始してから切断する通常の使い方)。
+void LC_OnBleDisconnected(void){
+    if (logging && outputToBLE && !outputToZigbee && !outputToFM && !outputToUSB)
+        LC_EndLoggingTask();
 }
 
 void LC_EndLoggingTask(void){
@@ -675,7 +703,6 @@ void LC_EndLoggingTask(void){
     // 時刻同期スケジュールも停止
     time_sync_next_unix = 0;
     time_sync_window_remaining = 0;
-    time_sync_emit_pending = false;
 }
 
 void LC_ProcessSensingTask(void){

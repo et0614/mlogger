@@ -1,7 +1,6 @@
 #include "mcc_generated_files/system/clock.h" //F_CPUの設定
 #include "mcc_generated_files/nvm/nvm.h" //EEPROM処理
 #include "eeprom_manager.h"
-#include "parameters.h"
 #include "crc.h"
 #include <stddef.h>
 #include <string.h>
@@ -18,12 +17,17 @@
 //   'U' = interval_* を 32bit 化 (2026-08-10)
 #define EEPROM_INIT_MAGIC  'U'
 
+// EEPROM 初期化時の仮の名前 (NUL 込みで name 領域 21 byte に収まること)
+#define DEFAULT_ML_NAME  "MLogger_0000"
+
 // EEPROM全体のマップを定義（型定義のみ）
 typedef struct {
     uint8_t init_flag;      // 0x0000
     uint8_t xb_init_flag;   // 0x0001
     CorrectionFactors cFactors; 
-    VelocityCharacteristicCoefficients vcCoefs;
+    // 旧設計 (本体で風速を計算していた頃) の風速特性係数の領域。現在は未使用だが、
+    // 後続の配置を変えると既存機のファーム更新で名前・設定がずれるので予約として残す。
+    VelocityCharacteristicCoefficients vcCoefs_reserved;
     MeasurementSettings mSettings;
     char name[21];
     uint8_t gen_number;
@@ -33,9 +37,7 @@ typedef struct {
 #define ADDR_INIT_FLAG   (EEPROM_BASE_ADDR +offsetof(EepromMap, init_flag))
 #define ADDR_XB_INIT     (EEPROM_BASE_ADDR +offsetof(EepromMap, xb_init_flag))
 #define ADDR_CFACTORS    (EEPROM_BASE_ADDR +offsetof(EepromMap, cFactors))
-#define ADDR_VCCOEFS     (EEPROM_BASE_ADDR +offsetof(EepromMap, vcCoefs))
 #define ADDR_MSETTINGS   (EEPROM_BASE_ADDR +offsetof(EepromMap, mSettings))
-#define ADDR_BATCONFIG   (EEPROM_BASE_ADDR +offsetof(EepromMap, bConfig))
 #define ADDR_NAME        (EEPROM_BASE_ADDR +offsetof(EepromMap, name))
 #define ADDR_GEN_NUMBER  (EEPROM_BASE_ADDR +offsetof(EepromMap, gen_number))
 
@@ -45,28 +47,11 @@ uint8_t EM_generationNumber = 1;
 //補正係数
 CorrectionFactors EM_cFactors;
 
-//風速特性係数
-VelocityCharacteristicCoefficients EM_vcCoefficients;
-
 //計測設定
 MeasurementSettings EM_mSettings;
 
 //名称
 char EM_mlName[21];
-
-// <editor-fold defaultstate="collapsed" desc="inline関数の定義">
-
-inline static float max(float x, float y)
-{
-	return (x > y) ? x : y;
-}
-
-inline static float min(float x, float y)
-{
-	return (x > y) ? y : x;
-}
-
-// </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="EEPROMブロック読み込み・書き込み処理">
 
@@ -116,18 +101,6 @@ static void writeCFactors()
 	write_eep_block(&EM_cFactors, ADDR_CFACTORS, sizeof(CorrectionFactors));
 }
 
-//風速特性係数を書き込む
-static void writeVCCoefficients()
-{
-	// CRCを計算
-	EM_vcCoefficients.crc = CRC_calc8(
-        (uint8_t*)&EM_vcCoefficients,
-        sizeof(VelocityCharacteristicCoefficients) - sizeof(EM_vcCoefficients.crc) //crcメンバー自身のサイズは計算範囲から除外する
-	);
-	
-	write_eep_block(&EM_vcCoefficients, ADDR_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
-}
-
 //計測設定を書き込む
 static void writeMSettings()
 {
@@ -147,30 +120,17 @@ static void writeMSettings()
 static void initCFactors(){
 	EM_cFactors = (CorrectionFactors){
 		1, //バージョン
-		DBT_COEF_A, //乾球温度a
-		DBT_COEF_B, //乾球温度b
-		HMD_COEF_A, //相対湿度a
-		HMD_COEF_B, //相対湿度b
-		GLB_COEF_A, //グローブ温度a
-		GLB_COEF_B, //グローブ温度b
+		1.0, //乾球温度a  (プローブ側で初期校正済みなので本体の補正は恒等)
+		0.0, //乾球温度b
+		1.0, //相対湿度a
+		0.0, //相対湿度b
+		1.0, //グローブ温度a
+		0.0, //グローブ温度b
 		1.0, //照度a
 		0.0, //照度b
 		1.0, //風速a
 		0.0, //風速b
 		0 //CRC（一旦0で初期化）
-	};
-}
-
-static void initVCCoefficients(){
-	EM_vcCoefficients = (VelocityCharacteristicCoefficients){
-		1,		//バージョン
-		VOL_VEL0,       //無風電圧
-		VEL_COEF_A1,	//係数A1
-		VEL_COEF_B1,    //係数B1
-		VEL_COEF_A2,	//係数A2
-		VEL_COEF_B2,	//係数B2
-        VEL_SWITCH,     //切り替え風速
-		0		//CRC（一旦0で初期化）
 	};
 }
 
@@ -210,16 +170,15 @@ static void initMemory()
 	initCFactors();
 	writeCFactors();
 
-	//風速計特性係数
-	initVCCoefficients();
-	writeVCCoefficients();
-	
 	//計測設定
 	initMSettings();
 	writeMSettings();
         
-	//名前
-	write_eep_block((const void *)ML_NAME, ADDR_NAME, sizeof(EM_mlName));
+	//名前 (出荷時にツールで個体ごとの名前を設定する。それまでの仮の名前)
+	// 文字列リテラルから直接 21 byte 読むと末尾の外まで読んでしまうので、領域と
+	// 同じ大きさの配列 (残りは 0 埋め) を経由する
+	static const char default_name[sizeof(EM_mlName)] = DEFAULT_ML_NAME;
+	write_eep_block((const void *)default_name, ADDR_NAME, sizeof(EM_mlName));
 	
     //データ世代番号
     while(EEPROM_IsBusy());
@@ -252,22 +211,6 @@ static void loadCFactors()
 
 	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
 	if (expected_crc != actual_crc) initCFactors();
-}
-
-//風速の特性係数を読み込む
-static void loadVCCoefficients()
-{
-	read_eep_block(&EM_vcCoefficients, ADDR_VCCOEFS, sizeof(VelocityCharacteristicCoefficients));
-
-	// 読み込んだデータのCRCを検証
-	uint8_t expected_crc = EM_vcCoefficients.crc;
-	uint8_t actual_crc = CRC_calc8(
-		(uint8_t*)&EM_vcCoefficients,
-		sizeof(VelocityCharacteristicCoefficients) - sizeof(EM_vcCoefficients.crc)
-	);
-
-	// CRCが一致しない（データ破損）場合にはデフォルト値で再初期化
-	if (expected_crc != actual_crc) initVCCoefficients();
 }
 
 //計測設定を読み込む
@@ -332,7 +275,6 @@ void EM_loadEEPROM()
 {
 	if (EEPROM_Read(ADDR_INIT_FLAG) != EEPROM_INIT_MAGIC) initMemory();
 	loadCFactors();
-	loadVCCoefficients();
 	loadMSettings();
     EM_generationNumber = EEPROM_Read(ADDR_GEN_NUMBER);
 	loadName();

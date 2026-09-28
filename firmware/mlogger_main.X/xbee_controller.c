@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <avr/wdt.h>        // wdt_reset (初回設定の長い応答待ち)
 
 #include "hal_io.h"
 
@@ -23,6 +24,7 @@
 
 // 内部状態変数 (staticで隠蔽)
 static bool g_readingFrame = false;
+static bool g_skipFrame = false;   // 使わない種類のフレームを length の終わりまで読み捨て中
 static uint16_t g_framePosition = 0;
 static uint16_t g_frameSize = 0;
 static char g_frameBuff[XB_RX_BUFFER_SIZE];
@@ -51,6 +53,15 @@ static uint16_t g_ai_request_timer = 0;
 // 接続中は XBee をスリープさせない (Pin Hibernate は BLE ごと落とすため)。
 static bool g_bleConnected = false;
 
+// BLE central が切断した (Modem Status 0x33) ことを 1 回だけ通知するフラグ。
+// Xbee_TakeBleDisconnectEvent で読み出すとクリアされる。
+static bool g_bleDisconnectEvent = false;
+
+// Zigbee 送信 (0x10) の結果集計 (TX Status 0x8B の delivery)。get_diag で報告する。
+static uint16_t g_zbTxStatusCount = 0;   // 受け取った TX Status の数
+static uint16_t g_zbTxFailCount   = 0;   // delivery != 0x00 の数
+static uint8_t  g_zbTxLastFail    = 0;   // 最後に失敗した delivery コード
+
 // 汎用 AT レスポンス捕捉 (Xbee_QueryAt 用)。最後に受信した 0x88 の内容を保持する。
 static char    g_atrCmd[2] = {0, 0};
 static uint8_t g_atrStatus = 0xFF;
@@ -64,6 +75,20 @@ static void sleepXBee(void)
 {
     SLP_XBEE_SetHigh();
     g_shouldSleep = true;
+}
+
+// 送信のためにスリープ中の XBee を起こす。起こした場合は true を返す
+// (呼び出し側は送信後、元どおりスリープさせる)。
+// XBee は起床して UART を受け付けられる状態になると CTS をアサート (Low) する。
+// 以前は起床後 150 µs の固定待ちで送っていたが、準備が整う前の送信が
+// delivery 0x21/0x22 (無線送信失敗) になることを実機で確認しているため、CTS を待つ。
+#define XB_WAKE_TIMEOUT_MS  50
+static bool wakeForTx(void)
+{
+    if (!Xbee_IsSleeping()) return false;
+    Xbee_Wakeup();
+    for (uint8_t i = 0; i < XB_WAKE_TIMEOUT_MS && CTS0_GetValue(); i++) _delay_ms(1);
+    return true;
 }
 
 static int getCharLength(const char *data) {
@@ -133,6 +158,7 @@ static void receiveMessage(char message[]) {
         }
         _delay_ms(1);
         timeout_counter++;
+        wdt_reset();   // 初回設定では応答待ち (最大 0.5 秒) が何度も続くため
     }
 }
 
@@ -194,15 +220,21 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
 {
     uint8_t current_byte = (uint8_t)dat;
 
-    if (current_byte == XB_START_DELIMITER) {
-        g_framePosition = 1;
-        g_readingFrame = true;
-        g_frameChecksum = 0;
+    // AP=1 (エスケープなし) ではアドレス・Frame ID・データの中にも 0x7E が現れるので、
+    // フレームの先頭とみなすのはフレームを読んでいないときだけ。フレームの終わりは
+    // length で決め、壊れたフレームはチェックサムで捨てる。
+    // (旧実装はフレーム途中の 0x7E でも読み直していたため、親機アドレスに 0x7E を含む
+    //  ネットワークでは Zigbee コマンドが一切届かなかった)
+    if (!g_readingFrame) {
+        if (current_byte == XB_START_DELIMITER) {
+            g_framePosition = 1;
+            g_readingFrame = true;
+            g_skipFrame = false;
+            g_frameChecksum = 0;
+        }
         return false;
     }
-    
-    if(!g_readingFrame) return false;
-    
+
     if(g_framePosition >= 3) g_frameChecksum += current_byte;
 
     switch(g_framePosition) {
@@ -211,7 +243,8 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
             break;
         case 2: // Len LSB
             g_frameSize = (g_frameSize | current_byte) + 3;
-            if (g_frameSize > XB_RX_MAX_FRAME_SIZE) {
+            // 最短のフレーム (Modem Status) でも length は 2 (API ID + status)
+            if (g_frameSize < 5 || g_frameSize > XB_RX_MAX_FRAME_SIZE) {
                 // 化けた length ヘッダ。フレームを破棄して次の 0x7E を待つ
                 g_readingFrame = false;
                 g_framePosition = 0;
@@ -240,7 +273,9 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                     g_xbeeOffset = XB_RX_OFFSET_AT_COMMAND_RESPONSE;
                     break;
                 default:
-                    g_readingFrame = false; // Unknown frame
+                    // 使わない種類のフレーム。途中の 0x7E を先頭と誤認しないよう、
+                    // 読み捨てながら length の終わりまで進める
+                    g_skipFrame = true;
                     break;
             }
             break; // missing break added
@@ -250,7 +285,15 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
             g_rxFrameId = current_byte;
             break;
         default:
-            if(g_xbeeOffset < g_framePosition) {
+            // 読み捨てるフレームと、payload 開始位置に届かない短すぎるフレームは
+            // length の終わりで破棄する
+            if (g_frameSize <= g_framePosition &&
+                (g_skipFrame || g_framePosition <= g_xbeeOffset)) {
+                g_readingFrame = false;
+                g_framePosition = 0;
+                return false;
+            }
+            if(!g_skipFrame && g_xbeeOffset < g_framePosition) {
                 if (g_frameSize <= g_framePosition) {
                     // Frame End (Checksum)
                     // payload_len は g_framePosition を 0 に reset する前に計算する
@@ -268,8 +311,10 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                         if (g_lastApiId == XB_FRAME_MODEM_STATUS) {
                             if (g_rxFrameId == XB_MODEM_STATUS_BLE_CONNECTED)
                                 g_bleConnected = true;
-                            else if (g_rxFrameId == XB_MODEM_STATUS_BLE_DISCONNECTED)
+                            else if (g_rxFrameId == XB_MODEM_STATUS_BLE_DISCONNECTED) {
                                 g_bleConnected = false;
+                                g_bleDisconnectEvent = true;
+                            }
                             diag_usb_logf("MODEM_STATUS 0x%02X bleConn=%d",
                                           (unsigned)g_rxFrameId, (int)g_bleConnected);
                             return false;
@@ -291,6 +336,13 @@ static bool processXbeeByte(char dat, char* output_buffer, int buffer_size)
                                 delivery = (uint8_t)g_frameBuff[3];
                             else if (g_lastApiId == XB_FRAME_TX_STATUS && payload_len_at_end >= 1)
                                 delivery = (uint8_t)g_frameBuff[0];
+                            if (g_lastApiId == XB_FRAME_TRANSMIT_STATUS) {
+                                if (g_zbTxStatusCount < 0xFFFF) g_zbTxStatusCount++;
+                                if (delivery != 0x00) {
+                                    if (g_zbTxFailCount < 0xFFFF) g_zbTxFailCount++;
+                                    g_zbTxLastFail = delivery;
+                                }
+                            }
                             diag_usb_logf("TX_STATUS api=0x%02X recvFrameId=0x%02X expectFrameId=0x%02X delivery=0x%02X",
                                           (unsigned)g_lastApiId,
                                           (unsigned)g_rxFrameId, (unsigned)g_lastFrameId,
@@ -577,13 +629,8 @@ bool Xbee_Initialize(void)
 
 void Xbee_SoftwareReset(void)
 {
-    // 送信前にスリープ中であれば起こす
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping) 
-    {
-        Xbee_Wakeup();
-        _delay_ms(2); // 起床待ち
-    }
+    // 送信前にスリープ中であれば起こす (リセットで XBee ごと再起動するので寝かせ戻さない)
+    (void)wakeForTx();
 
     // FR (Software Reset) コマンドを API フレームで送信
     sendAtCommandApiFrame("FR", 0x01, NULL, 0);
@@ -666,12 +713,7 @@ void Xbee_TxChars(const char *data)
 {
     g_communicating = true;
     //Sleepの場合には一旦起こす
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping)
-    {
-        Xbee_Wakeup();
-        DELAY_microseconds(150); //XBee立ち上げに0.05ms程度必要:3倍
-    }
+    bool wasSleeping = wakeForTx();
 
     int total = getCharLength(data);
 
@@ -752,12 +794,7 @@ static void xbee_bl_send_chunk_ex(const char *data, int len, bool requestStatus)
 void Xbee_BlChars(const char *data)
 {
     g_communicating = true;
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping)
-    {
-        Xbee_Wakeup();
-        DELAY_microseconds(150);
-    }
+    bool wasSleeping = wakeForTx();
 
     int total = getCharLength(data);
 
@@ -795,12 +832,7 @@ void Xbee_BlTxChars(const char *data)
 void Xbee_BlBytes(const uint8_t *data, int len)
 {
     g_communicating = true;
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping)
-    {
-        Xbee_Wakeup();
-        DELAY_microseconds(150);
-    }
+    bool wasSleeping = wakeForTx();
 
     int offset = 0;
     while (offset < len) {
@@ -818,12 +850,7 @@ void Xbee_BlBytes(const uint8_t *data, int len)
 void Xbee_TxBytes(const uint8_t *data, int len)
 {
     g_communicating = true;
-    bool wasSleeping = Xbee_IsSleeping();
-    if(wasSleeping)
-    {
-        Xbee_Wakeup();
-        DELAY_microseconds(150);
-    }
+    bool wasSleeping = wakeForTx();
 
     int offset = 0;
     while (offset < len) {
@@ -847,11 +874,7 @@ void Xbee_SendAtCmd(const char *data)
 // 戻り値: 受信した value のバイト数 (0 = value 無しの OK)、-1 = timeout / ステータス異常。
 int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap)
 {
-    bool wasSleeping = Xbee_IsSleeping();
-    if (wasSleeping) {
-        Xbee_Wakeup();
-        DELAY_microseconds(150);
-    }
+    bool wasSleeping = wakeForTx();
 
     g_atrReceived = false;
     sendAtCommandApiFrame(at_command, 0x01, NULL, 0);
@@ -885,11 +908,7 @@ int Xbee_QueryAt(const char at_command[2], uint8_t *out, uint8_t out_cap)
 // 電源再投入で反映される)。
 void Xbee_ApplyBleName(void)
 {
-    bool wasSleeping = Xbee_IsSleeping();
-    if (wasSleeping) {
-        Xbee_Wakeup();
-        DELAY_microseconds(150);
-    }
+    bool wasSleeping = wakeForTx();
 
     const uint8_t frameIdNoAck = 0x00; // 応答を要求しない
     sendAtCommandApiFrame("BI", frameIdNoAck, (const uint8_t*)EM_mlName, strlen(EM_mlName));
@@ -962,6 +981,20 @@ void Xbee_Wakeup(void)
 bool Xbee_IsSleeping(void)
 {
     return SLP_XBEE_GetValue();
+}
+
+bool Xbee_TakeBleDisconnectEvent(void)
+{
+    bool ev = g_bleDisconnectEvent;
+    g_bleDisconnectEvent = false;
+    return ev;
+}
+
+void Xbee_GetZigbeeTxStats(uint16_t *status_count, uint16_t *fail_count, uint8_t *last_fail)
+{
+    *status_count = g_zbTxStatusCount;
+    *fail_count   = g_zbTxFailCount;
+    *last_fail    = g_zbTxLastFail;
 }
 
 // </editor-fold>

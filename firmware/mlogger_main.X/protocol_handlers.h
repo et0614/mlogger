@@ -42,6 +42,7 @@ void ph_echo           (int32_t id, const char *json, const jsmntok_t *tokens, i
 // 出荷検査・診断用: プローブの個体識別情報 (INFO BLOCK) と XBee モジュール情報
 void ph_get_probe_info (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 void ph_get_radio_info (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
+void ph_get_diag       (int32_t id, const char *json, const jsmntok_t *tokens, int ntokens, int params_tok, CommandSource_t src);
 
 #ifdef __cplusplus
 }

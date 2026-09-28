@@ -2,6 +2,7 @@
 #include "i2c_master.h"
 
 #include <string.h>   // memcpy
+#include <math.h>     // isnan
 
 // I2C アドレス (poem_velocity_sensor の DEFAULT_I2C_ADDRESS と同期)
 #define ANEMO_ADDRESS     0x10
@@ -93,9 +94,10 @@ void Anemometer_Update(Anemometer_t* anemo) {
 
     // value[1] = 風速計回路の生電圧 [V]
     // 旧 API 互換のため adc_value は mV 単位 uint16 で保持する (旧 vel_probe は mV を直接返していた)。
-    if (!(status1 & STATUS1_VOLTAGE_BAD)) {
-        float voltage_v;
-        memcpy(&voltage_v, &buffer[POLL_OFS_VALUE + VAL_IDX_VOLTAGE * 4], 4);
+    // NaN は整数に変換できないので無効扱い
+    float voltage_v;
+    memcpy(&voltage_v, &buffer[POLL_OFS_VALUE + VAL_IDX_VOLTAGE * 4], 4);
+    if (!(status1 & STATUS1_VOLTAGE_BAD) && !isnan(voltage_v)) {
         if (voltage_v < 0.0f)       voltage_v = 0.0f;
         else if (voltage_v > 65.0f) voltage_v = 65.0f;   // uint16 max / 1000 = 65.535
         anemo->adc_value = (uint16_t)(voltage_v * 1000.0f);

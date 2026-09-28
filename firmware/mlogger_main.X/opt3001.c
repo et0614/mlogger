@@ -34,8 +34,9 @@ bool OPT3001_ReadALS(float *als){
     const uint8_t cmd = REG_ALS;
     if(!I2C_WriteRead(OPT_ADD, &cmd, 1, buffer, 2)) return false;
     int expnt = (0b11110000 & buffer[0]) >> 4; //上位4bitがレンジを表す
+    if (11 < expnt) return false; //仕様上 0-11。それ以外は読み値の異常
 	int val = ((0b00001111 & buffer[0]) << 8) + buffer[1]; //下位12bitは値を表す
-	*als = 0.01 * (float)(1 << expnt) * (float)val;
+	*als = 0.01 * (float)(1U << expnt) * (float)val;
     
     return true;
 }

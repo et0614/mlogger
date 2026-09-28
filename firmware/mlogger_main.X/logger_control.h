@@ -31,8 +31,9 @@ void LC_InitSensors(void);
 /**
  * @brief 現在時刻をUNIX時間で設定する
  * @param unixTime 現在時刻(UNIX時間)
+ * @return false: 2026-01-01 UTC より前の値なので設定しなかった
  */
-void LC_SetCurrentTime(time_t unixTime);
+bool LC_SetCurrentTime(time_t unixTime);
 
 /**
  * @brief 現在時刻をUNIX時間で取得する
@@ -102,8 +103,8 @@ bool LC_IsTimeSyncWindowActive(void);
 
 /**
  * @brief 時刻同期タスクを進める (per-second、main loop から呼ぶ)
- *        LC_TickSecond で立てられた emit pending フラグを処理し、
- *        time_sync_request イベントを送出する。
+ *        同期時刻に達したら time_sync_request イベントを送出し、
+ *        wake window を開始・カウントダウンする。
  */
 void LC_ProcessTimeSyncTask(void);
 
@@ -124,6 +125,11 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB);
  * @brief ロギングタスクを終える
  */
 void LC_EndLoggingTask(void);
+
+/**
+ * @brief BLE central の切断時に呼ぶ。出力先が BLE だけのロギング中なら停止する。
+ */
+void LC_OnBleDisconnected(void);
 
 /**
  * @brief センシングタスクを進める

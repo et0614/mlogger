@@ -158,6 +158,9 @@ def configure_intervals(ser, interval):
 
 def start_usb_logging(ser):
     print("Starting logging (transport=usb only)...")
+    # 時刻が未設定だと start_logging は rtc_unset で拒否される
+    send_json(ser, {"v": 1, "id": 199, "command": "set_time",
+                    "params": {"ts": int(time.time())}})
     resp = send_json(ser, {
         "v": 1, "id": 200, "command": "start_logging",
         "params": {

@@ -72,11 +72,19 @@ uint32_t W25_GetAddressFromRecordIndex(uint32_t index);
 void W25_SectorErase(uint32_t address);
 
 /**
- * @brief チップ全体を消去する (Chip Erase, 0xC7)。
- *        BUSY ビットが 0 になるまで blocking で待つため、約 80 秒〜最大 250 秒戻らない。
+ * @brief チップ全体の消去 (Chip Erase, 0xC7) を開始する。完了を待たずに戻る。
+ *        完了 (約 80 秒〜最大 250 秒) は W25_IsBusy() が false になるまで呼び出し側で待つ。
+ *        待つ間に WDT リセットや USB の処理を回せるよう、開始と完了待ちを分けている。
  *        通常運用では呼ばない (erase_flash コマンドからのみ呼ばれる)。
  */
-void W25_ChipErase(void);
+void W25_ChipEraseStart(void);
+
+/**
+ * @brief フラッシュが書き込み・消去の処理中 (ステータスレジスタ 1 の BUSY) か。
+ *        フラッシュが応答しない場合も true (ステータスが 0xFF になる) なので、
+ *        呼び出し側でタイムアウトを持つこと。
+ */
+bool W25_IsBusy(void);
 
 /**
  * @brief 指定したアドレスから任意のバイト数を読み出す (生データ読み出し)

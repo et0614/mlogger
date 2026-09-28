@@ -102,23 +102,21 @@ uint32_t W25_GetAddressFromRecordIndex(uint32_t index) {
 
 // チップ全体消去 (W25Q256 で約 40 秒〜最大 80 秒の blocking)。
 // 完了まで BUSY (Status Reg1 bit0) を polling し続けるためタイムアウトは設けない。
-// 呼び出し側は実行前に LED 等で「処理中」を示し、終わるまで待つこと。
-void W25_ChipErase(void) {
+// 呼び出し側は実行前に LED 等で「処理中」を示し、W25_IsBusy() で完了を待つこと。
+void W25_ChipEraseStart(void) {
     W25_WriteEnable();
 
     SPI_CS_SetLow();
     SPI0_ByteExchange(CMD_CHIP_ERASE);
     SPI_CS_SetHigh();
+}
 
-    // chip erase の最大時間は数十秒級。W25_WaitForReady の固定タイムアウトでは足りないので
-    // ここで専用の長時間 polling を行う。
-    uint8_t status;
-    do {
-        SPI_CS_SetLow();
-        SPI0_ByteExchange(CMD_READ_STATUS_REG1);
-        status = SPI0_ByteExchange(0x00);
-        SPI_CS_SetHigh();
-    } while (status & 0x01);
+bool W25_IsBusy(void) {
+    SPI_CS_SetLow();
+    SPI0_ByteExchange(CMD_READ_STATUS_REG1);
+    uint8_t status = SPI0_ByteExchange(0x00);
+    SPI_CS_SetHigh();
+    return (status & 0x01) != 0;
 }
 
 // 4KBセクタ消去 (4バイトアドレス指定)

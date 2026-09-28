@@ -24,12 +24,11 @@ static CommandBuffer_t usb_buffer    = { {0}, 0, false };
 static CommandBuffer_t zigbee_buffer = { {0}, 0, false };
 static CommandBuffer_t ble_buffer    = { {0}, 0, false };
 
-// dispatch 再入防止カウンタ。
-// 応答送信中の waitTxCompletion → Xbee_LoadUART 経由で別コマンドが完成した場合、
-// そこから同期的に dispatch すると、外側の dispatch と静的バッファ (protocol_handlers
-// の s_tx_buf、protocol_dispatch の s_tokens) を共有しているため送信途中の応答が
-// 破壊される。depth > 0 の間は ready フラグを立てるだけにして、外側の dispatch
-// 完了後に CH_DispatchPending のループが拾って処理する。
+// コマンドは受信時には組み立てて ready にするだけで、実行は main loop の
+// CH_DispatchPending に限る。受信処理 (Xbee_LoadUART) は計測処理の送信完了待ち
+// (waitTxCompletion) の中からも呼ばれるため、そこで実行すると clear_data や
+// set_time が計測処理の途中に割り込む (送信とフラッシュ書き込みの間に世代が
+// 変わる等)。depth は万一の入れ子呼び出しに対する保険。
 static uint8_t s_dispatch_depth = 0;
 
 // 応答送信 (v4 ハンドラは CH_Reply 経由でこれを呼ぶ)
@@ -67,16 +66,14 @@ static void append_char_internal(char c, CommandSource_t src) {
     if (c == '\r' || c == '\n') {
         if (b->pos > 0) {
             b->buff[b->pos] = '\0';
-            b->ready = true;
-            CH_DispatchPending();  // depth 0 なら即時処理 (従来挙動)、dispatch 中なら遅延
+            b->ready = true;   // 実行は main loop の CH_DispatchPending
         }
     } else if (b->pos < MAX_CMD_CHAR - 1) {
         b->buff[b->pos++] = c;
     }
 }
 
-// dispatch 待ちのコマンドを順に処理する。dispatch 中 (depth > 0) の呼び出しは
-// 何もせず戻り、外側のこのループが処理を引き継ぐ。
+// dispatch 待ちのコマンドを順に処理する (main loop から呼ぶ)。
 void CH_DispatchPending(void) {
     if (s_dispatch_depth > 0) return;
     for (;;) {

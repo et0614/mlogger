@@ -157,6 +157,10 @@ def live_test(ser, velocity_present):
     values = {}          # latest value per channel key
     passed = False
     try:
+        # The device refuses to start logging until its clock is set
+        if cmd_result(ser, "set_time", {"ts": int(time.time())}) is None:
+            print("[!] set_time failed — skipping live test")
+            return False
         r = cmd_result(ser, "start_logging", {
             "transports": {"zigbee": False, "ble": False, "flash": False, "usb": True},
             "mode": "once",

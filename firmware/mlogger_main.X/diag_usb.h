@@ -16,11 +16,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/// 1: diag log を USB-CDC に流す (debug build)
-/// 0: 全 diag 呼び出しが no-op (release build)
+/// 1: diag log を USB-CDC に流す (debug build。ble_trace.py 等で観測するとき)
+/// 0: 全 diag 呼び出しが no-op (release build。既定)
 /// 切替時は firmware を再ビルドする必要あり。
+/// 1 にすると diag_usb_logf の vsnprintf が XC8 の汎用 printf (浮動小数点書式込み
+/// 約 5 KB) を引き込み、フラッシュの空きが約 7.4 KB → 約 1.1 KB に減る。
 #ifndef DIAG_USB_ENABLED
-#define DIAG_USB_ENABLED 1
+#define DIAG_USB_ENABLED 0
 #endif
 
 #ifdef __cplusplus

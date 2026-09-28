@@ -6,7 +6,6 @@
                    projectFiles="true">
       <logicalFolder name="f1" displayName="App" projectFiles="true">
         <itemPath>main.h</itemPath>
-        <itemPath>parameters.h</itemPath>
         <itemPath>logger_control.h</itemPath>
         <itemPath>command_handler.h</itemPath>
         <itemPath>jsmn.h</itemPath>

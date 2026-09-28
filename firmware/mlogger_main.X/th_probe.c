@@ -2,6 +2,7 @@
 #include "i2c_master.h"
 
 #include <string.h>   // memcpy
+#include <math.h>     // isnan
 
 // ===== OSL 共通レジスタ (mlogger_th_sensor.X/i2c_shared_data.h と同期) =====
 // 0x06 = data_count (INFO BLOCK 内、接続確認用)
@@ -146,12 +147,13 @@ void ThProbe_Read(ThProbe_t* p)
     }
 
     // value[2] = CO2 濃度 [ppm] (float のまま受け取って uint16 へ丸める)
-    if (!(status1 & STATUS1_STALE_CO2)) {
-        float v;
-        memcpy(&v, &buffer[POLL_OFS_VALUE + VAL_IDX_CO2 * 4], 4);
-        if      (v < 0.0f)     v = 0.0f;
-        else if (v > 65535.0f) v = 65535.0f;
-        p->co2_ppm   = (uint16_t)(v + 0.5f);
+    // NaN は整数に変換できないので無効扱い
+    float co2;
+    memcpy(&co2, &buffer[POLL_OFS_VALUE + VAL_IDX_CO2 * 4], 4);
+    if (!(status1 & STATUS1_STALE_CO2) && !isnan(co2)) {
+        if      (co2 < 0.0f)     co2 = 0.0f;
+        else if (co2 > 65535.0f) co2 = 65535.0f;
+        p->co2_ppm   = (uint16_t)(co2 + 0.5f);
         p->co2_valid = true;
     } else {
         p->co2_valid = false;

@@ -6,6 +6,9 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 
 試験手順:
   1. hello で個体情報 (name / hardware_id / FW version) を取得
+  1b. XBee の設定値 (AP/SM/BD/BT/CE/PAN ID) を期待値と比較
+  1c. BLE: PC の Bluetooth で本体のアドバタイズが見えるか
+  1d. Zigbee: 同じ PC に挿した親機 XBee から Zigbee でコマンドを送り、応答が返るか
   2. get_battery で電池電圧を確認
   3. 設定を退避し、全センサ有効 / interval=1sec に変更
   4. set_time で RTC 設定 (フラッシュ記録の前提条件)
@@ -20,12 +23,20 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 判定レンジは室内 (照明あり・常温・無風〜微風) での試験を前提とする。
 照度センサを覆ったまま試験すると illuminance が FAIL するので注意。
 
+無線の試験には次が必要:
+  - pip install digi-xbee bleak
+  - 試験 PC に Zigbee 親機 (MLServer と同じ設定の XBee、Coordinator) を挿しておく。
+    MLServer は止めておく (親機のポートを使うため)
+  - 試験 PC の Bluetooth を有効にし、本体にスマホを接続しない (接続中はアドバタイズしない)
+
 Usage:
     python factory_test.py                  # auto-detect COM port
     python factory_test.py COM3
+    python factory_test.py COM3 --coord COM5  # 親機のポートを指定 (省略時は自動検出)
     python factory_test.py --id 1234        # 試験冒頭で名称を MLogger_1234 に設定
                                             # (firmware が XBee の BLE 名にも反映する)
 """
+import asyncio
 import json
 import os
 import struct
@@ -38,7 +49,7 @@ from ble_trace import open_no_reset, find_device_port
 # ============================================================
 # 試験パラメータ
 # ============================================================
-SCRIPT_VERSION = "1.2"  # 記録 JSON に埋める試験スクリプト版数
+SCRIPT_VERSION = "1.3"  # 記録 JSON に埋める試験スクリプト版数
 
 SAMPLE_COUNT      = 15    # ウォームアップ後に収集するサンプル数
 WARMUP_TIMEOUT_S  = 90    # ウォームアップ完了待ちの上限 [sec]
@@ -52,9 +63,25 @@ RANGES = {
     "c":  (300, 10000),     # CO2 [ppm]
     "l":  (1, 200000),      # 照度 [lx] (照明のある室内前提。0 は素子カバー or 故障)
     "v":  (0.0, 10.0),      # 風速 [m/s] (無風で 0.000 は正常)
-    "vv": (50, 3000),      # 熱線ブリッジ電圧 [mV]
+    "vv": (50, 1800),      # 熱線ブリッジ電圧 [mV] (静穏気流の室内で 1.8 V を超えるのは不良 = 2 V 張り付き等)
 }
+# 下限を最小値ではなく平均値で判定するチャネル。熱線ブリッジ電圧は加熱直後などに
+# 一時的に小さくなることがあるため (0 V 張り付きは平均で検出できる)
+MEAN_LOWER_BOUND = {"vv"}
 BATTERY_RANGE_MV = (2000, 3500)
+
+# 本体 XBee の設定の期待値 (get_radio_info のキー: 値)。main.c 冒頭の XBee 設定と対応
+XBEE_EXPECTED = {
+    "ap": 1,   # API mode (エスケープなし)
+    "sm": 1,   # Pin Hibernate
+    "bd": 7,   # 115200 bps
+    "bt": 1,   # BLE 有効
+    "ce": 0,   # End Device
+}
+
+COORD_BAUD      = 9600  # 親機 XBee の baud (MLServer と同じ)
+BLE_SCAN_S      = 10    # BLE アドバタイズを探す時間 [sec]
+ZIGBEE_WAIT_S   = 60    # 本体が親機のネットワークに参加して応答するまで待つ上限 [sec]
 
 RECORD_FORMAT = "<BIBIhhHHHH"  # SensorData_t (22 bytes)
 RECORD_SIZE = struct.calcsize(RECORD_FORMAT)
@@ -195,7 +222,7 @@ def check_channels(samples, report):
         vmin, vmax = min(vals), max(vals)
         vmean = sum(vals) / len(vals)
         stats[key] = {"n": len(vals), "min": vmin, "mean": round(vmean, 3), "max": vmax}
-        in_range = lo <= vmin and vmax <= hi
+        in_range = lo <= (vmean if key in MEAN_LOWER_BOUND else vmin) and vmax <= hi
         report.add(name, in_range,
                    f"n={len(vals)}/{n} min={vmin} mean={round(vmean, 2)} max={vmax}"
                    + ("" if in_range else f" (allowed {lo}-{hi})"))
@@ -312,7 +339,130 @@ def collect_identity(ser, report):
     return identity
 
 
-def main(port, device_id=None):
+# ============================================================
+# 無線 (XBee 設定 / BLE / Zigbee)
+# ============================================================
+def open_coordinator(port, exclude_port):
+    """親機 XBee (Coordinator) を開いて返す。port 省略時は自動検出。見つからなければ None。"""
+    from digi.xbee.devices import ZigBeeDevice
+    import serial.tools.list_ports
+
+    if port:
+        candidates = [port]
+    else:
+        candidates = [p.device for p in serial.tools.list_ports.comports()
+                      if p.device != exclude_port and "Bluetooth" not in (p.description or "")]
+    for dev in candidates:
+        coord = ZigBeeDevice(dev, COORD_BAUD)
+        try:
+            coord.open()
+            if coord.get_parameter("CE") == b"\x01":
+                print(f"親機 XBee: {dev}")
+                return coord
+        except Exception:
+            pass
+        if coord.is_open():
+            coord.close()
+    return None
+
+
+def check_xbee_settings(radio, coord, report):
+    """本体 XBee の設定値を期待値と比較する。PAN ID は親機と一致すること。"""
+    if not radio:
+        report.add("XBee settings", False, "get_radio_info unavailable")
+        return
+    bad = [f"{k}={radio.get(k)} (expected {v})"
+           for k, v in XBEE_EXPECTED.items() if radio.get(k) != v]
+    detail = ", ".join(f"{k}={radio.get(k)}" for k in XBEE_EXPECTED)
+    pan = radio.get("pan_id")
+    if coord is not None:
+        # 親機の設定 PAN ID (ID) と、ID=0 のとき自動で選んだ実際の PAN ID (OP) の
+        # どちらかに一致すれば良い。本体の ID=0 は「どの PAN にも参加する」設定
+        coord_pans = {int(coord.get_parameter(p).hex(), 16) for p in ("ID", "OP")}
+        if pan is None or (int(pan, 16) != 0 and int(pan, 16) not in coord_pans):
+            bad.append(f"pan_id={pan} (coordinator {', '.join(f'{p:X}' for p in coord_pans)})")
+    detail += f", pan_id={pan}"
+    report.add("XBee settings", not bad, "; ".join(bad) if bad else detail)
+
+
+def check_ble(radio, report):
+    """PC の Bluetooth で、本体 XBee の BLE アドバタイズが見えるかを確認する。"""
+    try:
+        from bleak import BleakScanner
+    except ImportError:
+        report.add("BLE advertising", False, "bleak not installed (pip install bleak)")
+        return
+    mac = (radio or {}).get("ble_mac")
+    if not mac or len(mac) != 12:
+        report.add("BLE advertising", False, f"BLE MAC unavailable: {mac}")
+        return
+    addr = ":".join(mac[i:i + 2] for i in range(0, 12, 2)).upper()
+    print(f"BLE アドバタイズを探しています ({addr}、最大 {BLE_SCAN_S} 秒)...")
+    try:
+        found = asyncio.run(BleakScanner.find_device_by_address(addr, timeout=BLE_SCAN_S))
+    except Exception as e:
+        report.add("BLE advertising", False, f"scan error: {e}")
+        return
+    if found:
+        report.add("BLE advertising", True, f"{addr} name={found.name}")
+    else:
+        report.add("BLE advertising", False, f"{addr} not found in {BLE_SCAN_S}s")
+
+
+def check_zigbee(radio, coord, report):
+    """親機 XBee から本体へ Zigbee でコマンドを送り、応答が返るかを確認する。
+    本体は非ロギング中は XBee を起こしたままにしているので、そのまま届く。"""
+    if coord is None:
+        report.add("Zigbee link", False, "coordinator XBee not found (stop MLServer / use --coord)")
+        return
+    mac = (radio or {}).get("xbee_mac")
+    if not mac:
+        report.add("Zigbee link", False, "XBee MAC unavailable")
+        return
+    from digi.xbee.devices import RemoteZigBeeDevice
+    from digi.xbee.models.address import XBee64BitAddress
+
+    remote = RemoteZigBeeDevice(coord, XBee64BitAddress.from_hex_string(mac))
+    print(f"Zigbee で応答を確認しています (ネットワーク参加待ち含め最大 {ZIGBEE_WAIT_S} 秒)...")
+    t0 = time.time()
+    last_err = ""
+    cmd_id = 9000
+    while time.time() - t0 < ZIGBEE_WAIT_S:
+        cmd_id += 1
+        req = json.dumps({"v": 1, "id": cmd_id, "command": "get_battery"}) + "\n"
+        try:
+            coord.send_data(remote, req.encode())
+        except Exception as e:   # 本体がまだネットワークに参加していない等
+            last_err = str(e)
+            time.sleep(3)
+            continue
+        # 応答は 150 B ごとに分割されて届くことがあるので改行までつなげる
+        buf = ""
+        end = time.time() + 5
+        while time.time() < end:
+            try:
+                msg = coord.read_data_from(remote, timeout=1)
+            except Exception:
+                msg = None
+            if msg is None:
+                continue
+            buf += msg.data.decode("utf-8", errors="ignore")
+            while "\n" in buf:
+                line, buf = buf.split("\n", 1)
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if obj.get("id") == cmd_id and "result" in obj:
+                    report.add("Zigbee link", True,
+                               f"response in {time.time() - t0:.1f}s "
+                               f"(voltage_mv={obj['result'].get('voltage_mv')})")
+                    return
+        last_err = "no response"
+    report.add("Zigbee link", False, f"no response within {ZIGBEE_WAIT_S}s ({last_err})")
+
+
+def main(port, device_id=None, coord_port=None):
     report = Report()
     device = {}
     stats = {}
@@ -349,6 +499,21 @@ def main(port, device_id=None):
         try:
             # --- 1b. プローブ ID / XBee MAC / 補正係数 ---
             identity = collect_identity(ser, report)
+
+            # --- 1c. 無線: XBee 設定値 / BLE アドバタイズ / Zigbee 応答 ---
+            radio = identity.get("radio")
+            try:
+                coord = open_coordinator(coord_port, port)
+            except ImportError:
+                print("  [WARN] digi-xbee が未インストール (pip install digi-xbee)")
+                coord = None
+            try:
+                check_xbee_settings(radio, coord, report)
+                check_ble(radio, report)
+                check_zigbee(radio, coord, report)
+            finally:
+                if coord is not None:
+                    coord.close()
 
             # --- 2. 電池電圧 ---
             bat = cmd_result(ser, "get_battery")
@@ -444,6 +609,8 @@ if __name__ == "__main__":
     ap.add_argument("--id", type=int, metavar="NNNN", default=None,
                     help="4 桁の個体番号。指定すると試験冒頭で名称を MLogger_NNNN に設定"
                          " (XBee の BLE 名にも反映)")
+    ap.add_argument("--coord", metavar="PORT", default=None,
+                    help="Zigbee 親機 XBee の COM ポート (省略時は自動検出)")
     args = ap.parse_args()
     if args.id is not None and not (0 <= args.id <= 9999):
         print("--id は 0-9999 の範囲で指定してください")
@@ -453,7 +620,7 @@ if __name__ == "__main__":
         print("No M-Logger found. Pass COM port explicitly: python factory_test.py COMx")
         sys.exit(2)
     try:
-        sys.exit(main(port, args.id))
+        sys.exit(main(port, args.id, args.coord))
     except RuntimeError as e:
         print(f"[ABORT] {e}")
         sys.exit(1)

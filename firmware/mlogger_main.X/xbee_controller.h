@@ -142,6 +142,17 @@ void Xbee_Wakeup(void);
 bool Xbee_IsSleeping(void);
 
 /**
+ * @brief BLE central (スマホ) の切断 (Modem Status 0x33) が起きたかを返し、フラグをクリアする。
+ *        接続→切断の変化を 1 回だけ通知するので、最初から未接続の場合は true にならない。
+ */
+bool Xbee_TakeBleDisconnectEvent(void);
+
+/**
+ * @brief Zigbee 送信の結果集計 (TX Status 0x8B)。起動以来の受信数・失敗数・最後の失敗コード。
+ */
+void Xbee_GetZigbeeTxStats(uint16_t *status_count, uint16_t *fail_count, uint8_t *last_fail);
+
+/**
  * @brief XBeeをソフトウェアリセットする (FRコマンド)
  */
 void Xbee_SoftwareReset(void);
