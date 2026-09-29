@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // 末尾スラッシュなしでアクセスされた場合、相対パスの解決基準がずれるので
+        // すぐにスラッシュ付きへリダイレクトして以降の挙動を一貫させる。
+        (function() {
+            var p = window.location.pathname;
+            if (p && !p.endsWith('/') && !/\.[a-zA-Z0-9]+$/.test(p)) {
+                window.location.replace(p + '/' + window.location.search + window.location.hash);
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Logger Anemometer Calibration Report</title>
+    <style>
+        body { max-width: 900px; margin: 2em auto; padding: 0 1.5em;
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+               line-height: 1.6; color: #222; }
+        .nav { text-align: right; font-size: 0.9rem; }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 0.3em; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .monospace { font-family: Consolas, "Courier New", monospace; }
+        .search-form { display: flex; gap: 10px; margin: 1.5em 0 0.5em 0; flex-wrap: wrap; }
+        .search-form input[type="text"] { flex: 1; min-width: 200px;
+            font-family: Consolas, "Courier New", monospace; font-size: 1.1rem;
+            padding: 8px 12px; border: 1px solid #999; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 2px; }
+        .search-form button { padding: 8px 24px; border: none; border-radius: 4px;
+            background: #2e7d32; color: #fff; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .search-form button:hover { background: #1b5e20; }
+        .hint { font-size: 0.85rem; color: #666; }
+        footer { margin-top: 4em; padding-top: 1em; border-top: 1px solid #ddd;
+                 font-size: 0.85rem; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <p class="nav"><a href="/">HOME</a></p>
+
+    <h2>M-Logger Anemometer Calibration Report</h2>
+    <p>Enter the air-velocity probe ID (6 hexadecimal digits). The ID is printed on the
+       probe label, listed in the factory inspection report of the main unit, and shown
+       as "Velocity probe ID" in the device settings screen of the smartphone app.</p>
+
+    <form class="search-form" onsubmit="return go(event)">
+        <input type="text" id="device-id" placeholder="e.g. 321465" maxlength="6"
+               pattern="[0-9A-Fa-f]{6}" required autocomplete="off">
+        <button type="submit">View</button>
+    </form>
+    <p class="hint">6 characters, 0-9 / A-F only.
+       Web reports are available for M-Logger version 4 or later.</p>
+
+    <footer>&copy; Togashi Research Institute LLC</footer>
+
+    <script>
+        function go(e) {
+            e.preventDefault();
+            const id = document.getElementById('device-id').value.trim().toUpperCase();
+            if (/^[0-9A-F]{6}$/.test(id)) {
+                window.location.href = `./viewer.html?id=${id}`;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

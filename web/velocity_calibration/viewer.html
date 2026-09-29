@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Logger Anemometer Calibration Report</title>
+    <style>
+        body { max-width: 900px; margin: 2em auto; padding: 0 1.5em;
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+               line-height: 1.6; color: #222; }
+        .nav { text-align: right; font-size: 0.9rem; }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 0.3em; }
+        h3 { color: #2e7d32; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .monospace { font-family: Consolas, "Courier New", monospace; }
+        .meta { font-size: 0.95rem; color: #555; margin: 0.5em 0 1.5em 0; }
+        .meta span { display: inline-block; margin-right: 2em; }
+        .meta b { font-weight: 600; color: #222; margin-right: 0.4em; }
+        .table-wrapper { overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.95rem; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; }
+        td.num, th.num { text-align: right; font-family: Consolas, "Courier New", monospace; }
+        .plot-img { max-width: 100%; display: block; margin: 16px 0; border: 1px solid #ddd; }
+        .status { padding: 40px 20px; border: 1px dashed #999; text-align: center; margin: 40px 0; }
+        footer { margin-top: 4em; padding-top: 1em; border-top: 1px solid #ddd;
+                 font-size: 0.85rem; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <p class="nav"><a href="./">SEARCH</a> / <a href="/">HOME</a></p>
+
+    <main id="main">
+        <div class="status" id="loading">Loading...</div>
+    </main>
+
+    <footer>&copy; Togashi Research Institute LLC</footer>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = (params.get('id') || '').toUpperCase();
+        const main = document.getElementById('main');
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g,
+                c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function showError(title, body) {
+            main.innerHTML = `
+                <div class="status">
+                    <h3>${title}</h3>
+                    <p>${body}</p>
+                    <a href="./">&larr; Back to search</a>
+                </div>`;
+        }
+
+        function fmt(n, digits) {
+            if (n === null || n === undefined) return '&infin;';
+            return Number(n).toFixed(digits);
+        }
+
+        function render(doc) {
+            const a = (doc.calibrations || {}).anemometer;
+
+            let html = `
+                <h2>Anemometer Calibration Report <span class="monospace">${esc(doc.device_id)}</span></h2>`;
+
+            if (!a) {
+                html += `<p>No anemometer calibration data is available for this probe.</p>`;
+                main.innerHTML = html;
+                return;
+            }
+
+            const meta = [];
+            meta.push(`<span><b>Calibrated:</b> ${esc(a.calibrated_at)}</span>`);
+            if (a.calibrator_id != null) meta.push(`<span><b>Wind tunnel:</b> ${esc(a.calibrator_id)}</span>`);
+            if (a.name) meta.push(`<span><b>Label:</b> ${esc(a.name)}</span>`);
+            meta.push(`<span><b>Zero-wind voltage E0:</b> ${fmt(a.E0, 4)} V</span>`);
+            html += `<div class="meta">${meta.join('')}</div>`;
+
+            // Coefficients (3-range King's law fit)
+            const rangeRows = (a.ranges || []).map((r, i) => `
+                <tr>
+                    <td>Range ${i + 1}</td>
+                    <td class="num">${fmt(r.v_min, 2)}</td>
+                    <td class="num">${r.v_max === null ? '&infin;' : fmt(r.v_max, 2)}</td>
+                    <td class="num">${fmt(r.m, 4)}</td>
+                    <td class="num">${fmt(r.lnC, 4)}</td>
+                </tr>`).join('');
+            html += `
+                <h3>Calibration Coefficients (3-range King's Law fit)</h3>
+                <div class="table-wrapper"><table>
+                    <thead><tr><th></th><th class="num">v_min [m/s]</th><th class="num">v_max [m/s]</th>
+                               <th class="num">m</th><th class="num">lnC</th></tr></thead>
+                    <tbody>${rangeRows}</tbody>
+                </table></div>`;
+
+            // Calibration points (measured voltages)
+            if (a.calibration_points && a.calibration_points.length) {
+                const calRows = a.calibration_points.map(r => `
+                    <tr>
+                        <td class="num">${fmt(r.ref_velocity, 2)}</td>
+                        <td class="num">${fmt(r.voltage_mV, 1)}</td>
+                        <td class="num">${fmt(r.std_dev_mV, 1)}</td>
+                    </tr>`).join('');
+                html += `
+                    <h3>Calibration Points</h3>
+                    <div class="table-wrapper"><table>
+                        <thead><tr><th class="num">Reference [m/s]</th><th class="num">Voltage [mV]</th>
+                                   <th class="num">Std. dev. [mV]</th></tr></thead>
+                        <tbody>${calRows}</tbody>
+                    </table></div>`;
+            }
+
+            // Verification
+            const verRows = (a.verification || []).map(r => `
+                <tr>
+                    <td class="num">${fmt(r.ref_velocity, 2)}</td>
+                    <td class="num">${fmt(r.measured_velocity, 3)}</td>
+                    <td class="num">${fmt(r.error_pct, 1)}</td>
+                    <td class="num">${fmt(r.voltage_mV, 1)}</td>
+                </tr>`).join('');
+            html += `
+                <h3>Post-calibration Verification</h3>
+                <div class="table-wrapper"><table>
+                    <thead><tr><th class="num">Reference [m/s]</th><th class="num">Measured [m/s]</th>
+                               <th class="num">Error [%]</th><th class="num">Voltage [mV]</th></tr></thead>
+                    <tbody>${verRows}</tbody>
+                </table></div>`;
+
+            // Plot
+            html += `
+                <h3>Calibration Curve</h3>
+                ${a.plot && a.plot.data_url
+                    ? `<img class="plot-img" src="${a.plot.data_url}" alt="Calibration curve">`
+                    : '<p>No plot available.</p>'}`;
+
+            document.title = `M-Logger Anemometer Calibration Report ${esc(doc.device_id)}`;
+            main.innerHTML = html;
+        }
+
+        // Web reports exist only for probes shipped with M-Logger version 4 or
+        // later, so both error messages explain the version requirement
+        // instead of a bare "not found".
+        const V4_NOTE = 'Web calibration reports are provided for air-velocity probes of '
+            + '<b>M-Logger version 4 or later</b>. '
+            + 'Reports for version 3 and earlier units are not published on the web.';
+
+        if (!/^[0-9A-F]{6}$/.test(id)) {
+            showError('Invalid ID',
+                `The probe ID must be 6 hexadecimal characters (0-9, A-F).<br>${V4_NOTE}`);
+        } else {
+            fetch(`./reports/${id}.json`, {cache: 'no-cache'})
+                .then(res => {
+                    if (!res.ok) throw new Error(res.status);
+                    return res.json();
+                })
+                .then(render)
+                .catch(() => {
+                    showError('Report Not Available',
+                        `No calibration report was found for probe <span class="monospace">${id}</span>.<br>${V4_NOTE}<br>`
+                        + 'If your probe belongs to a version 4 or later unit, please check the ID and try again.');
+                });
+        }
+    </script>
+</body>
+</html>

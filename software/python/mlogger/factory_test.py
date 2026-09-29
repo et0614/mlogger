@@ -2,7 +2,7 @@
 M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 
 温湿度・グローブ温度・CO2・照度・風速の各センサとフラッシュメモリを一通り
-動作させ、結果を reports/<hardware_id>.json に記録する。
+動作させ、結果を web/inspection/reports/<hardware_id>.json に記録する。
 
 試験手順:
   1. hello で個体情報 (name / hardware_id / FW version) を取得
@@ -86,9 +86,10 @@ ZIGBEE_WAIT_S   = 60    # 本体が親機のネットワークに参加して応
 RECORD_FORMAT = "<BIBIhhHHHH"  # SensorData_t (22 bytes)
 RECORD_SIZE = struct.calcsize(RECORD_FORMAT)
 
-# 成績の保存先 (スクリプトと同階層の reports/)。ファイル名は <hardware_id>.json。
-# 公開サイト (Drive 側 web/inspection/reports) への配置は手動で行う。
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+# 成績の保存先。公開サイトのソース (リポジトリの web/) に直接書き出し、git で管理する。
+# ファイル名は <hardware_id>.json。
+REPORTS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                            "..", "..", "..", "web", "inspection", "reports"))
 
 _next_id = [100]
 
@@ -597,7 +598,7 @@ def main(port, device_id=None, coord_port=None):
     print()
     print(f"総合判定: {'PASS' if overall else 'FAIL'}")
     print(f"記録: {path}")
-    print(f"公開: web/inspection/reports へ手動配置 → "
+    print(f"公開: コミット後に web/build_site.py で組み立てて配置 → "
           f"https://www.mlogger.jp/inspection/viewer.html?id={hwid}")
     return 0 if overall else 1
 

@@ -1,0 +1,8 @@
+# 組み立てた公開用一式 (build_site.py の出力)
+_site/
+
+# 大きなバイナリは git に入れず、Drive 等に置いて build_site.py --assets で取り込む
+*.pdf
+*.mp4
+appearance.jpg
+screenshots/

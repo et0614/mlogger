@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Logger Factory Inspection Report</title>
+    <style>
+        body { max-width: 900px; margin: 2em auto; padding: 0 1.5em;
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+               line-height: 1.6; color: #222; }
+        .nav { text-align: right; font-size: 0.9rem; }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 0.3em; }
+        h3 { color: #2e7d32; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .monospace { font-family: Consolas, "Courier New", monospace; }
+        .meta { font-size: 0.95rem; color: #555; margin: 0.5em 0 1.5em 0; }
+        .meta span { display: inline-block; margin-right: 2em; }
+        .meta b { font-weight: 600; color: #222; margin-right: 0.4em; }
+        .table-wrapper { overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.95rem; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; }
+        td.num, th.num { text-align: right; font-family: Consolas, "Courier New", monospace; }
+        .fail { color: #c62828; font-weight: bold; }
+        .status { padding: 40px 20px; border: 1px dashed #999; text-align: center; margin: 40px 0; }
+        .note { font-size: 0.85rem; color: #666; }
+        footer { margin-top: 4em; padding-top: 1em; border-top: 1px solid #ddd;
+                 font-size: 0.85rem; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+    <p class="nav"><a href="./">SEARCH</a> / <a href="/">HOME</a></p>
+
+    <main id="main">
+        <div class="status" id="loading">Loading...</div>
+    </main>
+
+    <footer>&copy; Togashi Research Institute LLC</footer>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = (params.get('id') || '').toUpperCase();
+        const main = document.getElementById('main');
+
+        // Air-velocity probe calibration report (keyed by 6-hex probe device_id)
+        const CALIBRATION_URL = velId => `../velocity_calibration/viewer.html?id=${velId}`;
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g,
+                c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function showError(title, body) {
+            main.innerHTML = `
+                <div class="status">
+                    <h3>${title}</h3>
+                    <p>${body}</p>
+                    <a href="./">&larr; Back to search</a>
+                </div>`;
+        }
+
+        // channel_stats key → display name / unit
+        const CHANNEL_LABELS = {
+            t:  ['Dry-bulb temperature', '°C'],
+            h:  ['Relative humidity', '%'],
+            g:  ['Globe temperature', '°C'],
+            c:  ['CO2 concentration', 'ppm'],
+            l:  ['Illuminance', 'lx'],
+            v:  ['Air velocity', 'm/s'],
+            vv: ['Hot-wire bridge voltage', 'mV'],
+        };
+
+        function probeRow(label, p, linkFn) {
+            if (!p) return `<tr><td>${label}</td><td colspan="3">no data</td></tr>`;
+            if (!p.connected) return `<tr><td>${label}</td><td colspan="3">not connected</td></tr>`;
+            let idCell = `<span class="monospace">${esc(p.device_id)}</span>`;
+            if (linkFn && p.device_id) {
+                idCell = `<a class="monospace" href="${linkFn(esc(p.device_id))}">${esc(p.device_id)}</a>`;
+            }
+            return `<tr>
+                <td>${label}</td>
+                <td>${idCell}</td>
+                <td>${esc(p.name)}</td>
+                <td class="num">${esc(p.data_count)}</td>
+            </tr>`;
+        }
+
+        function render(doc) {
+            const dev = doc.device || {};
+            const items = doc.items || [];
+            // Only passing units are shipped, so the result column is normally
+            // hidden. It appears (with FAIL in red) only if a failing report
+            // were ever published.
+            const anyFail = items.some(it => !it.pass) || doc.overall === 'FAIL';
+
+            let html = `
+                <h2>Factory Inspection Report <span class="monospace">${esc(dev.hardware_id)}</span></h2>
+                <div class="meta">
+                    <span><b>Tested:</b> ${esc(doc.timestamp)}</span>
+                    <span><b>Name:</b> ${esc(dev.name)}</span>
+                    <span><b>Firmware:</b> ${esc(dev.firmware_version)}</span>
+                    <span><b>Battery:</b> ${esc(dev.battery_mv)} mV</span>
+                </div>`;
+
+            // Hardware configuration
+            const radio = doc.radio || {};
+            const probes = doc.probes || {};
+            html += `
+                <h3>Hardware Configuration</h3>
+                <div class="table-wrapper"><table>
+                    <thead><tr><th>Component</th><th>ID</th><th>Label</th><th class="num">Channels</th></tr></thead>
+                    <tbody>
+                        <tr><td>Main unit (MCU)</td>
+                            <td><span class="monospace">${esc(dev.hardware_id)}</span></td>
+                            <td>${esc(dev.name)}</td><td class="num">-</td></tr>
+                        <tr><td>Radio module (XBee)</td>
+                            <td><span class="monospace">${esc(radio.xbee_mac ?? '-')}</span></td>
+                            <td>FW ${esc(radio.xbee_fw ?? '-')}</td><td class="num">-</td></tr>
+                        ${probeRow('T/RH/CO2/Globe probe', probes.th_probe, null)}
+                        ${probeRow('Air-velocity probe', probes.velocity_probe, CALIBRATION_URL)}
+                    </tbody>
+                </table></div>
+                <p class="note">The air-velocity probe ID links to its velocity-voltage calibration report.</p>`;
+
+            // Test results
+            const itemRows = items.map(it => `
+                <tr>
+                    <td>${esc(it.item)}</td>
+                    ${anyFail ? `<td class="${it.pass ? '' : 'fail'}">${it.pass ? 'PASS' : 'FAIL'}</td>` : ''}
+                    <td class="monospace">${esc(it.detail)}</td>
+                </tr>`).join('');
+            html += `
+                <h3>Test Results</h3>
+                <div class="table-wrapper"><table>
+                    <thead><tr><th>Item</th>${anyFail ? '<th>Result</th>' : ''}<th>Details</th></tr></thead>
+                    <tbody>${itemRows}</tbody>
+                </table></div>`;
+
+            // Measurement statistics
+            const stats = doc.channel_stats || {};
+            const statRows = Object.keys(CHANNEL_LABELS)
+                .filter(k => stats[k])
+                .map(k => {
+                    const s = stats[k];
+                    const [label, unit] = CHANNEL_LABELS[k];
+                    return `<tr>
+                        <td>${label} [${unit}]</td>
+                        <td class="num">${esc(s.n)}</td>
+                        <td class="num">${esc(s.min)}</td>
+                        <td class="num">${esc(s.mean)}</td>
+                        <td class="num">${esc(s.max)}</td>
+                    </tr>`;
+                }).join('');
+            if (statRows) {
+                html += `
+                    <h3>Measurement Statistics (1-second sampling)</h3>
+                    <div class="table-wrapper"><table>
+                        <thead><tr><th>Channel</th><th class="num">Samples</th><th class="num">Min</th><th class="num">Mean</th><th class="num">Max</th></tr></thead>
+                        <tbody>${statRows}</tbody>
+                    </table></div>`;
+            }
+
+            // Correction coefficients
+            const corr = doc.correction || {};
+            const corrNames = {
+                t_dry: 'Dry-bulb temperature', humidity: 'Relative humidity',
+                t_glb: 'Globe temperature', illuminance: 'Illuminance', velocity: 'Air velocity',
+            };
+            const corrRows = Object.keys(corrNames)
+                .filter(k => corr[k])
+                .map(k => `<tr>
+                    <td>${corrNames[k]}</td>
+                    <td class="num">${esc(corr[k].a)}</td>
+                    <td class="num">${esc(corr[k].b)}</td>
+                </tr>`).join('');
+            if (corrRows) {
+                html += `
+                    <h3>Factory Correction Coefficients (corrected = a &times; raw + b)</h3>
+                    <div class="table-wrapper"><table>
+                        <thead><tr><th>Item</th><th class="num">a</th><th class="num">b</th></tr></thead>
+                        <tbody>${corrRows}</tbody>
+                    </table></div>`;
+            }
+
+            document.title = `M-Logger Factory Inspection Report ${esc(dev.hardware_id)}`;
+            main.innerHTML = html;
+        }
+
+        // Web reports exist only for units of M-Logger version 4 or later.
+        // Owners of earlier units may reach this page by typing their ID
+        // (e.g. a 16-digit XBee address), so both error messages explain
+        // the version requirement instead of a bare "not found".
+        const V4_NOTE = 'Web inspection reports are provided for <b>M-Logger version 4 or later</b>. '
+            + 'Reports for version 3 and earlier units are not published on the web.';
+
+        if (!/^[0-9A-F]{8}$/.test(id)) {
+            showError('Invalid ID',
+                `The device ID must be 8 hexadecimal characters (0-9, A-F).<br>${V4_NOTE}`);
+        } else {
+            fetch(`./reports/${id}.json`, {cache: 'no-cache'})
+                .then(res => {
+                    if (!res.ok) throw new Error(res.status);
+                    return res.json();
+                })
+                .then(render)
+                .catch(() => {
+                    showError('Report Not Available',
+                        `No inspection report was found for device <span class="monospace">${id}</span>.<br>${V4_NOTE}<br>`
+                        + 'If your device is version 4 or later, please check the ID and try again.');
+                });
+        }
+    </script>
+</body>
+</html>

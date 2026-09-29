@@ -13,8 +13,8 @@ Phase 3: 7 点で再現精度を検証
   (旧版の UUID / firmware version / MCU 温度は OSL に存在しない)
 - AnemometerManager.set_coefficients_a / _b (lowercase) を使用
 - 出力は e-sensor 互換の JSON 1 ファイル (PNG は base64 で同梱)。
-  保存先は software/web/calibration/reports/<6hex>.json。
-  Web (software/web/calibration/index+viewer.html) から fetch される。
+  保存先は web/velocity_calibration/reports/<6hex>.json (git で管理し、公開サイトの
+  web/velocity_calibration/viewer.html から fetch される)。
 """
 import base64
 import datetime
@@ -558,9 +558,13 @@ def run_phase_3():
 # 結果出力 (e-sensor 互換 JSON; PNG は base64 同梱)
 # ==========================================
 
-# 成績の保存先 (スクリプトと同階層の reports/)。ファイル名は <6桁hex device_id>.json。
-# 公開サイト (Drive 側 web/velocity_calibration/reports) への配置は手動で行う。
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+# 成績の保存先。公開サイトのソース (リポジトリの web/) に直接書き出し、git で管理する。
+# ファイル名は <6桁hex device_id>.json。
+REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "..", "..", "..", "web", "velocity_calibration", "reports")
+REPORTS_DIR = os.path.normpath(REPORTS_DIR)
+# ローカル確認用のグラフ (PNG) の保存先。JSON に同じ画像を同梱しているので git には入れない
+PLOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 
 
 def build_plot(coef_a, coef_b, phase1_data, phase3_data):
@@ -674,8 +678,8 @@ def build_anemometer_doc(coef_a, coef_b, phase1_data, phase3_data, png_b64,
 
 def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_data,
                             show_plot=True, calibrator_id=None):
-    """JSON 1 ファイルに集約して reports/ に書き出し (既存ファイルがあれば merge)。
-    確認用に PNG も同ディレクトリへ保存し、show_plot=True ならグラフを表示する。"""
+    """JSON 1 ファイルに集約して REPORTS_DIR に書き出し (既存ファイルがあれば merge)。
+    確認用に PNG を PLOT_DIR へ保存し、show_plot=True ならグラフを表示する。"""
     fig = build_plot(coef_a, coef_b, phase1_data, phase3_data)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=120)
@@ -708,7 +712,8 @@ def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_dat
     print(f"\nReport written: {out_path}")
 
     # ローカル確認用に PNG も保存 (JSON には base64 で同梱済み)。
-    png_path = os.path.join(REPORTS_DIR, f"{device_id_hex}.png")
+    os.makedirs(PLOT_DIR, exist_ok=True)
+    png_path = os.path.join(PLOT_DIR, f"{device_id_hex}.png")
     fig.savefig(png_path, dpi=120)
     print(f"Plot saved    : {png_path}")
 

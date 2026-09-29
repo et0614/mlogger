@@ -1,0 +1,105 @@
+site_name: M-Logger ユーザーマニュアル
+site_url: https://mlogger.jp/ja/manual/
+site_description: M-Logger 本体とソフトウェア (スマートフォンアプリ・MLServer・Python ツール) の使い方
+site_author: 富樫英介
+copyright: Copyright &copy; 2022-2026 Eisuke Togashi
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: ja
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切替
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切替
+  features:
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  font:
+    text: Noto Sans JP
+    code: JetBrains Mono
+
+nav:
+  - トップ: index.md
+  - はじめに:
+      - システムの構成: start/system.md
+      - 本体の基本操作: start/device.md
+      - ファームウェアの版と対応機能: start/firmware.md
+      - ファームウェアの更新: start/firmware_update.md
+  - スマートフォンアプリ:
+      - mobile/index.md
+      - インストールと初回起動: mobile/installation.md
+      - 画面の構成: mobile/overview.md
+      - M-Logger を見つける: mobile/scanner.md
+      - 計測の設定: mobile/settings.md
+      - 計測中の表示: mobile/logging.md
+      - 計測データの確認: mobile/data.md
+      - 熱的快適性・湿り空気の計算: mobile/calculators.md
+      - 詳細設定と常設モード: mobile/advanced.md
+  - PC (MLServer):
+      - server/index.md
+      - インストールと起動: server/install.md
+      - Zigbee 親機の準備: server/coordinator.md
+      - 計測の開始とデータ: server/data.md
+      - 設定: server/settings.md
+      - BACnet 連携: server/bacnet.md
+  - Python ツール:
+      - python/index.md
+      - 準備: python/install.md
+      - 動作確認: python/check_device.md
+      - 記録データのダウンロード: python/load_data.md
+      - 記録データの消去: python/clear_data.md
+  - 付録:
+      - トラブルシューティング: appendix/troubleshooting.md
+      - 用語: appendix/glossary.md
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+      # 日本語の見出しでも見出しの文字列から ID を作る (既定だと "_1" のような番号になりリンクできない)
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+
+plugins:
+  - search:
+      lang: ja
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://mlogger.jp
+      name: M-Logger 公式サイト

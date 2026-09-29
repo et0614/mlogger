@@ -1,0 +1,104 @@
+site_name: M-Logger User Manual
+site_url: https://mlogger.jp/en/manual/
+site_description: How to use the M-Logger device and its software (smartphone app, MLServer, Python tools)
+site_author: Eisuke Togashi
+copyright: Copyright &copy; 2022-2026 Eisuke Togashi
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  font:
+    text: Roboto
+    code: JetBrains Mono
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - System overview: start/system.md
+      - Basic device operation: start/device.md
+      - Firmware versions and supported features: start/firmware.md
+      - Updating the firmware: start/firmware_update.md
+  - Smartphone app:
+      - mobile/index.md
+      - Installation and first launch: mobile/installation.md
+      - Screen layout: mobile/overview.md
+      - Finding an M-Logger: mobile/scanner.md
+      - Measurement settings: mobile/settings.md
+      - During measurement: mobile/logging.md
+      - Reviewing measured data: mobile/data.md
+      - Thermal comfort and moist air calculators: mobile/calculators.md
+      - Advanced settings and permanent mode: mobile/advanced.md
+  - PC (MLServer):
+      - server/index.md
+      - Installation and startup: server/install.md
+      - Preparing the Zigbee coordinator: server/coordinator.md
+      - Starting measurement and the data: server/data.md
+      - Settings: server/settings.md
+      - BACnet: server/bacnet.md
+  - Python tools:
+      - python/index.md
+      - Setup: python/install.md
+      - Checking the device: python/check_device.md
+      - Downloading recorded data: python/load_data.md
+      - Clearing recorded data: python/clear_data.md
+  - Appendix:
+      - Troubleshooting: appendix/troubleshooting.md
+      - Glossary: appendix/glossary.md
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+
+plugins:
+  - search:
+      lang: en
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://mlogger.jp
+      name: M-Logger official site

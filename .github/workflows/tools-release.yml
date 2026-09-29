@@ -1,0 +1,86 @@
+# 配布セット (mlogger_tools.zip) を作って GitHub Releases に登録する。
+#
+# tools-v1, tools-v2 ... のタグを push すると実行される:
+#   git tag tools-v1
+#   git push origin tools-v1
+#
+# zip の中身:
+#   python_tools/      software/dist_user/python_tools
+#   MLServer/          software/dotnet/MLServer を dotnet publish したもの
+#   firmware_update/   firmware/dist_user の説明書・update.bat
+#                      + firmware/release の hex + avrdude (公式配布から取得)
+#
+# 配布するファームウェアは、タグを付ける前に firmware/release/ に置いてコミットしておくこと。
+# Actions の画面から手動で実行した場合は、Releases には登録せず、zip を artifact として残す。
+
+name: tools-release
+
+on:
+  push:
+    tags:
+      - 'tools-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  AVRDUDE_VERSION: '8.1'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download avrdude
+        shell: pwsh
+        run: |
+          $url = "https://github.com/avrdudes/avrdude/releases/download/v$env:AVRDUDE_VERSION/avrdude-v$env:AVRDUDE_VERSION-windows-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile avrdude.zip
+          Expand-Archive avrdude.zip -DestinationPath avrdude
+
+      - name: Build mlogger_tools.zip
+        run: python software/make_dist_zip.py --avrdude avrdude -o mlogger_tools.zip
+
+      - name: Collect versions
+        id: ver
+        shell: pwsh
+        run: |
+          $fw = (Select-String -Path firmware/mlogger_main.X/version.h -Pattern 'FW_VERSION\s+"([^"]+)"').Matches[0].Groups[1].Value
+          $ml = (Select-String -Path software/dotnet/MLServer/Program.cs -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          "fw=$fw" >> $env:GITHUB_OUTPUT
+          "mlserver=$ml" >> $env:GITHUB_OUTPUT
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/tools-v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @"
+          M-Logger ツール (M-Logger Tools)
+
+          - MLServer ${{ steps.ver.outputs.mlserver }}
+          - Python tools
+          - Firmware ${{ steps.ver.outputs.fw }} (firmware_update)
+
+          使い方 / How to use: https://mlogger.jp/ja/manual/ , https://mlogger.jp/en/manual/
+          "@
+          gh release create "${{ github.ref_name }}" mlogger_tools.zip --title "M-Logger Tools ${{ github.ref_name }}" --notes $notes
+
+      - name: Keep zip as artifact (manual run)
+        if: ${{ !startsWith(github.ref, 'refs/tags/tools-v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlogger_tools
+          path: mlogger_tools.zip

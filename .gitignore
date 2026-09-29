@@ -461,7 +461,13 @@ software/dist_user/python_tools/mlogger_*.csv
 # 配布 zip (make_dist_zip.py の生成物)
 software/mlogger_tools.zip
 
-# 公開サイトのソースは Drive 側で管理する (repo に web/ を置かない)
-web/
 # anemometer_diag.py の記録出力
 software/python/anemometer/diag/
+
+# 配布するファームウェア (Visual Studio 用の [Rr]elease/ 除外から外す)
+!firmware/release/
+
+##### 出荷試験・校正の成績 #####
+# 成績 (JSON) は web/inspection/reports, web/velocity_calibration/reports で管理する。
+# 風速校正のローカル確認用グラフ (PNG) は git に入れない
+software/python/anemometer/reports/

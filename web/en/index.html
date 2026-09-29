@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>M-Logger, the Thermal Environment Measurement System</title>
+	<style>
+		body {
+			max-width: 900px;
+			margin: 2em auto;
+			padding: 0 1.5em;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			line-height: 1.6;
+			color: #222;
+		}
+		h2, h3 { color: #2e7d32; }
+		h2 { border-bottom: 2px solid #2e7d32; padding-bottom: 0.3em; }
+		hr { border: 0; border-top: 1px solid #ddd; margin: 2.5em 0; }
+		ul { padding-left: 1.5em; }
+		li { margin-bottom: 0.3em; }
+		a { color: #1976d2; text-decoration: none; }
+		a:hover { text-decoration: underline; }
+		img, video { max-width: 100%; height: auto; }
+		.intro { display: flex; gap: 2em; align-items: center; flex-wrap: wrap; }
+		.intro img { width: 260px; }
+		.intro ul { flex: 1; min-width: 280px; }
+		.manual { font-size: 1.15em; font-weight: bold; }
+	</style>
+</head>
+<body>
+
+<p style="text-align: right;">English / <a href="../ja/index.html">Japanese</a></p>
+
+<h2>M-Logger, the Thermal Environment Measurement System</h2>
+
+<p>A compact instrument for measuring the indoor thermal environment of buildings.</p>
+
+<div class="intro">
+	<img src="../device_v4.jpg" alt="M-Logger">
+	<ul>
+		<li>Measures dry-bulb temperature, relative humidity, globe temperature, low air velocity, illuminance and CO2 concentration</li>
+		<li>Calculates thermal comfort indices (PMV, PPD, SET*) in real time</li>
+		<li>Runs on two AA batteries (USB power also possible)</li>
+		<li>Operated and collects data wirelessly from a smartphone (iPhone / Android) or a PC</li>
+		<li>All design data is published (open-source hardware)</li>
+	</ul>
+</div>
+
+<hr>
+<h3>Using M-Logger</h3>
+<ul>
+	<li class="manual"><a href="manual/">User manual</a></li>
+	<p>Basic device operation and how to use the smartphone app, the PC software (MLServer) and the Python tools.</p>
+
+	<li>Purchase</li>
+	<p><a href="https://www.amazon.com/dp/B0C7GJ7KW5">Available on Amazon</a></p>
+
+	<li>Factory inspection and calibration reports</li>
+	<p>
+		View the reports of each unit with the ID shown on the device or in the smartphone app.<br>
+		<a href="../inspection/">Factory inspection reports</a> / <a href="../velocity_calibration/">Air velocity probe calibration reports</a>
+	</p>
+</ul>
+
+<hr>
+<h3>Development and research</h3>
+<ul>
+	<li><a href="https://github.com/et0614/mlogger">GitHub repository</a></li>
+	<p>Board and case design data, bill of materials, source code of the firmware and software, and the <a href="https://github.com/et0614/mlogger/blob/main/docs/protocol_v4.md">communication specification</a> (Japanese).</p>
+
+	<li>Related papers</li>
+	<ul>
+		<li>Eisuke Togashi: 室内温熱環境の廉価な無線計測記録装置の開発, AIJ Journal of Technology and Design, Vol. 28, No. 68, pp. 267-272, 2022 (in Japanese), DOI: <a href="https://doi.org/10.3130/aijt.28.267">10.3130/aijt.28.267</a></li>
+		<li>Eisuke Togashi: Developing a small, battery-powered PMV measurement device, Indoor Air 2024, Honolulu, 2024</li>
+		<li>Eisuke Togashi and Satoru Yamaguchi: A Compact, Battery-Operated Solution for PMV Measurement, IBPSA Asia Conference 2024, pp. 1447-1454, Osaka, 2024</li>
+	</ul>
+</ul>
+
+<hr>
+<h3>Others</h3>
+<ul>
+	<li>Example of visualizing measurement results</li>
+	<p>85 units installed in a laboratory with floor-supply air conditioning, measuring at 3-second intervals (sphere size: air velocity, color: dry-bulb temperature).</p>
+	<p><video autoplay loop muted controls src="../visualize.mp4"></video></p>
+
+	<li>Manual of the previous product (v3)</li>
+	<p>
+		<a href="document.pdf">Document (PDF)</a><br>
+		The smartphone app and MLServer also support v3.
+	</p>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,2 @@
+# Windows のバッチファイルは CRLF で取り出す (update.bat は CP932)
+*.bat text eol=crlf

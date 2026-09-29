@@ -1,0 +1,13 @@
+/* ファームウェアの版の印 (例: <span class="fw">v4 以降</span>) */
+.md-typeset .fw {
+  display: inline-block;
+  padding: 0 0.5em;
+  border-radius: 0.8em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1.6;
+  vertical-align: 0.1em;
+  color: var(--md-primary-bg-color);
+  background-color: var(--md-primary-fg-color);
+  white-space: nowrap;
+}

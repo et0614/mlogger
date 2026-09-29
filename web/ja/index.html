@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>温熱環境計測システムM-Logger</title>
+	<style>
+		body {
+			max-width: 900px;
+			margin: 2em auto;
+			padding: 0 1.5em;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+			line-height: 1.6;
+			color: #222;
+		}
+		h2, h3 { color: #2e7d32; }
+		h2 { border-bottom: 2px solid #2e7d32; padding-bottom: 0.3em; }
+		hr { border: 0; border-top: 1px solid #ddd; margin: 2.5em 0; }
+		ul { padding-left: 1.5em; }
+		li { margin-bottom: 0.3em; }
+		a { color: #1976d2; text-decoration: none; }
+		a:hover { text-decoration: underline; }
+		img, video { max-width: 100%; height: auto; }
+		.intro { display: flex; gap: 2em; align-items: center; flex-wrap: wrap; }
+		.intro img { width: 260px; }
+		.intro ul { flex: 1; min-width: 280px; }
+		.manual { font-size: 1.15em; font-weight: bold; }
+	</style>
+</head>
+<body>
+
+<p style="text-align: right;"><a href="../en/index.html">English</a> / Japanese</p>
+
+<h2>温熱環境計測システム M-Logger</h2>
+
+<p>建築の室内温熱環境を計測するための、小型の計測器です。</p>
+
+<div class="intro">
+	<img src="../device_v4.jpg" alt="M-Logger">
+	<ul>
+		<li>乾球温度・相対湿度・グローブ温度・微風速・照度・CO2 濃度を計測</li>
+		<li>熱的快適性指標 (PMV・PPD・SET*) をリアルタイムに計算</li>
+		<li>単 3 電池 2 本で動作 (USB 給電も可)</li>
+		<li>スマートフォン (iPhone / Android) や PC から無線で操作・データ収集</li>
+		<li>設計データをすべて公開 (オープンソースハードウェア)</li>
+	</ul>
+</div>
+
+<hr>
+<h3>使う</h3>
+<ul>
+	<li class="manual"><a href="manual/">ユーザーマニュアル</a></li>
+	<p>本体の基本操作と、スマートフォンアプリ・PC (MLServer)・Python ツールの使い方。</p>
+
+	<li>購入</li>
+	<p><a href="https://www.amazon.co.jp/dp/B0C7GJ7KW5">Amazon で販売しています</a></p>
+
+	<li>出荷時試験成績・風速校正成績</li>
+	<p>
+		本体またはスマートフォンアプリに表示される ID で、個体ごとの成績を閲覧できます (英語表記)。<br>
+		<a href="../inspection/">出荷時試験成績</a> / <a href="../velocity_calibration/">風速プローブの校正成績</a>
+	</p>
+</ul>
+
+<hr>
+<h3>開発・研究</h3>
+<ul>
+	<li><a href="https://github.com/et0614/mlogger">GitHub リポジトリ</a></li>
+	<p>基板・ケースの設計データ、部品表、ファームウェアとソフトウェアのソースコード、<a href="https://github.com/et0614/mlogger/blob/main/docs/protocol_v4.md">通信仕様</a>を公開しています。</p>
+
+	<li>関連論文</li>
+	<ul>
+		<li>富樫英介: 室内温熱環境の廉価な無線計測記録装置の開発, 日本建築学会技術報告集, Vol. 28, No. 68, pp. 267-272, 2022, DOI: <a href="https://doi.org/10.3130/aijt.28.267">10.3130/aijt.28.267</a></li>
+		<li>Eisuke Togashi: Developing a small, battery-powered PMV measurement device, Indoor Air 2024, Honolulu, 2024</li>
+		<li>Eisuke Togashi and Satoru Yamaguchi: A Compact, Battery-Operated Solution for PMV Measurement, IBPSA Asia Conference 2024, pp. 1447-1454, Osaka, 2024</li>
+	</ul>
+</ul>
+
+<hr>
+<h3>その他</h3>
+<ul>
+	<li>実測例</li>
+	<p>
+		<a href="case01.pdf">飛行機内の熱環境</a> /
+		<a href="case02.pdf">乾球温度と放射温度の違い (赤外線ヒーター)</a> /
+		<a href="case03.pdf">温室</a> /
+		<a href="case04.pdf">ぎふメディアコスモスの自然採光</a>
+	</p>
+
+	<li>計測結果の可視化例</li>
+	<p>床吹出空調の実験室に 85 台を設置し、3 秒間隔で計測した例です (球の大きさが風速、色が乾球温度)。</p>
+	<p><video autoplay loop muted controls src="../visualize.mp4"></video></p>
+
+	<li>以前の製品 (v3) の解説書</li>
+	<p>
+		<a href="document_3.3.17.pdf">3.3.17 (2024年6月〜2025年2月販売)</a> /
+		<a href="document_3.3.20.pdf">3.3.20 (2025年3月〜2025年9月販売)</a> /
+		<a href="document_3.4.1.pdf">3.4.1 (2025年10月〜2026年5月販売)</a><br>
+		スマートフォンアプリ・MLServer は v3 にも対応しています。
+	</p>
+
+	<li>姉妹品: 扉の開閉記録装置 K-Logger</li>
+	<p><a href="kl_document.pdf">マニュアル</a> / <a href="https://www.amazon.co.jp/dp/B0G4NSMP45">Amazon</a></p>
+</ul>
+
+</body>
+</html>

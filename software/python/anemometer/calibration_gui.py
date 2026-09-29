@@ -35,7 +35,7 @@ matplotlib.use('Agg')
 from cp2112_driver import CP2112Device
 from anemometer_manager import AnemometerManager
 from anemometer_calibrator import AnemometerCalibrator
-from calibrate_anemometer import CALIBRATOR_PROFILES, REPORTS_DIR
+from calibrate_anemometer import CALIBRATOR_PROFILES, PLOT_DIR
 
 POLL_INTERVAL_MS = 1500
 
@@ -388,7 +388,7 @@ class CalibrationGUI:
         dev = t.present_device_id
         if not dev:
             return
-        png = os.path.join(REPORTS_DIR, f"{dev}.png")
+        png = os.path.join(PLOT_DIR, f"{dev}.png")
         if os.path.exists(png):
             try:
                 os.startfile(png)  # Windows 既定ビューア
