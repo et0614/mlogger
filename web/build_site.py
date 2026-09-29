@@ -33,7 +33,8 @@ ASSET_SKIP_DIRS = {"mobile", "manual", "reports", "_site"}
 
 def copy_web_sources():
     def ignore(dirpath, names):
-        skip = {"_site", "build_site.py", ".gitignore", "__pycache__"}
+        # 組み立て用のファイル (開発者向けの README を含む) はサイトに入れない
+        skip = {"_site", "build_site.py", ".gitignore", "README.md", "__pycache__"}
         return [n for n in names if n in skip]
     shutil.copytree(WEB_DIR, OUT_DIR, ignore=ignore)
 
