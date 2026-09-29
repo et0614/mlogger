@@ -302,7 +302,8 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
                     _timeSyncRequests.OnNext(new TimeSyncRequest(
                         Timestamp:      DateTimeOffset.UtcNow,
                         DeviceTime:     ts,
-                        WindowDuration: TimeSpan.FromSeconds(windowSec)));
+                        WindowDuration: TimeSpan.FromSeconds(windowSec),
+                        Name:           data?["name"]?.GetValue<string>()));
                     break;
             }
         }
@@ -752,7 +753,8 @@ public sealed class JsonRpcV4Protocol : IMLProtocol
     private static ReadyEvent ParseReadyEvent(JsonObject data, DateTimeOffset ts) => new(
         Timestamp: ts,
         Uptime:    TimeSpan.FromSeconds(data["uptime_s"]?.GetValue<long>() ?? 0),
-        IsLogging: data["logging"]?.GetValue<bool>() ?? false);
+        IsLogging: data["logging"]?.GetValue<bool>() ?? false,
+        Name:      data["name"]?.GetValue<string>());
 
     private static Co2CalibrationProgress ParseCo2Progress(JsonObject data, DateTimeOffset ts)
     {

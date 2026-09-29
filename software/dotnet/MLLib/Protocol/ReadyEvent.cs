@@ -7,4 +7,5 @@ namespace MLLib.Protocol;
 public sealed record ReadyEvent(
     DateTimeOffset Timestamp,
     TimeSpan       Uptime,
-    bool           IsLogging);
+    bool           IsLogging,
+    string?        Name = null);   // 子機の名前 (v4 のみ。v3 は null)

@@ -3,6 +3,7 @@
 #include "xbee_controller.h"   // Xbee_TxChars, Xbee_BlChars, Xbee_BlTxChars
 #include "usb_extension.h"     // USB_CDC_SendString
 #include "logger_control.h"    // LC_GetCurrentTime
+#include "eeprom_manager.h"    // EM_mlName (ready / time_sync_request の name)
 
 #include <time.h>
 
@@ -147,6 +148,7 @@ void pe_emit_ready(uint32_t uptime_s, bool logging, bool toZigbee, bool toBLE) {
     begin_event(&w, "ready");
     pc_key(&w, "uptime_s"); pc_uint(&w, uptime_s);
     pc_key(&w, "logging");  pc_bool(&w, logging);
+    pc_key(&w, "name");     pc_str(&w, EM_mlName);   // 受信側 (MLServer) が名前を知る機会
     end_event(&w);
 
     if (!pc_ok(&w)) return;
@@ -163,6 +165,7 @@ void pe_emit_time_sync_request(uint16_t window_s) {
     pc_writer_t w;
     begin_event(&w, "time_sync_request");
     pc_key(&w, "window_s"); pc_uint(&w, window_s);
+    pc_key(&w, "name");     pc_str(&w, EM_mlName);   // 後から起動した MLServer も 24h 以内に名前を知れる
     end_event(&w);
 
     if (!pc_ok(&w)) return;

@@ -10,6 +10,7 @@
 #include "adc0_extension.h" //AD変換拡張
 #include "command_handler.h" //コマンド処理
 #include "protocol_events.h" //v4 自発イベント送出
+#include "main.h" //MAIN_GetUptimeSeconds
 
 #include <util/atomic.h>
 #include <time.h>
@@ -143,6 +144,11 @@ static bool waitingForFirstValidCO2 = false;
 static uint8_t prevThProbeState = TH_PROBE_STATE_IDLE;
 
 static bool hasTask = false;
+
+// Zigbee ロギング開始時の名乗り (ready イベント) がまだか。MLServer はロギング中の子機と
+// やり取りできない (XBee がスリープしている) ことがあり、名前を知る機会がないため、
+// ネットワーク参加後の最初の計測値の直前に 1 回だけ ready (name 付き) を送る。
+static bool zigbeeAnnouncePending = false;
 
 /**
  * @brief データ送信範囲の管理変数
@@ -431,6 +437,12 @@ void execLogging(void)
 	//新規データがある場合は送信
 	if(send_needed)
 	{
+        // Zigbee ロギング開始後、親機のネットワークに参加できたら 1 回だけ名乗る
+        if (zigbeeAnnouncePending && outputToZigbee && Xbee_GetAssociationStatus() == 0x00) {
+            pe_emit_ready(MAIN_GetUptimeSeconds(), true, true, false);
+            zigbeeAnnouncePending = false;
+        }
+
         //無線/USB出力 (v4 smp イベント)
 		if(outputToZigbee || outputToBLE || outputToUSB)
         {
@@ -669,6 +681,9 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
     lastDisconnectedVelocity = false;
     velSuccessStreak = 0;
     genSuccessStreak = 0;
+
+    // Zigbee に出力する場合は、ネットワーク参加後に 1 回名乗る (execLogging)
+    zigbeeAnnouncePending = toZigbee;
 
     // セッション開始時はまず warmup 表示にしておき (子機がまだ conditioning 中の可能性)、
     // 最初の co2_valid 受信で解除させる。CO2 未使用時は warmingGeneral 側で短絡されるので

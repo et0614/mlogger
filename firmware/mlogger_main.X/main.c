@@ -113,6 +113,11 @@ uint8_t MAIN_GetResetFlags(void)
     return reset_flags;
 }
 
+uint32_t MAIN_GetUptimeSeconds(void)
+{
+    return uptime_s;
+}
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="main">

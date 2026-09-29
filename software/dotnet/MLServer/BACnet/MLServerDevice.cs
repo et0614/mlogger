@@ -228,7 +228,7 @@ namespace MLServer.BACnet
       AddAnalogInputObject(5000  + indx, "RHM",        "current relative humidity",          lo, nm, (float)logger.RelativeHumdity.LastValue,   BACNET_UNIT_PERCENT);
       AddAnalogInputObject(6000  + indx, "MRT",        "current mean radiant temperature",   lo, nm, (float)logger.MeanRadiantTemperature,      BACNET_UNIT_DEGREES_C);
       AddAnalogInputObject(7000  + indx, "PMV",        "current PMV",                        lo, nm, (float)logger.PMV,                          BACNET_UNIT_NO_UNITS);
-      AddAnalogInputObject(8000  + indx, "SET",        "current SET*",                       lo, nm, (float)logger.SETStar,                      BACNET_UNIT_NO_UNITS);
+      AddAnalogInputObject(8000  + indx, "SET",        "current SET*",                       lo, nm, (float)logger.SETStar,                      BACNET_UNIT_DEGREES_C);
       AddAnalogInputObject(9000  + indx, "WBGT(IN)",   "current indoor WBGT",                lo, nm, (float)logger.WBGT_Indoor,                  BACNET_UNIT_DEGREES_C);
       AddAnalogInputObject(10000 + indx, "WBGT(OUT)",  "current outdoor WBGT",               lo, nm, (float)logger.WBGT_Outdoor,                 BACNET_UNIT_DEGREES_C);
       AddAnalogInputObject(11000 + indx, "CO2",        "current CO2 concentration",          lo, nm, (float)logger.CO2Level.LastValue,           BACNET_UNIT_PPM);

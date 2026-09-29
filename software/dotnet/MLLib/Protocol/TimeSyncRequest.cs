@@ -21,4 +21,5 @@ namespace MLLib.Protocol;
 public sealed record TimeSyncRequest(
     DateTimeOffset Timestamp,
     DateTimeOffset DeviceTime,
-    TimeSpan       WindowDuration);
+    TimeSpan       WindowDuration,
+    string?        Name = null);   // 子機の名前

@@ -11,3 +11,4 @@
 1.1.10 BACnet通信に対応
 1.1.11 mlnamesでコメント文に対応,BACnet通信でローカル以外の環境に対応
 1.2.0  BACnet機能を刷新(PoEMServer準拠)。MLServerDeviceStorage.xmlを廃止しBACnetDeviceをコードで構築(改竄対策)。Device IDをsetting.iniのbacdevidで設定可能に。入力系オブジェクトへのBACnet書込を拒否。Local Endpoint=0.0.0.0の場合の処理追加。
+1.2.1  CSVにCO2濃度[ppm]の列を追加(予備列を置き換え、列の位置は不変)。CSV見出しの誤記(WBGT Outdoor)を修正。BACnetのSET*の単位を°Cに修正。子機が通知する名前 (ready / time_sync_request / hello) を表示名に使用 (mlnames.txt は上書き用)

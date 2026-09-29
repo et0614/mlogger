@@ -28,6 +28,7 @@ import argparse
 import csv
 import json
 import os
+import signal
 import struct
 import sys
 import time
@@ -53,8 +54,16 @@ def open_no_reset(port, baud=BAUD_RATE, timeout=TIMEOUT_SEC):
     return ser
 
 
-def send_command(ser, command, params=None, cmd_id=1, timeout=5.0):
+# コマンドごとに id を変える。途中で打ち切った応答の残りが後から届いても、
+# 次のコマンドの応答と取り違えないようにするため。
+_next_id = [0]
+
+
+def send_command(ser, command, params=None, cmd_id=None, timeout=5.0):
     """1 コマンド送信して JSON 応答 (同 id) を待つ。応答 dict を返す。"""
+    if cmd_id is None:
+        _next_id[0] = _next_id[0] % 30000 + 1
+        cmd_id = _next_id[0]
     req = {"id": cmd_id, "command": command}
     if params:
         req["params"] = params
@@ -86,6 +95,55 @@ def send_command(ser, command, params=None, cmd_id=1, timeout=5.0):
     raise TimeoutError(f"no response for command '{command}'")
 
 
+def drain_input(ser, quiet_sec=0.3, max_sec=5.0):
+    """治具が送り続けている応答の残りを、途切れるまで読み捨てる (接続直後用)。"""
+    end = time.time() + max_sec
+    last = time.time()
+    old_timeout = ser.timeout
+    ser.timeout = 0.05
+    try:
+        while time.time() < end and time.time() - last < quiet_sec:
+            if ser.read(4096):
+                last = time.time()
+    finally:
+        ser.timeout = old_timeout
+    ser.reset_input_buffer()
+
+
+class StopAtCycleEnd:
+    """Ctrl+C を受けても、実行中の読み出しを最後まで受け取ってから止める。
+
+    th_read_all の応答の途中でポートを閉じると、治具が送り先のない応答を送ろうとして
+    しばらく止まり、直後の frc などが「見つからない」になるため。
+    with の中で requested を周期の切れ目で確認して終了する。2 回押すと即時中断。
+    """
+
+    def __init__(self):
+        self.requested = False
+        self._old = None
+
+    def _handler(self, signum, frame):
+        if self.requested:
+            raise KeyboardInterrupt
+        self.requested = True
+        print("\n停止します (読み出し中の周期が終わるまで待機。すぐに止めるにはもう一度 Ctrl+C)",
+              flush=True)
+
+    def sleep(self, sec):
+        """sec 秒待つ。途中で停止が要求されたらすぐ戻る。"""
+        end = time.time() + sec
+        while not self.requested and time.time() < end:
+            time.sleep(min(0.2, max(0.0, end - time.time())))
+
+    def __enter__(self):
+        self._old = signal.signal(signal.SIGINT, self._handler)
+        return self
+
+    def __exit__(self, *exc):
+        signal.signal(signal.SIGINT, self._old)
+        return False
+
+
 def find_device_port():
     """COM ポートを走査し hello に応答するデバイスを探す。"""
     print("Scanning ports...")
@@ -96,6 +154,7 @@ def find_device_port():
         try:
             with open_no_reset(p.device, timeout=1.0) as ser:
                 time.sleep(1.5)  # CDC 列挙直後の安定待ち
+                drain_input(ser, max_sec=1.0)
                 resp = send_command(ser, "hello", timeout=2.0)
                 if resp.get("ok"):
                     print(f" Found! (fw={resp.get('fw')})")
@@ -150,7 +209,7 @@ def render_monitor_frame(vals, cycle, note=""):
       wait  = トリガ未処理 or 計測中 (status2=0)
       ERR!  = 子機は居るが子機内で STCC4 通信全滅 (status1=0xFF)
       stal  = その値だけ stale (センサ部分異常)"""
-    # 旧ファーム (3 要素 [t,h,co2] / 6 要素) の応答でも落ちないように 7 要素へ正規化する。
+    # 3 要素 [t,h,co2] / 6 要素を返すファームウェアの応答でも落ちないように 7 要素へ正規化する。
     # status 系・グローブ温度が無い場合は None 埋め (状態表示は stal に倒れる)。
     vals = [None if v is None else (list(v) + [None] * 7)[:7] for v in vals]
 
@@ -208,8 +267,8 @@ def run_monitor(ser, interval):
     cycle = 0
     n_err = 0
     last_vals = None
-    try:
-        while True:
+    with StopAtCycleEnd() as stop:
+        while not stop.requested:
             t0 = time.time()
             note = ""
             try:
@@ -234,9 +293,8 @@ def run_monitor(ser, interval):
             print(out, end="", flush=True)
             remain = interval - (time.time() - t0)
             if remain > 0:
-                time.sleep(remain)
-    except KeyboardInterrupt:
-        print("\nstopped.")
+                stop.sleep(remain)
+    print("\nstopped.")
 
 
 STCC4_STATE_NAMES = {
@@ -416,12 +474,14 @@ def run_log(ser, port, out_path, interval, duration_min, keep_coef):
         n = 0        # 周期番号 (欠測周期も含む。記録タイミングの基準)
         n_rows = 0   # 書き込んだ行数
         n_err = 0    # 欠測周期数
-        try:
-            while end_time is None or time.time() < end_time:
+        with StopAtCycleEnd() as stop:
+            while not stop.requested and (end_time is None or time.time() < end_time):
                 t_row = t_start + n * interval   # 基準時刻からの累積で周期ずれを防ぐ
                 wait = t_row - time.time()
                 if wait > 0:
-                    time.sleep(wait)
+                    stop.sleep(wait)
+                    if stop.requested:
+                        break
                 stamp = datetime.now()
                 n += 1
 
@@ -458,8 +518,6 @@ def run_log(ser, port, out_path, interval, duration_min, keep_coef):
                 print(f"\r  {stamp:%H:%M:%S}  rows {n_rows}  valid {n_ok}/{len(slots)}"
                       + (f"  errors {n_err}" if n_err else "") + "  ",
                       end="", flush=True)
-        except KeyboardInterrupt:
-            pass
     print(f"\n記録終了: {n_rows} 行 (欠測 {n_err} 周期) → {out_path}")
 
 
@@ -695,6 +753,8 @@ def main():
             pass  # find_device_port 内で疎通済み。直指定時のみ安定待ちを入れる。
         else:
             time.sleep(1.5)
+        # 前回途中で打ち切った応答の残りが届いていれば捨てる
+        drain_input(ser)
 
         if args.cmd == "hello":
             resp = send_command(ser, "hello")

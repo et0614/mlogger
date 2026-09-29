@@ -22,6 +22,13 @@ public sealed class XBeeZigbeeCoordinatorMux : IDisposable
 
     public event Action<RemoteXBeeDevice>? NewRemoteDiscovered;
 
+    /// <summary>
+    /// 受信データをアドレス付きでそのまま通知する (子機の名前の取得用)。
+    /// 子機を見つけるきっかけになった最初のフレームも含む
+    /// (StreamFor の購読はその後に始まるため、最初のフレームは受け取れない)。
+    /// </summary>
+    public event Action<string, ReadOnlyMemory<byte>>? RawReceived;
+
     /// <summary>raw byte 診断 sink (受信フレーム長 + 送信元アドレス)。opt-in。</summary>
     public static Action<string, int>? DiagnosticRxSink { get; set; }
 
@@ -45,6 +52,8 @@ public sealed class XBeeZigbeeCoordinatorMux : IDisposable
             try { NewRemoteDiscovered?.Invoke(e.DataReceived.Device); }
             catch (Exception ex) { Console.WriteLine("NewRemoteDiscovered handler error: " + ex.Message); }
         }
+        try { RawReceived?.Invoke(addr, data); }
+        catch (Exception ex) { Console.WriteLine("RawReceived handler error: " + ex.Message); }
         subject.OnNext(data);
     }
 

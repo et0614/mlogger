@@ -10,7 +10,7 @@ M-Logger v4 のメイン基板ファームと親機(MAUI/Python/その他クラ�
 - **transport**: XBee ZigBee (主)、XBee BLE (副)、USB-CDC (PC直結)
 - **エンコーディング**: JSON Lines (`\n` 区切り、UTF-8)
 - **設計思想**: JSON-RPC 2.0 を参考にした非対称request/response/eventモデル
-- **後方互換**: ファームv4は新プロトコルのみ実装。v3端末との互換は **親機(MAUI)側で吸収**
+- **後方互換**: ファームv4は v4 プロトコルのみ実装。v3端末との互換は **親機(MAUI)側で吸収**
 - **サイズ方針**: 1メッセージ ≤200B を目安。**XBee 3 の APS レベル断片化**(XBee モジュール内で透過的にフレーム分割)に任せる。アプリ側ではチャンク制御を持たない
 
 ### v3 からの主な変更
@@ -75,7 +75,7 @@ M-Logger v4 のメイン基板ファームと親機(MAUI/Python/その他クラ�
 
 ### 4.1 `hello` — 接続確認と機器情報取得
 
-旧 `WHO` + `VER` + `LLN` + `HCS` を統合。接続後最初に呼ぶ。
+v3 の `WHO` + `VER` + `LLN` + `HCS` を統合。接続後最初に呼ぶ。
 
 ```jsonc
 // 要求
@@ -125,7 +125,7 @@ M-Logger v4 のメイン基板ファームと親機(MAUI/Python/その他クラ�
 
 ### 4.3 `start_logging` / `stop_logging`
 
-旧 `STL` / `ENL`。
+v3 の `STL` / `ENL`。
 
 ```jsonc
 // ~110B
@@ -152,7 +152,7 @@ M-Logger v4 のメイン基板ファームと親機(MAUI/Python/その他クラ�
 
 ### 4.4 `get_settings` / `set_settings`
 
-旧 `LMS` / `CMS`。**get/set とも構造体形式**で対称。set は PATCH-style (指定キーのみ更新)。
+v3 の `LMS` / `CMS`。**get/set とも構造体形式**で対称。set は PATCH-style (指定キーのみ更新)。
 
 v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminance`) に集約。同一プローブ上で
 一括計測されるセンサを 1 つの設定にまとめ、UI を簡素化する。
@@ -197,7 +197,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 
 ### 4.5 `get_correction` / `set_correction`
 
-旧 `LCF` / `SCF`。線形補正 `y = a*x + b`。CO2 除く 5 センサ対象。
+v3 の `LCF` / `SCF`。線形補正 `y = a*x + b`。CO2 除く 5 センサ対象。
 
 ```jsonc
 // 取得
@@ -233,7 +233,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 
 ### 4.6 `set_name`
 
-旧 `CLN`。`get_name` は `hello.result.name` で代替。
+v3 の `CLN`。`get_name` は `hello.result.name` で代替。
 
 ```jsonc
 {"v":1,"id":8,"command":"set_name","params":{"name":"SIH-01"}}
@@ -244,7 +244,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 
 ### 4.7 `set_time`
 
-旧 `UCT`。
+v3 の `UCT`。
 
 ```jsonc
 {"v":1,"id":9,"command":"set_time","params":{"ts":1747500000}}
@@ -255,7 +255,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 
 ### 4.8 `calibrate_co2`
 
-旧 `IC2` + `CCL` 統合。Sensirion STCC4 の `perform_factory_reset` / `perform_forced_recalibration` (datasheet ICD01 §3.4.11 / §3.4.15) を組合せた 3 つの操作モードを持つ。
+v3 の `IC2` + `CCL` 統合。Sensirion STCC4 の `perform_factory_reset` / `perform_forced_recalibration` (datasheet ICD01 §3.4.11 / §3.4.15) を組合せた 3 つの操作モードを持つ。
 
 ```jsonc
 {"v":1,"id":10,"command":"calibrate_co2","params":{
@@ -282,7 +282,7 @@ v4 では計測設定を **3 カテゴリ** (`general` / `velocity` / `illuminan
 
 ### 4.9 `clear_data`
 
-旧 `CLR`。記録データの論理消去 (世代番号インクリメント)。XBee/USB 両方から受付。
+v3 の `CLR`。記録データの論理消去 (世代番号インクリメント)。XBee/USB 両方から受付。
 
 ```jsonc
 {"v":1,"id":11,"command":"clear_data"}
@@ -311,7 +311,7 @@ dump 実行前に件数とフォーマット情報を取得する軽量コマン
 
 ### 4.11 `dump`
 
-旧 `DMP`。記録データ転送。**バイナリ形式は v3 を踏襲。**
+v3 の `DMP`。記録データ転送。**バイナリ形式は v3 を踏襲。**
 
 USB / BLE / Zigbee すべてで動作する。ただし以下の制約あり:
 
@@ -344,7 +344,7 @@ USB / BLE / Zigbee すべてで動作する。ただし以下の制約あり:
 //   uint8  gen, uint32 ts, uint8 flags, uint32 illuminance,
 //   int16  t_dry, int16  t_glb, uint16 hum,
 //   uint16 wind, uint16 volt, uint16 co2
-// (旧 v3 Python load_data.py の RECORD_SIZE/DATA_FMT と互換)
+// (v3 用の Python load_data.py の RECORD_SIZE/DATA_FMT と互換)
 
 // 終了通知 (JSON モードに戻る合図。sent = この要求で送ったレコード数)
 {"v":1,"event":"dump_end","ts":1747500000,"data":{"sent":<int>}}
@@ -415,7 +415,7 @@ W25Q256 を chip erase で完全に初期化し、generation を 1 にリセッ�
 
 **ユースケース**: 通常運用では呼ばない。以下の特殊状況のみ:
 
-- firmware 書き換え時に EEPROM がクリアされ、`EM_generationNumber` (= 1) が flash に残っている旧データの generation と衝突する場合
+- firmware 書き換え時に EEPROM がクリアされ、`EM_generationNumber` (= 1) が flash に残っている消去前のデータの generation と衝突する場合
 - ノイズ等で EEPROM 上の generation 値が壊れて `dump` が異常な件数を返す場合
 
 完了後は `EM_generationNumber = 1`、`rec_latest = 0` の工場初期化相当の状態になる。
@@ -448,21 +448,29 @@ WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.p
 
 ### 5.1 `ready` — ハートビート
 
-旧 `WFC` + XBee接続維持用空 `\r` パケット を統合。
+v3 の `WFC` + XBee接続維持用空 `\r` パケット を統合。
 
 ```jsonc
 {"v":1,"event":"ready","ts":1747500000,"data":{
   "uptime_s":3600,
-  "logging":false
+  "logging":false,
+  "name":"MLogger_0001"
 }}
 ```
 
-- 送信間隔: **60秒** (XBee接続維持に十分)
-- ロギング中は `smp` が流れるため **`ready` は送らない**(従来通り)
+| キー | 意味 |
+|---|---|
+| `uptime_s` | 起動からの秒数 |
+| `logging` | ロギング中か |
+| `name` | 子機の名前 (`set_name` で設定したもの)。受信側 (MLServer) が表示名に使う |
+
+- 送信間隔: 非ロギング時に **60秒** ごと (XBee接続維持に十分)
+- ロギング中は `smp` が流れるため 60 秒ごとの `ready` は送らない
+- Zigbee に出力するロギングを始めたときは、親機のネットワークに参加したあと、最初の `smp` の直前に 1 回だけ `ready` (`logging:true`) を Zigbee に送る。ロギング中の子機は XBee がスリープしていて問い合わせ (`hello`) に答えられないことがあるため、受信側が名前を知る機会として送る
 
 ### 5.2 `smp` — 計測サンプル
 
-旧 `DTT`。**高頻度送信のため短縮キーを採用** (XBee 1フレーム=84B以内に確実に収める)。
+v3 の `DTT`。**高頻度送信のため短縮キーを採用** (XBee 1フレーム=84B以内に確実に収める)。
 
 ```jsonc
 {"v":1,"event":"smp","ts":1747500000,"data":{
@@ -526,7 +534,7 @@ WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.p
 
 ### 5.3 `co2_calibration_progress` — CO2校正進捗
 
-旧 `CCL:残秒,状態,補正値,現在値` を置き換え。
+v3 の `CCL:残秒,状態,補正値,現在値` を置き換え。
 
 ```jsonc
 {"v":1,"event":"co2_calibration_progress","ts":1747500000,"data":{
@@ -555,7 +563,8 @@ WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.p
 
 ```jsonc
 {"v":1,"event":"time_sync_request","ts":1747500000,"data":{
-  "window_s": 30
+  "window_s": 30,
+  "name": "MLogger_0001"
 }}
 ```
 
@@ -563,6 +572,7 @@ WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.p
 |---|---|
 | `ts` | 子機の現 RTC (UTC unix 秒)。親機側で drift 量を観測可能 |
 | `data.window_s` | 子機が wake を維持する秒数 (この時間内に `set_time` を送れば確実に届く) |
+| `data.name` | 子機の名前。ロギング途中から受信を始めた親機も、24 時間以内に名前を知れる |
 
 **動作シーケンス**:
 
@@ -610,21 +620,21 @@ WDT の動作を確認できる (検査用。`software/python/mlogger/get_diag.p
 
 ## 7. 後方互換性 (親機側で吸収)
 
-ファーム v4 は新プロトコルのみ実装。市場の v3 端末は旧プロトコルで動き続けるため、親機(MAUI)側で両対応する。
+ファーム v4 は v4 プロトコル (JSON-RPC) のみ実装。市場の v3 端末は v3 プロトコルで動き続けるため、親機(MAUI)側で両対応する。
 
 ### バージョン判定フロー (親機側)
 
 1. 接続後、親機は `{"v":1,"id":1,"command":"hello"}` を送信
 2. 応答が
-   - **JSON で `result.protocol_version >= 1`** → 新プロトコル (`JsonRpcProtocol`) を採用
-   - **タイムアウト or 非JSON** → v3 端末と判断、旧 `VER` コマンドにフォールバック (`LegacyProtocol`)
+   - **JSON で `result.protocol_version >= 1`** → v4 プロトコル (`JsonRpcProtocol`) を採用
+   - **タイムアウト or 非JSON** → v3 端末と判断、v3 の `VER` コマンドにフォールバック (`LegacyProtocol`)
 
 実装はインタフェース抽象化で吸収:
 
 ```csharp
 interface IDeviceProtocol { ... }
-class LegacyProtocol : IDeviceProtocol { ... }   // 旧3文字コマンド+CSV
-class JsonRpcProtocol : IDeviceProtocol { ... }  // 新JSON
+class LegacyProtocol : IDeviceProtocol { ... }   // v3 の 3 文字コマンド + CSV
+class JsonRpcProtocol : IDeviceProtocol { ... }  // v4 の JSON
 ```
 
 ## 8. 未決定事項
@@ -634,7 +644,7 @@ class JsonRpcProtocol : IDeviceProtocol { ... }  // 新JSON
 ## 9. 参考
 
 - v3 仕様書: `~/OneDrive/デスクトップ/claude連携/document_ja_2026.01.01.docx` 第6章「通信仕様」
-- 旧コマンド実装: `firmware/mlogger_main.X/command_handler.c`, `eeprom_manager.c`, `logger_control.c`
+- v3 コマンドの実装: v3 ファームウェア時点 (git 履歴) の `firmware/mlogger_main.X/command_handler.c`, `eeprom_manager.c`, `logger_control.c`
 - dump 形式の参照実装 (v4 JSON-RPC + バイナリストリーム): `software/dist_user/python_tools/load_data.py`
 - 風速計子機 firmware の実体は `firmware/poem_velocity_sensor.X/`。HW ID 生成 (FNV-1a 32bit) は同 firmware の `main.c` を参照
 - OSL register map (REG_POLL_BASE / VAL_IDX_* / STATUS1_* など) は子機 firmware の `i2c_shared_data.h` が正典。M-Logger 親機 (`firmware/mlogger_main.X/anemometer.c`) は同 header の定数を複製しており、子機側の仕様変更時は親機の anemometer.c も追従修正する

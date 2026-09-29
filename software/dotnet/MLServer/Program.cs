@@ -24,7 +24,7 @@ namespace MLServer
 
     #region 定数宣言
 
-    internal const string VERSION = "1.2.0";
+    internal const string VERSION = "1.2.1";
 
     /// <summary>XBEEの上位アドレス</summary>
     private const string HIGH_ADD = "0013A200";
@@ -82,6 +82,12 @@ namespace MLServer
 
     /// <summary>MLoggerのアドレス-名称対応リスト</summary>
     private static readonly Dictionary<string, string> mlNames = new();
+
+    // 子機が自分から通知した名前 (v4 の ready / time_sync_request、hello の応答)。キーは 16 桁アドレス
+    private static readonly ConcurrentDictionary<string, string> deviceNames = new();
+
+    // 名前の取得用に、アドレスごとに受信データを行単位にまとめるバッファ
+    private static readonly ConcurrentDictionary<string, System.Text.StringBuilder> rawLines = new();
 
     /// <summary>受信パケット総量[bytes] (coordinator ごと)</summary>
     private static readonly ConcurrentDictionary<ZigBeeDevice, int> packetBytes = new();
@@ -267,6 +273,7 @@ namespace MLServer
     {
       var mux = new XBeeZigbeeCoordinatorMux(device);
       mux.NewRemoteDiscovered += OnNewRemoteDiscovered;
+      mux.RawReceived += OnRawReceived;
       coordinators[device].mux = mux;
 
       device.PacketReceived += Device_PacketReceived;
@@ -326,7 +333,7 @@ namespace MLServer
 
       //session 構築 (Protocol 検出は async でバックグラウンド実行)
       var session = new RemoteSession(addr, rdv);
-      session.Cache.LocalName = mlNames.TryGetValue(addr, out var nm) ? nm : "MLogger_" + addr;
+      session.Cache.LocalName = resolveName(addr);
       session.Cache.CloValue = cloValue;
       session.Cache.MetValue = metValue;
       session.Cache.DefaultTemperature = dbtValue;
@@ -361,13 +368,13 @@ namespace MLServer
           session.Protocol = await ProtocolFactory.DetectAsync(session.Transport, detectCts.Token);
 
           Console.WriteLine(session.Cache.LocalName + ": Protocol = " +
-            (session.Protocol.Device.ProtocolVersion >= 1 ? "v4 (JSON-RPC)" : "v3 (legacy)") +
+            (session.Protocol.Device.ProtocolVersion >= 1 ? "v4 (JSON-RPC)" : "v3") +
             ", FW " + session.Protocol.Device.FirmwareVersion +
             (attempt > 1 ? $" (after {attempt} attempts)" : ""));
 
           // device.Name (v4 の hello name) を反映 (v3 では LLN から取得)
           if (!string.IsNullOrEmpty(session.Protocol.Device.Name))
-            session.Cache.Name = session.Protocol.Device.Name;
+            setDeviceName(session.Address, session.Protocol.Device.Name);
           session.Cache.HasCO2LevelSensor = session.Protocol.Device.HasCo2Sensor;
 
           // 注: GetSettings は呼ばない。MLServer は子機の設定変更機能を持たず、
@@ -490,8 +497,8 @@ namespace MLServer
         if (firstCall)
           sWriter.WriteLine(
             "Server Timestamp,Client Timestamp,Drybulb temperature[C],Relative humidity[%]," +
-            "Globe temperature[C],Velocity[m/s],Illuminance[lux],Forward Compatibility Placeholder," +
-            "Voltage for velocity measurement[V],Future Placeholder,Mean radiant temperature[C],WBGT (Indoor)[C],WBGT (Outdoor[C])");
+            "Globe temperature[C],Velocity[m/s],Illuminance[lux],CO2 concentration[ppm]," +
+            "Voltage for velocity measurement[V],Future Placeholder,Mean radiant temperature[C],WBGT (Indoor)[C],WBGT (Outdoor)[C]");
 
         var cache = session.Cache;
         sWriter.WriteLine(
@@ -502,7 +509,7 @@ namespace MLServer
           fmtOrNA(s.GlobeTemperature,   "F1") + "," +
           fmtOrNA(s.Velocity,           "F4") + "," +
           fmtOrNA(s.Illuminance,        "F2") + "," +
-          "n/a," +                                   // Forward Compatibility Placeholder
+          fmtOrNA(s.Co2,                "D") + "," +  // CO2 [ppm] (1.2.0 までは予備列 Forward Compatibility Placeholder。列の位置は変えない)
           (s.VelocityVoltage.HasValue                // 熱線電圧 [V] (Sample は mV で保持)
             ? (s.VelocityVoltage.Value / 1000.0).ToString("F4") : "n/a") + "," +
           "n/a," +                                   // Future Placeholder
@@ -598,6 +605,71 @@ namespace MLServer
       public Task? connectTask { get; set; }
       public XBeeZigbeeCoordinatorMux? mux { get; set; }
     }
+
+    #region 子機の名前
+
+    /// <summary>
+    /// 表示・CSV 以外の出力・BACnet に使う名前。優先順位は
+    /// mlnames.txt の登録 &gt; 子機が通知した名前 &gt; "MLogger_" + アドレス。
+    /// </summary>
+    private static string resolveName(string addr)
+    {
+      if (mlNames.TryGetValue(addr, out var nm)) return nm;
+      if (deviceNames.TryGetValue(addr, out var dn)) return dn;
+      return "MLogger_" + addr;
+    }
+
+    /// <summary>子機が通知した名前を記録し、表示名に反映する。</summary>
+    private static void setDeviceName(string addr, string name)
+    {
+      if (string.IsNullOrWhiteSpace(name)) return;
+      deviceNames[addr] = name;
+      if (!sessions.TryGetValue(addr, out var session)) return;
+      session.Cache.Name = name;
+      string resolved = resolveName(addr);
+      if (session.Cache.LocalName == resolved) return;
+      Console.WriteLine(session.Cache.LocalName + ": name -> " + resolved);
+      session.Cache.LocalName = resolved;
+      hasNewData = true;
+    }
+
+    /// <summary>
+    /// 受信データを行にまとめ、名前を含むイベント (ready / time_sync_request) から名前を拾う。
+    /// ロギング中の子機は XBee がスリープしていて問い合わせに答えられないことがあるため、
+    /// 子機が自分から送る通知で名前を知る。
+    /// </summary>
+    private static void OnRawReceived(string addr, ReadOnlyMemory<byte> data)
+    {
+      var sb = rawLines.GetOrAdd(addr, _ => new System.Text.StringBuilder());
+      lock (sb)
+      {
+        foreach (var b in data.Span)
+        {
+          char c = (char)b;
+          if (c == '\r' || c == '\n')
+          {
+            if (sb.Length > 0) { tryReadName(addr, sb.ToString()); sb.Clear(); }
+          }
+          else if (sb.Length < 1024) sb.Append(c);
+        }
+      }
+    }
+
+    private static void tryReadName(string addr, string line)
+    {
+      if (!line.StartsWith("{") || !line.Contains("\"name\"")) return;
+      try
+      {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Encoding.Latin1.GetBytes(line));
+        string? ev = node?["event"]?.GetValue<string>();
+        if (ev != "ready" && ev != "time_sync_request") return;
+        string? name = node?["data"]?["name"]?.GetValue<string>();
+        if (name != null) setDeviceName(addr, name);
+      }
+      catch (Exception) { /* 途中で途切れた行などは無視 */ }
+    }
+
+    #endregion
 
     /// <summary>1 子機ぶんの protocol/transport/cache をまとめる</summary>
     private class RemoteSession

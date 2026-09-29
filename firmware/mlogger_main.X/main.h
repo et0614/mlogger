@@ -39,6 +39,11 @@ uint16_t MAIN_GetStackFreeMin(void);
 // 起動時のリセット要因 (RSTCTRL.RSTFR のビット列。bit0 PORF, 1 BORF, 2 EXTRF, 3 WDRF, 4 SWRF, 5 UPDIRF)
 uint8_t MAIN_GetResetFlags(void);
 
+/**
+ * @brief 起動からの秒数 (ready イベントの uptime_s)
+ */
+uint32_t MAIN_GetUptimeSeconds(void);
+
 #ifdef	__cplusplus
 }
 #endif
