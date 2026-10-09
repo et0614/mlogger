@@ -38,6 +38,14 @@ typedef struct {
 //熱線式風速計の立ち上げに必要な時間[sec]
 #define V_WAKEUP_TIME  10
 
+// 熱線回路の起動失敗の検知。長期間放置してコンデンサが空になった状態で起動すると、
+// 突入電流で風速プローブの 5V 昇圧 IC (XCL102) の過電流保護が働き、出力が止まったまま
+// (CE を一度 Low にするまで復帰しない) ブリッジ電圧が 0 V に張り付くことがある。
+// 無風でもブリッジ電圧は 200 mV 以上ある (校正済み 79 台の無風電圧 E0 は 207-389 mV、
+// 2026-10 時点) ので、その半分を下回ったら起動失敗とみなす。
+#define VEL_STALL_MV        100   // 起動失敗とみなすブリッジ電圧 [mV]
+#define VEL_RESTART_OFF_MS  100   // 起動し直すときに熱線回路を止めておく時間 [msec]
+
 // CO2 (STCC4) の平均化秒数。single-shot の読み値ノイズを平滑化する。
 // 暫定値 5 sec、実測ノイズ評価の結果で調整予定。
 // 平均化は親機がここで統括する (子機はトリガに単発の生値を返す基本機能のみ):
@@ -283,6 +291,12 @@ void execLogging(void)
             pass_counters.vel = 0;
 
             LC_Update_Anemometer();
+
+            // 熱線回路が起動していない (ブリッジ電圧がほぼ 0 V) 場合は、0 m/s を記録しない
+            bool velStalled = anemometer.i2c_ok && anemometer.voltage_valid
+                              && anemometer.adc_value < VEL_STALL_MV;
+            if (velStalled) anemometer.wind_valid = false;
+
             // 子機切断 / status1 異常時は valid_flag を立てない
             // (= load_data.py 等で空欄になり、ゴミ値 65000 等が混入しない)
             // 記録形式は uint16 × 10000 なので上限 6.5535 m/s (超える値はこの上限に張り付く)
@@ -309,8 +323,15 @@ void execLogging(void)
                 lastDisconnectedVelocity = true;
             }
 
+            if (velStalled) {
+                // 熱線回路が起動していない: 一度止めて (昇圧 IC の保護停止を解除して) 起動し直し、
+                // 次の計測まで止めずに温めておく。プローブは enable の変化で起動・予熱し直す
+                Anemometer_Sleep();
+                _delay_ms(VEL_RESTART_OFF_MS);
+                Anemometer_Wakeup();
+            }
             //次の起動時刻が起動に必要な時間よりも後の場合には微風速計回路をスリープ
-            if(V_WAKEUP_TIME <= EM_mSettings.interval_vel) Anemometer_Sleep();
+            else if(V_WAKEUP_TIME <= EM_mSettings.interval_vel) Anemometer_Sleep();
         }
     }
 
