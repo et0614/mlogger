@@ -7,7 +7,7 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 試験手順:
   1. hello で個体情報 (name / hardware_id / FW version) を取得
   1b. XBee の設定値 (AP/SM/BD/BT/CE/PAN ID) を期待値と比較
-  1c. BLE: PC の Bluetooth で本体のアドバタイズが見えるか
+  1c. BLE: PC の Bluetooth から携帯アプリと同じ手順で接続・認証し、コマンドが通るか
   1d. Zigbee: 同じ PC に挿した親機 XBee から Zigbee でコマンドを送り、応答が返るか
   2. get_battery で電池電圧を確認
   3. 設定を退避し、全センサ有効 / interval=1sec に変更
@@ -24,7 +24,7 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
 照度センサを覆ったまま試験すると illuminance が FAIL するので注意。
 
 無線の試験には次が必要:
-  - pip install digi-xbee bleak
+  - pip install digi-xbee bleak cryptography
   - 試験 PC に Zigbee 親機 (MLServer と同じ設定の XBee、Coordinator) を挿しておく。
     MLServer は止めておく (親機のポートを使うため)
   - 試験 PC の Bluetooth を有効にし、本体にスマホを接続しない (接続中はアドバタイズしない)
@@ -37,6 +37,7 @@ Usage:
                                             # (firmware が XBee の BLE 名にも反映する)
 """
 import asyncio
+import hashlib
 import json
 import os
 import struct
@@ -49,7 +50,7 @@ from ble_trace import open_no_reset, find_device_port
 # ============================================================
 # 試験パラメータ
 # ============================================================
-SCRIPT_VERSION = "1.3"  # 記録 JSON に埋める試験スクリプト版数
+SCRIPT_VERSION = "1.4"  # 記録 JSON に埋める試験スクリプト版数
 
 SAMPLE_COUNT      = 15    # ウォームアップ後に収集するサンプル数
 WARMUP_TIMEOUT_S  = 90    # ウォームアップ完了待ちの上限 [sec]
@@ -80,7 +81,6 @@ XBEE_EXPECTED = {
 }
 
 COORD_BAUD      = 9600  # 親機 XBee の baud (MLServer と同じ)
-BLE_SCAN_S      = 10    # BLE アドバタイズを探す時間 [sec]
 ZIGBEE_WAIT_S   = 60    # 本体が親機のネットワークに参加して応答するまで待つ上限 [sec]
 
 RECORD_FORMAT = "<BIBIhhHHHH"  # SensorData_t (22 bytes)
@@ -343,6 +343,265 @@ def collect_identity(ser, report):
 # ============================================================
 # 無線 (XBee 設定 / BLE / Zigbee)
 # ============================================================
+# ------------------------------------------------------------
+# BLE (XBee BLE API: SRP 認証 + AES-CTR 暗号化 + User Data Relay)
+# ------------------------------------------------------------
+# 携帯アプリ (MLS_Mobile/MLUtility.cs の ML_PASS) と同じ XBee の BLE パスワード
+BLE_PASSWORD = "ml_pass"
+SRP_USER = "apiservice"
+
+# XBee BLE API サービス
+API_SERVICE_UUID  = "53da53b9-0447-425a-b9ea-9837505eb59a"
+API_REQUEST_UUID  = "7dddca00-3e05-4651-9254-44074792c590"   # write
+API_RESPONSE_UUID = "f9279ee9-2cd0-410c-81cc-adf11e4e5aea"   # indicate
+
+FRAME_UNLOCK_REQ  = 0x2C
+FRAME_UNLOCK_RESP = 0xAC
+FRAME_RELAY_REQ   = 0x2D
+FRAME_RELAY_OUT   = 0xAD
+RELAY_IF_SERIAL   = 0x00
+
+BLE_SCAN_S = 15
+BLE_CMD_TIMEOUT_S  = 5.0
+
+# SRP-6a 1024 bit group (RFC 5054)。XBee の BLE unlock はこれと SHA-256 を使う
+SRP_N = int(
+    "EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C"
+    "9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE4"
+    "8E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B29"
+    "7BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9A"
+    "FD5138FE8376435B9FC61D2FC0EB06E3", 16)
+SRP_G = 2
+SRP_N_LEN = 128
+
+UNLOCK_ERRORS = {
+    0x80: "unable to offer B (bad A)",
+    0x81: "incorrect payload length",
+    0x82: "bad proof of key (password mismatch)",
+    0x83: "resource allocation error",
+    0x84: "step out of sequence",
+}
+
+
+# ============================================================
+# SRP-6a (クライアント側)
+# ============================================================
+def _b(n):
+    """整数を最小長のビッグエンディアンのバイト列に (0 は 1 バイト)。"""
+    return n.to_bytes(max(1, (n.bit_length() + 7) // 8), "big")
+
+
+def _h(*parts):
+    m = hashlib.sha256()
+    for p in parts:
+        m.update(p)
+    return m.digest()
+
+
+def _hi(*parts):
+    return int.from_bytes(_h(*parts), "big")
+
+
+class SrpClient:
+    def __init__(self, user, password):
+        self.user = user.encode()
+        self.password = password.encode()
+        while True:
+            self.a = int.from_bytes(os.urandom(32), "big")
+            self.A = pow(SRP_G, self.a, SRP_N)
+            if self.A.bit_length() > (SRP_N_LEN - 1) * 8:   # 128 バイトちょうどになる A を使う
+                break
+
+    def a_bytes(self):
+        return self.A.to_bytes(SRP_N_LEN, "big")
+
+    def process_challenge(self, salt, b_bytes):
+        """salt と B から M1 を計算して返す。B が不正なら None。"""
+        B = int.from_bytes(b_bytes, "big")
+        if B % SRP_N == 0:
+            return None
+        A_b, B_b = _b(self.A), _b(B)
+        u = _hi(A_b, B_b)
+        k = _hi(_b(SRP_N), _b(SRP_G))
+        # x = H(s | H(I | ":" | P))。salt は digi-xbee の verifier 生成と同じく整数化して扱う
+        x = _hi(_b(int.from_bytes(salt, "big")), _h(self.user, b":", self.password))
+        S = pow((B - k * pow(SRP_G, x, SRP_N)) % SRP_N, self.a + u * x, SRP_N)
+        self.K = _h(_b(S))
+        h_xor = bytes(i ^ j for i, j in zip(_h(_b(SRP_N)), _h(_b(SRP_G))))
+        self.M1 = _h(h_xor, _h(self.user), salt, A_b, B_b, self.K)
+        self.M2 = _h(A_b, self.M1, self.K)
+        return self.M1
+
+
+# ============================================================
+# API フレーム
+# ============================================================
+def build_frame(data):
+    return bytes([0x7E, len(data) >> 8, len(data) & 0xFF]) + data + bytes([0xFF - (sum(data) & 0xFF)])
+
+
+class FrameParser:
+    """バイトストリームから API フレームのデータ部を取り出す (チェックサム不一致は捨てる)。"""
+    def __init__(self):
+        self.buf = bytearray()
+
+    def feed(self, data):
+        self.buf += data
+        frames = []
+        while True:
+            start = self.buf.find(0x7E)
+            if start < 0:
+                self.buf.clear()
+                break
+            del self.buf[:start]
+            if len(self.buf) < 3:
+                break
+            length = (self.buf[1] << 8) | self.buf[2]
+            if len(self.buf) < length + 4:
+                break
+            body = bytes(self.buf[3:3 + length])
+            cs = self.buf[3 + length]
+            del self.buf[:length + 4]
+            if (sum(body) + cs) & 0xFF == 0xFF:
+                frames.append(body)
+        return frames
+
+
+class XBeeBleLink:
+    def __init__(self, client):
+        self.client = client
+        self.parser = FrameParser()
+        self.frames = asyncio.Queue()
+        self.enc = None      # 本体 XBee へ送るフレームの暗号化
+        self.dec = None      # 本体 XBee から届くフレームの復号
+        self.chunk = 20
+
+    def _on_indicate(self, _sender, data):
+        data = bytes(data)
+        if self.dec is not None:
+            data = self.dec.update(data)
+        for f in self.parser.feed(data):
+            self.frames.put_nowait(f)
+
+    async def start(self):
+        mtu = getattr(self.client, "mtu_size", 23) or 23
+        self.chunk = max(20, min(mtu - 3, 240))
+        await self.client.start_notify(API_RESPONSE_UUID, self._on_indicate)
+
+    async def send(self, data):
+        raw = build_frame(data)
+        if self.enc is not None:
+            raw = self.enc.update(raw)
+        for i in range(0, len(raw), self.chunk):
+            await self.client.write_gatt_char(API_REQUEST_UUID, raw[i:i + self.chunk], response=True)
+
+    async def recv(self, frame_type, timeout):
+        end = time.monotonic() + timeout
+        while True:
+            left = end - time.monotonic()
+            if left <= 0:
+                return None
+            try:
+                f = await asyncio.wait_for(self.frames.get(), left)
+            except asyncio.TimeoutError:
+                return None
+            if f and f[0] == frame_type:
+                return f
+
+    async def unlock(self, password):
+        srp = SrpClient(SRP_USER, password)
+        await self.send(bytes([FRAME_UNLOCK_REQ, 1]) + srp.a_bytes())
+        r = await self.recv(FRAME_UNLOCK_RESP, 5.0)
+        if r is None:
+            raise RuntimeError("unlock: no response to step 1")
+        if r[1] != 2:
+            raise RuntimeError(f"unlock step 1: {UNLOCK_ERRORS.get(r[1], hex(r[1]))}")
+        salt, b_bytes = r[2:6], r[6:6 + SRP_N_LEN]
+        m1 = srp.process_challenge(salt, b_bytes)
+        if m1 is None:
+            raise RuntimeError("unlock: invalid B from device")
+        await self.send(bytes([FRAME_UNLOCK_REQ, 3]) + m1)
+        r = await self.recv(FRAME_UNLOCK_RESP, 5.0)
+        if r is None:
+            raise RuntimeError("unlock: no response to step 3")
+        if r[1] != 4:
+            raise RuntimeError(f"unlock step 3: {UNLOCK_ERRORS.get(r[1], hex(r[1]))}")
+        m2, tx_nonce, rx_nonce = r[2:34], r[34:46], r[46:58]
+        if m2 != srp.M2:
+            raise RuntimeError("unlock: device proof (M2) mismatch")
+        # 以降のフレームは AES-256-CTR で暗号化される。カウンタは nonce(12B) + 1 から始まる。
+        # TX/RX はクライアント側から見た名前で、送信に TX nonce、受信に RX nonce を使う (実機で確認)
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        ctr = (1).to_bytes(4, "big")
+        self.enc = Cipher(algorithms.AES(srp.K), modes.CTR(tx_nonce + ctr)).encryptor()
+        self.dec = Cipher(algorithms.AES(srp.K), modes.CTR(rx_nonce + ctr)).decryptor()
+
+    async def command(self, req_id, command, timeout=BLE_CMD_TIMEOUT_S):
+        """User Data Relay で本体マイコンに JSON コマンドを送り、同 id の応答を返す。"""
+        line = json.dumps({"v": 1, "id": req_id, "command": command}) + "\n"
+        await self.send(bytes([FRAME_RELAY_REQ, 0, RELAY_IF_SERIAL]) + line.encode())
+        text = ""
+        end = time.monotonic() + timeout
+        while True:
+            f = await self.recv(FRAME_RELAY_OUT, end - time.monotonic())
+            if f is None:
+                return None
+            text += f[2:].decode("utf-8", errors="ignore")
+            while "\n" in text:
+                one, text = text.split("\n", 1)
+                one = one.strip()
+                if not one.startswith("{"):
+                    continue
+                try:
+                    obj = json.loads(one)
+                except json.JSONDecodeError:
+                    continue
+                if obj.get("id") == req_id:
+                    return obj
+
+
+async def ble_run_test(addr, add):
+    """BLE で接続・認証し、hello / get_battery が通るかを試験する。各項目は add(項目, 合否, 詳細) に記録。"""
+    from bleak import BleakClient, BleakScanner
+
+    print(f"BLE デバイスを探しています ({addr}、最大 {BLE_SCAN_S} 秒)...")
+    found = await BleakScanner.find_device_by_address(addr, timeout=BLE_SCAN_S)
+    if not found:
+        add("BLE advertising", False, f"{addr} not found")
+        return
+    rssi = getattr(found, "rssi", None)
+    add("BLE advertising", True, f"name={found.name}" + (f" rssi={rssi} dBm" if rssi is not None else ""))
+
+    try:
+        async with BleakClient(found, timeout=20.0) as client:
+            add("BLE connect", True, f"mtu={getattr(client, 'mtu_size', '?')}")
+            link = XBeeBleLink(client)
+            await link.start()
+            try:
+                await link.unlock(BLE_PASSWORD)
+                add("BLE unlock", True, "password accepted")
+            except Exception as e:
+                add("BLE unlock", False, str(e))
+                return
+
+            res = await link.command(1, "hello")
+            if res and "result" in res:
+                r = res["result"]
+                add("BLE command (hello)", True,
+                    f"name={r.get('name')} hw={r.get('hardware_id')} FW {r.get('firmware_version')}")
+            else:
+                add("BLE command (hello)", False, f"no response: {res}")
+                return
+
+            res = await link.command(2, "get_battery")
+            if res and "result" in res:
+                add("BLE command (get_battery)", True, f"{res['result'].get('voltage_mv')} mV")
+            else:
+                add("BLE command (get_battery)", False, f"no response: {res}")
+    except Exception as e:
+        add("BLE connect", False, f"{type(e).__name__}: {e}")
+
+
 def open_coordinator(port, exclude_port):
     """親機 XBee (Coordinator) を開いて返す。port 省略時は自動検出。見つからなければ None。"""
     from digi.xbee.devices import ZigBeeDevice
@@ -387,27 +646,23 @@ def check_xbee_settings(radio, coord, report):
 
 
 def check_ble(radio, report):
-    """PC の Bluetooth で、本体 XBee の BLE アドバタイズが見えるかを確認する。"""
+    """携帯アプリと同じ経路で BLE 通信を試験する: アドバタイズ → 接続 → パスワード認証
+    → User Data Relay で hello / get_battery を送り応答を確認。"""
     try:
-        from bleak import BleakScanner
-    except ImportError:
-        report.add("BLE advertising", False, "bleak not installed (pip install bleak)")
+        import bleak  # noqa: F401
+        import cryptography  # noqa: F401
+    except ImportError as e:
+        report.add("BLE advertising", False, f"{e} (pip install bleak cryptography)")
         return
     mac = (radio or {}).get("ble_mac")
     if not mac or len(mac) != 12:
         report.add("BLE advertising", False, f"BLE MAC unavailable: {mac}")
         return
     addr = ":".join(mac[i:i + 2] for i in range(0, 12, 2)).upper()
-    print(f"BLE アドバタイズを探しています ({addr}、最大 {BLE_SCAN_S} 秒)...")
     try:
-        found = asyncio.run(BleakScanner.find_device_by_address(addr, timeout=BLE_SCAN_S))
+        asyncio.run(ble_run_test(addr, report.add))
     except Exception as e:
-        report.add("BLE advertising", False, f"scan error: {e}")
-        return
-    if found:
-        report.add("BLE advertising", True, f"{addr} name={found.name}")
-    else:
-        report.add("BLE advertising", False, f"{addr} not found in {BLE_SCAN_S}s")
+        report.add("BLE link", False, f"{type(e).__name__}: {e}")
 
 
 def check_zigbee(radio, coord, report):
@@ -501,7 +756,7 @@ def main(port, device_id=None, coord_port=None):
             # --- 1b. プローブ ID / XBee MAC / 補正係数 ---
             identity = collect_identity(ser, report)
 
-            # --- 1c. 無線: XBee 設定値 / BLE アドバタイズ / Zigbee 応答 ---
+            # --- 1c. 無線: XBee 設定値 / BLE 接続・コマンド応答 / Zigbee 応答 ---
             radio = identity.get("radio")
             try:
                 coord = open_coordinator(coord_port, port)
