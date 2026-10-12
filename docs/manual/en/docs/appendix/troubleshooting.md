@@ -1,5 +1,10 @@
 # Troubleshooting
 
+## Measured values
+
+**CO2 concentration is blank or looks wrong right after starting a measurement**
+: For about 25 seconds after a measurement starts, the probe conditions the CO2 sensor, so CO2 concentration (along with dry-bulb temperature and humidity) is blank. After the M-Logger has been off or not measuring for more than 3 hours, the readings can also be off for a while; about 1 hour of continuous measurement settles them. Firmware 4.0.1 and later warm up the sensor automatically for the first hour of a measurement. With 4.0.0 and earlier, first measure for about 1 hour with the CO2 recording interval set to 5 seconds or less, then start the actual measurement within 3 hours. See [CO2 concentration right after starting](../mobile/advanced.md#co2-concentration-right-after-starting) for details.
+
 ## MLServer
 
 **`Failed to connect port COMx` is shown**

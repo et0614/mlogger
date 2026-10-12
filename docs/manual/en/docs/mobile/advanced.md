@@ -17,6 +17,32 @@ If you want to compensate for sensor drift after long-term use, the per-sensor g
 
 On both v3 and v4 firmware, correction coefficients are set independently for the **five sensors** (drybulb temperature, relative humidity, globe temperature, illuminance, velocity — CO2 is excluded because it uses factory calibration + automatic self-calibration). Even though v4 collapses the measurement settings into 3 categories, correction coefficients remain per-sensor.
 
+## CO2 concentration right after starting
+
+If the CO2 sensor (Sensirion STCC4) has been powered off or not measuring for more than 3 hours, its readings can be off for a while after measurement resumes (datasheet §1.1.3 "Warm-Up"). About 1 hour of continuous measurement is needed for it to settle.
+
+=== "Firmware 4.0.1 and later"
+
+    **For the first hour after a measurement starts, CO2 is measured every second regardless of the recording interval, so the sensor warms up automatically.** No action is needed.
+    Records are still stored at the interval you set. Battery consumption increases slightly for that hour only.
+
+    Treat the CO2 concentration during roughly the first hour as approximate.
+
+=== "Firmware 4.0.0 and earlier"
+
+    For accurate CO2 measurement, run about 1 hour of continuous measurement first.
+
+    1. Set the CO2 recording interval to **5 seconds or less** and measure for **about 1 hour** (CO2 is then measured every second continuously)
+    2. Stop the measurement. You may also turn the M-Logger off
+    3. Within **3 hours**, start the actual measurement with your intended settings (any recording interval, such as 10 minutes)
+
+    As long as the sensor is not left unmeasured for more than 3 hours, it stays settled.
+    If you skip this step, the readings can take a long time to settle, especially with long recording intervals.
+
+See [Firmware versions and features](../start/firmware.md#how-to-check-the-version) for how to check the firmware version.
+
+In addition, the probe conditions the sensor every time it starts (datasheet §3.4.9 `perform_conditioning`, about 22 seconds), so **CO2 concentration is blank for about 25 seconds after a measurement starts**. Dry-bulb temperature and humidity are blank as well (globe temperature is recorded). This short gap happens every time and is separate from the warm-up above.
+
 ## CO2 sensor calibration, reset, and full initialization
 
 The CO2 sensor (Sensirion STCC4) has an **Automatic Self-Calibration (ASC)** feature: as long as it is exposed roughly once a day to fresh outdoor-equivalent air (about 400 ppm), it auto-calibrates against that level.

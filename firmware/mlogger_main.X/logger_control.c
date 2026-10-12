@@ -55,6 +55,15 @@ typedef struct {
 // 連続するためプローブは 1 Hz 連続動作となる (live 閲覧相当、電力増は許容)。
 #define CO2_AVERAGING_SEC  5
 
+// CO2 (STCC4) の立ち上げ (warm-up) 秒数。datasheet §1.1.3 "Warm-Up" では、3 時間を
+// 超えて電源オフ / 未計測だった後は、連続計測で最大 1 時間 (単発なら 360 回) で所定の
+// 精度に達する。記録間隔が長いと 1 記録あたり CO2_AVERAGING_SEC 回しか測らないため
+// 安定まで非常に長くかかる (10 分間隔で約 12 時間)。そこで計測開始から
+// CO2_WARMUP_SEC 秒間は、記録間隔に関係なく CO2 を 1 Hz で測り続ける。記録は従来どおり
+// interval_co2 ごとで、値は直近 CO2_AVERAGING_SEC 回の平均。電池への影響は
+// 1 時間分のプローブ連続動作 (約 5.5 mAh) のみ。
+#define CO2_WARMUP_SEC     3600
+
 //照度計カバーアクリル板の透過率
 #define TRANSMITTANCE  0.60
 
@@ -113,6 +122,7 @@ volatile static uint8_t co2_condition_time = 0;	 //perform_conditioning 進行�
 static uint32_t co2InitializingTime = 0;         //安定化(任意秒)→FRC モード残り秒数
 static uint16_t reforcedCO2Level = 400;          //強制校正CO2濃度[ppm]
 static SmAverage smaCO2;                         //CO2平均化 (窓幅は LC_StartLoggingTask で interval_co2 に応じて設定)
+static uint16_t co2WarmupRemaining = 0;          //CO2 立ち上げの残り秒数 (> 0 の間は 1 Hz で測る)
 
 // FRC 進行管理 (子機 stcc4_state を polling)
 typedef enum { FRC_PHASE_IDLE = 0, FRC_PHASE_RUNNING } FrcPhase_t;
@@ -261,6 +271,11 @@ void execLogging(void)
 	//自動計測開始がOffで計測開始時刻の前ならば終了
 	time_t current_snapshot = LC_GetCurrentTime();
 	if(!EM_mSettings.start_auto && current_snapshot < EM_mSettings.start_dt) return;
+
+	// CO2 立ち上げ期間。計測が実際に始まった sec から数える (開始時刻待ちの間は減らさない)。
+	// co2WarmupNow = この sec が立ち上げ期間内か / 減算後の co2WarmupRemaining > 0 = 次 sec も期間内か
+	bool co2WarmupNow = co2WarmupRemaining > 0;
+	if (co2WarmupNow) co2WarmupRemaining--;
 	
 	//ロギング中は5秒ごとに点滅
 	blinkCount++;
@@ -349,8 +364,10 @@ void execLogging(void)
 	// CO2 平均化 burst: CO2 計測 tick 直前 CO2_AVERAGING_SEC sec の窓内は tick で
 	// なくても毎 sec read し、CO2 を SMA に蓄積する (トリガは前 sec の pre-trigger
 	// 部で発行済み)。interval_co2 <= CO2_AVERAGING_SEC の場合は常に窓内 (1 Hz 連続)。
+	// 立ち上げ期間 (co2WarmupNow) は記録間隔に関係なく毎 sec read する。
 	bool co2Burst = EM_mSettings.measure_co2 && co2_condition_time == 0
-	                && (int32_t)EM_mSettings.interval_co2 - pass_counters.co2 <= CO2_AVERAGING_SEC - 1;
+	                && (co2WarmupNow
+	                    || (int32_t)EM_mSettings.interval_co2 - pass_counters.co2 <= CO2_AVERAGING_SEC - 1);
 
 	if (mesTH || mesCO2 || mesGlb || co2Burst) {
 		ThProbe_Read(&th_probe);
@@ -529,7 +546,8 @@ void execLogging(void)
 	//翌 sec に co2Burst read で SMA へ蓄積される。
 	bool nextTH  = EM_mSettings.measure_th  && (pass_counters.th  + 1) >= (int32_t)EM_mSettings.interval_th;
 	bool nextCO2 = EM_mSettings.measure_co2 && co2_condition_time == 0
-	               && (pass_counters.co2 + 1) >= (int32_t)EM_mSettings.interval_co2 - (CO2_AVERAGING_SEC - 1);
+	               && (co2WarmupRemaining > 0
+	                   || (pass_counters.co2 + 1) >= (int32_t)EM_mSettings.interval_co2 - (CO2_AVERAGING_SEC - 1));
 	bool nextGlb = EM_mSettings.measure_glb && (pass_counters.glb + 1) >= (int32_t)EM_mSettings.interval_glb;
 	if (nextTH || nextCO2 || nextGlb) {
 		ThProbe_Trigger();
@@ -692,6 +710,9 @@ void LC_StartLoggingTask(bool toZigbee, bool toBLE, bool toFlash, bool toUSB){
 
     // CO2 平均化 SMA を初期化 (前セッションの残サンプルを破棄)
     SMA_Init(&smaCO2, CO2_AVERAGING_SEC);
+
+    // CO2 立ち上げ期間を開始 (計測開始から CO2_WARMUP_SEC 秒は 1 Hz で測る)
+    co2WarmupRemaining = EM_mSettings.measure_co2 ? CO2_WARMUP_SEC : 0;
 
     // pre-trigger 状態を初期化 (前セッションの残骸を持ち越さない)
     th_trigger_pending = false;

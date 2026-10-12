@@ -23,6 +23,11 @@ The top half lists sensor readings received from the M-Logger together with ther
 | SET\* | Standard Effective Temperature (ASHRAE 55) | °C |
 | WBGT | Wet Bulb Globe Temperature; the formula differs between indoor and outdoor | °C |
 
+!!! warning "For accurate CO2 measurement"
+    After the M-Logger has been off or not measuring for more than 3 hours, CO2 readings can be off for a while; about 1 hour of continuous measurement settles them. Firmware 4.0.1 and later warm up the sensor automatically for the first hour of a measurement. With 4.0.0 and earlier, first measure for about 1 hour with the CO2 recording interval set to 5 seconds or less, then start the actual measurement within 3 hours.
+    CO2 concentration is also blank for about 25 seconds after a measurement starts.
+    See [CO2 concentration right after starting](advanced.md#co2-concentration-right-after-starting) for details.
+
 !!! note "MRT / PMV / PPD / SET\* / WBGT are computed"
     These are not measured directly by sensors. They are computed from the raw values above (dry-bulb temperature, humidity, globe temperature, air velocity) together with the settings introduced below (clothing and metabolic rate).
     Missing any required input makes the computation impossible.
