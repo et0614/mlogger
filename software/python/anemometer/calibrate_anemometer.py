@@ -558,13 +558,17 @@ def run_phase_3():
 # 結果出力 (e-sensor 互換 JSON; PNG は base64 同梱)
 # ==========================================
 
-# 成績の保存先。公開サイトのソース (リポジトリの web/) に直接書き出し、git で管理する。
-# ファイル名は <6桁hex device_id>.json。
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           "..", "..", "..", "web", "velocity_calibration", "reports")
-REPORTS_DIR = os.path.normpath(REPORTS_DIR)
 # ローカル確認用のグラフ (PNG) の保存先。JSON に同じ画像を同梱しているので git には入れない
 PLOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+
+# 成績の保存先。リポジトリ内で実行したときは公開サイトのソース (web/) に直接書き出し、git で管理する。
+# スクリプトだけを別の場所へ持ち出して実行したときは、相対パスで無関係なフォルダに書かないよう
+# PNG と同じ PLOT_DIR に書く (後でリポジトリの web/velocity_calibration/reports/ へコピーする)。
+# ファイル名は <6桁hex device_id>.json。
+_REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+REPORTS_IN_REPO = os.path.isfile(os.path.join(_REPO_ROOT, "web", "build_site.py"))
+REPORTS_DIR = (os.path.join(_REPO_ROOT, "web", "velocity_calibration", "reports")
+               if REPORTS_IN_REPO else PLOT_DIR)
 
 
 def build_plot(coef_a, coef_b, phase1_data, phase3_data):
@@ -710,6 +714,9 @@ def save_calibration_report(device_info, phase1_data, coef_a, coef_b, phase3_dat
         json.dump(doc, f, ensure_ascii=False, indent=2)
 
     print(f"\nReport written: {out_path}")
+    if not REPORTS_IN_REPO:
+        print("  (リポジトリの外で実行したため上記に保存。"
+              "リポジトリの web/velocity_calibration/reports/ へコピーすること)")
 
     # ローカル確認用に PNG も保存 (JSON には base64 で同梱済み)。
     os.makedirs(PLOT_DIR, exist_ok=True)

@@ -16,8 +16,11 @@ M-Logger 出荷前試験スクリプト (USB-CDC 経由)。
   6. ウォームアップ完了 (wu 消滅) を待つ (CO2 conditioning ~25sec + 風速加熱 ~10sec)
   7. N サンプル収集し、各チャネルの出現率とレンジを検査
      (dc フラグ = プローブ切断は即 FAIL)
+  7b. 風速プローブの校正記録 (web/velocity_calibration/reports/<probe id>.json) から
+     各サンプルのブリッジ電圧で風速を計算し、プローブが返した風速と一致するか検査
+     (プローブ内の係数の消失・書き換わりを検出する)
   8. stop_logging → dump でフラッシュから実データを読み返して検証
-  9. clear_data + 設定復元で出荷状態に戻す
+  9. clear_data + 出荷時の計測設定 (SHIPPING_SETTINGS) を書き込み、読み返して確認
  10. 結果を表示し JSON 保存。全項目 PASS なら exit 0
 
 判定レンジは室内 (照明あり・常温・無風〜微風) での試験を前提とする。
@@ -39,6 +42,7 @@ Usage:
 import asyncio
 import hashlib
 import json
+import math
 import os
 import struct
 import sys
@@ -50,7 +54,7 @@ from ble_trace import open_no_reset, find_device_port
 # ============================================================
 # 試験パラメータ
 # ============================================================
-SCRIPT_VERSION = "1.4"  # 記録 JSON に埋める試験スクリプト版数
+SCRIPT_VERSION = "1.5"  # 記録 JSON に埋める試験スクリプト版数
 
 SAMPLE_COUNT      = 15    # ウォームアップ後に収集するサンプル数
 WARMUP_TIMEOUT_S  = 90    # ウォームアップ完了待ちの上限 [sec]
@@ -71,6 +75,19 @@ RANGES = {
 MEAN_LOWER_BOUND = {"vv"}
 BATTERY_RANGE_MV = (2000, 3500)
 
+# 出荷時の計測設定。試験前の設定には戻さず、常にこの値にして出荷する
+# (試験前の設定が試験用の 1 sec のまま残っていた個体がそのまま出荷された事例があるため)
+SHIPPING_SETTINGS = {
+    "general":     {"enabled": True, "interval": 60},
+    "velocity":    {"enabled": True, "interval": 60},
+    "illuminance": {"enabled": True, "interval": 60},
+}
+
+# 風速: 校正記録から計算した風速とプローブが返した風速の許容差 (|差| <= ABS + REL * 計算値)。
+# 校正記録の係数は小数 4 桁に丸めてあるため完全一致はしない
+VEL_MATCH_ABS = 0.02   # [m/s]
+VEL_MATCH_REL = 0.05
+
 # 本体 XBee の設定の期待値 (get_radio_info のキー: 値)。main.c 冒頭の XBee 設定と対応
 XBEE_EXPECTED = {
     "ap": 1,   # API mode (エスケープなし)
@@ -86,10 +103,16 @@ ZIGBEE_WAIT_S   = 60    # 本体が親機のネットワークに参加して応
 RECORD_FORMAT = "<BIBIhhHHHH"  # SensorData_t (22 bytes)
 RECORD_SIZE = struct.calcsize(RECORD_FORMAT)
 
-# 成績の保存先。公開サイトのソース (リポジトリの web/) に直接書き出し、git で管理する。
+# 成績の保存先。リポジトリ内で実行したときは公開サイトのソース (web/) に直接書き出し、git で管理する。
+# スクリプトだけを別の場所へ持ち出して実行したときは、相対パスで無関係なフォルダに書かないよう
+# スクリプトの横の reports/ に書く (後でリポジトリの web/inspection/reports/ へコピーする)。
 # ファイル名は <hardware_id>.json。
-REPORTS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            "..", "..", "..", "web", "inspection", "reports"))
+_REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+REPORTS_IN_REPO = os.path.isfile(os.path.join(_REPO_ROOT, "web", "build_site.py"))
+REPORTS_DIR = (os.path.join(_REPO_ROOT, "web", "inspection", "reports") if REPORTS_IN_REPO
+               else os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports"))
+# 風速プローブの校正記録 (calibrate_anemometer.py が書き出す)。リポジトリ外で実行すると参照できない
+VEL_CAL_DIR = os.path.join(_REPO_ROOT, "web", "velocity_calibration", "reports")
 
 _next_id = [100]
 
@@ -228,6 +251,57 @@ def check_channels(samples, report):
                    f"n={len(vals)}/{n} min={vmin} mean={round(vmean, 2)} max={vmax}"
                    + ("" if in_range else f" (allowed {lo}-{hi})"))
     return stats
+
+
+def _velocity_from_calibration(voltage_v, cal):
+    """校正記録の係数で風速を計算する (プローブ firmware の computeVelocity と同じ式)。"""
+    e0 = cal["E0"]
+    r = cal["ranges"]
+    evv = voltage_v * voltage_v - e0 * e0
+    if evv <= 0.0:
+        return 0.0
+    lnev = math.log(evv)
+    v = math.exp(lnev * r[0]["m"] + r[0]["lnC"])
+    if r[0]["v_max"] <= v:
+        v = math.exp(lnev * r[1]["m"] + r[1]["lnC"])
+        if r[1]["v_max"] <= v:
+            v = math.exp(lnev * r[2]["m"] + r[2]["lnC"])
+    return v
+
+
+def check_velocity_calibration(samples, identity, report):
+    """校正記録から計算した風速とプローブが返した風速を、サンプルごとに比較する。
+    プローブ内の係数が消えた (全 0 だと常に 1.000 m/s) り、別の値に書き換わったりしたものを検出する。"""
+    name = "Velocity calibration match"
+    pid = ((identity.get("probes") or {}).get("velocity_probe") or {}).get("device_id")
+    if not pid:
+        report.add(name, False, "velocity probe id unavailable")
+        return
+    path = os.path.join(VEL_CAL_DIR, f"{pid.upper()}.json")
+    if not os.path.exists(path):
+        report.add(name, False, f"calibration record not found: {path}")
+        return
+    with open(path, encoding="utf-8") as f:
+        cal = json.load(f)["calibrations"]["anemometer"]
+
+    pairs = [(s["v"], s["vv"]) for s in samples if "v" in s and "vv" in s]
+    if not pairs:
+        report.add(name, False, "no velocity samples")
+        return
+    worst = None
+    n_bad = 0
+    for v, vv in pairs:
+        pred = _velocity_from_calibration(vv / 1000.0, cal)
+        err = abs(v - pred)
+        if err > VEL_MATCH_ABS + VEL_MATCH_REL * pred:
+            n_bad += 1
+        if worst is None or err > worst[0]:
+            worst = (err, v, pred, vv)
+    err, v, pred, vv = worst
+    report.add(name, n_bad == 0,
+               f"probe {pid.upper()} calibrated {cal.get('calibrated_at', '?')[:10]}; "
+               f"{n_bad}/{len(pairs)} mismatched; worst: reported {v:.3f} vs calibration {pred:.3f} m/s "
+               f"at {vv} mV")
 
 
 def _attempt_dump(ser, count, rec_size, session_start_ts):
@@ -801,6 +875,7 @@ def main(port, device_id=None, coord_port=None):
             samples = collect_samples(ser, report)
             if samples:
                 stats = check_channels(samples, report)
+                check_velocity_calibration(samples, identity, report)
 
             # --- 8. 停止してフラッシュ読み返し検証 ---
             cmd_result(ser, "stop_logging")
@@ -817,14 +892,21 @@ def main(port, device_id=None, coord_port=None):
                     time.sleep(1.0)
                     ser.reset_input_buffer()
                 send_cmd(ser, "clear_data")
-                if original_settings:
-                    send_cmd(ser, "set_settings", {
-                        "general":     original_settings["general"],
-                        "velocity":    original_settings["velocity"],
-                        "illuminance": original_settings["illuminance"],
-                    })
-            except Exception as e:  # 復元失敗は報告のみ (試験判定には含めない)
-                print(f"  [WARN] 出荷状態への復帰に失敗: {e}")
+                send_cmd(ser, "set_settings", SHIPPING_SETTINGS)
+            except Exception as e:  # 書き込み失敗は下の読み返し検査で FAIL になる
+                print(f"  [WARN] 出荷時設定の書き込みに失敗: {e}")
+
+        # --- 9b. 出荷時設定の読み返し確認 ---
+        try:
+            shipped_settings = cmd_result(ser, "get_settings")
+            ok = all(shipped_settings.get(k) == v for k, v in SHIPPING_SETTINGS.items())
+            report.add("Shipping settings", ok,
+                       "; ".join(f"{k}: interval={shipped_settings.get(k, {}).get('interval')} "
+                                 f"enabled={shipped_settings.get(k, {}).get('enabled')}"
+                                 for k in SHIPPING_SETTINGS))
+        except Exception as e:
+            shipped_settings = None
+            report.add("Shipping settings", False, f"get_settings failed: {e}")
 
     # --- 10. 結果保存 ---
     overall = report.all_pass()
@@ -836,7 +918,8 @@ def main(port, device_id=None, coord_port=None):
         "probes": identity.get("probes"),
         "radio": identity.get("radio"),
         "correction": identity.get("correction"),
-        "settings_shipped": original_settings,
+        "settings_before_test": original_settings,
+        "settings_shipped": shipped_settings,
         "overall": "PASS" if overall else "FAIL",
         "items": report.items,
         "channel_stats": stats,
@@ -853,6 +936,8 @@ def main(port, device_id=None, coord_port=None):
     print()
     print(f"総合判定: {'PASS' if overall else 'FAIL'}")
     print(f"記録: {path}")
+    if not REPORTS_IN_REPO:
+        print("  (リポジトリの外で実行したため上記に保存。リポジトリの web/inspection/reports/ へコピーすること)")
     print(f"公開: コミット後に web/build_site.py で組み立てて配置 → "
           f"https://www.mlogger.jp/inspection/viewer.html?id={hwid}")
     return 0 if overall else 1

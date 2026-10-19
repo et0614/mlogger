@@ -35,7 +35,7 @@ matplotlib.use('Agg')
 from cp2112_driver import CP2112Device
 from anemometer_manager import AnemometerManager
 from anemometer_calibrator import AnemometerCalibrator
-from calibrate_anemometer import CALIBRATOR_PROFILES, PLOT_DIR
+from calibrate_anemometer import CALIBRATOR_PROFILES, PLOT_DIR, REPORTS_DIR, REPORTS_IN_REPO
 
 POLL_INTERVAL_MS = 1500
 
@@ -144,6 +144,11 @@ class CalibrationGUI:
         bar.pack(fill='x')
         self.status_line = ttk.Label(bar, text="CP2112 監視中...", foreground='#57606a')
         self.status_line.pack(side='left')
+
+        # 成績 (JSON) の保存先を常に表示する。リポジトリ外で実行したときは目立たせる。
+        note = "" if REPORTS_IN_REPO else "  ※リポジトリの外で実行中。後で web/velocity_calibration/reports/ へコピーすること"
+        ttk.Label(top, text=f"成績の保存先: {REPORTS_DIR}{note}",
+                  foreground='#57606a' if REPORTS_IN_REPO else '#cf222e').pack(fill='x', anchor='w')
 
     def _build_row(self, parent, tid):
         f = ttk.Frame(parent, padding=(0, 4))
