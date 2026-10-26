@@ -1,0 +1,287 @@
+{
+  "test": "factory_test",
+  "script_version": "1.5",
+  "timestamp": "2026-10-26T14:10:01",
+  "device": {
+    "name": "MLogger_1513",
+    "hardware_id": "E9D714DF",
+    "firmware_version": "4.0.1",
+    "protocol_version": 1,
+    "battery_mv": 2978
+  },
+  "probes": {
+    "th_probe": {
+      "connected": true,
+      "device_id": "051044",
+      "name": "",
+      "data_count": 4
+    },
+    "velocity_probe": {
+      "connected": true,
+      "device_id": "150DBD",
+      "name": "",
+      "data_count": 2
+    }
+  },
+  "radio": {
+    "xbee_mac": "0013A20042081B22",
+    "xbee_fw": "1013",
+    "ble_mac": "F082C0C27810",
+    "pan_id": "0000000019800614",
+    "ap": 1,
+    "sm": 1,
+    "bd": 7,
+    "bt": 1,
+    "ce": 0
+  },
+  "correction": {
+    "t_dry": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "humidity": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "t_glb": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "illuminance": {
+      "a": 1.0,
+      "b": 0.0
+    },
+    "velocity": {
+      "a": 1.0,
+      "b": 0.0
+    }
+  },
+  "settings_before_test": {
+    "general": {
+      "enabled": true,
+      "interval": 60
+    },
+    "velocity": {
+      "enabled": true,
+      "interval": 60
+    },
+    "illuminance": {
+      "enabled": true,
+      "interval": 60
+    },
+    "start_ts": 1609459200
+  },
+  "settings_shipped": {
+    "general": {
+      "enabled": true,
+      "interval": 60
+    },
+    "velocity": {
+      "enabled": true,
+      "interval": 60
+    },
+    "illuminance": {
+      "enabled": true,
+      "interval": 60
+    },
+    "start_ts": 1609459200
+  },
+  "overall": "PASS",
+  "items": [
+    {
+      "item": "Device name set",
+      "pass": true,
+      "detail": "MLogger_1513 -> MLogger_1513"
+    },
+    {
+      "item": "TH probe info",
+      "pass": true,
+      "detail": "id=051044 name= n=4"
+    },
+    {
+      "item": "Velocity probe info",
+      "pass": true,
+      "detail": "id=150DBD name= n=2"
+    },
+    {
+      "item": "XBee module",
+      "pass": true,
+      "detail": "mac=0013A20042081B22 fw=1013"
+    },
+    {
+      "item": "XBee settings",
+      "pass": true,
+      "detail": "ap=1, sm=1, bd=7, bt=1, ce=0, pan_id=0000000019800614"
+    },
+    {
+      "item": "BLE advertising",
+      "pass": true,
+      "detail": "name=MLogger_1513"
+    },
+    {
+      "item": "BLE connect",
+      "pass": true,
+      "detail": "mtu=247"
+    },
+    {
+      "item": "BLE unlock",
+      "pass": true,
+      "detail": "password accepted"
+    },
+    {
+      "item": "BLE command (hello)",
+      "pass": true,
+      "detail": "name=MLogger_1513 hw=E9D714DF FW 4.0.1"
+    },
+    {
+      "item": "BLE command (get_battery)",
+      "pass": true,
+      "detail": "2981 mV"
+    },
+    {
+      "item": "Zigbee link",
+      "pass": true,
+      "detail": "response in 0.3s (voltage_mv=2978)"
+    },
+    {
+      "item": "Battery voltage",
+      "pass": true,
+      "detail": "2978 mV (allowed 2000-3500)"
+    },
+    {
+      "item": "Probe connection",
+      "pass": true,
+      "detail": "no disconnection"
+    },
+    {
+      "item": "T/RH sensor (dry-bulb)",
+      "pass": true,
+      "detail": "n=15/15 min=25.88 mean=26.07 max=26.25"
+    },
+    {
+      "item": "T/RH sensor (humidity)",
+      "pass": true,
+      "detail": "n=15/15 min=55.1 mean=55.61 max=56.4"
+    },
+    {
+      "item": "Globe temperature sensor",
+      "pass": true,
+      "detail": "n=15/15 min=24.62 mean=24.66 max=24.71"
+    },
+    {
+      "item": "CO2 sensor",
+      "pass": true,
+      "detail": "n=15/15 min=1543 mean=1760.93 max=2168"
+    },
+    {
+      "item": "Illuminance sensor",
+      "pass": true,
+      "detail": "n=15/15 min=1003 mean=1027.13 max=1035"
+    },
+    {
+      "item": "Velocity sensor (air speed)",
+      "pass": true,
+      "detail": "n=15/15 min=0.045 mean=0.1 max=0.17"
+    },
+    {
+      "item": "Velocity sensor (bridge voltage)",
+      "pass": true,
+      "detail": "n=15/15 min=366 mean=442.53 max=526"
+    },
+    {
+      "item": "Velocity calibration match",
+      "pass": true,
+      "detail": "probe 150DBD calibrated 2026-10-17; 0/15 mismatched; worst: reported 0.083 vs calibration 0.082 m/s at 425 mV"
+    },
+    {
+      "item": "Flash memory",
+      "pass": true,
+      "detail": "read back 21 records: gen=[5] ts_monotonic=True flags_nonzero=True ts_sane=True dump_end=True"
+    },
+    {
+      "item": "Shipping settings",
+      "pass": true,
+      "detail": "general: interval=60 enabled=True; velocity: interval=60 enabled=True; illuminance: interval=60 enabled=True"
+    }
+  ],
+  "channel_stats": {
+    "t": {
+      "n": 15,
+      "min": 25.88,
+      "mean": 26.073,
+      "max": 26.25
+    },
+    "h": {
+      "n": 15,
+      "min": 55.1,
+      "mean": 55.607,
+      "max": 56.4
+    },
+    "g": {
+      "n": 15,
+      "min": 24.62,
+      "mean": 24.665,
+      "max": 24.71
+    },
+    "c": {
+      "n": 15,
+      "min": 1543,
+      "mean": 1760.933,
+      "max": 2168
+    },
+    "l": {
+      "n": 15,
+      "min": 1003,
+      "mean": 1027.133,
+      "max": 1035
+    },
+    "v": {
+      "n": 15,
+      "min": 0.045,
+      "mean": 0.099,
+      "max": 0.17
+    },
+    "vv": {
+      "n": 15,
+      "min": 366,
+      "mean": 442.533,
+      "max": 526
+    }
+  },
+  "judge_ranges": {
+    "channels": {
+      "t": [
+        -10.0,
+        50.0
+      ],
+      "h": [
+        5.0,
+        95.0
+      ],
+      "g": [
+        -10.0,
+        50.0
+      ],
+      "c": [
+        300,
+        10000
+      ],
+      "l": [
+        1,
+        200000
+      ],
+      "v": [
+        0.0,
+        10.0
+      ],
+      "vv": [
+        50,
+        1800
+      ]
+    },
+    "battery_mv": [
+      2000,
+      3500
+    ]
+  }
+}
