@@ -81,13 +81,18 @@ jobs:
           echo "DEVELOPER_DIR=$SELECTED/Contents/Developer" >> "$GITHUB_ENV"
           xcodebuild -version
 
+      # .NET SDK と MAUI ワークロードは版を固定する。最新 (10.0.x) にすると iOS バインディングが
+      # ランナーにまだ無い Xcode を要求して MT4162 で失敗する (2026-11: workload 10.0.403 =
+      # iOS 27.1 バインディング / ランナーの Xcode は 26.6 まで)。
+      # 10.0.400.1 は iOS 26.5 バインディングで、Xcode 26.6 での成功実績がある (2026-08, 1.3.6)。
+      # ランナーに新しい Xcode が入ったら、両方を上げてよい。
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '10.0.400'
 
       - name: Install MAUI workloads
-        run: dotnet workload restore software/dotnet/MLS_Mobile/MLS_Mobile.csproj
+        run: dotnet workload restore software/dotnet/MLS_Mobile/MLS_Mobile.csproj --version 10.0.400.1
 
       - name: Import signing certificate
         env:
