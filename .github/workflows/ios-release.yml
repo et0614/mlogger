@@ -46,8 +46,11 @@ jobs:
           SELECTED=""
           for x in $(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -rV); do
             DEV="$x/Contents/Developer"
-            if ! ls "$DEV/Platforms/iPhoneOS.platform/Developer/SDKs" 2>/dev/null | grep -q '^iPhoneOS26'; then
-              echo "skip: $x (no iOS 26 SDK)"; continue
+            # .NET の iOS バインディングは新しい Xcode の公開に合わせて更新される
+            # (2026-11 には iOS 27 の型を含み、Xcode 26.5 では MT4162 で失敗した)。
+            # SDK の版は固定せず iOS 26 以上を受け付け、新しい Xcode から順に試す。
+            if ! ls "$DEV/Platforms/iPhoneOS.platform/Developer/SDKs" 2>/dev/null | grep -Eq '^iPhoneOS(2[6-9]|[3-9][0-9])'; then
+              echo "skip: $x (no iOS 26+ SDK)"; continue
             fi
             if [ ! -d "$DEV/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ]; then
               echo "skip: $x (no macOS SDK)"; continue
@@ -69,7 +72,7 @@ jobs:
             SELECTED="$x"; break
           done
           if [ -z "$SELECTED" ]; then
-            echo "::error::no usable Xcode with iOS 26 SDK found"
+            echo "::error::no usable Xcode with iOS 26+ SDK found"
             for x in /Applications/Xcode_*.app; do echo "== $x"; ls "$x/Contents/Developer/Platforms" 2>/dev/null || true; done
             exit 1
           fi
