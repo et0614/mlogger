@@ -7,7 +7,9 @@
              xmlns:local="clr-namespace:MLS_Mobile"
              x:DataType="local:MoistAirCalculator">
 
-    <StackLayout BackgroundColor="{StaticResource Lightest_G}">
+    <!--小さい画面でも下のボタンまで届くようにスクロールさせる-->
+    <ScrollView BackgroundColor="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource PageBg_Dark}}">
+    <StackLayout BackgroundColor="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource PageBg_Dark}}">
         <HorizontalStackLayout Margin="20,10,20,0" Spacing="10" VerticalOptions="Center">
             <Switch x:Name="liveToggle" Toggled="LiveToggle_Toggled" IsEnabled="False"/>
             <Label x:Name="liveStatusLabel" Text="{x:Static res:MLSResource.LIVE_NoDevice}" VerticalTextAlignment="Center"/>
@@ -144,4 +146,5 @@
             <Button Grid.Row="2" Grid.Column="2" Text="{x:Static res:MLSResource.MA_WinterOutdoor}" x:Name="btnWinterOutdoor" Clicked="Button_Clicked"/>
         </Grid>
     </StackLayout>
+    </ScrollView>
 </ContentPage>

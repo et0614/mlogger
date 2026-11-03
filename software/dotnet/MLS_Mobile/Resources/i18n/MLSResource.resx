@@ -321,7 +321,7 @@ Do not switch screens or close the app during the transfer. Continue?</value>
     <value>Are you sure you want to delete the file?</value>
   </data>
   <data name="LD_Exceed" xml:space="preserve">
-    <value>The maximum number of items displayed has been exceeded. Please copy them on the clipboard.</value>
+    <value>Only the first part is shown because the maximum number of rows was exceeded. Use "Share" to get all the data.</value>
   </data>
   <data name="LD_Formatting" xml:space="preserve">
     <value>Formatting</value>
@@ -555,5 +555,29 @@ To exit, hold the device reset button for 3 seconds.</value>
   </data>
   <data name="DS_PromptCo2RefLevel" xml:space="preserve">
     <value>Reference CO2 level [ppm]</value>
+  </data>
+  <data name="LD_Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="LD_SelectDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="LD_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="LD_DeleteSelected" xml:space="preserve">
+    <value>Delete ({0})</value>
+  </data>
+  <data name="LD_DeleteSelectedAlert" xml:space="preserve">
+    <value>Delete {0} selected file(s)?</value>
+  </data>
+  <data name="DS_StartedPC" xml:space="preserve">
+    <value>{0} started recording to the PC.</value>
+  </data>
+  <data name="DS_StartedFlash" xml:space="preserve">
+    <value>{0} started recording to its internal memory.</value>
+  </data>
+  <data name="DS_StartedPermanent" xml:space="preserve">
+    <value>{0} started recording in permanent mode.</value>
   </data>
 </root>

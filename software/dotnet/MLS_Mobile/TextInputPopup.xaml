@@ -10,15 +10,15 @@
     
     <VerticalStackLayout>
         <Border WidthRequest="300" HeightRequest="160" Padding="10"
-                Stroke="{StaticResource Dark_G}" BackgroundColor="{StaticResource Lightest_G}"
+                Stroke="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}" BackgroundColor="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource PageBg_Dark}}"
                 HorizontalOptions="Center" StrokeThickness="1">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="20"/>
             </Border.StrokeShape>
             <VerticalStackLayout>
                 <Label x:Name="lblMessage" Text="{Binding LabelText}" Margin="5"/>
-                <Border Stroke="Black" Margin="5,10" StrokeThickness="1" Padding="0">
-                    <Entry x:Name="entName" Text="{Binding EntryValue}" Keyboard="{Binding Key}" Margin="0" HorizontalTextAlignment="Center" BackgroundColor="White" TextColor="Black"/>
+                <Border Stroke="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" Margin="5,10" StrokeThickness="1" Padding="0">
+                    <Entry x:Name="entName" Text="{Binding EntryValue}" Keyboard="{Binding Key}" Margin="0" HorizontalTextAlignment="Center" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"/>
                 </Border>
                 <HorizontalStackLayout HorizontalOptions="End">
                     <Button Text="OK" Clicked="btnOK_Clicked" Margin="5"/>

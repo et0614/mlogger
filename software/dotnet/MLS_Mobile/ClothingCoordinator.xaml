@@ -13,9 +13,11 @@
           RowDefinitions="Auto, *"
           ColumnDefinitions="*, 100">
 
-        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" BackgroundColor="Transparent" />
+        <!-- 下の一覧をスクロールしたときに境目が分かるよう、下辺だけに控えめな区切り線を引く -->
+        <BoxView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" HeightRequest="1" VerticalOptions="End"
+                 Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Line_Dark}}" />
         <Label Grid.Row="0" Grid.Column="0" VerticalTextAlignment="Center" HorizontalTextAlignment="Center" FontSize="20"
-                        x:Name="CloValueLabel" TextColor="{StaticResource Dark_G}"/>
+                        x:Name="CloValueLabel" TextColor="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
         <Button Text="Apply" Grid.Row="0" Grid.Column="1" Margin="5" x:Name="btnApply" Clicked="Button_Clicked"/>
 
         <CollectionView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="cloView"
@@ -30,10 +32,12 @@
                     <Grid Padding="8" RowDefinitions="Auto,Auto,Auto" HorizontalOptions="Fill">
                         <Border Grid.Row="0"
                                 StrokeShape="RoundRectangle 12"
-                                Stroke="{StaticResource Dark_G}"
+                                Stroke="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"
                                 StrokeThickness="1"
                                 Padding="4"
+                                BackgroundColor="White"
                                 HorizontalOptions="Center">
+                            <!-- 絵は白地の画像なので、ダーク表示でも白い角丸のカードに載せて「写真」として見せる -->
                             <Image Source="{Binding Appearance}" Aspect="AspectFit"
                                    HeightRequest="140" WidthRequest="140"/>
                         </Border>

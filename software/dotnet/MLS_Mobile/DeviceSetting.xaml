@@ -11,14 +11,14 @@
              HideSoftInputOnTapped="True">
     
     <Grid>
-        <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{StaticResource Lightest_G}">
+        <ScrollView Grid.Row="0" Grid.Column="0" Orientation="Vertical" BackgroundColor="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource PageBg_Dark}}">
             <StackLayout Padding="15">
                 
                 <!--主要な3機能-->
                 <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
                     <Label Text="{x:Static res:MLSResource.DS_StartLogging}"
                            FontSize="Subtitle" FontAttributes="Bold"
-                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Heading_Dark}}" TextDecorations="Underline"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Measure_Tapped"/>
@@ -26,7 +26,7 @@
                     </Label>
                     <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
                         <Image.Source>
-                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                         </Image.Source>
                         <Image.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Measure_Tapped"/>
@@ -76,7 +76,7 @@
                 <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
                     <Label Text="{x:Static res:MLSResource.DS_TargetAndTimeInterval}"
                            FontSize="Subtitle" FontAttributes="Bold"
-                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Heading_Dark}}" TextDecorations="Underline"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Setting_Tapped"/>
@@ -84,7 +84,7 @@
                     </Label>
                     <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
                         <Image.Source>
-                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                         </Image.Source>
                         <Image.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Setting_Tapped"/>
@@ -147,7 +147,7 @@
                 <HorizontalStackLayout Margin="20,5,0,20" HorizontalOptions="End">
                     <Label x:Name="lbl_stdtime" Text="{x:Static res:MLSResource.DS_StartDTime}" VerticalOptions="Center" Margin="0,0,20,0"/>
                     <Border Margin="0,0,10,0">
-                        <DatePicker x:Name="dpck_start" Date="1999/01/01" MinimumDate="1980/01/01" MaximumDate="2030/12/31" Format="yyyy/MM/dd" HorizontalOptions="Fill" DateSelected="dpck_start_DateSelected"/>
+                        <DatePicker x:Name="dpck_start" Date="1999/01/01" MinimumDate="1980/01/01" MaximumDate="2099/12/31" Format="yyyy/MM/dd" HorizontalOptions="Fill" DateSelected="dpck_start_DateSelected"/>
                     </Border>
                     <Border Margin="0,0,0,0">
                         <TimePicker x:Name="tpck_start" Time="00:00" Format="HH:mm:ss" HorizontalOptions="Fill" PropertyChanged="tpck_start_PropertyChanged"/>
@@ -157,12 +157,12 @@
                 <!--設定ボタン-->
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="LoadButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf56e;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf56e;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
                 <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="SaveButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf56d;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf56d;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
 
@@ -171,7 +171,7 @@
                     <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
                         <Label Text="{x:Static res:MLSResource.DS_DataManagement}"
                                FontSize="Subtitle" FontAttributes="Bold"
-                               TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                               TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Heading_Dark}}" TextDecorations="Underline"
                                VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="TapGestureRecognizer_Data_Tapped"/>
@@ -179,7 +179,7 @@
                         </Label>
                         <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
                             <Image.Source>
-                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                             </Image.Source>
                             <Image.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="TapGestureRecognizer_Data_Tapped"/>
@@ -188,12 +188,12 @@
                     </HorizontalStackLayout>
                     <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_DumpButton}" Clicked="DumpButton_Clicked">
                         <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                         </Button.ImageSource>
                     </Button>
                     <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ClearDataButton}" Clicked="ClearDataButton_Clicked">
                         <Button.ImageSource>
-                            <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                         </Button.ImageSource>
                     </Button>
                 </VerticalStackLayout>
@@ -203,7 +203,7 @@
                     <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
                         <Label Text="{x:Static res:MLSResource.DS_BatteryInfo}"
                                FontSize="Subtitle" FontAttributes="Bold"
-                               TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                               TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Heading_Dark}}" TextDecorations="Underline"
                                VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="TapGestureRecognizer_Battery_Tapped"/>
@@ -211,7 +211,7 @@
                         </Label>
                         <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
                             <Image.Source>
-                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                                <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                             </Image.Source>
                             <Image.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="TapGestureRecognizer_Battery_Tapped"/>
@@ -225,7 +225,7 @@
                         <Label Grid.Row="1" Grid.Column="1" x:Name="lbl_batType" Text="-" VerticalTextAlignment="Center" FontAttributes="Bold"/>
                         <Label Grid.Row="2" Grid.Column="0" Text="{x:Static res:MLSResource.DS_EstimatedRuntime}" VerticalTextAlignment="Center"/>
                         <Label Grid.Row="2" Grid.Column="1" x:Name="lbl_batRuntime" Text="-" VerticalTextAlignment="Center" FontAttributes="Bold"/>
-                        <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="lbl_batWarning" Text="" TextColor="{StaticResource Status_Warn}" IsVisible="False" FontSize="Small"/>
+                        <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="lbl_batWarning" Text="" TextColor="{AppThemeBinding Light={StaticResource Status_Warn}, Dark={StaticResource Status_Warn_Dark}}" IsVisible="False" FontSize="Small"/>
                     </Grid>
                 </VerticalStackLayout>
 
@@ -233,7 +233,7 @@
                 <HorizontalStackLayout Margin="0,20,0,5" Spacing="8" VerticalOptions="Center">
                     <Label Text="{x:Static res:MLSResource.DS_OtherSetting}"
                            FontSize="Subtitle" FontAttributes="Bold"
-                           TextColor="{StaticResource Darkest_G}" TextDecorations="Underline"
+                           TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Heading_Dark}}" TextDecorations="Underline"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Other_Tapped"/>
@@ -241,7 +241,7 @@
                     </Label>
                     <Image WidthRequest="20" HeightRequest="20" VerticalOptions="Center">
                         <Image.Source>
-                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{StaticResource Dark_G}"/>
+                            <FontImageSource Glyph="&#xf05a;" FontFamily="FAS" Size="18" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                         </Image.Source>
                         <Image.GestureRecognizers>
                             <TapGestureRecognizer Tapped="TapGestureRecognizer_Other_Tapped"/>
@@ -257,35 +257,35 @@
                 <!--名称の設定-->
                 <Button Margin="50,15,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetName}" Clicked="SetNameButton_Clicked">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf02b;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf02b;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
                 
                 <!--特性係数の設定-->
                 <Button x:Name="calvBtnA" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SetCorrectionCoefficients}" Clicked="CFButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf7d9;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf7d9;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
 
                 <!--CO2センサの校正 (forced recalibration、30 秒モード)-->
                 <Button x:Name="calCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_CalibrateCO2Sensor}" Clicked="CO2CalibrationButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
 
                 <!--CO2センサの工場リセット (factory_reset 単独、~90ms で完了)-->
                 <Button x:Name="resetCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_ResetCO2Sensor}" Clicked="CO2ResetButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf2f1;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf2f1;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
 
                 <!--CO2センサの完全初期化 (factory_reset + 12 時間 + FRC)-->
                 <Button x:Name="initCo2Btn" IsVisible="False" Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_InitializeCO2Sensor}" Clicked="CO2InitializeButton_Clicked" HorizontalOptions="FillAndExpand">
                     <Button.ImageSource>
-                        <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                        <FontImageSource Glyph="&#xf624;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                     </Button.ImageSource>
                 </Button>
 
@@ -294,10 +294,10 @@
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
-            <StackLayout BackgroundColor="White">
-                <ActivityIndicator Color="Black" IsRunning="True"/>
-                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+        <Border x:Name="indicator" IsVisible="False" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+            <StackLayout BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}">
+                <ActivityIndicator Color="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"/>
             </StackLayout>
         </Border>
         <!--インジケータここまで-->

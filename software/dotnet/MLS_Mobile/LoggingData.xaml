@@ -10,14 +10,14 @@
         <!--共有ボタン-->
         <Button Grid.Row="0" Grid.Column="0" Text="{x:Static res:MLSResource.LD_Share}" Clicked="share_Clicked" ContentLayout="Left, 10" Margin="5">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="24" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="24" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
             </Button.ImageSource>
         </Button>
 
         <!--削除ボタン-->
         <Button Grid.Row="0" Grid.Column="1" Text="{x:Static res:MLSResource.LD_Delete}" Clicked="delete_Clicked" ContentLayout="Left, 10" Margin="5">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="24" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAR" Size="24" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
             </Button.ImageSource>
         </Button>
 
@@ -28,10 +28,10 @@
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" Grid.RowSpan="3" Grid.ColumnSpan="3"/>
-        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" Grid.RowSpan="3" Grid.ColumnSpan="3" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
-            <StackLayout BackgroundColor="White">
-                <ActivityIndicator Color="Black" IsRunning="True"/>
-                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+        <Border x:Name="indicator" IsVisible="False" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}" Grid.RowSpan="3" Grid.ColumnSpan="3" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+            <StackLayout BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}">
+                <ActivityIndicator Color="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"/>
             </StackLayout>
         </Border>
         <!--インジケータここまで-->

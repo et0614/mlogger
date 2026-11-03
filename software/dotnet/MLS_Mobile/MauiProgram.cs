@@ -31,6 +31,10 @@ public static class MauiProgram
     {
       handler.PlatformView.TintColor = UIKit.UIColor.White;
     });
+
+    // 計測中にタブを再タップしたとき、UIKit が確認なしにルートへ戻すのを止める (Platforms/iOS/MLShellRenderer.cs)
+    builder.ConfigureMauiHandlers(handlers =>
+      handlers.AddHandler(typeof(Shell), typeof(MLS_Mobile.Platforms.iOS.MLShellRenderer)));
 #endif
 
     // i18n は MLSResource (resx 自動生成) が System.Resources.ResourceManager 経由で

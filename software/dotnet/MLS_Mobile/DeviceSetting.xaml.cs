@@ -342,7 +342,20 @@ public partial class DeviceSetting : ContentPage
             await Shell.Current.GoToAsync(nameof(DataReceive),
               new Dictionary<string, object> { { "mlLowAddress", MLoggerLowAddress } });
           else
+          {
             await Shell.Current.GoToAsync("..");
+            // ここに来るのは M-Logger が記録開始の指令に応答したとき (応答がなければ 5 秒で
+            // 下の catch に入り、エラーを表示してこの画面に留まる。戻れなくなることはない)。
+            // 一覧に戻った後でも開始できたことが分かるよう、画面中央に機器名つきで知らせる。
+            string fmt = lMode switch
+            {
+              loggingMode.mfcard    => MLSResource.DS_StartedFlash,
+              loggingMode.permanent => MLSResource.DS_StartedPermanent,
+              _                     => MLSResource.DS_StartedPC,
+            };
+            string name = string.IsNullOrEmpty(Logger?.XBeeName) ? "M-Logger" : Logger.XBeeName;
+            await NoticePopup.ShowAsync(string.Format(fmt, name));
+          }
         }
         catch (Exception navEx)
         {
@@ -453,7 +466,7 @@ public partial class DeviceSetting : ContentPage
   private void makeIdLabelLink(Label label, string url)
   {
     label.TextDecorations = TextDecorations.Underline;
-    label.TextColor = Color.FromArgb("#1976D2");
+    MLUtility.SetThemeColor(label, Label.TextColorProperty, "Link");
     label.GestureRecognizers.Clear();  // 再接続時の多重登録防止
     var tap = new TapGestureRecognizer();
     tap.Tapped += async (_, __) =>
@@ -1012,26 +1025,27 @@ public partial class DeviceSetting : ContentPage
 
   #region コントロール編集時の着色処理
 
-  // 「未保存」状態を示す警告色 (Resources/Styles/Colors.xaml の Status_Warn)
-  private static Color UnsavedColor => (Color)Application.Current.Resources["Status_Warn"];
+  // 「未保存」状態を示す警告色 (Resources/Styles/Colors.xaml の Status_Warn、ダーク時は Status_Warn_Dark)。
+  // 起動中にライト/ダークが切り替わっても追従するよう、色は SetThemeColor で設定する。
+  private static void setUnsaved(Label label) => MLUtility.SetThemeColor(label, Label.TextColorProperty, "Status_Warn");
 
   private void cbx_Toggled(object sender, ToggledEventArgs e)
   {
-    if (sender.Equals(cbx_th)) lbl_th.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_glb)) lbl_glb.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_vel)) lbl_vel.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_lux)) lbl_lux.TextColor = UnsavedColor;
-    else if (sender.Equals(cbx_co2)) lbl_co2.TextColor = UnsavedColor;
+    if (sender.Equals(cbx_th)) setUnsaved(lbl_th);
+    else if (sender.Equals(cbx_glb)) setUnsaved(lbl_glb);
+    else if (sender.Equals(cbx_vel)) setUnsaved(lbl_vel);
+    else if (sender.Equals(cbx_lux)) setUnsaved(lbl_lux);
+    else if (sender.Equals(cbx_co2)) setUnsaved(lbl_co2);
     updateBatteryPanel();
   }
 
   private void ent_TextChanged(object sender, TextChangedEventArgs e)
   {
-    if (sender.Equals(ent_th)) lbl_th.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_glb)) lbl_glb.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_vel)) lbl_vel.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_lux)) lbl_lux.TextColor = UnsavedColor;
-    else if (sender.Equals(ent_co2)) lbl_co2.TextColor = UnsavedColor;
+    if (sender.Equals(ent_th)) setUnsaved(lbl_th);
+    else if (sender.Equals(ent_glb)) setUnsaved(lbl_glb);
+    else if (sender.Equals(ent_vel)) setUnsaved(lbl_vel);
+    else if (sender.Equals(ent_lux)) setUnsaved(lbl_lux);
+    else if (sender.Equals(ent_co2)) setUnsaved(lbl_co2);
     updateBatteryPanel();
   }
 
@@ -1040,7 +1054,7 @@ public partial class DeviceSetting : ContentPage
     //日付変更がなければ終了 (Logger 側は秒まで持つので .Date で比較)
     if (Logger == null || dpck_start.Date == Logger.StartMeasuringDateTime.Date) return;
 
-    lbl_stdtime.TextColor = UnsavedColor;
+    setUnsaved(lbl_stdtime);
   }
 
   private void tpck_start_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -1050,18 +1064,14 @@ public partial class DeviceSetting : ContentPage
     //時刻変更がなければ終了
     if (tpck_start == null || Logger == null || tpck_start.Time == Logger.StartMeasuringDateTime.TimeOfDay) return;
 
-    lbl_stdtime.TextColor = UnsavedColor;
+    setUnsaved(lbl_stdtime);
   }
 
   private void resetTextColor()
   {
-    lbl_th.TextColor =
-      lbl_glb.TextColor =
-      lbl_vel.TextColor =
-      lbl_lux.TextColor =
-      lbl_co2.TextColor =
-      lbl_stdtime.TextColor =
-      Colors.DarkGreen;
+    // 他のラベルと同じ本文の色 (ダーク表示でも読める)
+    foreach (Label l in new[] { lbl_th, lbl_glb, lbl_vel, lbl_lux, lbl_co2, lbl_stdtime })
+      MLUtility.SetThemeColor(l, Label.TextColorProperty, "Text");
   }
 
   #endregion

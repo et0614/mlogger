@@ -5,7 +5,9 @@
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
              Title="{x:Static res:MLSResource.CF_Title}"
              HideSoftInputOnTapped="True">
-    <Grid BackgroundColor="{StaticResource Lightest_G}">
+    <Grid BackgroundColor="{AppThemeBinding Light={StaticResource Lightest_G}, Dark={StaticResource PageBg_Dark}}">
+        <!--小さい画面やキーボード表示中でも、下の入力欄とボタンまでスクロールで届くようにする-->
+        <ScrollView>
         <StackLayout Margin="10">
 
             <!--乾球温度-->
@@ -126,23 +128,24 @@
             <!--設定ボタン-->
             <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_LoadSetting}" Clicked="Load_Clicked">
                 <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    <FontImageSource Glyph="&#xf019;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                 </Button.ImageSource>
             </Button>
             <Button Margin="50,5,0,5" ContentLayout="Left, 20" Text="{x:Static res:MLSResource.DS_SaveSetting}" Clicked="Save_Clicked">
                 <Button.ImageSource>
-                    <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{StaticResource Dark_G}"/>
+                    <FontImageSource Glyph="&#xf093;" FontFamily="FAS" Size="20" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
                 </Button.ImageSource>
             </Button>
 
         </StackLayout>
+        </ScrollView>
 
         <!--インジケータ-->
         <ContentView x:Name="grayback" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-        <Border x:Name="indicator" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
-            <StackLayout BackgroundColor="White">
-                <ActivityIndicator Color="Black" IsRunning="True"/>
-                <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+        <Border x:Name="indicator" IsVisible="False" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+            <StackLayout BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}">
+                <ActivityIndicator Color="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" IsRunning="True"/>
+                <Label x:Name="indicatorLabel" Text="---" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"/>
             </StackLayout>
         </Border>
         <!--インジケータここまで-->

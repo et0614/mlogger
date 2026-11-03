@@ -3,33 +3,33 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MLS_Mobile.LogView"
              xmlns:res="clr-namespace:MLS_Mobile.Resources.i18n"
-             BackgroundColor="White"
+             BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}"
              Title="{x:Static res:MLSResource.LV_Title}">
-    <Grid RowDefinitions="*,Auto,Auto,Auto" BackgroundColor="White">
+    <Grid RowDefinitions="*,Auto,Auto,Auto" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}">
 
         <!-- ログ表示 (Editor で IsReadOnly: iOS でも TextColor が安定して効く) -->
         <Editor Grid.Row="0"
                 x:Name="logEditor"
                 Text=""
                 IsReadOnly="True"
-                BackgroundColor="White"
-                TextColor="Black"
+                BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}"
+                TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"
                 FontSize="Small"
                 Margin="10" />
 
-        <BoxView Grid.Row="1" HeightRequest="1" BackgroundColor="{StaticResource Darkest_G}" HorizontalOptions="FillAndExpand" />
+        <BoxView Grid.Row="1" HeightRequest="1" BackgroundColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Line_Dark}}" HorizontalOptions="FillAndExpand" />
 
         <!-- Clear ボタン -->
         <Button Grid.Row="2" Text="{x:Static res:MLSResource.LV_ClearLog}" Margin="10,10,10,0" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="clear_Clicked" FontSize="Medium" ContentLayout="Left, 10">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="16" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xf2ed;" FontFamily="FAS" Size="16" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
             </Button.ImageSource>
         </Button>
 
         <!-- Share ボタン -->
         <Button Grid.Row="3" Text="{x:Static res:MLSResource.LD_Share}" Margin="10" VerticalOptions="Center" HorizontalOptions="Fill" Clicked="share_Clicked" FontSize="Medium" ContentLayout="Left, 10">
             <Button.ImageSource>
-                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="{StaticResource Dark_G}"/>
+                <FontImageSource Glyph="&#xe09a;" FontFamily="FAS" Size="16" Color="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"/>
             </Button.ImageSource>
         </Button>
 

@@ -1,4 +1,4 @@
-namespace MLS_Mobile;
+﻿namespace MLS_Mobile;
 
 using System.ComponentModel;
 using CommunityToolkit.Maui.Extensions;
@@ -55,6 +55,13 @@ public partial class ThermalComfortCalculator : ContentPage
     //更新
     updateIndices();
 
+    //代謝量・着衣量の選択画面から戻ったときは、変わった値を光らせて知らせる
+    switch (MLUtility.TakeValueHighlight())
+    {
+      case "met": _ = MLUtility.FlashAsync(metLabel); break;
+      case "clo": _ = MLUtility.FlashAsync(cloLabel); break;
+    }
+
     //シェイク検知Off
     /*if (Accelerometer.Default.IsSupported)
     {
@@ -100,11 +107,12 @@ public partial class ThermalComfortCalculator : ContentPage
 
     double pmv = FangerModel.GetPMV(dbt, mrt, hmd, vel, clo, met, 0);
     double ppd = FangerModel.GetPPD(pmv);
-    double setstar = GaggeModel.GetSETStarFromAmbientCondition(dbt, mrt, hmd, vel, clo, 58 * met, 0);
+    // 代謝量 1 met = 58.15 W/m2 (計測画面 DataReceiveViewModel と同じ値・同じ表示桁数にそろえる)
+    double setstar = GaggeModel.GetSETStarFromAmbientCondition(dbt, mrt, hmd, vel, clo, 58.15 * met, 0);
 
     lblPMV.Text = pmv.ToString("F2");
     lblPPD.Text = ppd.ToString("F1");
-    lblSET.Text = setstar.ToString("F2");
+    lblSET.Text = setstar.ToString("F1");
   }
 
   //着衣量設定ボタンクリック時の処理
@@ -159,6 +167,8 @@ public partial class ThermalComfortCalculator : ContentPage
     }
 
     if (popup == null) return;
+    // Live 中は対象のスライダーが無効になっている。手入力しても次のサンプルで上書きされるので受け付けない
+    if (!sld.IsEnabled) return;
     await this.ShowPopupAsync<string>(popup);
     if (popup.WasAccepted && double.TryParse(popup.AcceptedText, out double val))
       sld.Value = Math.Min(sld.Maximum, Math.Max(sld.Minimum, val));

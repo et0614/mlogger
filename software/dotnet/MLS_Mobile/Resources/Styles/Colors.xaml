@@ -24,6 +24,29 @@
     <SolidColorBrush x:Key="Status_WarnBrush"   Color="{StaticResource Status_Warn}"/>
     <SolidColorBrush x:Key="Status_DangerBrush" Color="{StaticResource Status_Danger}"/>
 
+    <!-- ダークモード用の色 (Styles.xaml と各画面の AppThemeBinding の Dark= 側で使う)。
+         緑の基調は保ち、暗い背景で読めるよう前景の緑・警告色は明るめにする。
+         コードから使う色は MLUtility.ThemeColor("キー") で、ダーク時は "キー_Dark" を引く。 -->
+    <Color x:Key="PageBg_Dark">#121812</Color>       <!-- ページの背景 (ライト: Lightest_G) -->
+    <Color x:Key="Surface_Dark">#1E261E</Color>      <!-- 行・入力欄・カード (ライト: White) -->
+    <Color x:Key="Text_Dark">#E6EEE6</Color>         <!-- 本文の文字 (ライト: Black) -->
+    <Color x:Key="Accent_Dark">#81C784</Color>       <!-- 見出し・アイコン・枠線の緑 (ライト: Dark_G) -->
+    <Color x:Key="Selected_Dark">#2E4A2E</Color>     <!-- 選択中・ボタンの地 (ライト: Light_G) -->
+    <Color x:Key="Line_Dark">#2E4A2E</Color>         <!-- 区切り線 (ライト: Darkest_G) -->
+    <Color x:Key="Bar_Dark">#123D16</Color>          <!-- 上部のバーと下のタブ (ライト: Darkest_G)。暗い画面で重く見えないよう暗めの緑 -->
+    <Color x:Key="Heading_Dark">#5E9E62</Color>      <!-- 機器設定の見出し (ロギング先など)。Accent_Dark より控えめ -->
+    <Color x:Key="Status_Normal_Dark">#81C784</Color>
+    <Color x:Key="Status_Warn_Dark">#FFA726</Color>
+    <Color x:Key="Status_Danger_Dark">#EF5350</Color>
+
+    <!-- コードから色を付ける箇所の、ライト/ダークの組 -->
+    <Color x:Key="Surface">White</Color>
+    <Color x:Key="Text">Black</Color>
+    <Color x:Key="DumpRow">#E3F2FD</Color>           <!-- 内蔵メモリから取り出したデータの行 -->
+    <Color x:Key="DumpRow_Dark">#1A2A3A</Color>
+    <Color x:Key="Link">#1976D2</Color>
+    <Color x:Key="Link_Dark">#64B5F6</Color>
+
     <Color x:Key="Darkest_O">#804d00</Color>
     <Color x:Key="Dark_O">#e68a00</Color>
     <Color x:Key="Light_O">#ffd699</Color>

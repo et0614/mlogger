@@ -1,4 +1,4 @@
-namespace MLS_Mobile;
+﻿namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -349,6 +349,9 @@ public partial class MoistAirCalculator : ContentPage
     // Live モード時は pairList を「乾球温度 + 相対湿度」(index=0) に強制し、
     // dbt/rhmd を独立変数として扱う (他は派生量として自動計算される)。
     if (pairList.SelectedIndex != 0) pairList.SelectedIndex = 0;
+    // Live 中に入力の組み合わせを変えられると、乾球温度・相対湿度が入力でなくなり
+    // ライブ値が反映されなくなるので、Live の間は選択を固定する
+    pairList.IsEnabled = false;
     ApplyLiveValuesToSliders();
     dbtSlider.IsEnabled  = false;
     rhmdSlider.IsEnabled = false;
@@ -357,6 +360,7 @@ public partial class MoistAirCalculator : ContentPage
   private void DisableLiveMode()
   {
     _liveActive = false;
+    pairList.IsEnabled = true;
     // 入力スライダの有効状態は pairList の選択 (=updateValue 側の責務) に任せるため、
     // ここでは強制的に true に戻さず、pairList_SelectedIndexChanged を呼び直して再設定。
     pairList_SelectedIndexChanged(pairList, EventArgs.Empty);

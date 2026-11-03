@@ -33,11 +33,28 @@ public partial class DataReceive : ContentPage
         }
     }
 
+    private double _cloValue = 1.2;
+    private double _metValue = 1.1;
+    // QueryProperty で新しい値が渡されたときだけスライダーへ反映するためのフラグ。
+    // 毎回 OnAppearing で反映すると、利用者がスライダーで変えた値が、
+    // 活動選択やタブ切り替えから戻るたびに直前の適用値へ巻き戻ってしまう。
+    // Shell は同じ QueryProperty を再適用することがあるので、値が変わったときだけ立てる。
+    private bool _cloPending = true;
+    private bool _metPending = true;
+
     /// <summary>QueryProperty: initial Clo.</summary>
-    public double CloValue { get; set; } = 1.2;
+    public double CloValue
+    {
+        get => _cloValue;
+        set { if (value != _cloValue) _cloPending = true; _cloValue = value; }
+    }
 
     /// <summary>QueryProperty: initial Met.</summary>
-    public double MetValue { get; set; } = 1.1;
+    public double MetValue
+    {
+        get => _metValue;
+        set { if (value != _metValue) _metPending = true; _metValue = value; }
+    }
 
     #endregion
 
@@ -73,8 +90,16 @@ public partial class DataReceive : ContentPage
         DeviceDisplay.Current.KeepScreenOn = true;
 
         // Reflect Clo/Met from QueryProperty into sliders (which write back to the VM).
-        cloSlider.Value = CloValue;
-        metSlider.Value = MetValue;
+        // 新しい値が渡されたときだけ反映する (スライダーでの手動変更を巻き戻さない)。
+        if (_cloPending) { cloSlider.Value = CloValue; _cloPending = false; }
+        if (_metPending) { metSlider.Value = MetValue; _metPending = false; }
+
+        // 代謝量・着衣量の選択画面から戻ったときは、変わった値を光らせて知らせる
+        switch (MLUtility.TakeValueHighlight())
+        {
+            case "met": _ = MLUtility.FlashAsync(metValueLabel); break;
+            case "clo": _ = MLUtility.FlashAsync(cloValueLabel); break;
+        }
     }
 
     protected override void OnDisappearing()

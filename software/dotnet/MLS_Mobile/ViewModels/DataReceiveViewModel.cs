@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Text;
 using System.Threading;
@@ -30,13 +30,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
     private const double GLOBE_DIAMETER = 0.038;
 
     // 警告色は App.xaml の Status_* リソースから取得 (Colors.xaml で一元管理)。
-    // resource が見つからない場合は安全な fallback で動作継続。
+    // ダーク表示では Status_*_Dark を使う。resource が見つからない場合は安全な fallback で動作継続。
     private static Color GetResourceColor(string key, Color fallback)
-    {
-        var res = Application.Current?.Resources;
-        if (res != null && res.TryGetValue(key, out var v) && v is Color c) return c;
-        return fallback;
-    }
+        => MLUtility.ThemeColor(key, fallback);
     private static Color NormalColor => GetResourceColor("Status_Normal", Colors.ForestGreen);
     private static Color WarnColor   => GetResourceColor("Status_Warn",   Colors.DarkOrange);
     private static Color DangerColor => GetResourceColor("Status_Danger", Colors.Red);
@@ -415,7 +411,9 @@ public sealed partial class DataReceiveViewModel : ObservableObject, IDisposable
 
         double dbt = Clamp(dbtRaw, -10, 40);
         double rhd = Clamp(rhdRaw, 0, 100);
-        double vel = Clamp(velRaw, 0, 2);
+        // 計算機ページ (風速スライダー 0〜5 m/s) と同じ範囲にそろえる。2 m/s で頭打ちにすると、
+        // 同じ条件でも計算機と計測画面で MRT・SET* が食い違っていた
+        double vel = Clamp(velRaw, 0, 5);
         double glb = Clamp(glbRaw, -10, 50);
 
         double mrt = GetMRT(dbt, glb, vel);

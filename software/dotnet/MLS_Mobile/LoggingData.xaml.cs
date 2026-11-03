@@ -35,9 +35,10 @@ public partial class LoggingData : ContentPage
     {
       isInitialized = true;
 
-      string[] bf = FileName.Split('_');
-      this.Title = "MLogger_" + bf[1] + ": "
-        + bf[2].Substring(0, 4) + "/" + bf[2].Substring(4, 2) + "/" + bf[2].Substring(6, 2);
+      // 機器名に '_' を含んでもよいよう、解析は MLUtility.TryParseDataFileName に任せる
+      this.Title = MLUtility.TryParseDataFileName(FileName, out string mlName, out DateTime date, out _)
+        ? mlName + ": " + date.ToString("yyyy/MM/dd")
+        : FileName;
       
       //テーブル表示
       showIndicator(MLSResource.LD_Formatting);
@@ -123,7 +124,6 @@ public partial class LoggingData : ContentPage
         Label lbl = new Label
         {
           Text = bf[j],
-          BackgroundColor = Colors.White,
           HorizontalTextAlignment = TextAlignment.Center,
           VerticalTextAlignment = TextAlignment.Center,
           HorizontalOptions = LayoutOptions.Fill,
@@ -132,6 +132,7 @@ public partial class LoggingData : ContentPage
           Padding = new Thickness(2),
           LineBreakMode = LineBreakMode.CharacterWrap
         };
+        MLUtility.SetThemeColor(lbl, BackgroundColorProperty, "Surface");
         tableGrid.Add(lbl, col++, 0);
       }
     }
@@ -167,29 +168,29 @@ public partial class LoggingData : ContentPage
       Label lbl = new Label
       {
         Text = sBuilds[i].ToString(),
-        BackgroundColor = Colors.White,
         HorizontalTextAlignment = TextAlignment.Center,
         VerticalTextAlignment = TextAlignment.Center,
         HorizontalOptions = LayoutOptions.Fill,
         VerticalOptions = LayoutOptions.Fill,
         Margin = new Thickness(1)
       };
+      MLUtility.SetThemeColor(lbl, BackgroundColorProperty, "Surface");
       tableGrid.Add(lbl, i, 1);
     }
 
     //データが500を超える場合には続きがあることを表示
     if (lines.Length - 1 == 500)
     {
-      IView iv = new Label
+      Label iv = new Label
       {
         Text = MLSResource.LD_Exceed,
-        BackgroundColor = Colors.White,
         HorizontalTextAlignment = TextAlignment.Start,
         VerticalTextAlignment = TextAlignment.Center,
         HorizontalOptions = LayoutOptions.Fill,
         VerticalOptions = LayoutOptions.Fill,
         Margin = new Thickness(1)
       };
+      MLUtility.SetThemeColor(iv, BackgroundColorProperty, "Surface");
       tableGrid.Add(iv, 0, 2);
       tableGrid.SetColumnSpan(iv, rowNum - 3);
     }

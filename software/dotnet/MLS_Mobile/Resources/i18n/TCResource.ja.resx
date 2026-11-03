@@ -217,16 +217,16 @@
     <value>キーボード作業</value>
   </data>
   <data name="Act_WalkingAbout" xml:space="preserve">
-    <value>歩行</value>
+    <value>室内を歩き回る</value>
   </data>
   <data name="Act_Walking_09" xml:space="preserve">
-    <value>0.9 m/s, 3.2 km/h, 2.0 mph</value>
+    <value>0.9 m/s (3.2 km/h)</value>
   </data>
   <data name="Act_Walking_12" xml:space="preserve">
-    <value>1.2 m/s, 4.3 km/h, 2.7 mph</value>
+    <value>1.2 m/s (4.3 km/h)</value>
   </data>
   <data name="Act_Walking_18" xml:space="preserve">
-    <value>1.8 m/s, 6.8 km/h, 4.2 mph</value>
+    <value>1.8 m/s (6.8 km/h)</value>
   </data>
   <data name="Act_Wrestling" xml:space="preserve">
     <value>レスリング</value>
@@ -319,7 +319,7 @@
     <value>サンダル</value>
   </data>
   <data name="Clo_Shoes" xml:space="preserve">
-    <value>運動靴</value>
+    <value>靴</value>
   </data>
   <data name="Clo_ShortShorts" xml:space="preserve">
     <value>短パン</value>
@@ -337,7 +337,7 @@
     <value>薄手半袖パジャマ</value>
   </data>
   <data name="Clo_ShortSleeveShirtDressThin" xml:space="preserve">
-    <value>薄手半袖初ドレス</value>
+    <value>薄手半袖シャツドレス</value>
   </data>
   <data name="Clo_ShortSleeveShortRobeThin" xml:space="preserve">
     <value>薄手半袖ショートローブ</value>
@@ -397,7 +397,7 @@
     <value>ドレスとスカート（膝丈）</value>
   </data>
   <data name="Clo_Title_Footwear" xml:space="preserve">
-    <value>靴下</value>
+    <value>履物</value>
   </data>
   <data name="Clo_Title_ShirtsAndBlouses" xml:space="preserve">
     <value>シャツとブラウス</value>

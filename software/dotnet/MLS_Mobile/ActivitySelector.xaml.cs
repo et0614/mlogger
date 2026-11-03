@@ -110,16 +110,25 @@ public partial class ActivitySelector : ContentPage
   /// <summary>選択項目変更時の処理</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
-  private void OnCollectionViewSelectionChanged(object sender, SelectionChangedEventArgs e)
+  private bool _closing;
+
+  private async void OnCollectionViewSelectionChanged(object sender, SelectionChangedEventArgs e)
   {
-    if (actView.SelectedItem != null)
-      MetValue = ((Activity)actView.SelectedItem).MetValue;
+    // 戻る途中の二重選択を防ぐ
+    if (_closing || actView.SelectedItem is not Activity act) return;
+    _closing = true;
+    MetValue = act.MetValue;
+
+    // すぐ戻ると選べた手応えがないので、選択の色を一瞬見せてから戻る
+    await Task.Delay(350);
 
     var navigationParameter = new Dictionary<string, object>
     {
         { "MetValue", MetValue }
     };
-    Shell.Current.GoToAsync($"..", navigationParameter);
+    // 戻った先の画面で代謝量の欄を光らせて、値が変わったことを知らせる
+    MLUtility.RequestValueHighlight("met");
+    await Shell.Current.GoToAsync($"..", navigationParameter);
   }
 
   #endregion

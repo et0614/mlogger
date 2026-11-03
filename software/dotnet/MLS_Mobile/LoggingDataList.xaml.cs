@@ -1,6 +1,8 @@
-namespace MLS_Mobile;
+﻿namespace MLS_Mobile;
 
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text;
 using MLS_Mobile.Resources.i18n;
 
@@ -9,6 +11,12 @@ public partial class LoggingDataList : ContentPage
 
   //public ObservableCollection<LogFileGroup> LogFiles { get; set; } = new ObservableCollection<LogFileGroup>();
 
+  /// <summary>一覧に表示中のファイル (選択モードの一括操作用)</summary>
+  private List<LogFile> _allFiles = new List<LogFile>();
+
+  /// <summary>チェックボックスで複数のファイルを選ぶ選択モードか</summary>
+  public bool IsSelecting { get; private set; }
+
   public LoggingDataList()
 	{
 		InitializeComponent();
@@ -16,6 +24,11 @@ public partial class LoggingDataList : ContentPage
     UpdateLogFiles();
 
     BindingContext = this;
+
+    // 行の背景色はコードで決めているので、起動中にライト/ダークが切り替わったら作り直す
+    // (このページはタブのルートでアプリ終了まで残るので、購読の解除は不要)
+    if (Application.Current != null)
+      Application.Current.RequestedThemeChanged += (_, __) => Dispatcher.Dispatch(UpdateLogFiles);
   }
 
   public void UpdateLogFiles()
@@ -31,7 +44,7 @@ public partial class LoggingDataList : ContentPage
         try { lf = new LogFile(fName, this); }
         catch
         {
-          // 命名規約外のファイル (機器名に '_' を含む、外部から持ち込まれた等) が
+          // 命名規約外のファイル (外部から持ち込まれた等) が
           // 1 つあるだけでページ生成ごと失敗しないよう、除外して続行する。
           MLUtility.WriteLog($"[datalist] unrecognized file name skipped: {fName}");
           continue;
@@ -45,8 +58,70 @@ public partial class LoggingDataList : ContentPage
     ObservableCollection<LogFileGroup> logFiles = new ObservableCollection<LogFileGroup>();
     foreach (string key in lfDict.Keys)
       logFiles.Add(new LogFileGroup(key, new List<LogFile>(lfDict[key].OrderBy(n => n.DTime))));
+    _allFiles = logFiles.SelectMany(g => g).ToList();
+    foreach (LogFile lf in _allFiles) lf.IsSelecting = IsSelecting;
     fileList.ItemsSource = logFiles;
+    UpdateSelectionBar();
   }
+
+  #region 選択モード (複数ファイルの一括削除)
+
+  /// <summary>選択モードの開始・終了を切り替える</summary>
+  private void SetSelecting(bool selecting)
+  {
+    IsSelecting = selecting;
+    foreach (LogFile lf in _allFiles)
+    {
+      lf.IsSelecting = selecting;
+      if (!selecting) lf.IsSelected = false;
+    }
+    selectToolbarItem.Text = selecting ? MLSResource.LD_SelectDone : MLSResource.LD_Select;
+    selectionBar.IsVisible = selecting;
+    logButton.IsVisible = !selecting;
+    UpdateSelectionBar();
+  }
+
+  /// <summary>選択数に応じて削除ボタンの表示を更新する</summary>
+  internal void UpdateSelectionBar()
+  {
+    int n = _allFiles.Count(f => f.IsSelected);
+    deleteSelectedButton.Text = string.Format(MLSResource.LD_DeleteSelected, n);
+    deleteSelectedButton.IsEnabled = 0 < n;
+  }
+
+  private void select_Clicked(object sender, EventArgs e)
+  {
+    SetSelecting(!IsSelecting);
+  }
+
+  private void selectAll_Clicked(object sender, EventArgs e)
+  {
+    // すべて選択済みなら全解除、そうでなければ全選択
+    bool all = _allFiles.Count > 0 && _allFiles.All(f => f.IsSelected);
+    foreach (LogFile lf in _allFiles) lf.IsSelected = !all;
+    UpdateSelectionBar();
+  }
+
+  private async void deleteSelected_Clicked(object sender, EventArgs e)
+  {
+    List<LogFile> targets = _allFiles.Where(f => f.IsSelected).ToList();
+    if (targets.Count == 0) return;
+
+    bool ok = await DisplayAlert(MLSResource.LD_Delete,
+      string.Format(MLSResource.LD_DeleteSelectedAlert, targets.Count),
+      MLSResource.Yes, MLSResource.Cancel);
+    if (!ok) return;
+
+    foreach (LogFile lf in targets)
+    {
+      try { MLUtility.DeleteDataFile(lf.FileName); }
+      catch (Exception ex) { MLUtility.WriteLog($"[datalist] delete failed: {lf.FileName} {ex.Message}"); }
+    }
+    SetSelecting(false);
+    UpdateLogFiles();
+  }
+
+  #endregion
 
   protected override void OnAppearing()
   {
@@ -76,21 +151,47 @@ public partial class LoggingDataList : ContentPage
     }
   }
 
-  public class LogFile
+  public class LogFile : INotifyPropertyChanged
   {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+      => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    private bool _isSelecting;
+    private bool _isSelected;
+
+    /// <summary>選択モード中か (チェックボックスの表示に使う)</summary>
+    public bool IsSelecting
+    {
+      get => _isSelecting;
+      set { if (_isSelecting != value) { _isSelecting = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>一括削除の対象として選ばれているか</summary>
+    public bool IsSelected
+    {
+      get => _isSelected;
+      set
+      {
+        if (_isSelected == value) return;
+        _isSelected = value;
+        OnPropertyChanged();
+        Parent?.UpdateSelectionBar();
+      }
+    }
+
     public LogFile(string fName, LoggingDataList parent)
     {
       FileName = fName;
       Parent = parent;
 
-      // 期待される命名:
-      //   - 計測 (DataReceive)   : MLogger_{name}_{yyyymmdd}.txt
-      //   - dump (DeviceSetting) : MLogger_{name}_{yyyymmdd}_{hhmmss}_M.txt
-      // どちらも _ で split したときの bf[1] が機器名、bf[2] の先頭 8 文字が日付。
-      string[] bf = fName.Split('_');
-      MLoggerName = "MLogger_" + bf[1];
-      DTime = new DateTime(int.Parse(bf[2].Substring(0, 4)), int.Parse(bf[2].Substring(4, 2)), int.Parse(bf[2].Substring(6, 2)));
-      IsDump = fName.EndsWith("_M.txt");
+      // 命名規約の解析は MLUtility.TryParseDataFileName に集約 (機器名に '_' を含んでもよい)
+      if (!MLUtility.TryParseDataFileName(fName, out string mlName, out DateTime date, out bool isDump))
+        throw new FormatException($"unrecognized data file name: {fName}");
+      MLoggerName = mlName;
+      DTime = date;
+      IsDump = isDump;
 
       FileSize = MLUtility.GetFileSize(FileName);
 
@@ -128,14 +229,20 @@ public partial class LoggingDataList : ContentPage
     /// <summary>一覧に表示する日付テキスト (dump は "-M" suffix 付き)。</summary>
     public string DTimeDisplay => DTime.ToString("yyyy/MM/dd") + (IsDump ? "-M" : "");
 
-    /// <summary>行の背景色 (dump は淡い blue で視覚的に区別)。</summary>
-    public Color RowBackgroundColor => IsDump ? Color.FromArgb("#E3F2FD") : Colors.White;
+    /// <summary>行の背景色 (dump は淡い青で視覚的に区別。ダーク表示では暗い青)。</summary>
+    public Color RowBackgroundColor => MLUtility.ThemeColor(IsDump ? "DumpRow" : "Surface");
 
     #endregion
 
 
-    private void OnDeleteCommand(LogFile logFile)
+    private async void OnDeleteCommand(LogFile logFile)
     {
+      // 一括削除 (選択モード) ができたので、スワイプでの削除も誤操作防止のため確認する
+      bool ok = await logFile.Parent.DisplayAlert(MLSResource.LD_Delete,
+        $"{MLSResource.LD_DeleteAlert}{Environment.NewLine}{logFile.FileName}",
+        MLSResource.Yes, MLSResource.Cancel);
+      if (!ok) return;
+
       MLUtility.DeleteDataFile(logFile.FileName);
       logFile.Parent.UpdateLogFiles();
     }
@@ -164,6 +271,12 @@ public partial class LoggingDataList : ContentPage
 
     private async void OnNavigateCommand(LogFile logFile)
     {
+      // 選択モード中は、行のタップでチェックを切り替える
+      if (logFile.IsSelecting)
+      {
+        logFile.IsSelected = !logFile.IsSelected;
+        return;
+      }
       var navigationParameter = new Dictionary<string, object>
         {
             { "FileName", logFile.FileName }

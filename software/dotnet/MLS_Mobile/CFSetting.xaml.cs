@@ -72,31 +72,31 @@ public partial class CFSetting : ContentPage
 
   private void dbt_TextChanged(object sender, TextChangedEventArgs e)
   {
-    lbl_dbt.TextColor = Colors.Red;
+    MLUtility.SetThemeColor(lbl_dbt, Label.TextColorProperty, "Status_Danger");
     isEdited = true;
   }
 
   private void hmd_TextChanged(object sender, TextChangedEventArgs e)
   {
-    lbl_hmd.TextColor = Colors.Red;
+    MLUtility.SetThemeColor(lbl_hmd, Label.TextColorProperty, "Status_Danger");
     isEdited = true;
   }
 
   private void glb_TextChanged(object sender, TextChangedEventArgs e)
   {
-    lbl_glb.TextColor = Colors.Red;
+    MLUtility.SetThemeColor(lbl_glb, Label.TextColorProperty, "Status_Danger");
     isEdited = true;
   }
 
   private void vel_TextChanged(object sender, TextChangedEventArgs e)
   {
-    lbl_vel.TextColor = Colors.Red;
+    MLUtility.SetThemeColor(lbl_vel, Label.TextColorProperty, "Status_Danger");
     isEdited = true;
   }
 
   private void lux_TextChanged(object sender, TextChangedEventArgs e)
   {
-    lbl_lux.TextColor = Colors.Red;
+    MLUtility.SetThemeColor(lbl_lux, Label.TextColorProperty, "Status_Danger");
     isEdited = true;
   }
 
@@ -186,7 +186,8 @@ public partial class CFSetting : ContentPage
   {
     Application.Current.Dispatcher.Dispatch(() =>
     {
-      lbl_dbt.TextColor = lbl_hmd.TextColor = lbl_glb.TextColor = lbl_vel.TextColor = lbl_lux.TextColor = Colors.Black;
+      foreach (Label l in new[] { lbl_dbt, lbl_hmd, lbl_glb, lbl_vel, lbl_lux })
+        MLUtility.SetThemeColor(l, Label.TextColorProperty, "Text");
     });
     isEdited = false;
   }

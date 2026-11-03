@@ -8,12 +8,12 @@
              CanBeDismissedByTappingOutsideOfPopup="True"
              Padding="0" Margin="0">
 
-    <Grid BackgroundColor="White"
+    <Grid BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}"
           HeightRequest="400"
           HorizontalOptions="Fill"
           Padding="5">
         <ScrollView Margin="15">
-            <Label x:Name="lblMessage" Text="{Binding LabelText}" TextColor="Black" 
+            <Label x:Name="lblMessage" Text="{Binding LabelText}" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" 
                    HorizontalOptions="Fill"
                    VerticalOptions="Fill" FontSize="Medium" LineBreakMode="WordWrap"/>
         </ScrollView>

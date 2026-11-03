@@ -544,6 +544,78 @@ namespace MLS_Mobile.Resources.i18n {
         }
         
         /// <summary>
+        ///   Select に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_Select {
+            get {
+                return ResourceManager.GetString("LD_Select", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Done に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_SelectDone {
+            get {
+                return ResourceManager.GetString("LD_SelectDone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Select all に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_SelectAll {
+            get {
+                return ResourceManager.GetString("LD_SelectAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Delete ({0}) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_DeleteSelected {
+            get {
+                return ResourceManager.GetString("LD_DeleteSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Delete {0} selected file(s)? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string LD_DeleteSelectedAlert {
+            get {
+                return ResourceManager.GetString("LD_DeleteSelectedAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   {0} started recording to the PC. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_StartedPC {
+            get {
+                return ResourceManager.GetString("DS_StartedPC", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   {0} started recording to its internal memory. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_StartedFlash {
+            get {
+                return ResourceManager.GetString("DS_StartedFlash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   {0} started recording in permanent mode. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string DS_StartedPermanent {
+            get {
+                return ResourceManager.GetString("DS_StartedPermanent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Delete に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string LD_Delete {

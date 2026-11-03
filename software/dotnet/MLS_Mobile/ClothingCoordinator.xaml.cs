@@ -153,13 +153,15 @@ public partial class ClothingCoordinator : ContentPage
   /// <summary>設定ボタンクリック時の処理</summary>
   /// <param name="sender"></param>
   /// <param name="e"></param>
-  private void Button_Clicked(object sender, EventArgs e)
+  private async void Button_Clicked(object sender, EventArgs e)
   {
     var navigationParameter = new Dictionary<string, object>
     {
         { "CloValue", CloValue }
     };
-    Shell.Current.GoToAsync($"..", navigationParameter);
+    // 戻った先の画面で着衣量の欄を光らせて、値が変わったことを知らせる
+    MLUtility.RequestValueHighlight("clo");
+    await Shell.Current.GoToAsync($"..", navigationParameter);
   }
 
   #endregion

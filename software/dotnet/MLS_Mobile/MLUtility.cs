@@ -273,6 +273,118 @@ namespace MLS_Mobile
       return Directory.GetFiles(folder);
     }
 
+    /// <summary>ライト/ダークに応じた色を Colors.xaml から取り出す。</summary>
+    /// <remarks>ダーク表示のときは "キー_Dark" を優先し、なければ "キー" を使う。
+    /// XAML の AppThemeBinding と違い、取得した時点の配色で固定される。コントロールに色を付けるなら SetThemeColor を使うこと。</remarks>
+    /// <param name="key">Colors.xaml のキー (例: "Text", "Surface", "Status_Warn")</param>
+    /// <param name="fallback">キーが見つからないときの色</param>
+    public static Color ThemeColor(string key, Color? fallback = null)
+    {
+      var app = Application.Current;
+      if (app != null)
+      {
+        if (app.RequestedTheme == AppTheme.Dark
+            && app.Resources.TryGetValue(key + "_Dark", out var dark) && dark is Color dc)
+          return dc;
+        if (app.Resources.TryGetValue(key, out var light) && light is Color lc)
+          return lc;
+      }
+      return fallback ?? Colors.Black;
+    }
+
+    /// <summary>ライト/ダーク両方の色を Colors.xaml から取り出してコントロールに設定する。</summary>
+    /// <remarks>ThemeColor と違い、起動中にライト/ダークが切り替わっても自動で追従する。
+    /// コードから色を付けるときはこちらを使う (ダーク用 "キー_Dark" がなければライトと同じ色)。</remarks>
+    /// <param name="target">色を付けるコントロール</param>
+    /// <param name="property">色のプロパティ (例: Label.TextColorProperty)</param>
+    /// <param name="key">Colors.xaml のキー</param>
+    public static void SetThemeColor(BindableObject target, BindableProperty property, string key)
+    {
+      var res = Application.Current?.Resources;
+      Color light = res != null && res.TryGetValue(key, out var l) && l is Color lc ? lc : Colors.Black;
+      Color dark = res != null && res.TryGetValue(key + "_Dark", out var d) && d is Color dc ? dc : light;
+      target.SetAppThemeColor(property, light, dark);
+    }
+
+    /// <summary>代謝量・着衣量の選択画面から戻ったとき、光らせて知らせる値 ("met" / "clo")。</summary>
+    private static string? _pendingHighlight;
+
+    /// <summary>戻り先の画面で、選んだ値の欄を光らせるよう予約する。</summary>
+    /// <param name="key">"met" または "clo"</param>
+    public static void RequestValueHighlight(string key) => _pendingHighlight = key;
+
+    /// <summary>予約された光らせる値を取り出す (取り出すと予約は消える)。</summary>
+    public static string? TakeValueHighlight()
+    {
+      string? key = _pendingHighlight;
+      _pendingHighlight = null;
+      return key;
+    }
+
+    /// <summary>値が変わったことが分かるよう、コントロールの背景を一瞬光らせて少し大きくする。</summary>
+    public static async Task FlashAsync(VisualElement target)
+    {
+      Color hi = Application.Current?.RequestedTheme == AppTheme.Dark
+        ? ThemeColor("Accent_Dark").WithAlpha(0.6f)
+        : ThemeColor("Light_G");
+      Color original = target.BackgroundColor;
+      try
+      {
+        target.BackgroundColor = hi;
+        await target.ScaleTo(1.25, 150, Easing.CubicOut);
+        await target.ScaleTo(1.0, 200, Easing.CubicIn);
+        await Task.Delay(500);
+        // 背景をゆっくり元に戻す
+        var tcs = new TaskCompletionSource();
+        new Animation(a => target.BackgroundColor = hi.WithAlpha((float)(hi.Alpha * a)), 1, 0)
+          .Commit(target, "flash", length: 700, finished: (_, __) => tcs.TrySetResult());
+        await tcs.Task;
+      }
+      finally
+      {
+        target.Scale = 1.0;
+        target.BackgroundColor = original;
+      }
+    }
+
+    /// <summary>データファイル名から機器名・日付・dump かどうかを取り出す。</summary>
+    /// <remarks>
+    /// 命名規約:
+    ///   計測 (DataReceive)   : MLogger_{name}_{yyyyMMdd}.txt
+    ///   dump (DeviceSetting) : MLogger_{name}_{yyyyMMdd}_{HHmmss}_M.txt
+    /// 機器名 ({name}) に '_' を含んでもよいよう、日付・時刻は末尾側から切り出す。
+    /// (以前は '_' で区切った 2 番目を機器名としていたため、名前に '_' があると
+    ///  データ一覧からファイルが消えていた)
+    /// </remarks>
+    /// <param name="fileName">データファイル名 (パスを含まない)</param>
+    /// <param name="mloggerName">機器名 (例: MLogger_Room_A)</param>
+    /// <param name="date">ファイル名の日付</param>
+    /// <param name="isDump">内蔵メモリからの dump ファイルか</param>
+    /// <returns>規約どおりの名前なら true</returns>
+    public static bool TryParseDataFileName(string fileName, out string mloggerName, out DateTime date, out bool isDump)
+    {
+      mloggerName = "";
+      date = default;
+      isDump = false;
+      if (!fileName.StartsWith("MLogger_") || !fileName.EndsWith(".txt")) return false;
+
+      string body = fileName.Substring(0, fileName.Length - ".txt".Length);
+      isDump = body.EndsWith("_M");
+      if (isDump) body = body.Substring(0, body.Length - "_M".Length);
+
+      string[] parts = body.Split('_');
+      // dump は末尾が {yyyyMMdd}_{HHmmss}、計測は末尾が {yyyyMMdd}
+      int dateIdx = isDump ? parts.Length - 2 : parts.Length - 1;
+      if (dateIdx < 2) return false;   // "MLogger" + 機器名 (1 つ以上) + 日付
+      if (isDump && !(parts[^1].Length == 6 && parts[^1].All(char.IsDigit))) return false;
+      if (!DateTime.TryParseExact(parts[dateIdx], "yyyyMMdd",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out date)) return false;
+
+      mloggerName = string.Join("_", parts, 0, dateIdx);
+      return true;
+    }
+
     /// <summary>データファイルの内容を取得する</summary>
     /// <param name="fileName">データファイル名称</param>
     /// <param name="maxLine">読み込む最大行数</param>

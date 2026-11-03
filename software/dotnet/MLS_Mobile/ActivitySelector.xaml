@@ -21,10 +21,12 @@
                     <Grid Padding="8" RowDefinitions="Auto,Auto,Auto" HorizontalOptions="Fill">
                         <Border Grid.Row="0"
                                 StrokeShape="RoundRectangle 12"
-                                Stroke="{StaticResource Dark_G}"
+                                Stroke="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"
                                 StrokeThickness="1"
                                 Padding="4"
+                                BackgroundColor="White"
                                 HorizontalOptions="Center">
+                            <!-- 絵は白地の画像なので、ダーク表示でも白い角丸のカードに載せて「写真」として見せる -->
                             <Image Source="{Binding Appearance}" Aspect="AspectFit"
                                    HeightRequest="140" WidthRequest="140"/>
                         </Border>

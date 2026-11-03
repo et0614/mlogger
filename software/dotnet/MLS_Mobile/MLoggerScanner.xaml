@@ -13,10 +13,10 @@
             <Grid x:Name="demoBtn" Grid.Row="0" IsVisible="False" ColumnDefinitions="*,*" Margin="10,5" ColumnSpacing="5">
                 <Button Grid.Column="0" Text="Demo (v4)" Clicked="DemoButtonV4_Clicked"
                         Padding="5"
-                        BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Light_G}, Dark={StaticResource Selected_Dark}}" TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Accent_Dark}}"/>
                 <Button Grid.Column="1" Text="Demo (v3)" Clicked="DemoButtonV3_Clicked"
                         Padding="5"
-                        BackgroundColor="{StaticResource Light_G}" TextColor="{StaticResource Darkest_G}"/>
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Light_G}, Dark={StaticResource Selected_Dark}}" TextColor="{AppThemeBinding Light={StaticResource Darkest_G}, Dark={StaticResource Accent_Dark}}"/>
             </Grid>
             <CollectionView Grid.Row="1"
                 x:Name="mlList" ItemsSource="{ Binding MLXBees }" SelectionMode="Single" SelectionChanged="mlList_SelectionChanged">
@@ -47,7 +47,7 @@
             <Label Grid.Row="2"
                    Text="mlogger.jp"
                    FontSize="12"
-                   TextColor="{StaticResource Dark_G}"
+                   TextColor="{AppThemeBinding Light={StaticResource Dark_G}, Dark={StaticResource Accent_Dark}}"
                    TextDecorations="Underline"
                    HorizontalTextAlignment="Center"
                    Padding="0,8,0,8">
@@ -58,10 +58,10 @@
 
             <!--インジケータ (Grid 全体を覆う)-->
             <ContentView x:Name="grayback" Grid.RowSpan="3" IsVisible="False" BackgroundColor="Black" Opacity="0.4" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1"/>
-            <Border x:Name="indicator" Grid.RowSpan="3" IsVisible="False" BackgroundColor="White" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
-                <StackLayout BackgroundColor="White">
-                    <ActivityIndicator Color="Black" IsRunning="True"/>
-                    <Label x:Name="indicatorLabel" Text="---" TextColor="Black"/>
+            <Border x:Name="indicator" Grid.RowSpan="3" IsVisible="False" BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}" AnchorX="0.5" HorizontalOptions="Center" VerticalOptions="Center" StrokeShape="RoundRectangle 10" Padding="15">
+                <StackLayout BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Surface_Dark}}">
+                    <ActivityIndicator Color="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}" IsRunning="True"/>
+                    <Label x:Name="indicatorLabel" Text="---" TextColor="{AppThemeBinding Light=Black, Dark={StaticResource Text_Dark}}"/>
                 </StackLayout>
             </Border>
             <!--インジケータここまで-->

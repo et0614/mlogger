@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ダークモード時の Android 標準部品 (確認ダイアログのボタン、日付の選択など) の色。
+         暗い背景で読めるよう、明るい緑 (Resources/Styles/Colors.xaml の Accent_Dark) にする -->
+    <color name="colorPrimary">#123D16</color>
+    <color name="colorPrimaryDark">#123D16</color>
+    <color name="colorAccent">#81C784</color>
+</resources>
